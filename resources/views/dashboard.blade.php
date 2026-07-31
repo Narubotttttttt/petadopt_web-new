@@ -161,8 +161,8 @@
                 <div class="grid grid-cols-1 gap-6">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h2 class="text-lg font-bold text-[#333634] mb-4">Adoption Trends</h2>
-                        <div class="h-80 bg-gray-50 rounded-xl border border-dashed border-gray-200 flex items-center justify-center">
-                            <p class="text-sm text-gray-400 font-medium">Chart visualization placeholder</p>
+                        <div class="h-80">
+                            <canvas id="adoptionTrendsChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -209,4 +209,40 @@
             </div>
         </main>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        const ctx = document.getElementById('adoptionTrendsChart');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: @json($chartMonths ?? []),
+                datasets: [{
+                    label: 'Adoptions',
+                    data: @json($chartCounts ?? []),
+                    borderColor: '#199CA4',
+                    backgroundColor: 'rgba(25, 156, 164, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#199CA4',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    </script>
 </x-app-layout>

@@ -50,7 +50,11 @@
             <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900">Quick actions</h2>
-                    <p class="text-sm text-gray-500">Update application status or schedule a meet-and-greet.</p>
+                    @if(Auth::user()->role === 'admin')
+                        <p class="text-sm text-gray-500">Make the final decision or schedule a meet-and-greet.</p>
+                    @else
+                        <p class="text-sm text-gray-500">Review requirements and forward to admin for final decision.</p>
+                    @endif
                 </div>
 
                 <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-4">
@@ -61,9 +65,16 @@
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Status</label>
                         <select name="status" class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white text-sm text-gray-800">
                             <option value="under_review" {{ $application->status == 'under_review' ? 'selected' : '' }}>Under review</option>
-                            <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approved</option>
+                            @if(Auth::user()->role === 'admin')
+                                <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approved</option>
+                            @else
+                                <option value="pending" {{ $application->status == 'pending' ? 'selected' : '' }}>Pending admin decision</option>
+                            @endif
                             <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
+                        @if(Auth::user()->role !== 'admin')
+                            <p class="text-xs text-gray-400 mt-2">Only an admin can give final approval. Mark as "Pending admin decision" once requirements are complete.</p>
+                        @endif
                     </div>
 
                     <div>

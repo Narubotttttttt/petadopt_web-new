@@ -41,7 +41,6 @@ class PetController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
             'breed' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
@@ -67,7 +66,6 @@ class PetController extends Controller
         }
 
         Pet::create([
-            'name' => $data['name'],
             'breed' => $data['breed'],
             'color' => $data['color'],
             'gender' => $data['gender'],
@@ -102,7 +100,6 @@ class PetController extends Controller
     public function update(Request $request, Pet $pet)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
             'breed' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
@@ -133,7 +130,6 @@ class PetController extends Controller
         }
 
         $pet->update([ 
-            'name' => $data['name'],
             'breed' => $data['breed'],
             'color' => $data['color'],
             'gender' => $data['gender'],

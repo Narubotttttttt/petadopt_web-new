@@ -15,12 +15,16 @@ return new class extends Migration
     {
         Schema::create('pets', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->enum('type', ['dog', 'cat'])->nullable();
+            $table->string('age')->nullable();
             $table->string('breed')->nullable();
             $table->string('color')->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
-            $table->enum('type', ['dog', 'cat'])->nullable();
+            $table->text('description')->nullable();
             $table->string('photo_path')->nullable();
+            $table->text('medical_history')->nullable();
+            $table->text('temperament')->nullable();
+            $table->enum('status', ['available', 'pending', 'adopted'])->default('available');
             $table->timestamps();
         });
     }

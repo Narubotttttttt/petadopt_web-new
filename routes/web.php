@@ -3,8 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\UserController;
+use App\Models\AdoptionApplication;
 use App\Models\Pet;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,10 +20,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/dashboard', function () {
+        $adoptionTrends = AdoptionApplication::selectRaw('MONTH(approved_at) as month, COUNT(*) as total')
+            ->whereNotNull('approved_at')
+            ->whereYear('approved_at', now()->year)
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        $chartMonths = [];
+        $chartCounts = [];
+
+        foreach (range(1, 12) as $m) {
+            $chartMonths[] = Carbon::create()->month($m)->format('M');
+            $chartCounts[] = $adoptionTrends->get($m, 0);
+        }
+
         return view('dashboard', [
             'totalPets' => Pet::count(),
             'totalUsers' => User::whereIn('role', ['admin', 'staff'])->count(),
             'latestPet' => Pet::latest('created_at')->first(),
+            'chartMonths' => $chartMonths,
+            'chartCounts' => $chartCounts,
         ]);
     })->name('dashboard');
 

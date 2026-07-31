@@ -2,17 +2,20 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Name</label>
-        <input type="text" name="name" value="{{ old('name', optional($pet)->name) }}"
-            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800"
-            required>
+        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Pet Type</label>
+        <select name="type"
+            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" required>
+            <option value="">Select type</option>
+            <option value="dog" {{ old('type', optional($pet)->type) == 'dog' ? 'selected' : '' }}>Dog</option>
+            <option value="cat" {{ old('type', optional($pet)->type) == 'cat' ? 'selected' : '' }}>Cat</option>
+        </select>
     </div>
 
     <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Breed</label>
         <input type="text" name="breed" value="{{ old('breed', optional($pet)->breed) }}"
             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800"
-            required>
+            placeholder="e.g., Aspin / Poodle" required>
     </div>
 </div>
 
@@ -35,33 +38,21 @@
     </div>
 
     <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Pet Type</label>
-        <select name="type"
-            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" required>
-            <option value="">Select type</option>
-            <option value="dog" {{ old('type', optional($pet)->type) == 'dog' ? 'selected' : '' }}>Dog</option>
-            <option value="cat" {{ old('type', optional($pet)->type) == 'cat' ? 'selected' : '' }}>Cat</option>
-        </select>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <div>
         <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Age</label>
         <input type="text" name="age" value="{{ old('age', optional($pet)->age) }}"
             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800"
             placeholder="e.g., 2 years">
     </div>
+</div>
 
-    <div>
-        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Status</label>
-        <select name="status"
-            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" required>
-            <option value="available" {{ old('status', optional($pet)->status ?? 'available') == 'available' ? 'selected' : '' }}>Available</option>
-            <option value="pending" {{ old('status', optional($pet)->status) == 'pending' ? 'selected' : '' }}>Pending</option>
-            <option value="adopted" {{ old('status', optional($pet)->status) == 'adopted' ? 'selected' : '' }}>Adopted</option>
-        </select>
-    </div>
+<div class="mb-8">
+    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Status</label>
+    <select name="status"
+        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" required>
+        <option value="available" {{ old('status', optional($pet)->status ?? 'available') == 'available' ? 'selected' : '' }}>Available</option>
+        <option value="pending" {{ old('status', optional($pet)->status) == 'pending' ? 'selected' : '' }}>Pending</option>
+        <option value="adopted" {{ old('status', optional($pet)->status) == 'adopted' ? 'selected' : '' }}>Adopted</option>
+    </select>
 </div>
 
 @php
@@ -89,15 +80,24 @@
 
 <div class="mb-8">
     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Temperament</label>
-    <textarea name="temperament" rows="4"
-        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800">{{ old('temperament', optional($pet)->temperament) }}</textarea>
+    <select name="temperament"
+        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" required>
+        <option value="">Select temperament</option>
+        <option value="Friendly" {{ old('temperament', optional($pet)->temperament) == 'Friendly' ? 'selected' : '' }}>Friendly</option>
+        <option value="Calm" {{ old('temperament', optional($pet)->temperament) == 'Calm' ? 'selected' : '' }}>Calm</option>
+        <option value="Energetic" {{ old('temperament', optional($pet)->temperament) == 'Energetic' ? 'selected' : '' }}>Energetic</option>
+        <option value="Shy" {{ old('temperament', optional($pet)->temperament) == 'Shy' ? 'selected' : '' }}>Shy</option>
+        <option value="Playful" {{ old('temperament', optional($pet)->temperament) == 'Playful' ? 'selected' : '' }}>Playful</option>
+        <option value="Gentle" {{ old('temperament', optional($pet)->temperament) == 'Gentle' ? 'selected' : '' }}>Gentle</option>
+    </select>
+    
+</div>
 </div>
 
 <div class="mb-8">
     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Pet Description</label>
     <textarea name="description" rows="4"
-        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800">{{ old('description', optional($pet)->description) }}</textarea>
-    <p class="text-xs text-gray-500 mt-2">Add a short summary that adopters can read.</p>
+        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" placeholder="Add a short summary that adopters can read...">{{ old('description', optional($pet)->description) }}</textarea>
 </div>
 
 <div class="mb-8">

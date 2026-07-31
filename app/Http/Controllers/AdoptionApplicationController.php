@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class AdoptionApplicationController extends Controller
 {
@@ -24,12 +25,32 @@ class AdoptionApplicationController extends Controller
 
     public function update(Request $request, AdoptionApplication $application): RedirectResponse
     {
+        $isAdmin = Auth::user()->role === 'admin';
+
+        $allowedStatuses = $isAdmin
+            ? ['under_review', 'pending', 'approved', 'rejected']
+            : ['under_review', 'pending', 'rejected'];
+
         $request->validate([
-            'status' => ['required', Rule::in(['under_review', 'approved', 'rejected'])],
+            'status' => ['required', Rule::in($allowedStatuses)],
             'scheduled_at' => ['nullable', 'date'],
         ]);
 
-        $application->update($request->only(['status', 'scheduled_at']));
+        $data = $request->only(['status', 'scheduled_at']);
+        $wasApproved = $application->status === 'approved';
+        $willBeApproved = $request->status === 'approved';
+
+        if ($willBeApproved && ! $wasApproved) {
+            $data['approved_at'] = now();
+        }
+
+        $application->update($data);
+
+        if ($willBeApproved && ! $wasApproved) {
+            $application->pet->update(['status' => 'adopted']);
+        } elseif ($wasApproved && ! $willBeApproved) {
+            $application->pet->update(['status' => 'available']);
+        }
 
         return back()->with('success', 'Adoption application updated successfully.');
     }
