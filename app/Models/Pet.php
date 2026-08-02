@@ -17,7 +17,6 @@ class Pet extends Model
         'type',
         'age',
         'medical_history',
-        'temperament',
         'description',
         'photo_path',
         'status',
@@ -26,5 +25,10 @@ class Pet extends Model
     public function adoptionApplications()
     {
         return $this->hasMany(AdoptionApplication::class);
+    }
+
+    public function temperamentTags()
+    {
+        return $this->belongsToMany(TemperamentTag::class, 'pet_temperament_tag');
     }
 }

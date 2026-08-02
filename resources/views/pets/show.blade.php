@@ -42,7 +42,20 @@
                         <p><strong class="text-gray-700">Age:</strong> <span class="text-gray-600">{{ $pet->age ?? '—' }}</span></p>
                         <p><strong class="text-gray-700">Status:</strong> <span class="text-gray-600">{{ ucfirst(str_replace('_', ' ', $pet->status ?? 'available')) }}</span></p>
                         <p><strong class="text-gray-700">Medical history:</strong> <span class="text-gray-600">{{ $pet->medical_history ?? 'Not provided' }}</span></p>
-                        <p><strong class="text-gray-700">Temperament:</strong> <span class="text-gray-600">{{ $pet->temperament ?? 'Not provided' }}</span></p>
+
+                        <div>
+                            <strong class="text-gray-700">Temperament:</strong>
+                            @if($pet->temperamentTags->isNotEmpty())
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    @foreach($pet->temperamentTags as $tag)
+                                        <span class="px-2.5 py-1 bg-[#199CA4]/10 text-[#199CA4] text-xs font-semibold rounded-full">{{ $tag->name }}</span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-gray-600">Not provided</span>
+                            @endif
+                        </div>
+
                         <p><strong class="text-gray-700">Description:</strong> <span class="text-gray-600">{{ $pet->description ?? 'Not provided' }}</span></p>
                         <p><strong class="text-gray-700">Added:</strong> <span class="text-gray-600">{{ $pet->created_at->diffForHumans() }}</span></p>
                     </div>

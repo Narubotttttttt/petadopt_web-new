@@ -32,6 +32,7 @@
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Color</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Added</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Type</th>
+                            <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
                             <th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -42,13 +43,13 @@
                                     <div class="flex items-center gap-3">
                                         <div class="w-12 h-12 rounded-2xl bg-[#199CA4]/10 overflow-hidden flex items-center justify-center">
                                             @if($pet->photo_path)
-                                                <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="{{ $pet->name }}" class="w-full h-full object-cover">
+                                                <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet photo" class="w-full h-full object-cover">
                                             @else
                                                 <span class="text-base">🐾</span>
                                             @endif
                                         </div>
                                         <div>
-                                            <p class="font-semibold text-gray-900">{{ $pet->name }}</p>
+                                            <p class="font-semibold text-gray-900">{{ $pet->name ?? 'Pet #'.$pet->id }}</p>
                                             <p class="text-xs text-gray-400">{{ ucfirst($pet->gender ?? 'Unknown') }}</p>
                                         </div>
                                     </div>
@@ -57,6 +58,19 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $pet->color ?? '—' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $pet->created_at->diffForHumans() }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($pet->type ?? 'Unknown') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    @php
+                                        $statusStyles = [
+                                            'available' => 'bg-green-50 text-green-700 border-green-100',
+                                            'pending' => 'bg-yellow-50 text-yellow-700 border-yellow-100',
+                                            'adopted' => 'bg-[#199CA4]/10 text-[#199CA4] border-[#199CA4]/20',
+                                        ];
+                                        $style = $statusStyles[$pet->status] ?? 'bg-gray-50 text-gray-600 border-gray-100';
+                                    @endphp
+                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border {{ $style }}">
+                                        {{ ucfirst($pet->status ?? 'Unknown') }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                     <div class="inline-flex items-center gap-2">
                                         <a href="{{ route('pets.show', $pet) }}" class="text-sm text-[#199CA4] font-medium">View</a>
@@ -73,7 +87,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
+                                <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">
                                     No pets have been added yet. Use the button above to add your first pet.
                                 </td>
                             </tr>

@@ -5,26 +5,29 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Pet;
 use App\Models\AdoptionApplication;
+use App\Models\TemperamentTag;
 use Illuminate\Support\Facades\Storage;
 
 class PetController extends Controller
 {
     public function create()
     {
-        return view('pets.create');
+        $temperamentTags = TemperamentTag::orderBy('name')->get();
+
+        return view('pets.create', [
+            'temperamentTags' => $temperamentTags,
+        ]);
     }
 
     public function index()
     {
-        // server-side search and pagination
         $q = request()->input('q');
 
         $query = Pet::query();
 
         if ($q) {
             $query->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', "%{$q}%")
-                    ->orWhere('breed', 'like', "%{$q}%")
+                $sub->where('breed', 'like', "%{$q}%")
                     ->orWhere('color', 'like', "%{$q}%")
                     ->orWhere('type', 'like', "%{$q}%");
             });
@@ -47,7 +50,8 @@ class PetController extends Controller
             'type' => 'required|in:dog,cat',
             'age' => 'nullable|string|max:50',
             'medical_history' => 'nullable',
-            'temperament' => 'nullable|string',
+            'temperament_tags' => 'nullable|array',
+            'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
             'photo' => 'required|image|max:2048',
         ]);
@@ -65,18 +69,19 @@ class PetController extends Controller
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
         }
 
-        Pet::create([
+        $pet = Pet::create([
             'breed' => $data['breed'],
             'color' => $data['color'],
             'gender' => $data['gender'],
             'type' => $data['type'],
             'age' => $data['age'] ?? null,
             'medical_history' => $data['medical_history'] ?? null,
-            'temperament' => $data['temperament'] ?? null,
             'description' => $data['description'] ?? null,
             'photo_path' => $data['photo_path'] ?? null,
             'status' => 'available',
         ]);
+
+        $pet->temperamentTags()->sync($data['temperament_tags'] ?? []);
 
         session()->flash('success', 'Pet added successfully.');
 
@@ -92,8 +97,13 @@ class PetController extends Controller
 
     public function edit(Pet $pet)
     {
+        $temperamentTags = TemperamentTag::orderBy('name')->get();
+        $selectedTagIds = $pet->temperamentTags()->pluck('temperament_tags.id')->toArray();
+
         return view('pets.edit', [
             'pet' => $pet,
+            'temperamentTags' => $temperamentTags,
+            'selectedTagIds' => $selectedTagIds,
         ]);
     }
 
@@ -106,9 +116,10 @@ class PetController extends Controller
             'type' => 'required|in:dog,cat',
             'age' => 'nullable|string|max:50',
             'medical_history' => 'nullable',
-            'temperament' => 'nullable|string',
+            'temperament_tags' => 'nullable|array',
+            'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
-            'status' => ['required', 'in:available,pending,adopted'],
+            'status' => ['required', 'in:available,pending'],
             'photo' => 'nullable|image|max:2048',
         ]);
 
@@ -129,18 +140,19 @@ class PetController extends Controller
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
         }
 
-        $pet->update([ 
+        $pet->update([
             'breed' => $data['breed'],
             'color' => $data['color'],
             'gender' => $data['gender'],
             'type' => $data['type'],
             'age' => $data['age'] ?? null,
             'medical_history' => $data['medical_history'] ?? null,
-            'temperament' => $data['temperament'] ?? null,
             'description' => $data['description'] ?? null,
             'status' => $data['status'],
             'photo_path' => $data['photo_path'] ?? $pet->photo_path,
         ]);
+
+        $pet->temperamentTags()->sync($data['temperament_tags'] ?? []);
 
         session()->flash('success', 'Pet updated successfully.');
 
