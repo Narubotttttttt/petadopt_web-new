@@ -137,15 +137,16 @@
                         </div>
                     </div>
 
-                    <div class="bg-teal-900 text-white p-6 rounded-2xl shadow-sm flex justify-between items-start">
+                    <a href="{{ $latestPet ? route('pets.show', $latestPet) : route('pets.index') }}" class="bg-teal-900 hover:bg-teal-800 text-white p-6 rounded-2xl shadow-sm flex justify-between items-start transition-colors">
                         <div>
                             <p class="text-xs uppercase tracking-wider text-teal-200">Latest Pet</p>
 
                             @if($latestPet)
-                                <h3 class="text-3xl font-bold my-1 text-white">{{ $latestPet->name }}</h3>
-                                <p class="text-xs text-teal-300">Added {{ $latestPet->created_at->diffForHumans() }}</p>
+                                <h3 class="text-xl font-bold my-1 text-white">{{ $latestPet->name ?? 'Pet #'.$latestPet->id }}</h3>
+                                <p class="text-xs text-teal-300">{{ ucfirst($latestPet->type ?? '') }} • {{ $latestPet->breed ?? '—' }}</p>
+                                <p class="text-xs text-teal-300 mt-1">Added {{ $latestPet->created_at->diffForHumans() }}</p>
                             @else
-                                <h3 class="text-3xl font-bold my-1 text-white">No Pets Yet</h3>
+                                <h3 class="text-xl font-bold my-1 text-white">No Pets Yet</h3>
                                 <p class="text-xs text-teal-300">Add a pet to see the latest entry</p>
                             @endif
                         </div>
@@ -154,7 +155,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                    </div>
+                    </a>
 
                 </div>
 

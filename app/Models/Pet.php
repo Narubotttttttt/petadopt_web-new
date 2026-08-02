@@ -31,4 +31,9 @@ class Pet extends Model
     {
         return $this->belongsToMany(TemperamentTag::class, 'pet_temperament_tag');
     }
+
+    public function medicalLogs()
+    {
+        return $this->hasMany(MedicalLog::class)->orderByDesc('date');
+    }
 }

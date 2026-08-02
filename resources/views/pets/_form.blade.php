@@ -141,7 +141,7 @@
         <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Medical Background</label>
         <p class="text-sm text-gray-500 mb-3">Choose the options that best describe the pet's health history.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-gray-200 p-4 bg-gray-50/50">
-            @php $medicalOptions = ['Vaccinated', 'Spayed/Neutered', 'Dewormed', 'Microchipped', 'Flea & Tick Treated', 'Healthy', 'Needs Observation']; @endphp
+            @php $medicalOptions = ['Vaccinated', 'Spayed/Neutered', 'Dewormed', 'Microchipped', 'Flea & Tick Treated', 'Healthy']; @endphp
             @foreach($medicalOptions as $option)
                 <label class="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
                     <input type="checkbox" name="medical_history[]" value="{{ $option }}" class="rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]" {{ in_array($option, $selectedMedicalHistory, true) ? 'checked' : '' }}>

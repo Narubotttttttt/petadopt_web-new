@@ -52,7 +52,7 @@
 					<span x-show="expanded" x-cloak class="whitespace-nowrap">Adopters</span>
 				</a>
 
-				<a href="#" title="Medical Logs" class="group flex items-center gap-3 px-2 py-3 rounded-xl text-gray-600 hover:bg-[#199CA4]/5 hover:text-[#199CA4] transition-all">
+				<a href="{{ route('medical-logs.index') }}" title="Medical Logs" class="group flex items-center gap-3 px-2 py-3 rounded-xl {{ request()->routeIs('medical-logs.*') ? 'bg-[#199CA4]/10 text-[#199CA4] font-semibold' : 'text-gray-600 hover:bg-[#199CA4]/5 hover:text-[#199CA4]' }} transition-all">
 					<span class="inline-flex items-center justify-center w-10 h-8 shrink-0 rounded-lg bg-gray-100 group-hover:bg-[#199CA4]/10">
 						<svg class="w-5 h-5 text-gray-500 group-hover:text-[#199CA4]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
 					</span>

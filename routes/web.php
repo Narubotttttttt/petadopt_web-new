@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\MedicalLogController;
 use App\Models\AdoptionApplication;
 use App\Models\Pet;
 use App\Models\User;
@@ -58,6 +59,14 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::patch('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'update'])->name('adoption-applications.update');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
+
+    Route::get('/medical-logs', [MedicalLogController::class, 'index'])->name('medical-logs.index');
+    Route::get('/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create');
+    Route::post('/medical-logs', [MedicalLogController::class, 'store'])->name('medical-logs.store');
+    Route::get('/pets/{pet}/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create-for-pet');
+    Route::get('/medical-logs/{medicalLog}/edit', [MedicalLogController::class, 'edit'])->name('medical-logs.edit');
+    Route::match(['put', 'patch'], '/medical-logs/{medicalLog}', [MedicalLogController::class, 'update'])->name('medical-logs.update');
+    Route::delete('/medical-logs/{medicalLog}', [MedicalLogController::class, 'destroy'])->name('medical-logs.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
