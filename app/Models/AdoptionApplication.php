@@ -15,8 +15,12 @@ class AdoptionApplication extends Model
         'applicant_email',
         'applicant_phone',
         'message',
+        'valid_id_path',
+        'barangay_certificate_path',
         'status',
         'scheduled_at',
+        'event_location',
+        'event_notes',
     ];
 
     protected $casts = [

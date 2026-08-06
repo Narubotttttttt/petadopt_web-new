@@ -41,7 +41,7 @@
                         <p><strong class="text-gray-700">Gender:</strong> <span class="text-gray-600">{{ ucfirst($pet->gender ?? '—') }}</span></p>
                         <p><strong class="text-gray-700">Age:</strong> <span class="text-gray-600">{{ $pet->age ?? '—' }}</span></p>
                         <p><strong class="text-gray-700">Status:</strong> <span class="text-gray-600">{{ ucfirst(str_replace('_', ' ', $pet->status ?? 'available')) }}</span></p>
-                        <p><strong class="text-gray-700">Medical history:</strong> <span class="text-gray-600">{{ $pet->medical_history ?? 'Not provided' }}</span></p>
+                        <p><strong class="text-gray-700">Medical History:</strong> <span class="text-gray-600">{{ $pet->medical_history ?? 'Not provided' }}</span></p>
 
                         <div>
                             <strong class="text-gray-700">Temperament:</strong>
@@ -65,7 +65,7 @@
             @if(in_array(Auth::user()->role, ['admin', 'staff']))
                 <div class="mt-10 pt-6 border-t border-gray-100">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-bold text-gray-900">🩺 Medical History</h2>
+                        <h2 class="text-lg font-bold text-gray-900">🩺 Vaccination Logs</h2>
                         <a href="{{ route('medical-logs.create-for-pet', $pet) }}" class="px-4 py-2 bg-[#199CA4] text-white rounded-xl text-sm font-semibold hover:bg-[#13787F] transition">+ Add Entry</a>
                     </div>
 

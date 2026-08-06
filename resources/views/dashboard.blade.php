@@ -106,9 +106,9 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider">Adoptions</p>
-                                <p class="text-3xl font-bold text-gray-900 mt-2">0</p>
-                                <p class="text-xs text-gray-400 mt-2">This month</p>
+                                <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider">Approved Adoptions</p>
+                                <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalAdoptions ?? 0 }}</p>
+                                <p class="text-xs text-gray-400 mt-2">Total completed</p>
                             </div>
                             <div class="bg-[#199CA4]/10 p-3 rounded-xl text-[#199CA4]">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -169,8 +169,9 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-100">
-                        <h2 class="text-lg font-bold text-[#333634]">Recent Adoptions</h2>
+                    <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-[#333634]">Recent Adoption Applications</h2>
+                        <a href="{{ route('adoption-applications.index') }}" class="text-xs font-bold text-[#199CA4] hover:underline">View All Requests →</a>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
@@ -178,30 +179,45 @@
                                 <tr>
                                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Pet Name</th>
                                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Adopter</th>
-                                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
                                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
-                                <tr class="hover:bg-gray-50/70 transition-colors">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 bg-[#199CA4]/10 rounded-full flex items-center justify-center">
-                                                <span class="text-xs text-[#199CA4] font-bold">🐾</span>
+                                @forelse($recentApplications ?? [] as $application)
+                                    <tr class="hover:bg-gray-50/70 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-[#199CA4]/10 rounded-full flex items-center justify-center text-xs">🐾</div>
+                                                {{ $application->pet->name ?: ($application->pet ? $application->pet->breed . ' (Pet #' . $application->pet->id . ')' : 'Pet #' . $application->pet_id) }}
                                             </div>
-                                            No Data
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">—</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">—</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">—</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span class="inline-flex px-2.5 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs font-semibold border border-yellow-100">
-                                            
-                                        </span>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            <div class="font-semibold text-gray-900">{{ $application->applicant_name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $application->applicant_phone }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $application->created_at ? $application->created_at->diffForHumans() : '—' }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold 
+                                                {{ $application->status === 'approved' ? 'bg-emerald-100 text-emerald-800' : '' }}
+                                                {{ $application->status === 'rejected' ? 'bg-rose-100 text-rose-800' : '' }}
+                                                {{ $application->status === 'under_review' ? 'bg-sky-100 text-sky-800' : '' }}
+                                                {{ $application->status === 'pending' ? 'bg-amber-100 text-amber-800' : '' }}">
+                                                {{ ucfirst(str_replace('_', ' ', $application->status)) }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                            <a href="{{ route('adoption-applications.show', $application) }}" class="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#EAF5F6] text-[#199CA4] font-bold hover:bg-[#199CA4] hover:text-white transition">View</a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No adoption requests submitted yet.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

@@ -34,9 +34,11 @@ class AdoptionApplicationController extends Controller
         $request->validate([
             'status' => ['required', Rule::in($allowedStatuses)],
             'scheduled_at' => ['nullable', 'date'],
+            'event_location' => ['nullable', 'string', 'max:255'],
+            'event_notes' => ['nullable', 'string'],
         ]);
 
-        $data = $request->only(['status', 'scheduled_at']);
+        $data = $request->only(['status', 'scheduled_at', 'event_location', 'event_notes']);
         $wasApproved = $application->status === 'approved';
         $willBeApproved = $request->status === 'approved';
 
@@ -47,7 +49,16 @@ class AdoptionApplicationController extends Controller
         $application->update($data);
 
         if ($willBeApproved && ! $wasApproved) {
-            $application->pet->update(['status' => 'adopted']);
+            $petUpdate = ['status' => 'adopted'];
+            if (empty($application->pet->name) && $application->message && preg_match('/Proposed Pet Name:\s*(.+)/i', $application->message, $matches)) {
+                $petUpdate['name'] = trim($matches[1]);
+            }
+            $application->pet->update($petUpdate);
+
+            AdoptionApplication::where('pet_id', $application->pet_id)
+                ->where('id', '!=', $application->id)
+                ->whereIn('status', ['pending', 'under_review'])
+                ->update(['status' => 'rejected']);
         } elseif ($wasApproved && ! $willBeApproved) {
             $application->pet->update(['status' => 'available']);
         }

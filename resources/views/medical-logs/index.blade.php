@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-[#333634]">Medical Logs</h1>
-                <p class="text-sm text-gray-500 mt-1">Health records and treatment history for all pets.</p>
+                <p class="text-sm text-gray-500 mt-1">Vaccination and Deworming record of pets.</p>
             </div>
             <div class="flex items-center gap-3">
                 <form method="GET" action="{{ route('medical-logs.index') }}" class="flex items-center gap-2">

@@ -38,7 +38,9 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
         return view('dashboard', [
             'totalPets' => Pet::count(),
             'totalUsers' => User::whereIn('role', ['admin', 'staff'])->count(),
+            'totalAdoptions' => AdoptionApplication::where('status', 'approved')->count(),
             'latestPet' => Pet::latest('created_at')->first(),
+            'recentApplications' => AdoptionApplication::with('pet')->latest('created_at')->take(5)->get(),
             'chartMonths' => $chartMonths,
             'chartCounts' => $chartCounts,
         ]);
