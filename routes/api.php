@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PetApiController;
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 
 Route::get('/pets', [PetApiController::class, 'index']);

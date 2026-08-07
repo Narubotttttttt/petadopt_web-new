@@ -11,22 +11,26 @@ class PetApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Pet::with('temperamentTags')->where('status', 'available');
+        $query = Pet::with(['temperamentTags', 'medicalLogs'])->where('status', 'available');
 
         if ($request->filled('type') && strtolower($request->type) !== 'all') {
             $query->where('type', strtolower($request->type));
         }
 
         if ($request->filled('search')) {
-            $search = strtolower($request->search);
+            $search = strtolower(trim($request->search));
             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
-                  ->orWhereRaw('LOWER(breed) LIKE ?', ["%{$search}%"]);
+                  ->orWhereRaw('LOWER(type) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"])
+                  ->orWhereHas('temperamentTags', function ($tq) use ($search) {
+                      $tq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                  });
             });
         }
 
         $pets = $query->latest()->get()->map(function ($pet) {
-            return $this->transformPet($pet);
+            return $this->transformPet($pet, true);
         });
 
         return response()->json([

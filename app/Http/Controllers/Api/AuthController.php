@@ -69,4 +69,28 @@ class AuthController extends Controller
             ],
         ]);
     }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email'    => ['required', 'string', 'email'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'No account found with this email address.',
+            ], 404);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'message' => 'Password reset successfully! You can now log in.',
+        ]);
+    }
 }
