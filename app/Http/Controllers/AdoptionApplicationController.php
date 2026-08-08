@@ -89,4 +89,42 @@ class AdoptionApplicationController extends Controller
 
         return back()->with('success', 'Adoption application updated successfully.');
     }
+
+    public function downloadContract($id)
+    {
+        $application = $id instanceof AdoptionApplication
+            ? $id->load(['pet'])
+            : AdoptionApplication::with(['pet'])->findOrFail($id);
+
+        if (!in_array($application->status, ['approved', 'adopted'])) {
+            return response()->json(['error' => 'Contract is only available for approved or adopted applications.'], 403);
+        }
+
+        $pet = $application->pet;
+
+        if (!$pet) {
+            return response()->json(['error' => 'Pet data not found for this application.'], 400);
+        }
+
+        // Build an adopter object from the application data
+        $adopter = (object) [
+            'name'         => $application->applicant_name,
+            'phone_number' => $application->applicant_phone ?? 'N/A',
+            'address'      => 'N/A',
+        ];
+
+        // Try to get richer data from the users table via email
+        $userRecord = \App\Models\User::where('email', $application->applicant_email)->first();
+        if ($userRecord) {
+            $adopter->name         = $userRecord->name ?? $application->applicant_name;
+            $adopter->phone_number = $userRecord->phone_number ?? $application->applicant_phone ?? 'N/A';
+            $adopter->address      = $userRecord->address ?? 'N/A';
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.adoption_contract', compact('application', 'adopter', 'pet'));
+
+        $filename = 'Adoption_Contract_' . str_replace(' ', '_', $pet->name ?? 'Pet') . '.pdf';
+
+        return $pdf->stream($filename);
+    }
 }

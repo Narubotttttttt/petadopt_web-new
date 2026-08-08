@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/adoption-applications', [\App\Http\Controllers\AdoptionApplicationController::class, 'index'])->name('adoption-applications.index');
     Route::get('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'show'])->name('adoption-applications.show');
     Route::patch('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'update'])->name('adoption-applications.update');
+    Route::get('/adoption-applications/{application}/contract', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('adoption-applications.contract');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
 
@@ -74,5 +75,8 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
 });
+
+// Public signed route for contract downloads — accessible by mobile browsers without web session
+Route::get('/contract/{id}/download', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('contract.download')->middleware('signed');
 
 require __DIR__.'/auth.php';

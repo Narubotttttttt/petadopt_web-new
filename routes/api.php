@@ -22,6 +22,15 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::post('/adoption-applications', [AdoptionApiController::class, 'store']);
     Route::get('/my-applications', [AdoptionApiController::class, 'myApplications']);
+    Route::get('/adoption-applications/{id}/contract', function (Request $request, $id) {
+        $app = \App\Models\AdoptionApplication::findOrFail($id);
+        // Check ownership via applicant_email since there is no user_id column
+        if ($app->applicant_email !== auth()->user()->email) abort(403);
+        \Illuminate\Support\Facades\URL::forceRootUrl($request->root());
+        return response()->json([
+            'url' => \Illuminate\Support\Facades\URL::temporarySignedRoute('contract.download', now()->addMinutes(60), ['id' => $id])
+        ]);
+    });
     Route::get('/vaccine-reminders', [AdoptionApiController::class, 'vaccineReminders']);
     Route::post('/save-fcm-token', function (Request $request) {
         $request->validate(['fcm_token' => 'required|string']);
