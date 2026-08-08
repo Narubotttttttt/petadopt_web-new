@@ -140,4 +140,46 @@ class AdoptionApiController extends Controller
             'data'    => $applications,
         ]);
     }
+
+    public function vaccineReminders(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $petIds = AdoptionApplication::where('applicant_email', $user->email)
+            ->pluck('pet_id')
+            ->unique()
+            ->values();
+
+        if ($petIds->isEmpty()) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $today = now()->startOfDay();
+
+        $reminders = \App\Models\MedicalLog::with('pet')
+            ->whereIn('pet_id', $petIds)
+            ->whereNotNull('next_due_date')
+            ->whereDate('next_due_date', '>=', $today)
+            ->orderBy('next_due_date')
+            ->get()
+            ->map(function ($log) use ($today) {
+                $daysUntil = (int) $today->diffInDays($log->next_due_date, false);
+                $pet = $log->pet;
+
+                return [
+                    'log_id'       => $log->id,
+                    'pet_id'       => $log->pet_id,
+                    'pet_name'     => ($pet && !empty($pet->name)) ? $pet->name : ('Pet #' . $log->pet_id),
+                    'category'     => ucfirst(str_replace('_', ' ', $log->category ?? 'checkup')),
+                    'next_due_date' => $log->next_due_date->format('Y-m-d'),
+                    'next_due_label' => $log->next_due_date->format('M d, Y'),
+                    'days_until_due' => $daysUntil,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $reminders,
+        ]);
+    }
 }

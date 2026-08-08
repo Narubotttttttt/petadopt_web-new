@@ -56,11 +56,13 @@ class MedicalLogController extends Controller
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
-        MedicalLog::create([
+        $log = MedicalLog::create([
             ...$data,
             'administered_by' => Auth::user()->name,
             'created_by' => Auth::id(),
         ]);
+
+        $this->notifyAdoptersOfMedicalLog($log, $data['category']);
 
         session()->flash('success', 'Medical log entry added.');
 
@@ -91,9 +93,45 @@ class MedicalLogController extends Controller
 
         $medicalLog->update($data);
 
+        $this->notifyAdoptersOfMedicalLog($medicalLog, $data['category']);
+
         session()->flash('success', 'Medical log entry updated.');
 
         return redirect()->route('medical-logs.index');
+    }
+
+    private function notifyAdoptersOfMedicalLog(MedicalLog $log, string $category): void
+    {
+        $pet = $log->pet;
+        $petName = ($pet && !empty($pet->name)) ? $pet->name : ('Pet #' . $log->pet_id);
+        $categoryLabel = ucfirst(str_replace('_', ' ', $category));
+
+        $title = $category === 'vaccination'
+            ? "💉 Vaccination Scheduled for {$petName}!"
+            : "🩺 {$categoryLabel} Logged for {$petName}";
+
+        $dueDateStr = $log->next_due_date ? $log->next_due_date->format('M d, Y') : null;
+        $body = $dueDateStr
+            ? "{$petName}'s {$categoryLabel} record was updated. Next due date: {$dueDateStr}. Check CAWS app for details!"
+            : "A new {$categoryLabel} record has been added for {$petName}. Check the CAWS app for details.";
+
+        // Find verified applicants or adopters for this pet
+        $adopterEmails = \App\Models\AdoptionApplication::where('pet_id', $log->pet_id)
+            ->pluck('applicant_email')
+            ->unique();
+
+        foreach ($adopterEmails as $email) {
+            \App\Services\FirebaseNotificationService::sendToUser(
+                $email,
+                $title,
+                $body,
+                [
+                    'type' => 'vaccine_reminder',
+                    'pet_id' => $log->pet_id,
+                    'category' => $category,
+                ]
+            );
+        }
     }
 
     public function destroy(MedicalLog $medicalLog): RedirectResponse
@@ -112,6 +150,10 @@ class MedicalLogController extends Controller
     private function calculateNextDueDate(string $category, string $date, ?string $manualNextDueDate): ?string
     {
         if ($category === 'vaccination') {
+            // Use admin-provided override if set, otherwise auto-calculate 6 months
+            if (!empty($manualNextDueDate)) {
+                return $manualNextDueDate;
+            }
             return Carbon::parse($date)->addMonths(6)->format('Y-m-d');
         }
 

@@ -35,7 +35,7 @@
                 <div x-data="{
                     category: '{{ old('category', $medicalLog->category) }}',
                     originalCategory: '{{ $medicalLog->category }}',
-                    nextDueDate: '{{ old('next_due_date', $medicalLog->category !== 'vaccination' ? optional($medicalLog->next_due_date)->format('Y-m-d') : '') }}'
+                    nextDueDate: '{{ old('next_due_date', optional($medicalLog->next_due_date)->format('Y-m-d')) }}'
                 }">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -56,11 +56,17 @@
 
                     <div class="mt-6">
                         <template x-if="category === 'vaccination'">
-                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
-                                📅 Next due date will be automatically recalculated as <strong>6 months</strong> from the date above.
-                                <template x-if="originalCategory === 'vaccination'">
-                                    <div class="text-blue-600 mt-1">Current next due date: {{ optional($medicalLog->next_due_date)->format('M d, Y') ?? '—' }}</div>
-                                </template>
+                            <div>
+                                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700 mb-3">
+                                    📅 By default, next due date is auto-set to <strong>6 months</strong> from the date above.
+                                    You can override it below if needed.
+                                </div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                                    Next Due Date
+                                    <span class="text-gray-400 font-normal normal-case">(leave blank to auto-calculate 6 months)</span>
+                                </label>
+                                <input type="date" name="next_due_date" x-model="nextDueDate"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800">
                             </div>
                         </template>
                         <template x-if="category !== 'vaccination' && category !== ''">

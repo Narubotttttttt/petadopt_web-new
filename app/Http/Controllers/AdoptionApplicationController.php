@@ -55,6 +55,30 @@ class AdoptionApplicationController extends Controller
             }
             $application->pet->update($petUpdate);
 
+            // Send real-time FCM Push Notification to the approved adopter
+            $petName = $application->pet->name ?? 'your pet';
+            \App\Services\FirebaseNotificationService::sendToUser(
+                $application->applicant_email,
+                "🎉 Adoption Approved for {$petName}!",
+                "Great news! Your adoption request for {$petName} was approved by CAWS staff! Check your notification bell for event details.",
+                ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id]
+            );
+
+            // Notify other pending applicants that the pet was adopted
+            $otherApplicants = AdoptionApplication::where('pet_id', $application->pet_id)
+                ->where('id', '!=', $application->id)
+                ->whereIn('status', ['pending', 'under_review'])
+                ->get();
+
+            foreach ($otherApplicants as $otherApp) {
+                \App\Services\FirebaseNotificationService::sendToUser(
+                    $otherApp->applicant_email,
+                    "🐾 {$petName} Has Found a Home!",
+                    "The pet you requested ({$petName}) has found a forever home with another verified applicant. Browse other lovely pets available!",
+                    ['type' => 'adoption_status', 'status' => 'adopted_by_other', 'pet_id' => $application->pet_id]
+                );
+            }
+
             AdoptionApplication::where('pet_id', $application->pet_id)
                 ->where('id', '!=', $application->id)
                 ->whereIn('status', ['pending', 'under_review'])

@@ -22,4 +22,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::post('/adoption-applications', [AdoptionApiController::class, 'store']);
     Route::get('/my-applications', [AdoptionApiController::class, 'myApplications']);
+    Route::get('/vaccine-reminders', [AdoptionApiController::class, 'vaccineReminders']);
+    Route::post('/save-fcm-token', function (Request $request) {
+        $request->validate(['fcm_token' => 'required|string']);
+        $user = $request->user();
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update(['fcm_token' => $request->fcm_token]);
+        return response()->json(['success' => true, 'message' => 'FCM token saved successfully.']);
+    });
 });
