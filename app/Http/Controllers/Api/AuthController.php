@@ -93,4 +93,105 @@ class AuthController extends Controller
             'message' => 'Password reset successfully! You can now log in.',
         ]);
     }
+
+    public function googleLogin(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'name'  => ['required', 'string', 'max:255'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user) {
+            $user = User::create([
+                'name'              => $request->name,
+                'email'             => $request->email,
+                'password'          => Hash::make(\Illuminate\Support\Str::random(24)),
+                'email_verified_at' => now(),
+                'role'              => 'adopter',
+            ]);
+        } else {
+            // Sync user's display name if provided by Google
+            if (!empty($request->name)) {
+                $user->update(['name' => $request->name]);
+            }
+        }
+
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Google sign-in successful.',
+            'token'   => $token,
+            'user'    => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ],
+        ]);
+    }
+
+    public function sendEmailOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $code = (string) random_int(100000, 999999);
+        \Illuminate\Support\Facades\Cache::put('email_otp_' . strtolower(trim($request->email)), $code, now()->addMinutes(10));
+
+        try {
+            \Illuminate\Support\Facades\Mail::html("
+                <div style='font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 16px; background-color: #ffffff;'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <h2 style='color: #0A6B72; margin: 0;'>🐾 CAWS Pet Adoption</h2>
+                        <p style='color: #666; font-size: 13px; margin: 4px 0 0 0;'>CDO Animal Welfare Society Inc.</p>
+                    </div>
+                    <p style='color: #333; font-size: 15px;'>Hello!</p>
+                    <p style='color: #555; font-size: 14px; line-height: 1.5;'>Your 6-digit verification code is:</p>
+                    <div style='background-color: #E6F4F5; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;'>
+                        <span style='font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0A6B72;'>{$code}</span>
+                    </div>
+                    <p style='color: #888; font-size: 12px; text-align: center;'>This code will expire in 10 minutes. If you did not request this verification, please ignore this email.</p>
+                </div>
+            ", function ($m) use ($request) {
+                $m->to(trim($request->email))->subject('🐾 Your CAWS Verification Code');
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Verification code sent to your email successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function verifyEmailOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'otp'   => ['required', 'string'],
+        ]);
+
+        $cachedCode = \Illuminate\Support\Facades\Cache::get('email_otp_' . strtolower(trim($request->email)));
+
+        if (! $cachedCode || $cachedCode !== trim($request->otp)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code.',
+            ], 422);
+        }
+
+        \Illuminate\Support\Facades\Cache::forget('email_otp_' . strtolower(trim($request->email)));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully! 🎉',
+        ]);
+    }
 }

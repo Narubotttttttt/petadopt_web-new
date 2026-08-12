@@ -132,6 +132,8 @@ class AdoptionApiController extends Controller
                     'scheduledRaw'     => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('Y-m-d H:i:s') : null,
                     'eventLocation'    => $isApproved ? $app->event_location : null,
                     'eventNotes'       => $isApproved ? $app->event_notes : null,
+                    'updated_at'       => $app->updated_at ? $app->updated_at->toIso8601String() : null,
+                    'created_at'       => $app->created_at ? $app->created_at->toIso8601String() : null,
                 ];
             });
 

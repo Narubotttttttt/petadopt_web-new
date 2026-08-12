@@ -83,6 +83,14 @@ class AdoptionApplicationController extends Controller
                 ->where('id', '!=', $application->id)
                 ->whereIn('status', ['pending', 'under_review'])
                 ->update(['status' => 'rejected']);
+        } elseif ($request->status === 'rejected' && $application->getOriginal('status') !== 'rejected') {
+            $petName = $application->pet->name ?? 'your requested pet';
+            \App\Services\FirebaseNotificationService::sendToUser(
+                $application->applicant_email,
+                "📋 Adoption Request Update — {$petName}",
+                "Thank you for your interest in adopting {$petName}. Your application could not be approved at this time. Browse our other lovely pets waiting for a home!",
+                ['type' => 'adoption_status', 'status' => 'rejected', 'pet_id' => $application->pet_id]
+            );
         } elseif ($wasApproved && ! $willBeApproved) {
             $application->pet->update(['status' => 'available']);
         }
@@ -108,7 +116,7 @@ class AdoptionApplicationController extends Controller
 
         // Build an adopter object from the application data
         $adopter = (object) [
-            'name'         => $application->applicant_name,
+            'name'         => $application->applicant_name ?? 'N/A',
             'phone_number' => $application->applicant_phone ?? 'N/A',
             'address'      => 'N/A',
         ];
@@ -116,9 +124,20 @@ class AdoptionApplicationController extends Controller
         // Try to get richer data from the users table via email
         $userRecord = \App\Models\User::where('email', $application->applicant_email)->first();
         if ($userRecord) {
-            $adopter->name         = $userRecord->name ?? $application->applicant_name;
-            $adopter->phone_number = $userRecord->phone_number ?? $application->applicant_phone ?? 'N/A';
-            $adopter->address      = $userRecord->address ?? 'N/A';
+            if (empty($adopter->name) || $adopter->name === 'N/A') {
+                $adopter->name = $userRecord->name ?? 'N/A';
+            }
+            if ($adopter->phone_number === 'N/A') {
+                $adopter->phone_number = $userRecord->phone_number ?? 'N/A';
+            }
+            if (!empty($userRecord->address) && $userRecord->address !== 'N/A') {
+                $adopter->address = $userRecord->address;
+            }
+        }
+
+        // Extract address from application message if not already set
+        if (($adopter->address === 'N/A' || empty($adopter->address)) && $application->message && preg_match('/Address:\s*(.+)/i', $application->message, $addrMatches)) {
+            $adopter->address = trim($addrMatches[1]);
         }
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.adoption_contract', compact('application', 'adopter', 'pet'));

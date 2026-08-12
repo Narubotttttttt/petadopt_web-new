@@ -36,15 +36,17 @@
         }
         .org-cell {
             vertical-align: middle;
+            text-align: center;
         }
         .org-name {
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: bold;
+            margin-bottom: 2px;
         }
         .org-details {
-            font-size: 10px;
-            margin-top: 3px;
-            line-height: 1.6;
+            font-size: 9.5px;
+            line-height: 1.35;
+            text-align: center;
         }
 
         /* ── TITLE ──────────────────────────────── */
@@ -216,8 +218,8 @@
                     <div class="org-name">CDO Animal Welfare Society Inc. (CAWS)</div>
                     <div class="org-details">
                         J Serina St. Carmen, Cagayan de Oro City<br>
-                        Tel No: 0936-556-6200 &ndash; 0915-99-88880<br>
-                        https://www.facebook.com/CdoAnimalRescue/
+                        Tel No: 0936-556-6200 - 0915-99-88880<br>
+                        <u>https://www.facebook.com/CdoAnimalRescue/</u>
                     </div>
                 </td>
             </tr>
