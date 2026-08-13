@@ -122,10 +122,8 @@
             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800" required>
             <option value="available" {{ old('status', optional($pet)->status ?? 'available') == 'available' ? 'selected' : '' }}>Available</option>
             <option value="pending" {{ old('status', optional($pet)->status) == 'pending' ? 'selected' : '' }}>Pending</option>
+            <option value="adopted" {{ old('status', optional($pet)->status) == 'adopted' ? 'selected' : '' }}>Adopted</option>
         </select>
-        @if(optional($pet)->status === 'adopted')
-            <p class="text-xs text-gray-400 mt-2">This pet is currently marked as Adopted. This status is set automatically when an adoption application is approved and can't be changed manually here.</p>
-        @endif
     </div>
 
     @php

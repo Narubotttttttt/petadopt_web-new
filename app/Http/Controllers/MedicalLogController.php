@@ -64,9 +64,14 @@ class MedicalLogController extends Controller
 
         $this->notifyAdoptersOfMedicalLog($log, $data['category']);
 
-        session()->flash('success', 'Medical log entry added.');
+        $petName = $log->pet->name ?? ('Pet #' . $log->pet_id);
+        session()->flash('success', "Medical log entry added for {$petName}.");
 
-        return redirect()->route('medical-logs.index');
+        if ($request->filled('redirect_to')) {
+            return redirect($request->input('redirect_to'));
+        }
+
+        return redirect()->back();
     }
 
     public function edit(MedicalLog $medicalLog): View
@@ -95,9 +100,14 @@ class MedicalLogController extends Controller
 
         $this->notifyAdoptersOfMedicalLog($medicalLog, $data['category']);
 
-        session()->flash('success', 'Medical log entry updated.');
+        $petName = $medicalLog->pet->name ?? ('Pet #' . $medicalLog->pet_id);
+        session()->flash('success', "Medical log entry updated for {$petName}.");
 
-        return redirect()->route('medical-logs.index');
+        if ($request->filled('redirect_to')) {
+            return redirect($request->input('redirect_to'));
+        }
+
+        return redirect()->back();
     }
 
     private function notifyAdoptersOfMedicalLog(MedicalLog $log, string $category): void
@@ -107,8 +117,8 @@ class MedicalLogController extends Controller
         $categoryLabel = ucfirst(str_replace('_', ' ', $category));
 
         $title = $category === 'vaccination'
-            ? "💉 Vaccination Scheduled for {$petName}!"
-            : "🩺 {$categoryLabel} Logged for {$petName}";
+            ? "Vaccination Scheduled for {$petName}!"
+            : "{$categoryLabel} Logged for {$petName}";
 
         $dueDateStr = $log->next_due_date ? $log->next_due_date->format('M d, Y') : null;
         $body = $dueDateStr
@@ -144,7 +154,7 @@ class MedicalLogController extends Controller
 
         session()->flash('success', 'Medical log entry removed.');
 
-        return redirect()->route('medical-logs.index');
+        return redirect()->back();
     }
 
     private function calculateNextDueDate(string $category, string $date, ?string $manualNextDueDate): ?string

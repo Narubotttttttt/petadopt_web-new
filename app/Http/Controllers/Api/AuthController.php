@@ -94,44 +94,6 @@ class AuthController extends Controller
         ]);
     }
 
-    public function googleLogin(Request $request): JsonResponse
-    {
-        $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'name'  => ['required', 'string', 'max:255'],
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user) {
-            $user = User::create([
-                'name'              => $request->name,
-                'email'             => $request->email,
-                'password'          => Hash::make(\Illuminate\Support\Str::random(24)),
-                'email_verified_at' => now(),
-                'role'              => 'adopter',
-            ]);
-        } else {
-            // Sync user's display name if provided by Google
-            if (!empty($request->name)) {
-                $user->update(['name' => $request->name]);
-            }
-        }
-
-        $token = $user->createToken('mobile-app')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Google sign-in successful.',
-            'token'   => $token,
-            'user'    => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,
-            ],
-        ]);
-    }
-
     public function sendEmailOtp(Request $request): JsonResponse
     {
         $request->validate([

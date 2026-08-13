@@ -23,7 +23,7 @@ class PetController extends Controller
     {
         $q = request()->input('q');
 
-        $query = Pet::query();
+        $query = Pet::where('status', '!=', 'adopted');
 
         if ($q) {
             $query->where(function ($sub) use ($q) {
@@ -119,7 +119,7 @@ class PetController extends Controller
             'temperament_tags' => 'nullable|array',
             'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
-            'status' => ['required', 'in:available,pending'],
+            'status' => ['required', 'in:available,pending,adopted'],
             'photo' => 'nullable|image|max:2048',
         ]);
 

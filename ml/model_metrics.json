@@ -1,0 +1,22 @@
+{
+  "model_name": "Random Forest Compatibility Classifier",
+  "framework": "Scikit-Learn",
+  "accuracy": 86.2,
+  "precision": 85.44,
+  "recall": 99.75,
+  "f1_score": 0.9204,
+  "confusion_matrix": [
+    [
+      32,
+      68
+    ],
+    [
+      1,
+      399
+    ]
+  ],
+  "total_samples": 2500,
+  "train_samples": 2000,
+  "test_samples": 500,
+  "n_estimators": 120
+}
