@@ -7,7 +7,9 @@ use App\Http\Controllers\MedicalLogController;
 use App\Models\AdoptionApplication;
 use App\Models\Pet;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,10 +22,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'staff'])->group(function () {
-    Route::get('/dashboard', function () {
-        $adoptionTrends = AdoptionApplication::selectRaw('MONTH(approved_at) as month, COUNT(*) as total')
-            ->whereNotNull('approved_at')
-            ->whereYear('approved_at', now()->year)
+    Route::get('/dashboard', function (Request $request) {
+        $selectedYear = (int) $request->query('year', now()->year);
+
+        $adoptionTrends = AdoptionApplication::selectRaw('MONTH(COALESCE(approved_at, updated_at)) as month, COUNT(*) as total')
+            ->where('status', 'approved')
+            ->whereYear(DB::raw('COALESCE(approved_at, updated_at)'), $selectedYear)
             ->groupBy('month')
             ->pluck('total', 'month');
 
@@ -32,8 +36,25 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 
         foreach (range(1, 12) as $m) {
             $chartMonths[] = Carbon::create()->month($m)->format('M');
-            $chartCounts[] = $adoptionTrends->get($m, 0);
+            $chartCounts[] = (int) ($adoptionTrends->get($m, 0));
         }
+
+        // Available years for dropdown
+        $availableYears = AdoptionApplication::where('status', 'approved')
+            ->selectRaw('DISTINCT YEAR(COALESCE(approved_at, updated_at)) as yr')
+            ->pluck('yr')
+            ->map(fn($y) => (int)$y)
+            ->toArray();
+
+        if (!in_array(now()->year, $availableYears)) {
+            $availableYears[] = now()->year;
+        }
+        rsort($availableYears);
+
+        $totalYearAdoptions = array_sum($chartCounts);
+        $peakCount = !empty($chartCounts) ? max($chartCounts) : 0;
+        $peakMonthIdx = array_search($peakCount, $chartCounts);
+        $peakMonth = ($peakCount > 0 && $peakMonthIdx !== false) ? $chartMonths[$peakMonthIdx] : 'None';
 
         return view('dashboard', [
             'totalPets' => Pet::count(),
@@ -43,6 +64,11 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
             'recentApplications' => AdoptionApplication::with('pet')->latest('created_at')->take(5)->get(),
             'chartMonths' => $chartMonths,
             'chartCounts' => $chartCounts,
+            'selectedYear' => $selectedYear,
+            'availableYears' => $availableYears,
+            'totalYearAdoptions' => $totalYearAdoptions,
+            'peakMonth' => $peakMonth,
+            'peakCount' => $peakCount,
         ]);
     })->name('dashboard');
 
@@ -72,6 +98,9 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::delete('/medical-logs/{medicalLog}', [MedicalLogController::class, 'destroy'])->name('medical-logs.destroy');
 });
 
+    Route::get('/admin/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::post('/admin/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('admin.notifications.markAllRead');
+    Route::post('/admin/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('admin.notifications.markRead');
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
 });

@@ -43,15 +43,21 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $user = \App\Models\User::where('email', $this->string('email'))
-            ->whereIn('role', ['admin', 'staff'])
-            ->first();
+        $user = \App\Models\User::where('email', $this->string('email'))->first();
 
         if (! $user || ! Hash::check($this->string('password'), $user->password)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        if ($user->role === 'adopter') {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Adopter accounts cannot log in to the Web Admin Portal. Please use the PetAdopt Mobile App.',
             ]);
         }
 

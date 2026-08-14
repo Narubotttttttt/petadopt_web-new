@@ -31,6 +31,23 @@ Route::middleware('auth:sanctum')->group(function () {
         $updatedUser = \App\Models\User::find($user->id);
         return response()->json(['success' => true, 'user' => $updatedUser]);
     });
+    Route::post('/user/update-avatar', function (Request $request) {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+        ]);
+        $user = $request->user();
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $avatarUrl = asset('storage/' . $path);
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update(['avatar' => $avatarUrl]);
+        $updatedUser = \App\Models\User::find($user->id);
+        return response()->json([
+            'success' => true,
+            'avatar_url' => $avatarUrl,
+            'user' => $updatedUser,
+        ]);
+    });
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
@@ -46,6 +63,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
     Route::get('/vaccine-reminders', [AdoptionApiController::class, 'vaccineReminders']);
+    Route::post('/health-updates', [AdoptionApiController::class, 'storeHealthUpdate']);
+    Route::get('/my-health-updates', [AdoptionApiController::class, 'getHealthUpdates']);
     Route::post('/save-fcm-token', function (Request $request) {
         $request->validate(['fcm_token' => 'required|string']);
         $user = $request->user();

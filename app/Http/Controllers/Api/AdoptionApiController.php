@@ -184,4 +184,84 @@ class AdoptionApiController extends Controller
             'data'    => $reminders,
         ]);
     }
+    public function storeHealthUpdate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'application_id' => ['required', 'exists:adoption_applications,id'],
+            'photo'          => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+            'health_status'  => ['required', 'in:healthy,minor_issue,under_treatment'],
+            'weight'         => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'notes'          => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $user = $request->user();
+        $application = AdoptionApplication::findOrFail($request->application_id);
+
+        if ($application->applicant_email !== $user->email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.',
+            ], 403);
+        }
+
+        $photoPath = $request->file('photo')->store('health_updates', 'public');
+
+        $healthUpdate = \App\Models\PetHealthUpdate::create([
+            'adoption_application_id' => $application->id,
+            'pet_id'                  => $application->pet_id,
+            'user_id'                 => $user->id,
+            'photo_path'              => $photoPath,
+            'health_status'           => $request->health_status,
+            'weight'                  => $request->weight,
+            'notes'                   => $request->notes,
+            'check_in_date'           => now()->toDateString(),
+            'status'                  => 'submitted',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Health check-in submitted successfully.',
+            'data'    => [
+                'id'            => $healthUpdate->id,
+                'photo_url'     => asset('storage/' . $photoPath),
+                'health_status' => $healthUpdate->health_status,
+                'weight'        => $healthUpdate->weight,
+                'notes'         => $healthUpdate->notes,
+                'check_in_date' => $healthUpdate->check_in_date->format('M d, Y'),
+                'created_at'    => $healthUpdate->created_at->toIso8601String(),
+            ],
+        ], 201);
+    }
+
+    public function getHealthUpdates(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $query = \App\Models\PetHealthUpdate::where('user_id', $user->id);
+
+        if ($request->filled('application_id')) {
+            $query->where('adoption_application_id', $request->application_id);
+        }
+
+        $updates = $query->latest('check_in_date')->get()->map(function ($item) {
+            return [
+                'id'                      => $item->id,
+                'adoption_application_id' => $item->adoption_application_id,
+                'pet_id'                  => $item->pet_id,
+                'photo_url'               => asset('storage/' . $item->photo_path),
+                'health_status'           => $item->health_status,
+                'weight'                  => $item->weight,
+                'notes'                   => $item->notes,
+                'check_in_date'           => $item->check_in_date ? $item->check_in_date->format('M d, Y') : '',
+                'check_in_date_raw'       => $item->check_in_date ? $item->check_in_date->format('Y-m-d') : '',
+                'status'                  => $item->status,
+                'staff_remarks'           => $item->staff_remarks,
+                'created_at'              => $item->created_at ? $item->created_at->toIso8601String() : null,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $updates,
+        ]);
+    }
 }

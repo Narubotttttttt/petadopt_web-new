@@ -56,6 +56,12 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($user->role !== 'adopter') {
+            return response()->json([
+                'message' => 'Admin accounts cannot log in to the mobile app. Please use the Web Admin Portal.',
+            ], 403);
+        }
+
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([

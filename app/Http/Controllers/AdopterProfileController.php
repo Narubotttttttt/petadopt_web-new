@@ -16,13 +16,17 @@ class AdopterProfileController extends Controller
         $search = trim($request->query('search', ''));
         $filter = $request->query('filter', 'all');
 
-        $query = AdoptionApplication::with(['pet.medicalLogs' => function($q) {
-                $q->latest('date');
-            }])
+        $query = AdoptionApplication::with([
+                'pet.medicalLogs' => function($q) {
+                    $q->latest('date');
+                },
+                'pet.healthUpdates' => function($q) {
+                    $q->latest('check_in_date');
+                }
+            ])
             ->where('status', 'approved');
 
         if (!empty($search)) {
-            // Check if search looks like an Adopter ID (e.g., ADP-0001, ADP-1, ADP 1, or just an integer)
             $matchedUserEmails = [];
             if (preg_match('/^(?:adp[-_\s]*)?(\d+)$/i', $search, $matches)) {
                 $parsedUserId = (int)$matches[1];
@@ -67,7 +71,7 @@ class AdopterProfileController extends Controller
 
         $allApplications = $query->latest('updated_at')->get();
 
-        // Preload users by email to quickly resolve user IDs
+        // Preload users by email to quickly resolve user IDs & avatars
         $allEmails = $allApplications->pluck('applicant_email')->filter()->unique()->toArray();
         $userMap = User::whereIn('email', $allEmails)->get()->keyBy(function($u) {
             return strtolower(trim($u->email));
@@ -81,9 +85,11 @@ class AdopterProfileController extends Controller
             $emailKey = strtolower(trim($primary->applicant_email ?? ''));
             $user = $userMap->get($emailKey);
             $adopterIdNumber = $user ? sprintf('ADP-%04d', $user->id) : sprintf('APP-%04d', $primary->id);
+            $avatarUrl = $user && !empty($user->avatar) ? $user->avatar : null;
 
             return (object)[
                 'adopter_id_code'   => $adopterIdNumber,
+                'avatar'            => $avatarUrl,
                 'applicant_name'    => $primary->applicant_name,
                 'applicant_email'   => $primary->applicant_email,
                 'applicant_phone'   => $primary->applicant_phone,
@@ -103,7 +109,6 @@ class AdopterProfileController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        // Statistics
         $totalApprovedAdopters = $groupedAdopters->count();
         $totalApprovedApplications = AdoptionApplication::where('status', 'approved')->count();
         

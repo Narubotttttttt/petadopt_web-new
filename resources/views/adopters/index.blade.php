@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto py-6 px-3 sm:px-6 lg:px-8" x-data="adopterMedicalManager()">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6" x-data="adopterMedicalManager()">
         
         {{-- Flash Messages --}}
         @if(session('success'))
@@ -15,250 +15,273 @@
         @endif
 
         {{-- Page Header --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-3">
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-[#333634] tracking-tight">Adopter Profiles</h1>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20">
                         {{ $totalApprovedAdopters }} Adopters ({{ $totalApprovedApplications }} Pets)
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                    Manage approved adopters, monitor vaccine schedules, and record clinical medical logs.
-                </p>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">Manage approved adopters, monitor vaccine schedules, and record clinical medical logs.</p>
             </div>
             
-            {{-- Header Actions --}}
-            <div class="flex flex-wrap items-center gap-2.5">
-                <a href="{{ route('medical-logs.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm">
+            {{-- Header Action --}}
+            <div class="flex items-center gap-3">
+                <a href="{{ route('adoption-applications.index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-xs sm:text-sm font-bold hover:bg-gray-50 hover:text-[#199CA4] transition shadow-xs">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                    </svg>
-                    <span>Medical Logs</span>
-                </a>
-                <a href="{{ route('adoption-applications.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#199CA4] text-xs sm:text-sm font-semibold text-white hover:bg-[#13787F] transition shadow-sm">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                     </svg>
                     <span>Review Requests</span>
                 </a>
             </div>
         </div>
 
-        {{-- Main Container (Single-page, no side scrolling) --}}
-        <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            
-            {{-- Controls Bar: Search & Status Filter Tabs --}}
-            <div class="p-4 sm:p-5 border-b border-gray-100 bg-gray-50/50">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    
-                    {{-- Filter Tabs --}}
-                    <div class="flex flex-wrap items-center gap-1 p-1 bg-gray-100/90 rounded-xl border border-gray-200/70">
-                        <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'all'])) }}"
-                           class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $filter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
-                            All ({{ $totalApprovedAdopters }})
-                        </a>
-                        <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'overdue'])) }}"
-                           class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $filter === 'overdue' ? 'bg-red-500 text-white shadow-sm' : 'text-red-700 hover:bg-red-50' }}">
-                            🚨 Overdue ({{ $overdueCount }})
-                        </a>
-                        <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'due_soon'])) }}"
-                           class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $filter === 'due_soon' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-700 hover:bg-amber-50' }}">
-                            ⏰ Due ({{ $dueSoonCount }})
-                        </a>
-                        <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'up_to_date'])) }}"
-                           class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $filter === 'up_to_date' ? 'bg-emerald-600 text-white shadow-sm' : 'text-emerald-700 hover:bg-emerald-50' }}">
-                            ✨ Valid
-                        </a>
-                    </div>
-
-                    {{-- Search Form --}}
-                    <form method="GET" action="{{ route('adopters.index') }}" class="flex items-center gap-2">
-                        @if(request('filter'))
-                            <input type="hidden" name="filter" value="{{ request('filter') }}">
-                        @endif
-                        <div class="relative w-full sm:w-64">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
-                            <input type="text"
-                                   name="search"
-                                   value="{{ $search }}"
-                                   placeholder="Search by Adopter ID (ADP-0001), name, email, pet..."
-                                   class="w-full pl-8 pr-7 py-1.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#199CA4]/30 focus:border-[#199CA4] transition">
-                            @if($search)
-                                <a href="{{ route('adopters.index', request()->except('search', 'page')) }}" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600 font-bold text-sm">
-                                    &times;
-                                </a>
-                            @endif
-                        </div>
-                        <button type="submit" class="px-3.5 py-1.5 bg-[#199CA4] hover:bg-[#13787F] text-white font-semibold rounded-xl text-xs sm:text-sm transition shadow-sm">
-                            Search
-                        </button>
-                    </form>
-                </div>
+        {{-- Filters & Search Row --}}
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {{-- Filter Tabs --}}
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'all'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100' }}">
+                    All ({{ $totalApprovedAdopters }})
+                </a>
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'overdue'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'overdue' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 hover:bg-rose-50' }}">
+                    Overdue ({{ $overdueCount ?? 0 }})
+                </a>
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'due_soon'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'due_soon' ? 'bg-amber-500 text-white shadow-xs' : 'text-amber-600 hover:bg-amber-50' }}">
+                    Due Soon ({{ $dueSoonCount ?? 0 }})
+                </a>
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'up_to_date'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'up_to_date' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-600 hover:bg-emerald-50' }}">
+                    Up to Date
+                </a>
             </div>
 
-            {{-- 1. Desktop Grouped Layout (Fits 100% width cleanly) --}}
-            <div class="hidden lg:block w-full">
-                <table class="w-full text-left border-collapse table-auto">
-                    <thead>
-                        <tr class="bg-gray-50/80 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                            <th class="px-5 py-3.5 w-4/12">Adopter Profile</th>
-                            <th class="px-5 py-3.5 w-8/12">Adopted Companion(s) & Health Records</th>
+            {{-- Search Bar --}}
+            <form method="GET" action="{{ route('adopters.index') }}" class="flex items-center gap-2 w-full md:w-auto">
+                @if(request('filter'))
+                    <input type="hidden" name="filter" value="{{ request('filter') }}">
+                @endif
+                <div class="relative flex-1 md:w-80">
+                    <input type="text" 
+                           name="search" 
+                           value="{{ $search }}"
+                           placeholder="Search by ADP ID, name, email, pet..." 
+                           class="w-full pl-10 pr-8 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-gray-400">
+                    <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    @if($search)
+                        <a href="{{ route('adopters.index', request()->except('search', 'page')) }}" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 text-xs">
+                            &times;
+                        </a>
+                    @endif
+                </div>
+                <button type="submit" class="px-5 py-2.5 bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span>Search</span>
+                </button>
+            </form>
+        </div>
+
+        {{-- Main Adopter Table --}}
+        <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[900px]">
+                    <thead class="bg-gray-50/80 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-500">
+                        <tr>
+                            <th class="py-4 px-5 w-64">Adopter Profile</th>
+                            <th class="py-4 px-5 w-72">Adopted Pet(s)</th>
+                            <th class="py-4 px-5">Pet Medical & Vaccine Status</th>
+                            <th class="py-4 px-5 text-center w-40">Monthly Reports</th>
+                            <th class="py-4 px-5 text-right w-44">Clinical Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 text-xs sm:text-sm">
+                    <tbody class="divide-y divide-gray-100">
                         @forelse($adopters as $adopter)
-                            @php
-                                $nameParts = explode(' ', trim($adopter->applicant_name));
-                                $initials = strtoupper(substr($nameParts[0] ?? 'A', 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
-                                $hasMultiple = $adopter->pets_count > 1;
-                            @endphp
-                            <tr class="hover:bg-teal-50/10 transition-colors">
+                            <tr class="hover:bg-gray-50/50 transition-colors">
                                 
-                                {{-- Adopter Info Column --}}
-                                <td class="px-5 py-4 align-top">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white font-bold text-xs flex items-center justify-center shadow-sm flex-shrink-0">
-                                            {{ $initials }}
-                                        </div>
-                                        <div class="min-w-0">
-                                            <div class="flex items-center flex-wrap gap-1.5">
-                                                <p class="font-bold text-gray-900 text-sm">
-                                                    {{ $adopter->applicant_name }}
-                                                </p>
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                                    🏷️ {{ $adopter->adopter_id_code }}
-                                                </span>
-                                                @if($hasMultiple)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20">
-                                                        🐾 {{ $adopter->pets_count }} Pets
-                                                    </span>
-                                                @endif
+                                {{-- 1. Adopter Profile --}}
+                                <td class="py-4 px-5 align-top">
+                                    <div class="flex items-start gap-3.5">
+                                        @if($adopter->avatar)
+                                            <img src="{{ $adopter->avatar }}" alt="{{ $adopter->applicant_name }}" class="w-12 h-12 rounded-2xl object-cover border border-gray-200 shadow-xs flex-shrink-0">
+                                        @else
+                                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] text-[#199CA4] flex items-center justify-center font-extrabold text-sm border border-[#199CA4]/20 flex-shrink-0 shadow-xs">
+                                                @php
+    $adopterNameParts = preg_split('/\s+/', trim($adopter->applicant_name));
+    $adopterInitials = count($adopterNameParts) >= 2 
+        ? strtoupper(mb_substr($adopterNameParts[0], 0, 1) . mb_substr(end($adopterNameParts), 0, 1))
+        : strtoupper(mb_substr($adopter->applicant_name, 0, 1));
+@endphp
+{{ $adopterInitials }}
                                             </div>
-                                            <p class="text-xs text-gray-400 mt-0.5 truncate">
-                                                {{ $adopter->applicant_email ?? 'No email' }}
-                                            </p>
-                                            @if($adopter->applicant_phone)
-                                                <p class="text-[11px] text-gray-500 mt-0.5">
-                                                    📞 {{ $adopter->applicant_phone }}
-                                                </p>
-                                            @endif
-                                            <span class="text-[10px] text-gray-400 block mt-1">
-                                                Latest adoption: {{ $adopter->latest_updated_at ? \Carbon\Carbon::parse($adopter->latest_updated_at)->format('M d, Y') : '' }}
-                                            </span>
+                                        @endif
+
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-extrabold text-gray-900 text-sm sm:text-base leading-tight">{{ $adopter->applicant_name }}</span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold font-mono bg-cyan-50 text-cyan-800 border border-cyan-200">
+                                                    {{ $adopter->adopter_id_code }}
+                                                </span>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1 truncate">{{ $adopter->applicant_email }}</div>
+                                            <div class="text-xs font-semibold text-gray-600 mt-0.5">{{ $adopter->applicant_phone }}</div>
                                         </div>
                                     </div>
                                 </td>
 
-                                {{-- Adopted Pets Column (Nested cleanly for single or multiple pets) --}}
-                                <td class="px-5 py-3.5 align-middle">
+                                {{-- 2. Adopted Pets --}}
+                                <td class="py-4 px-5 align-top">
                                     <div class="space-y-2.5">
                                         @foreach($adopter->applications as $app)
-                                            @php
-                                                $pet = $app->pet;
-                                                $latestLog = $pet ? $pet->medicalLogs->first() : null;
-                                                $vaccineLogs = $pet ? $pet->medicalLogs->where('category', 'vaccination') : collect();
-                                                $latestVaccine = $vaccineLogs->first();
+                                            @php 
+                                                $pet = $app->pet; 
+                                                $petImg = $pet && $pet->photo_path ? asset('storage/' . ltrim($pet->photo_path, '/')) : ($pet ? $pet->primary_image_url : null);
                                             @endphp
-                                            <div class="p-3 rounded-2xl border border-gray-100 bg-gray-50/60 hover:bg-white hover:border-[#199CA4]/30 hover:shadow-sm transition flex items-center justify-between gap-3">
-                                                
-                                                {{-- Pet Identity --}}
-                                                <div class="flex items-center gap-3 min-w-0 w-4/12">
-                                                    <div class="w-10 h-10 rounded-xl bg-white border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-inner">
-                                                        @if($pet && $pet->photo_path)
-                                                            <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet" class="w-full h-full object-cover">
-                                                        @else
-                                                            <span class="text-sm">🐾</span>
-                                                        @endif
+                                            <div class="flex items-center gap-3 p-2 rounded-2xl bg-gray-50/80 border border-gray-100 hover:bg-white hover:border-gray-200 transition shadow-2xs">
+                                                @if($petImg)
+                                                    <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-gray-200 shadow-xs">
+                                                @else
+                                                    <div class="w-12 h-12 rounded-xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-bold text-base flex-shrink-0">
+                                                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
                                                     </div>
-                                                    <div class="min-w-0">
-                                                        <div class="flex items-center gap-1.5">
-                                                            <span class="text-xs sm:text-sm font-bold text-gray-900 truncate">
-                                                                {{ $pet->name ?? 'Pet #'.($pet->id ?? '') }}
-                                                            </span>
-                                                            @if($pet && $pet->gender)
-                                                                <span class="text-[11px] font-bold {{ strtolower($pet->gender) === 'male' ? 'text-blue-500' : 'text-pink-500' }}">
-                                                                    {{ strtolower($pet->gender) === 'male' ? '♂' : '♀' }}
-                                                                </span>
-                                                            @endif
-                                                        </div>
-                                                        <p class="text-[11px] text-gray-500 truncate capitalize">
-                                                            {{ $pet->type ?? 'Pet' }} • {{ $pet->breed ?? 'Mixed' }}
-                                                        </p>
-                                                    </div>
+                                                @endif
+
+                                                <div class="min-w-0 flex-1">
+                                                    <span class="font-bold text-gray-900 block truncate text-sm sm:text-base leading-tight">{{ $pet ? $pet->name : 'Pet #'.$app->pet_id }}</span>
+                                                    <span class="text-xs text-gray-500 block truncate mt-0.5">{{ $pet ? (ucfirst($pet->type) . ' • ' . $pet->breed) : 'Adopted' }}</span>
                                                 </div>
 
-                                                {{-- Pet Medical & Vaccine Status --}}
-                                                <div class="w-5/12 min-w-0 space-y-1">
-                                                    @if($latestLog)
-                                                        <div class="flex items-center gap-1.5">
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $latestLog->category === 'vaccination' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
-                                                                {{ $latestLog->category === 'vaccination' ? '💉 Vaccine' : '💊 Deworming' }}
-                                                            </span>
-                                                            <span class="text-[11px] text-gray-400">{{ $latestLog->date ? $latestLog->date->format('M d') : '' }}</span>
-                                                        </div>
-                                                    @else
-                                                        <span class="text-[11px] text-gray-400 italic">No medical logs yet</span>
-                                                    @endif
-
-                                                    @if($latestVaccine && $latestVaccine->next_due_date)
-                                                        @php
-                                                            $isPastDue = $latestVaccine->next_due_date->isPast();
-                                                            $isSoon = $latestVaccine->next_due_date->isBetween(now(), now()->addDays(14));
-                                                        @endphp
-                                                        @if($isPastDue)
-                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 border border-red-200">
-                                                                🚨 Overdue: {{ $latestVaccine->next_due_date->format('M d') }}
-                                                            </span>
-                                                        @elseif($isSoon)
-                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                                                                ⏰ Due: {{ $latestVaccine->next_due_date->format('M d') }}
-                                                            </span>
-                                                        @else
-                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                                🛡️ Valid ({{ $latestVaccine->next_due_date->format('M d') }})
-                                                            </span>
-                                                        @endif
-                                                    @endif
-                                                </div>
-
-                                                {{-- Action Buttons per Pet --}}
-                                                <div class="flex items-center justify-end gap-1.5 w-3/12">
-                                                    @if($pet)
-                                                        <button type="button"
-                                                            @click="openAddModal({{ $pet->id }}, '{{ addslashes($pet->name ?? 'Pet #'.$pet->id) }}', '{{ addslashes($adopter->applicant_name) }}')"
-                                                            class="px-2.5 py-1.5 rounded-lg bg-[#199CA4]/10 text-[#199CA4] hover:bg-[#199CA4] hover:text-white transition font-bold text-[11px] shadow-sm">
-                                                            + Log
-                                                        </button>
-
-                                                        <button type="button"
-                                                            @click="openHistoryModal({{ json_encode($pet->medicalLogs) }}, '{{ addslashes($pet->name ?? 'Pet #'.$pet->id) }}', '{{ addslashes($adopter->applicant_name) }}')"
-                                                            class="px-2 py-1.5 rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-gray-100 transition font-semibold text-[11px]">
-                                                            History ({{ $pet->medicalLogs->count() }})
-                                                        </button>
-                                                    @endif
-
-                                                    <a href="{{ route('adoption-applications.show', $app) }}"
-                                                       title="View Application"
-                                                       class="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                                        </svg>
+                                                @if($app->contract_pdf_path)
+                                                    <a href="{{ route('adoption-applications.contract', $app->id) }}" title="Download Contract" target="_blank"
+                                                        class="p-1.5 rounded-lg text-gray-400 hover:text-[#199CA4] hover:bg-teal-50 transition flex-shrink-0">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                                     </a>
-                                                </div>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>
                                 </td>
+
+                                {{-- 3. Pet Medical & Vaccine Status --}}
+                                <td class="py-4 px-5 align-top">
+                                    <div class="space-y-2.5">
+                                        @foreach($adopter->applications as $app)
+                                            @php 
+                                                $pet = $app->pet; 
+                                                $latestLog = $pet ? $pet->medicalLogs->first() : null;
+                                                $vaccineLogs = $pet ? $pet->medicalLogs->where('category', 'vaccination') : collect();
+                                                $latestVaccine = $vaccineLogs->first();
+                                            @endphp
+                                            <div class="p-2 rounded-2xl bg-gray-50/80 border border-gray-100 flex items-center justify-between gap-2 min-h-[50px]">
+                                                @if($latestLog)
+                                                    <div class="flex items-center gap-2 min-w-0">
+                                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold {{ $latestLog->category === 'vaccination' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
+                                                            {{ $latestLog->category === 'vaccination' ? 'Vaccine' : 'Deworming' }}
+                                                        </span>
+                                                        <span class="text-xs text-gray-600 font-medium truncate">{{ $latestLog->date ? $latestLog->date->format('M d, Y') : '' }}</span>
+                                                    </div>
+                                                @else
+                                                    <span class="text-xs text-gray-400 italic px-1">No medical logs</span>
+                                                @endif
+
+                                                @if($latestVaccine && $latestVaccine->next_due_date)
+                                                    @php
+                                                        $isPastDue = $latestVaccine->next_due_date->isPast();
+                                                        $isSoon = $latestVaccine->next_due_date->isBetween(now(), now()->addDays(14));
+                                                    @endphp
+                                                    <span class="text-xs font-bold px-2.5 py-1 rounded-lg flex-shrink-0 {{ $isPastDue ? 'bg-rose-100 text-rose-800' : ($isSoon ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800') }}">
+                                                        {{ $isPastDue ? 'Overdue' : ($isSoon ? 'Due Soon' : 'Valid') }}: {{ $latestVaccine->next_due_date->format('M d') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </td>
+
+                                {{-- 4. Monthly Reports --}}
+                                <td class="py-4 px-5 align-top text-center">
+                                    <div class="space-y-2.5">
+                                        @foreach($adopter->applications as $app)
+                                            @php 
+                                                $pet = $app->pet;
+                                                $healthUpdates = $pet ? $pet->healthUpdates : collect();
+                                                $latestCheckin = $healthUpdates->first();
+                                                $healthData = $healthUpdates->map(function($h) {
+                                                    return [
+                                                        'id' => $h->id,
+                                                        'photo_url' => $h->photo_path ? asset('storage/' . ltrim($h->photo_path, '/')) : ($h->photo_url ?? null),
+                                                        'health_status' => $h->health_status,
+                                                        'weight' => $h->weight,
+                                                        'notes' => $h->notes,
+                                                        'check_in_date' => $h->check_in_date ? $h->check_in_date->format('M d, Y') : '',
+                                                    ];
+                                                })->values()->toArray();
+                                                $petNameStr = $pet ? ($pet->name ?: 'Pet #'.$pet->id) : 'Pet #'.$app->pet_id;
+                                            @endphp
+                                            <div class="flex flex-col items-center justify-center min-h-[50px] p-1">
+                                                <button type="button"
+                                                    @click='openHealthModal(@json($healthData), @json($petNameStr), @json($adopter->applicant_name))'
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition {{ $healthUpdates->count() > 0 ? 'bg-[#EAF5F6] text-[#199CA4] hover:bg-[#199CA4] hover:text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
+                                                    <span>Reports ({{ $healthUpdates->count() }})</span>
+                                                </button>
+                                                <span class="text-[11px] text-gray-400 mt-1">
+                                                    {{ $latestCheckin && $latestCheckin->check_in_date ? $latestCheckin->check_in_date->format('M d') : 'None' }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </td>
+
+                                {{-- 5. Clinical Actions --}}
+                                <td class="py-4 px-5 align-top text-right">
+                                    <div class="space-y-2.5">
+                                        @foreach($adopter->applications as $app)
+                                            @php 
+                                                $pet = $app->pet;
+                                                $historyData = $pet ? $pet->medicalLogs->map(function($m) {
+                                                    return [
+                                                        'id' => $m->id,
+                                                        'category' => $m->category,
+                                                        'name' => $m->vaccine_name ?: $m->deworming_name ?: 'Treatment',
+                                                        'date' => $m->date ? $m->date->format('M d, Y') : '',
+                                                        'next_due_date' => $m->next_due_date ? $m->next_due_date->format('M d, Y') : null,
+                                                        'notes' => $m->notes,
+                                                        'veterinarian' => $m->veterinarian,
+                                                    ];
+                                                })->values()->toArray() : [];
+                                                $petNameStr = $pet ? ($pet->name ?: 'Pet #'.$pet->id) : 'Pet #'.$app->pet_id;
+                                            @endphp
+                                            <div class="flex items-center justify-end gap-2 min-h-[50px]">
+                                                <button type="button" 
+                                                    @click='openHistoryModal(@json($historyData), @json($petNameStr), @json($adopter->applicant_name))'
+                                                    class="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100 transition shadow-2xs">
+                                                    History ({{ count($historyData) }})
+                                                </button>
+
+                                                <button type="button" 
+                                                    @click="openAddModal('{{ $app->pet_id }}', @json($petNameStr), @json($adopter->applicant_name))"
+                                                    class="px-3.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-bold transition shadow-xs flex items-center gap-1">
+                                                    <span>+ Record</span>
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </td>
+
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="2" class="px-6 py-12 text-center text-gray-400 text-xs">
-                                    No adopter profiles found.
+                                <td colspan="5" class="py-12 text-center">
+                                    <div class="w-12 h-12 rounded-2xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center text-lg mx-auto mb-3 font-bold">
+                                        🐾
+                                    </div>
+                                    <h3 class="text-sm font-bold text-gray-900">No Adopter Records Found</h3>
+                                    <p class="text-xs text-gray-500 mt-1">When adoption applications are approved, the adopters and their pets will appear here.</p>
                                 </td>
                             </tr>
                         @endforelse
@@ -266,104 +289,17 @@
                 </table>
             </div>
 
-            {{-- 2. Mobile & Tablet Grouped Card Layout --}}
-            <div class="lg:hidden divide-y divide-gray-100">
-                @forelse($adopters as $adopter)
-                    @php
-                        $nameParts = explode(' ', trim($adopter->applicant_name));
-                        $initials = strtoupper(substr($nameParts[0] ?? 'A', 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
-                        $hasMultiple = $adopter->pets_count > 1;
-                    @endphp
-                    <div class="p-4 space-y-3 hover:bg-gray-50/40 transition">
-                        
-                        {{-- Adopter Header --}}
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white font-bold text-xs flex items-center justify-center shadow-sm flex-shrink-0">
-                                    {{ $initials }}
-                                </div>
-                                <div>
-                                    <div class="flex items-center flex-wrap gap-1.5">
-                                        <h4 class="font-bold text-gray-900 text-sm">{{ $adopter->applicant_name }}</h4>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                            🏷️ {{ $adopter->adopter_id_code }}
-                                        </span>
-                                        @if($hasMultiple)
-                                            <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#199CA4]/10 text-[#199CA4]">
-                                                🐾 {{ $adopter->pets_count }} Pets
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-400">{{ $adopter->applicant_email ?? $adopter->applicant_phone ?? 'No contact' }}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Pets Stack --}}
-                        <div class="space-y-2">
-                            @foreach($adopter->applications as $app)
-                                @php
-                                    $pet = $app->pet;
-                                    $latestVaccine = $pet ? $pet->medicalLogs->where('category', 'vaccination')->first() : null;
-                                @endphp
-                                <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-white border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
-                                                @if($pet && $pet->photo_path)
-                                                    <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet" class="w-full h-full object-cover">
-                                                @else
-                                                    <span>🐾</span>
-                                                @endif
-                                            </div>
-                                            <div>
-                                                <p class="text-xs font-bold text-gray-900">{{ $pet->name ?? 'Pet #'.($pet->id ?? '') }}</p>
-                                                <p class="text-[10px] text-gray-500 capitalize">{{ $pet->type ?? 'Pet' }} • {{ $pet->breed ?? '' }}</p>
-                                            </div>
-                                        </div>
-
-                                        <a href="{{ route('adoption-applications.show', $app) }}" class="text-xs text-[#199CA4] font-semibold hover:underline">
-                                            Application &rarr;
-                                        </a>
-                                    </div>
-
-                                    @if($pet)
-                                        <div class="flex items-center gap-2 pt-1 border-t border-gray-200/60">
-                                            <button type="button"
-                                                @click="openAddModal({{ $pet->id }}, '{{ addslashes($pet->name ?? 'Pet #'.$pet->id) }}', '{{ addslashes($adopter->applicant_name) }}')"
-                                                class="flex-1 py-1.5 rounded-lg bg-[#199CA4] text-white text-xs font-bold hover:bg-[#13787F] transition text-center shadow-sm">
-                                                + Log Health
-                                            </button>
-                                            <button type="button"
-                                                @click="openHistoryModal({{ json_encode($pet->medicalLogs) }}, '{{ addslashes($pet->name ?? 'Pet #'.$pet->id) }}', '{{ addslashes($adopter->applicant_name) }}')"
-                                                class="flex-1 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-xs font-semibold hover:bg-gray-50 transition text-center">
-                                                History ({{ $pet->medicalLogs->count() }})
-                                            </button>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-
-                    </div>
-                @empty
-                    <div class="p-8 text-center text-gray-400 text-xs">
-                        No adopter profiles found.
-                    </div>
-                @endforelse
-            </div>
-
-            {{-- Pagination Footer --}}
+            {{-- Pagination --}}
             @if($adopters->hasPages())
-                <div class="p-3.5 border-t border-gray-100 bg-gray-50/50">
+                <div class="p-4 border-t border-gray-100 bg-gray-50/50">
                     {{ $adopters->links() }}
                 </div>
             @endif
         </div>
 
-        {{-- Modal 1: Add Medical Log Modal (ONLY Vaccination & Deworming) --}}
-        <div x-show="showAddModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        {{-- Modal 1: Add Medical Log Modal --}}
+        <div x-show="showAddModal" x-cloak style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 transition-opacity bg-gray-900/60 backdrop-blur-sm" @click="showAddModal = false"></div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
@@ -371,133 +307,125 @@
                 <div class="inline-block px-5 sm:px-6 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
                     
                     {{-- Modal Header --}}
-                    <div class="flex items-center justify-between pb-3.5 mb-3.5 border-b border-gray-100">
+                    <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-2xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center text-lg font-bold">
+                            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
                                 🩺
                             </div>
                             <div>
-                                <h3 class="text-base sm:text-lg font-extrabold text-gray-900">Record Medical Event</h3>
-                                <p class="text-xs text-gray-500">Pet: <span class="font-bold text-[#199CA4]" x-text="modalPetName"></span> | Adopter: <span class="font-semibold text-gray-700" x-text="modalAdopterName"></span></p>
+                                <h3 class="text-base sm:text-lg font-extrabold text-gray-900">Record Medical Log</h3>
+                                <p class="text-xs text-gray-500">
+                                    Pet: <span class="font-bold text-[#199CA4]" x-text="modalPetName"></span> | Adopter: <span class="font-semibold text-gray-700" x-text="modalAdopterName"></span>
+                                </p>
                             </div>
                         </div>
                         <button type="button" @click="showAddModal = false" class="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">&times;</button>
                     </div>
 
-                    <form action="{{ route('medical-logs.store') }}" method="POST" class="space-y-3.5">
+                    {{-- Modal Form --}}
+                    <form method="POST" action="{{ route('medical-logs.store') }}" class="space-y-4">
                         @csrf
                         <input type="hidden" name="pet_id" :value="modalPetId">
 
-                        {{-- Care Category: ONLY Vaccination & Deworming --}}
+                        {{-- Category Selector --}}
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Care Category *</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button type="button"
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Record Type</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" 
                                     @click="selectedCategory = 'vaccination'"
-                                    :class="selectedCategory === 'vaccination' ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
-                                    class="py-3 px-3 rounded-2xl text-xs font-bold border transition flex flex-col items-center gap-1.5">
-                                    <span class="text-xl">💉</span>
-                                    <span class="text-sm">Vaccination</span>
-                                    <span class="text-[10px] font-normal" :class="selectedCategory === 'vaccination' ? 'text-blue-100' : 'text-gray-500'">Auto push notification</span>
+                                    :class="selectedCategory === 'vaccination' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                    class="py-2.5 rounded-xl font-bold text-xs transition">
+                                    💉 Vaccination
                                 </button>
-
-                                <button type="button"
+                                <button type="button" 
                                     @click="selectedCategory = 'deworming'"
-                                    :class="selectedCategory === 'deworming' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-300' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
-                                    class="py-3 px-3 rounded-2xl text-xs font-bold border transition flex flex-col items-center gap-1.5">
-                                    <span class="text-xl">💊</span>
-                                    <span class="text-sm">Deworming</span>
-                                    <span class="text-[10px] font-normal" :class="selectedCategory === 'deworming' ? 'text-emerald-100' : 'text-gray-500'">Clinical care record</span>
+                                    :class="selectedCategory === 'deworming' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                    class="py-2.5 rounded-xl font-bold text-xs transition">
+                                    💊 Deworming
                                 </button>
                             </div>
                             <input type="hidden" name="category" :value="selectedCategory">
                         </div>
 
-                        {{-- Dynamic Reminder Alert Banner --}}
-                        <div class="p-3 rounded-2xl text-xs transition border"
-                            :class="selectedCategory === 'vaccination' ? 'bg-blue-50/80 text-blue-900 border-blue-200' : 'bg-emerald-50/80 text-emerald-900 border-emerald-200'">
-                            <template x-if="selectedCategory === 'vaccination'">
-                                <div class="flex items-start gap-2">
-                                    <span class="text-base">🔔</span>
-                                    <div>
-                                        <p class="font-bold text-blue-900">Push Notification Reminder</p>
-                                        <p class="text-blue-700 mt-0.5">A mobile reminder & vaccine notification will be scheduled for <strong x-text="modalAdopterName"></strong>.</p>
-                                    </div>
-                                </div>
-                            </template>
-                            <template x-if="selectedCategory === 'deworming'">
-                                <div class="flex items-start gap-2">
-                                    <span class="text-base">💊</span>
-                                    <div>
-                                        <p class="font-bold text-emerald-900">Deworming Record</p>
-                                        <p class="text-emerald-700 mt-0.5">Recorded directly in <strong x-text="modalPetName"></strong>'s medical history timeline.</p>
-                                    </div>
-                                </div>
-                            </template>
+                        {{-- Dynamic Fields --}}
+                        <div x-show="selectedCategory === 'vaccination'" class="space-y-3.5">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Vaccine Name *</label>
+                                <input type="text" name="vaccine_name" placeholder="e.g. Anti-Rabies, 5-in-1, DHPP" 
+                                    class="w-full px-3.5 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                            </div>
                         </div>
 
-                        {{-- Administered By --}}
+                        <div x-show="selectedCategory === 'deworming'" class="space-y-3.5">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Deworming Brand / Medicine *</label>
+                                <input type="text" name="deworming_name" placeholder="e.g. Canex, Pyrantel, Drontal" 
+                                    class="w-full px-3.5 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                            </div>
+                        </div>
+
+                        {{-- Date & Next Due Date --}}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Date Administered *</label>
+                                <input type="date" name="date" value="{{ date('Y-m-d') }}" required
+                                    class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Next Due Date</label>
+                                <input type="date" name="next_due_date" 
+                                    class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                            </div>
+                        </div>
+
+                        {{-- Veterinarian & Weight --}}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Veterinarian / Staff</label>
+                                <input type="text" name="veterinarian" placeholder="e.g. Dr. Santos"
+                                    class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Weight (kg)</label>
+                                <input type="number" step="0.1" name="weight" placeholder="e.g. 5.5"
+                                    class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                            </div>
+                        </div>
+
+                        {{-- Clinical Notes --}}
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Administered By</label>
-                            <input type="text"
-                                   name="administered_by"
-                                   placeholder="e.g. Dr. Santos / Clinic Staff"
-                                   class="w-full rounded-xl border-gray-200 text-xs sm:text-sm focus:border-[#199CA4] focus:ring-[#199CA4] shadow-sm">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Clinical Notes</label>
+                            <textarea name="notes" rows="2" placeholder="Optional observations or remarks..."
+                                class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition"></textarea>
                         </div>
 
-                        {{-- Date Grid --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Date Administered *</label>
-                                <input type="date"
-                                       name="date"
-                                       value="{{ date('Y-m-d') }}"
-                                       required
-                                       class="w-full rounded-xl border-gray-200 text-xs sm:text-sm focus:border-[#199CA4] focus:ring-[#199CA4] shadow-sm">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                                    Next Due Date
-                                </label>
-                                <input type="date"
-                                       name="next_due_date"
-                                       class="w-full rounded-xl border-gray-200 text-xs sm:text-sm focus:border-[#199CA4] focus:ring-[#199CA4] shadow-sm">
-                                <span x-show="selectedCategory === 'vaccination'" class="text-[10px] text-blue-600 block mt-0.5">Auto-sets to +6 mos if empty</span>
-                            </div>
-                        </div>
-
-                        {{-- Modal Footer --}}
-                        <div class="pt-3.5 flex items-center justify-end gap-2.5 border-t border-gray-100">
-                            <button type="button" @click="showAddModal = false" class="px-3.5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition">
-                                Cancel
-                            </button>
-                            <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-[#199CA4] hover:bg-[#13787F] rounded-xl transition shadow-md flex items-center gap-1">
-                                <span>Save Medical Log</span>
-                            </button>
+                        {{-- Modal Actions --}}
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                            <button type="button" @click="showAddModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Cancel</button>
+                            <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-bold text-white bg-[#199CA4] hover:bg-[#13787F] rounded-xl shadow-xs transition">Save Record</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        {{-- Modal 2: Medical History Timeline Modal --}}
-        <div x-show="showHistoryModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        {{-- Modal 2: History Timeline Modal --}}
+        <div x-show="showHistoryModal" x-cloak style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 transition-opacity bg-gray-900/60 backdrop-blur-sm" @click="showHistoryModal = false"></div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-                <div class="inline-block px-5 sm:px-6 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
+                <div class="inline-block px-5 sm:px-6 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100">
                     
                     {{-- Modal Header --}}
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-lg shadow-sm">
-                                📋
+                            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                                📜
                             </div>
                             <div>
-                                <h3 class="text-base sm:text-lg font-extrabold text-gray-900">Medical Care Timeline</h3>
+                                <h3 class="text-base sm:text-lg font-extrabold text-gray-900">Medical History Timeline</h3>
                                 <p class="text-xs text-gray-500">
                                     Pet: <span class="font-bold text-[#199CA4]" x-text="historyPetName"></span> | Adopter: <span class="font-semibold text-gray-700" x-text="historyAdopterName"></span>
                                 </p>
@@ -506,48 +434,36 @@
                         <button type="button" @click="showHistoryModal = false" class="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">&times;</button>
                     </div>
 
-                    {{-- Timeline Body --}}
-                    <div class="max-h-[380px] overflow-y-auto pr-1 space-y-3.5">
+                    {{-- Timeline Content --}}
+                    <div class="max-h-[420px] overflow-y-auto pr-1 space-y-3.5">
                         <template x-if="historyLogs.length === 0">
                             <div class="py-10 text-center">
-                                <div class="w-10 h-10 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center text-xl mx-auto mb-2">
+                                <div class="w-10 h-10 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center text-sm mx-auto mb-2 font-bold">
                                     🩺
                                 </div>
-                                <p class="text-xs sm:text-sm font-semibold text-gray-700">No medical records yet</p>
-                                <p class="text-[11px] text-gray-400 mt-0.5">Records logged for this pet will appear here.</p>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-700">No medical records registered yet</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">Click "+ Record" on the table to add the first vaccine or deworming entry.</p>
                             </div>
                         </template>
 
-                        {{-- Timeline items --}}
-                        <div class="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200" x-show="historyLogs.length > 0">
-                            <template x-for="(log, idx) in historyLogs" :key="log.id || idx">
-                                <div class="relative">
-                                    <div class="absolute -left-[23px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm"
-                                         :class="log.category === 'vaccination' ? 'bg-blue-500 ring-2 ring-blue-100' : 'bg-emerald-500 ring-2 ring-emerald-100'">
-                                    </div>
-
-                                    <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:border-[#199CA4]/30 hover:shadow-sm transition">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+                        <div class="space-y-3" x-show="historyLogs.length > 0">
+                            <template x-for="log in historyLogs" :key="log.id">
+                                <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:border-[#199CA4]/30 hover:shadow-sm transition">
+                                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
                                                 :class="log.category === 'vaccination' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'"
-                                                x-text="log.category === 'vaccination' ? '💉 Vaccination' : '💊 Deworming'">
+                                                x-text="log.category === 'vaccination' ? 'Vaccination' : 'Deworming'">
                                             </span>
-                                            <span class="text-[11px] font-bold text-gray-500" x-text="formatDate(log.date)"></span>
+                                            <span class="text-xs sm:text-sm font-bold text-gray-900" x-text="log.name"></span>
                                         </div>
-
-                                        <div class="mt-2 pt-2 border-t border-gray-200/60 flex flex-wrap items-center justify-between text-[11px] text-gray-600 gap-1.5">
-                                            <div>
-                                                <span>Administered by: </span>
-                                                <strong class="text-gray-900" x-text="log.administered_by || 'Staff / Clinic'"></strong>
-                                            </div>
-                                            <template x-if="log.next_due_date">
-                                                <span class="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-medium">
-                                                    <span>Next Due:</span>
-                                                    <strong x-text="formatDate(log.next_due_date)"></strong>
-                                                </span>
-                                            </template>
-                                        </div>
+                                        <span class="text-xs font-semibold text-gray-500" x-text="log.date"></span>
                                     </div>
+                                    <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
+                                        <span x-show="log.veterinarian" x-text="'Vet: ' + log.veterinarian"></span>
+                                        <span x-show="log.next_due_date" class="font-semibold text-amber-700" x-text="'Next Due: ' + log.next_due_date"></span>
+                                    </div>
+                                    <p x-show="log.notes" class="text-xs text-gray-600 mt-1.5 bg-white p-2 rounded-lg border border-gray-100" x-text="log.notes"></p>
                                 </div>
                             </template>
                         </div>
@@ -563,6 +479,85 @@
             </div>
         </div>
 
+        {{-- Modal 3: Monthly Pet Health Reports Modal --}}
+        <div x-show="showHealthModal" x-cloak style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-gray-900/60 backdrop-blur-sm" @click="showHealthModal = false"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+                <div class="inline-block px-5 sm:px-6 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                                📋
+                            </div>
+                            <div>
+                                <h3 class="text-base sm:text-lg font-extrabold text-gray-900">Monthly Pet Health Reports</h3>
+                                <p class="text-xs text-gray-500">
+                                    Pet: <span class="font-bold text-[#199CA4]" x-text="healthPetName"></span> | Adopter: <span class="font-semibold text-gray-700" x-text="healthAdopterName"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showHealthModal = false" class="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">&times;</button>
+                    </div>
+
+                    {{-- Reports Content --}}
+                    <div class="max-h-[420px] overflow-y-auto pr-1 space-y-3.5">
+                        <template x-if="healthLogs.length === 0">
+                            <div class="py-10 text-center">
+                                <div class="w-10 h-10 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center text-sm mx-auto mb-2 font-bold">
+                                    📋
+                                </div>
+                                <p class="text-xs sm:text-sm font-semibold text-gray-700">No monthly check-ins submitted yet</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">When the adopter submits monthly photos and health updates via the mobile app, they will appear here.</p>
+                            </div>
+                        </template>
+
+                        <div class="space-y-3" x-show="healthLogs.length > 0">
+                            <template x-for="item in healthLogs" :key="item.id">
+                                <div class="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:border-[#199CA4]/30 hover:shadow-sm transition flex gap-3.5">
+                                    <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0 border border-gray-200">
+                                        <img :src="item.photo_url" alt="Pet Checkin" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="min-w-0 flex-1 space-y-1">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-xs font-bold text-gray-900" x-text="item.check_in_date"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                                                :class="{
+                                                    'bg-emerald-100 text-emerald-800': item.health_status === 'healthy',
+                                                    'bg-amber-100 text-amber-800': item.health_status === 'minor_issue',
+                                                    'bg-red-100 text-red-800': item.health_status === 'under_treatment'
+                                                }"
+                                                x-text="item.health_status === 'healthy' ? 'Healthy & Active' : (item.health_status === 'minor_issue' ? 'Minor Issue' : 'Under Treatment')">
+                                            </span>
+                                        </div>
+                                        <template x-if="item.weight">
+                                            <p class="text-[11px] font-semibold text-gray-700">
+                                                Weight: <span class="font-bold text-[#199CA4]" x-text="item.weight + ' kg'"></span>
+                                            </p>
+                                        </template>
+                                        <template x-if="item.notes">
+                                            <p class="text-[11px] text-gray-600 bg-white p-2 rounded-lg border border-gray-100" x-text="item.notes"></p>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div class="pt-3.5 mt-3.5 border-t border-gray-100 flex justify-end">
+                        <button type="button" @click="showHealthModal = false" class="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -570,6 +565,10 @@
             return {
                 showAddModal: false,
                 showHistoryModal: false,
+                showHealthModal: false,
+                healthLogs: [],
+                healthPetName: '',
+                healthAdopterName: '',
                 modalPetId: null,
                 modalPetName: '',
                 modalAdopterName: '',
@@ -591,6 +590,13 @@
                     this.historyPetName = petName;
                     this.historyAdopterName = adopterName;
                     this.showHistoryModal = true;
+                },
+
+                openHealthModal(logs, petName, adopterName) {
+                    this.healthLogs = logs || [];
+                    this.healthPetName = petName;
+                    this.healthAdopterName = adopterName;
+                    this.showHealthModal = true;
                 },
 
                 formatDate(dateString) {
