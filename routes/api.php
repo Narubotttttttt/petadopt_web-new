@@ -49,7 +49,54 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        $user = $request->user();
+        $profile = \App\Models\AdoptersProfile::where('email', $user->email)
+            ->orWhere('user_id', $user->id)
+            ->first();
+
+        $userData = $user->toArray();
+        if ($profile) {
+            $userData['adopter_code'] = $profile->adopter_code;
+            $userData['phone'] = $profile->phone;
+            $userData['address'] = $profile->address;
+            $userData['city'] = $profile->city;
+            $userData['province'] = $profile->province;
+            $userData['status'] = $profile->status;
+        }
+
+        return response()->json($userData);
+    });
+
+    Route::post('/user/update-address', function (Request $request) {
+        $request->validate([
+            'address'  => 'required|string|max:500',
+            'city'     => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
+            'phone'    => 'nullable|string|max:50',
+        ]);
+
+        $user = $request->user();
+        $code = sprintf('ADP-%04d', $user->id);
+
+        $profile = \App\Models\AdoptersProfile::updateOrCreate(
+            ['email' => $user->email],
+            [
+                'user_id'      => $user->id,
+                'adopter_code' => $code,
+                'full_name'    => $user->name,
+                'phone'        => $request->phone ?: $user->phone ?? null,
+                'address'      => $request->address,
+                'city'         => $request->city ?: 'Cagayan de Oro City',
+                'province'     => $request->province ?: 'Misamis Oriental',
+                'status'       => 'active',
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Address updated successfully.',
+            'profile' => $profile,
+        ]);
     });
     Route::post('/adoption-applications', [AdoptionApiController::class, 'store']);
     Route::get('/my-applications', [AdoptionApiController::class, 'myApplications']);

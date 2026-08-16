@@ -56,9 +56,11 @@ class MedicalLogController extends Controller
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
+        $administeredBy = trim($request->input('administered_by', '')) ?: Auth::user()->name;
+
         $log = MedicalLog::create([
             ...$data,
-            'administered_by' => Auth::user()->name,
+            'administered_by' => $administeredBy,
             'created_by' => Auth::id(),
         ]);
 
@@ -159,14 +161,19 @@ class MedicalLogController extends Controller
 
     private function calculateNextDueDate(string $category, string $date, ?string $manualNextDueDate): ?string
     {
+        if (!empty($manualNextDueDate)) {
+            return $manualNextDueDate;
+        }
+
+        // Automatic scheduling if left empty
         if ($category === 'vaccination') {
-            // Use admin-provided override if set, otherwise auto-calculate 6 months
-            if (!empty($manualNextDueDate)) {
-                return $manualNextDueDate;
-            }
             return Carbon::parse($date)->addMonths(6)->format('Y-m-d');
         }
 
-        return $manualNextDueDate;
+        if ($category === 'deworming') {
+            return Carbon::parse($date)->addMonths(3)->format('Y-m-d');
+        }
+
+        return null;
     }
 }

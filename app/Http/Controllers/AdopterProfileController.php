@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdoptersProfile;
 use App\Models\AdoptionApplication;
-use App\Models\MedicalLog;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -71,28 +72,47 @@ class AdopterProfileController extends Controller
 
         $allApplications = $query->latest('updated_at')->get();
 
-        // Preload users by email to quickly resolve user IDs & avatars
+        // Preload users and adopters_profile by email
         $allEmails = $allApplications->pluck('applicant_email')->filter()->unique()->toArray();
         $userMap = User::whereIn('email', $allEmails)->get()->keyBy(function($u) {
             return strtolower(trim($u->email));
+        });
+        $profileMap = AdoptersProfile::whereIn('email', $allEmails)->get()->keyBy(function($p) {
+            return strtolower(trim($p->email));
         });
 
         // Group by adopter email / name so multi-pet adopters are presented cleanly
         $groupedAdopters = $allApplications->groupBy(function($item) {
             return strtolower(trim($item->applicant_email ?: $item->applicant_name));
-        })->map(function($apps) use ($userMap) {
+        })->map(function($apps) use ($userMap, $profileMap) {
             $primary = $apps->first();
             $emailKey = strtolower(trim($primary->applicant_email ?? ''));
             $user = $userMap->get($emailKey);
-            $adopterIdNumber = $user ? sprintf('ADP-%04d', $user->id) : sprintf('APP-%04d', $primary->id);
-            $avatarUrl = $user && !empty($user->avatar) ? $user->avatar : null;
+            $profile = $profileMap->get($emailKey);
+
+            $adopterIdNumber = $profile?->adopter_code 
+                ?: ($user ? sprintf('ADP-%04d', $user->id) : sprintf('APP-%04d', $primary->id));
+            $avatarUrl = $user && !empty($user->avatar) ? $user->avatar_url : null;
+            $adopterStatus = $profile?->status ?? 'active';
+
+            // Extract address from profile or application
+            $resolvedAddress = $profile?->address;
+            if (empty($resolvedAddress) && !empty($primary->message) && preg_match('/Address:\s*(.+?)(?=\n[A-Za-z\s]+:|$)/is', $primary->message, $m)) {
+                $resolvedAddress = trim($m[1]);
+            }
 
             return (object)[
+                'profile_id'        => $profile?->id,
                 'adopter_id_code'   => $adopterIdNumber,
+                'status'            => $adopterStatus,
+                'admin_notes'       => $profile?->admin_notes,
                 'avatar'            => $avatarUrl,
                 'applicant_name'    => $primary->applicant_name,
                 'applicant_email'   => $primary->applicant_email,
-                'applicant_phone'   => $primary->applicant_phone,
+                'applicant_phone'   => $profile?->phone ?: $primary->applicant_phone,
+                'address'           => $resolvedAddress,
+                'city'              => $profile?->city,
+                'province'          => $profile?->province,
                 'latest_updated_at' => $apps->max('updated_at'),
                 'applications'      => $apps,
                 'pets_count'        => $apps->count(),
@@ -135,5 +155,21 @@ class AdopterProfileController extends Controller
             'overdueCount',
             'dueSoonCount'
         ));
+    }
+
+    public function updateStatus(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'status'      => 'required|in:active,good_standing,restricted,blacklisted',
+            'admin_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $profile = AdoptersProfile::findOrFail($id);
+        $profile->update([
+            'status'      => $request->status,
+            'admin_notes' => $request->admin_notes,
+        ]);
+
+        return back()->with('success', "Updated status for {$profile->full_name} to " . ucfirst(str_replace('_', ' ', $request->status)) . ".");
     }
 }

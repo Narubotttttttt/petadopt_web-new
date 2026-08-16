@@ -1,5 +1,55 @@
 <x-app-layout>
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6" x-data="adopterMedicalManager()">
+    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6" 
+         x-data="{
+             showAddModal: false,
+             showHistoryModal: false,
+             showHealthModal: false,
+             showStatusModal: false,
+             statusProfileId: null,
+             statusAdopterName: '',
+             selectedStatus: 'active',
+             statusAdminNotes: '',
+             healthLogs: [],
+             healthPetName: '',
+             healthAdopterName: '',
+             modalPetId: null,
+             modalPetName: '',
+             modalAdopterName: '',
+             selectedCategory: 'vaccination',
+             historyLogs: [],
+             historyPetName: '',
+             historyAdopterName: '',
+
+             openStatusModal(profileId, adopterName, status, notes) {
+                 this.statusProfileId = profileId;
+                 this.statusAdopterName = adopterName;
+                 this.selectedStatus = status || 'active';
+                 this.statusAdminNotes = notes || '';
+                 this.showStatusModal = true;
+             },
+
+             openAddModal(petId, petName, adopterName) {
+                 this.modalPetId = petId;
+                 this.modalPetName = petName;
+                 this.modalAdopterName = adopterName;
+                 this.selectedCategory = 'vaccination';
+                 this.showAddModal = true;
+             },
+
+             openHistoryModal(logs, petName, adopterName) {
+                 this.historyLogs = logs || [];
+                 this.historyPetName = petName;
+                 this.historyAdopterName = adopterName;
+                 this.showHistoryModal = true;
+             },
+
+             openHealthModal(logs, petName, adopterName) {
+                 this.healthLogs = logs || [];
+                 this.healthPetName = petName;
+                 this.healthAdopterName = adopterName;
+                 this.showHealthModal = true;
+             }
+         }">
         
         {{-- Flash Messages --}}
         @if(session('success'))
@@ -23,7 +73,7 @@
                         {{ $totalApprovedAdopters }} Adopters ({{ $totalApprovedApplications }} Pets)
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-gray-500 mt-1">Manage approved adopters, monitor vaccine schedules, and record clinical medical logs.</p>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">Manage approved adopters, shelter safety status, vaccine schedules, and clinical medical logs.</p>
             </div>
             
             {{-- Header Action --}}
@@ -90,10 +140,10 @@
         {{-- Main Adopter Table --}}
         <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[900px]">
+                <table class="w-full text-left border-collapse min-w-[950px]">
                     <thead class="bg-gray-50/80 border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-500">
                         <tr>
-                            <th class="py-4 px-5 w-64">Adopter Profile</th>
+                            <th class="py-4 px-5 w-72">Adopter Profile</th>
                             <th class="py-4 px-5 w-72">Adopted Pet(s)</th>
                             <th class="py-4 px-5">Pet Medical & Vaccine Status</th>
                             <th class="py-4 px-5 text-center w-40">Monthly Reports</th>
@@ -110,14 +160,14 @@
                                         @if($adopter->avatar)
                                             <img src="{{ $adopter->avatar }}" alt="{{ $adopter->applicant_name }}" class="w-12 h-12 rounded-2xl object-cover border border-gray-200 shadow-xs flex-shrink-0">
                                         @else
+                                            @php
+                                                $adopterNameParts = preg_split('/\s+/', trim($adopter->applicant_name));
+                                                $adopterInitials = count($adopterNameParts) >= 2 
+                                                    ? strtoupper(mb_substr($adopterNameParts[0], 0, 1) . mb_substr(end($adopterNameParts), 0, 1))
+                                                    : strtoupper(mb_substr($adopter->applicant_name, 0, 1));
+                                            @endphp
                                             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] text-[#199CA4] flex items-center justify-center font-extrabold text-sm border border-[#199CA4]/20 flex-shrink-0 shadow-xs">
-                                                @php
-    $adopterNameParts = preg_split('/\s+/', trim($adopter->applicant_name));
-    $adopterInitials = count($adopterNameParts) >= 2 
-        ? strtoupper(mb_substr($adopterNameParts[0], 0, 1) . mb_substr(end($adopterNameParts), 0, 1))
-        : strtoupper(mb_substr($adopter->applicant_name, 0, 1));
-@endphp
-{{ $adopterInitials }}
+                                                {{ $adopterInitials }}
                                             </div>
                                         @endif
 
@@ -128,8 +178,37 @@
                                                     {{ $adopter->adopter_id_code }}
                                                 </span>
                                             </div>
+                                            
+                                            {{-- Adopter Status Chip --}}
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $adopter->status === 'blacklisted' ? 'bg-rose-100 text-rose-800 border border-rose-200' : ($adopter->status === 'restricted' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200') }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $adopter->status ?? 'active')) }}
+                                                </span>
+
+                                                @if($adopter->profile_id)
+                                                    <button type="button" 
+                                                        @click='openStatusModal(@json($adopter->profile_id), @json($adopter->applicant_name), @json($adopter->status ?? "active"), @json($adopter->admin_notes ?? ""))'
+                                                        class="text-[11px] font-bold text-[#199CA4] hover:underline">
+                                                        Edit Status
+                                                    </button>
+                                                @endif
+                                            </div>
+
                                             <div class="text-xs text-gray-500 mt-1 truncate">{{ $adopter->applicant_email }}</div>
                                             <div class="text-xs font-semibold text-gray-600 mt-0.5">{{ $adopter->applicant_phone }}</div>
+
+                                            @if(!empty($adopter->address))
+                                                <div class="text-[11px] text-gray-500 mt-1 flex items-start gap-1 leading-snug">
+                                                    <span class="text-gray-400">📍</span>
+                                                    <span class="truncate max-w-[200px]" title="{{ $adopter->address }}">{{ $adopter->address }}</span>
+                                                </div>
+                                            @endif
+
+                                            @if(!empty($adopter->admin_notes))
+                                                <p class="text-[11px] text-gray-600 bg-amber-50/70 border border-amber-200/60 p-1.5 rounded-lg mt-1.5 italic">
+                                                    Note: {{ $adopter->admin_notes }}
+                                                </p>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
@@ -247,11 +326,10 @@
                                                     return [
                                                         'id' => $m->id,
                                                         'category' => $m->category,
-                                                        'name' => $m->vaccine_name ?: $m->deworming_name ?: 'Treatment',
+                                                        'name' => ucfirst($m->category),
                                                         'date' => $m->date ? $m->date->format('M d, Y') : '',
                                                         'next_due_date' => $m->next_due_date ? $m->next_due_date->format('M d, Y') : null,
-                                                        'notes' => $m->notes,
-                                                        'veterinarian' => $m->veterinarian,
+                                                        'administered_by' => $m->administered_by ?: ($m->creator ? $m->creator->name : 'Staff'),
                                                     ];
                                                 })->values()->toArray() : [];
                                                 $petNameStr = $pet ? ($pet->name ?: 'Pet #'.$pet->id) : 'Pet #'.$app->pet_id;
@@ -264,8 +342,8 @@
                                                 </button>
 
                                                 <button type="button" 
-                                                    @click="openAddModal('{{ $app->pet_id }}', @json($petNameStr), @json($adopter->applicant_name))"
-                                                    class="px-3.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-bold transition shadow-xs flex items-center gap-1">
+                                                    @click='openAddModal(@json($app->pet_id), @json($petNameStr), @json($adopter->applicant_name))'
+                                                    class="px-3.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-bold transition shadow-xs flex items-center gap-1 cursor-pointer">
                                                     <span>+ Record</span>
                                                 </button>
                                             </div>
@@ -372,31 +450,28 @@
                                     class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Next Due Date</label>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Next Due Date (Optional)</label>
                                 <input type="date" name="next_due_date" 
                                     class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                                <p class="text-[10px] text-gray-400 mt-1">
+                                    <span x-show="selectedCategory === 'vaccination'">Auto-calculates +6 months if left empty</span>
+                                    <span x-show="selectedCategory === 'deworming'">Auto-calculates +3 months if left empty</span>
+                                </p>
                             </div>
                         </div>
 
-                        {{-- Veterinarian & Weight --}}
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Veterinarian / Staff</label>
-                                <input type="text" name="veterinarian" placeholder="e.g. Dr. Santos"
-                                    class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Weight (kg)</label>
-                                <input type="number" step="0.1" name="weight" placeholder="e.g. 5.5"
-                                    class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
-                            </div>
-                        </div>
-
-                        {{-- Clinical Notes --}}
+                        {{-- Administered By (Auto-detected) --}}
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Clinical Notes</label>
-                            <textarea name="notes" rows="2" placeholder="Optional observations or remarks..."
-                                class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition"></textarea>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Administered By (Staff / Admin)</label>
+                            <div class="flex items-center justify-between px-3.5 py-2.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span class="text-xs font-bold text-emerald-900">{{ Auth::user()->name }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase">{{ Auth::user()->role }}</span>
+                                </div>
+                                <span class="text-[11px] text-emerald-700 font-medium">Logged in staff</span>
+                            </div>
+                            <input type="hidden" name="administered_by" value="{{ Auth::user()->name }}">
                         </div>
 
                         {{-- Modal Actions --}}
@@ -460,7 +535,7 @@
                                         <span class="text-xs font-semibold text-gray-500" x-text="log.date"></span>
                                     </div>
                                     <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
-                                        <span x-show="log.veterinarian" x-text="'Vet: ' + log.veterinarian"></span>
+                                        <span x-show="log.administered_by" class="font-semibold text-gray-700" x-text="'Administered by: ' + log.administered_by"></span>
                                         <span x-show="log.next_due_date" class="font-semibold text-amber-700" x-text="'Next Due: ' + log.next_due_date"></span>
                                     </div>
                                     <p x-show="log.notes" class="text-xs text-gray-600 mt-1.5 bg-white p-2 rounded-lg border border-gray-100" x-text="log.notes"></p>
@@ -558,54 +633,90 @@
             </div>
         </div>
 
+        {{-- Modal 4: Edit Adopter Shelter Safety Status & Notes Modal --}}
+        <div x-show="showStatusModal" x-cloak style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-gray-900/60 backdrop-blur-sm" @click="showStatusModal = false"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+                <div class="inline-block px-5 sm:px-6 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                                🛡️
+                            </div>
+                            <div>
+                                <h3 class="text-base sm:text-lg font-extrabold text-gray-900">Shelter Safety Status</h3>
+                                <p class="text-xs text-gray-500">
+                                    Adopter: <span class="font-bold text-[#199CA4]" x-text="statusAdopterName"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showStatusModal = false" class="text-gray-400 hover:text-gray-600 text-2xl font-light leading-none">&times;</button>
+                    </div>
+
+                    {{-- Modal Form --}}
+                    <form method="POST" :action="'/adopters/' + statusProfileId + '/status'" class="space-y-4">
+                        @csrf
+                        @method('PATCH')
+
+                        {{-- Status Selection --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Adopter Standing</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="status" value="active" x-model="selectedStatus" class="text-[#199CA4] focus:ring-[#199CA4]">
+                                    <div>
+                                        <span class="text-xs font-bold text-gray-900 block">Active</span>
+                                        <span class="text-[11px] text-gray-500">Standard verified adopter in regular standing.</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50 cursor-pointer">
+                                    <input type="radio" name="status" value="good_standing" x-model="selectedStatus" class="text-emerald-600 focus:ring-emerald-500">
+                                    <div>
+                                        <span class="text-xs font-bold text-emerald-800 block">Good Standing ⭐</span>
+                                        <span class="text-[11px] text-emerald-700">Excellent track record with timely check-ins.</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-amber-200 bg-amber-50/30 hover:bg-amber-50 cursor-pointer">
+                                    <input type="radio" name="status" value="restricted" x-model="selectedStatus" class="text-amber-600 focus:ring-amber-500">
+                                    <div>
+                                        <span class="text-xs font-bold text-amber-800 block">Restricted ⚠️</span>
+                                        <span class="text-[11px] text-amber-700">Requires additional verification or home visits.</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-rose-200 bg-rose-50/30 hover:bg-rose-50 cursor-pointer">
+                                    <input type="radio" name="status" value="blacklisted" x-model="selectedStatus" class="text-rose-600 focus:ring-rose-500">
+                                    <div>
+                                        <span class="text-xs font-bold text-rose-800 block">Blacklisted 🚫</span>
+                                        <span class="text-[11px] text-rose-700">Banned from future pet adoptions due to violations.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Internal Shelter Notes --}}
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Internal Shelter Remarks (Private)</label>
+                            <textarea name="admin_notes" rows="3" x-model="statusAdminNotes" placeholder="Private shelter observations, housing conditions, or warnings..."
+                                class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition"></textarea>
+                        </div>
+
+                        {{-- Modal Actions --}}
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                            <button type="button" @click="showStatusModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Cancel</button>
+                            <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-bold text-white bg-[#199CA4] hover:bg-[#13787F] rounded-xl shadow-xs transition">Update Status</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <script>
-        function adopterMedicalManager() {
-            return {
-                showAddModal: false,
-                showHistoryModal: false,
-                showHealthModal: false,
-                healthLogs: [],
-                healthPetName: '',
-                healthAdopterName: '',
-                modalPetId: null,
-                modalPetName: '',
-                modalAdopterName: '',
-                selectedCategory: 'vaccination',
-                historyLogs: [],
-                historyPetName: '',
-                historyAdopterName: '',
-
-                openAddModal(petId, petName, adopterName) {
-                    this.modalPetId = petId;
-                    this.modalPetName = petName;
-                    this.modalAdopterName = adopterName;
-                    this.selectedCategory = 'vaccination';
-                    this.showAddModal = true;
-                },
-
-                openHistoryModal(logs, petName, adopterName) {
-                    this.historyLogs = logs || [];
-                    this.historyPetName = petName;
-                    this.historyAdopterName = adopterName;
-                    this.showHistoryModal = true;
-                },
-
-                openHealthModal(logs, petName, adopterName) {
-                    this.healthLogs = logs || [];
-                    this.healthPetName = petName;
-                    this.healthAdopterName = adopterName;
-                    this.showHealthModal = true;
-                },
-
-                formatDate(dateString) {
-                    if (!dateString) return '';
-                    const d = new Date(dateString);
-                    if (isNaN(d.getTime())) return dateString;
-                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                }
-            }
-        }
-    </script>
 </x-app-layout>

@@ -67,6 +67,28 @@ class AdoptionApiController extends Controller
             $barangayCertPath = $request->file('barangay_certificate')->store('documents', 'public');
         }
 
+        // Extract or record address to adopters_profile
+        if (!empty($validated['address']) || !empty($user->email)) {
+            $adopterAddress = $validated['address'] ?? null;
+            if (empty($adopterAddress) && !empty($message) && preg_match('/Address:\s*(.+?)(?=\n[A-Za-z\s]+:|$)/is', $message, $m)) {
+                $adopterAddress = trim($m[1]);
+            }
+
+            \App\Models\AdoptersProfile::updateOrCreate(
+                ['email' => $user->email],
+                [
+                    'user_id'      => $user->id,
+                    'adopter_code' => sprintf('ADP-%04d', $user->id),
+                    'full_name'    => $user->name,
+                    'phone'        => $validated['applicant_phone'] ?? null,
+                    'address'      => $adopterAddress,
+                    'city'         => 'Cagayan de Oro City',
+                    'province'     => 'Misamis Oriental',
+                    'status'       => 'active',
+                ]
+            );
+        }
+
         $application = AdoptionApplication::create([
             'pet_id'                    => $request->pet_id,
             'applicant_name'            => $request->full_name,

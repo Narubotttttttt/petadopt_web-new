@@ -55,6 +55,23 @@ class AdoptionApplicationController extends Controller
             }
             $application->pet->update($petUpdate);
 
+            // Auto-sync or create AdoptersProfile
+            if (!empty($application->applicant_email)) {
+                $user = \App\Models\User::where('email', $application->applicant_email)->first();
+                $adopterCode = $user ? sprintf('ADP-%04d', $user->id) : sprintf('ADP-%04d', $application->id + 100);
+                \App\Models\AdoptersProfile::firstOrCreate(
+                    ['email' => $application->applicant_email],
+                    [
+                        'user_id'      => $user?->id,
+                        'adopter_code' => $adopterCode,
+                        'full_name'    => $application->applicant_name,
+                        'phone'        => $application->applicant_phone,
+                        'address'      => $application->address,
+                        'status'       => 'active',
+                    ]
+                );
+            }
+
             // Send real-time FCM Push Notification to the approved adopter
             $petName = $application->pet->name ?? 'your pet';
             \App\Services\FirebaseNotificationService::sendToUser(

@@ -27,6 +27,19 @@ class AuthController extends Controller
             'role'     => 'adopter',
         ]);
 
+        // Auto-create AdoptersProfile for registered adopter
+        if ($user->role === 'adopter') {
+            \App\Models\AdoptersProfile::firstOrCreate(
+                ['email' => $user->email],
+                [
+                    'user_id'      => $user->id,
+                    'adopter_code' => sprintf('ADP-%04d', $user->id),
+                    'full_name'    => $user->name,
+                    'status'       => 'active',
+                ]
+            );
+        }
+
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([
@@ -60,6 +73,19 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Admin accounts cannot log in to the mobile app. Please use the Web Admin Portal.',
             ], 403);
+        }
+
+        // Auto-create AdoptersProfile for registered adopter
+        if ($user->role === 'adopter') {
+            \App\Models\AdoptersProfile::firstOrCreate(
+                ['email' => $user->email],
+                [
+                    'user_id'      => $user->id,
+                    'adopter_code' => sprintf('ADP-%04d', $user->id),
+                    'full_name'    => $user->name,
+                    'status'       => 'active',
+                ]
+            );
         }
 
         $token = $user->createToken('mobile-app')->plainTextToken;
