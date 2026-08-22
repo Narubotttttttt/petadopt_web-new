@@ -126,14 +126,38 @@ class AuthController extends Controller
         ]);
     }
 
+    public function checkEmail(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $email = strtolower(trim($request->email));
+        $exists = User::where('email', $email)->exists();
+
+        return response()->json([
+            'exists'  => $exists,
+            'message' => $exists ? 'This email address is already registered. Please log in or use a different email.' : 'Email is available.',
+        ]);
+    }
+
     public function sendEmailOtp(Request $request): JsonResponse
     {
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
+        $email = strtolower(trim($request->email));
+
+        if (User::where('email', $email)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This email address is already registered. Please log in or use a different email.',
+            ], 422);
+        }
+
         $code = (string) random_int(100000, 999999);
-        \Illuminate\Support\Facades\Cache::put('email_otp_' . strtolower(trim($request->email)), $code, now()->addMinutes(10));
+        \Illuminate\Support\Facades\Cache::put('email_otp_' . $email, $code, now()->addMinutes(10));
 
         try {
             \Illuminate\Support\Facades\Mail::html("
@@ -149,8 +173,8 @@ class AuthController extends Controller
                     </div>
                     <p style='color: #888; font-size: 12px; text-align: center;'>This code will expire in 10 minutes. If you did not request this verification, please ignore this email.</p>
                 </div>
-            ", function ($m) use ($request) {
-                $m->to(trim($request->email))->subject('🐾 Your CAWS Verification Code');
+            ", function ($m) use ($email) {
+                $m->to($email)->subject('🐾 Your CAWS Verification Code');
             });
 
             return response()->json([
@@ -172,7 +196,16 @@ class AuthController extends Controller
             'otp'   => ['required', 'string'],
         ]);
 
-        $cachedCode = \Illuminate\Support\Facades\Cache::get('email_otp_' . strtolower(trim($request->email)));
+        $email = strtolower(trim($request->email));
+
+        if (User::where('email', $email)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This email address is already registered. Please log in or use a different email.',
+            ], 422);
+        }
+
+        $cachedCode = \Illuminate\Support\Facades\Cache::get('email_otp_' . $email);
 
         if (! $cachedCode || $cachedCode !== trim($request->otp)) {
             return response()->json([
@@ -181,11 +214,11 @@ class AuthController extends Controller
             ], 422);
         }
 
-        \Illuminate\Support\Facades\Cache::forget('email_otp_' . strtolower(trim($request->email)));
+        \Illuminate\Support\Facades\Cache::forget('email_otp_' . $email);
 
         return response()->json([
             'success' => true,
-            'message' => 'Email verified successfully! 🎉',
+            'message' => 'Email verified successfully!',
         ]);
     }
 }

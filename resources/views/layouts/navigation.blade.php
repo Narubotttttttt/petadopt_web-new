@@ -1,13 +1,29 @@
 <nav x-data="{ mobileNavOpen: false }" class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-2xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+        <div class="flex items-center justify-between h-16">
             
             {{-- Left area --}}
-            <div class="flex items-center">
+            <div class="flex items-center gap-3">
+                {{-- Mobile Hamburger Toggle (Visible on < lg screens) --}}
+                <button @click="mobileNavOpen = ! mobileNavOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 lg:hidden focus:outline-none transition cursor-pointer">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path :class="{'hidden': mobileNavOpen, 'inline-flex': ! mobileNavOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{'hidden': ! mobileNavOpen, 'inline-flex': mobileNavOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                {{-- Mobile Brand Logo & Name (Visible on < lg screens) --}}
+                <div class="flex items-center gap-2.5 lg:hidden">
+                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover border border-gray-200 shadow-xs">
+                    <div>
+                        <span class="block text-xs font-bold text-gray-900 leading-tight">CAWS Pet Adoption</span>
+                        <span class="block text-[10px] text-gray-400 font-medium leading-tight">Admin Portal</span>
+                    </div>
+                </div>
             </div>
                 
-            {{-- Right Header Actions --}}
-            <div class="hidden sm:flex sm:items-center sm:gap-3 sm:ms-6">
+            {{-- Right Header Actions (Always aligned to right) --}}
+            <div class="flex items-center gap-3 ms-auto">
                 
                 {{-- Grouped Adopter Notification Bell Component --}}
                 @php
@@ -96,111 +112,83 @@
                         </template>
                     </button>
 
-                    {{-- Dropdown Modal / Popover --}}
-                    <div x-show="openNotif" x-cloak style="display: none;" 
-                        x-cloak
+                    {{-- Dropdown Container --}}
+                    <div x-show="openNotif" 
                         x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-2 scale-95"
-                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
                         x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                        x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                        style="display: none;"
+                        class="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden">
                         
                         {{-- Dropdown Header --}}
-                        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                        <div class="p-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <h3 class="text-sm font-extrabold text-gray-900">Notifications</h3>
-                                <template x-if="unreadCount > 0">
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700" x-text="unreadCount + ' new'"></span>
-                                </template>
+                                <h3 class="font-extrabold text-sm tracking-wide">Adopter Tracking</h3>
+                                <span class="bg-[#199CA4] text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    x-text="unreadCount + ' new'">
+                                </span>
                             </div>
-                            <button type="button" 
-                                @click="markAll()"
-                                class="text-xs font-bold text-[#199CA4] hover:underline cursor-pointer">
+                            <button @click="markAll()" 
+                                class="text-[11px] font-semibold text-gray-300 hover:text-white transition cursor-pointer hover:underline">
                                 Mark all as read
                             </button>
                         </div>
 
                         {{-- Filter Tabs --}}
-                        <div class="px-3 py-2 border-b border-gray-100 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white">
-                            <button type="button" 
-                                @click="activeTab = 'all'"
-                                :class="activeTab === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                        <div class="flex border-b border-gray-100 bg-gray-50/70 p-1.5 gap-1 text-xs">
+                            <button @click="activeTab = 'all'" 
+                                :class="activeTab === 'all' ? 'bg-white font-bold text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-700'"
+                                class="flex-1 py-1.5 px-2 rounded-lg text-center transition cursor-pointer">
                                 All (<span x-text="counts.all"></span>)
                             </button>
-                            <button type="button" 
-                                @click="activeTab = 'checkin'"
-                                :class="activeTab === 'checkin' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                            <button @click="activeTab = 'checkin'" 
+                                :class="activeTab === 'checkin' ? 'bg-white font-bold text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-700'"
+                                class="flex-1 py-1.5 px-2 rounded-lg text-center transition cursor-pointer">
                                 Check-ins (<span x-text="counts.checkins"></span>)
                             </button>
-                            <button type="button" 
-                                @click="activeTab = 'overdue'"
-                                :class="activeTab === 'overdue' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 hover:bg-rose-50'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                            <button @click="activeTab = 'overdue'" 
+                                :class="activeTab === 'overdue' ? 'bg-white font-bold text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-700'"
+                                class="flex-1 py-1.5 px-2 rounded-lg text-center transition cursor-pointer">
                                 Overdue (<span x-text="counts.overdue"></span>)
-                            </button>
-                            <button type="button" 
-                                @click="activeTab = 'request'"
-                                :class="activeTab === 'request' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
-                                Requests (<span x-text="counts.requests"></span>)
                             </button>
                         </div>
 
-                        {{-- Notifications List --}}
-                        <div class="max-h-[420px] overflow-y-auto divide-y divide-gray-100">
-                            
-                            {{-- Empty State --}}
+                        {{-- Notification List --}}
+                        <div class="max-h-[380px] overflow-y-auto divide-y divide-gray-100">
                             <template x-if="list.length === 0">
-                                <div class="py-12 px-4 text-center">
-                                    <div class="w-10 h-10 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-2 font-bold">
-                                        🔔
-                                    </div>
-                                    <p class="text-xs font-bold text-gray-700">No notifications in this tab</p>
-                                    <p class="text-[11px] text-gray-400 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
+                                <div class="p-8 text-center text-gray-400">
+                                    <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-xs font-semibold">No adopter notifications found.</p>
                                 </div>
                             </template>
 
-                            {{-- Grouped Adopter Notification Item Cards --}}
                             <template x-for="item in list" :key="item.id">
-                                <a :href="item.url" 
+                                <a :href="item.action_url" 
                                     @click="markItem(item.id)"
-                                    :class="item.is_read ? 'bg-white hover:bg-gray-50/90' : 'bg-teal-50/40 hover:bg-teal-50/80'"
-                                    class="p-4 flex gap-3.5 transition block cursor-pointer group">
+                                    class="block p-3.5 hover:bg-gray-50/80 transition relative group"
+                                    :class="!item.is_read ? 'bg-[#199CA4]/5' : ''">
                                     
-                                    {{-- Adopter Avatar / Initials --}}
-                                    <div class="flex-shrink-0 pt-0.5">
-                                        <template x-if="item.avatar">
-                                            <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-gray-200 shadow-xs">
-                                        </template>
-                                        <template x-if="!item.avatar">
-                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] text-[#199CA4] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 shadow-xs"
-                                                x-text="item.initials">
+                                    <div class="space-y-1.5">
+                                        {{-- Adopter Headline & Code --}}
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-bold text-xs shrink-0">
+                                                    <span x-text="item.adopter_name.charAt(0)"></span>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span class="text-xs font-extrabold text-gray-900 truncate" x-text="item.adopter_name"></span>
+                                                        <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-gray-100 text-gray-600 border border-gray-200" x-text="item.adopter_code"></span>
+                                                    </div>
+                                                    <p class="text-[11px] text-gray-500 font-medium truncate" x-text="item.summary"></p>
+                                                </div>
                                             </div>
-                                        </template>
-                                    </div>
-
-                                    {{-- Grouped Details --}}
-                                    <div class="min-w-0 flex-1 space-y-2">
-                                        
-                                        {{-- Adopter Header Line --}}
-                                        <div class="flex items-center justify-between gap-1">
-                                            <div class="flex items-center gap-1.5 min-w-0">
-                                                <span class="text-xs sm:text-sm font-extrabold text-gray-900 group-hover:text-[#199CA4] transition truncate" x-text="item.adopter_name"></span>
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-gray-100 text-gray-600 border border-gray-200" x-text="item.adopter_id_code"></span>
-                                            </div>
-                                            <span class="text-[10px] font-semibold text-gray-400 whitespace-nowrap" x-text="item.time"></span>
-                                        </div>
-
-                                        {{-- Title & Pet Count Pill --}}
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-xs font-semibold text-gray-600 truncate" x-text="item.title"></span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20 flex-shrink-0">
-                                                <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet Adopted' : ' Pets Adopted')"></span>
-                                            </span>
+                                            <span class="text-[10px] text-gray-400 shrink-0" x-text="item.time_ago"></span>
                                         </div>
 
                                         {{-- Multi-Pet Breakdown Chips --}}
@@ -227,7 +215,7 @@
                                         {{-- Click Action Hint --}}
                                         <div class="pt-0.5 text-right">
                                             <span class="text-[10px] font-bold text-[#199CA4] group-hover:underline">
-                                                View all adopted pets in directory →
+                                                View in directory &rarr;
                                             </span>
                                         </div>
 
@@ -241,7 +229,7 @@
                         {{-- Dropdown Footer --}}
                         <div class="p-3 border-t border-gray-100 bg-gray-50/50 text-center">
                             <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-[#199CA4] hover:underline">
-                                Open Full Adopter Profiles Directory →
+                                Open Full Adopter Profiles Directory &rarr;
                             </a>
                         </div>
 
@@ -290,35 +278,58 @@
                     </x-slot>
                 </x-dropdown>
             </div>
-
-            {{-- Mobile hamburger --}}
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="mobileNavOpen = ! mobileNavOpen" class="inline-flex items-center justify-center p-2 rounded-xl text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none transition">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': mobileNavOpen, 'inline-flex': ! mobileNavOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! mobileNavOpen, 'inline-flex': mobileNavOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
         </div>
     </div>
 
-    {{-- Mobile Responsive Menu --}}
-    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden sm:hidden bg-white border-t border-gray-100">
-        <div class="pt-4 pb-2 px-4 space-y-2">
-            <div class="font-bold text-sm text-gray-900">{{ Auth::user()->name }}</div>
-            <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
+    {{-- Mobile Responsive Menu (Full Navigation for < lg screens) --}}
+    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden lg:hidden bg-white border-t border-gray-100 shadow-xl">
+        <div class="p-4 space-y-3">
+            <div class="flex items-center gap-3 pb-3 border-b border-gray-100">
+                @if(Auth::user()->avatar_url)
+                    <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-xl object-cover border border-gray-200 shadow-xs">
+                @else
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] text-[#199CA4] flex items-center justify-center font-extrabold text-sm border border-[#199CA4]/20 shadow-xs">
+                        {{ Auth::user()->initials }}
+                    </div>
+                @endif
+                <div>
+                    <div class="font-bold text-sm text-gray-900">{{ Auth::user()->name }}</div>
+                    <div class="text-xs text-gray-500">{{ Auth::user()->email }} ({{ ucfirst(Auth::user()->role) }})</div>
+                </div>
+            </div>
 
-            <div class="pt-2 border-t border-gray-100 space-y-1">
-                <a href="{{ route('adopters.index') }}" class="block py-2 text-xs font-bold text-[#199CA4]">
+            {{-- Main Navigation Links --}}
+            <div class="space-y-1">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('dashboard') ? 'bg-[#199CA4]/10 text-[#199CA4]' : 'text-gray-700 hover:bg-gray-50' }}">
+                    Dashboard
+                </a>
+                <a href="{{ route('pets.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('pets.*') ? 'bg-[#199CA4]/10 text-[#199CA4]' : 'text-gray-700 hover:bg-gray-50' }}">
+                    Pets
+                </a>
+                @if(Auth::user()->role === 'admin')
+                    <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('users.*') ? 'bg-[#199CA4]/10 text-[#199CA4]' : 'text-gray-700 hover:bg-gray-50' }}">
+                        User Management
+                    </a>
+                @endif
+                <a href="{{ route('adoption-applications.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adoption-applications.*') ? 'bg-[#199CA4]/10 text-[#199CA4]' : 'text-gray-700 hover:bg-gray-50' }}">
+                    Adoption Requests
+                </a>
+                <a href="{{ route('adopters.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adopters.*') ? 'bg-[#199CA4]/10 text-[#199CA4]' : 'text-gray-700 hover:bg-gray-50' }}">
                     Adopters Directory
                 </a>
-                <a href="{{ route('profile.edit') }}" class="block py-2 text-xs font-medium text-gray-700">
+                <a href="{{ route('medical-logs.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('medical-logs.*') ? 'bg-[#199CA4]/10 text-[#199CA4]' : 'text-gray-700 hover:bg-gray-50' }}">
+                    Medical Logs
+                </a>
+            </div>
+
+            {{-- Profile & Logout Links --}}
+            <div class="pt-2 border-t border-gray-100 space-y-1">
+                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 rounded-xl">
                     {{ __('Profile') }}
                 </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="block w-full text-left py-2 text-xs font-medium text-rose-600">
+                    <button type="submit" class="block w-full text-left px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-xl cursor-pointer">
                         {{ __('Log Out') }}
                     </button>
                 </form>
