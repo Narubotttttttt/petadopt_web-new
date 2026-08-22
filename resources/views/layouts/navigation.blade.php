@@ -1,4 +1,4 @@
-<nav x-data="{ mobileNavOpen: false }" class="bg-white/90 dark:bg-[#0c181b]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors duration-150">
+<nav x-data="{ mobileNavOpen: false }" class="bg-white/90 dark:bg-[#0B0F19]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors duration-150">
     <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             
@@ -43,7 +43,7 @@
                 }">
                     <button type="button" 
                         @click="toggleTheme()"
-                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-[#199CA4]/10 dark:hover:bg-white/5 focus:outline-none transition cursor-pointer"
+                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition cursor-pointer"
                         :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                         :aria-label="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
                         {{-- Sun icon (visible in dark mode) --}}
@@ -129,7 +129,7 @@
                     {{-- Bell Trigger Button --}}
                     <button type="button" 
                         @click.stop="openNotif = !openNotif"
-                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-[#199CA4]/10 dark:hover:bg-white/5 focus:outline-none transition cursor-pointer"
+                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition cursor-pointer"
                         title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -152,10 +152,10 @@
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                         x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-[#0e1d20] rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
+                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-[#111827] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50">
                         
                         {{-- Dropdown Header --}}
-                        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-[#0a171a]">
+                        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-[#0D131F]">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Notifications</h3>
                                 <template x-if="unreadCount > 0">
@@ -170,7 +170,7 @@
                         </div>
 
                         {{-- Filter Tabs --}}
-                        <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#0e1d20]">
+                        <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#111827]">
                             <button type="button" 
                                 @click="activeTab = 'all'"
                                 :class="activeTab === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
@@ -214,7 +214,7 @@
                             <template x-for="item in list" :key="item.id">
                                 <a :href="item.action_url" 
                                     @click="markItem(item.id)"
-                                    :class="item.is_read ? 'bg-white dark:bg-[#0e1d20] hover:bg-slate-50/90 dark:hover:bg-[#13262a]' : 'bg-[#F0FBFB]/60 dark:bg-[#142e33]/50 hover:bg-[#F0FBFB] dark:hover:bg-[#142e33]'"
+                                    :class="item.is_read ? 'bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-800/60' : 'bg-[#F0FBFB]/80 dark:bg-[#142332]/60 hover:bg-[#F0FBFB] dark:hover:bg-[#142332]'"
                                     class="p-4 flex gap-3.5 transition block cursor-pointer group">
                                     
                                     {{-- Adopter Avatar / Initials --}}
@@ -223,7 +223,7 @@
                                             <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs">
                                         </template>
                                         <template x-if="!item.avatar">
-                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shadow-xs"
+                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-slate-800 dark:to-slate-700 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-slate-600 shadow-xs"
                                                 x-text="item.initials">
                                             </div>
                                         </template>
@@ -252,7 +252,7 @@
                                         {{-- Multi-Pet Breakdown Chips --}}
                                         <div class="space-y-1.5 pt-1">
                                             <template x-for="(pet, idx) in item.pet_details" :key="idx">
-                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#091518] border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:group-hover:bg-[#112428] group-hover:border-slate-200 dark:group-hover:border-slate-700 transition">
+                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#0D131F] border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:group-hover:bg-slate-800/80 group-hover:border-slate-200 dark:group-hover:border-slate-700 transition">
                                                     <div class="flex items-center gap-1.5 min-w-0">
                                                         <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="'🐾 ' + pet.pet_name"></span>
                                                     </div>
@@ -285,7 +285,7 @@
                         </div>
 
                         {{-- Dropdown Footer --}}
-                        <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0a171a] text-center">
+                        <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0D131F] text-center">
                             <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline">
                                 Open Full Adopter Profiles Directory →
                             </a>
@@ -298,11 +298,11 @@
                 {{-- User Profile Dropdown --}}
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#0e1d20] hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none transition shadow-2xs cursor-pointer">
+                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none transition shadow-2xs cursor-pointer">
                             @if(Auth::user()->avatar_url)
                                 <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs">
                             @else
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shadow-xs">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-slate-800 dark:to-slate-700 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-slate-600 shadow-xs">
                                     {{ Auth::user()->initials }}
                                 </div>
                             @endif
@@ -340,13 +340,13 @@
     </div>
 
     {{-- Mobile Responsive Menu (Full Navigation for < lg screens) --}}
-    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden lg:hidden bg-white dark:bg-[#0c181b] border-t border-slate-100 dark:border-slate-800 shadow-xl">
+    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden lg:hidden bg-white dark:bg-[#0B0F19] border-t border-slate-100 dark:border-slate-800 shadow-xl">
         <div class="p-4 space-y-3">
             <div class="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                 @if(Auth::user()->avatar_url)
                     <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs">
                 @else
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-sm border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shadow-xs">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-slate-800 dark:to-slate-700 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-sm border border-[#199CA4]/20 dark:border-slate-600 shadow-xs">
                         {{ Auth::user()->initials }}
                     </div>
                 @endif
