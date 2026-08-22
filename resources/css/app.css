@@ -5,3 +5,97 @@
 [x-cloak] {
     display: none !important;
 }
+
+/* ─── Premium Scrollbar ─── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(25, 156, 164, 0.6);
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.2);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(65, 193, 203, 0.5);
+}
+
+/* ─── Animations & Micro-Interactions ─── */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(25, 156, 164, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(25, 156, 164, 0);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card-hover-effect {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover-effect:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(25, 156, 164, 0.08);
+}
+.dark .card-hover-effect:hover {
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(25, 156, 164, 0.2);
+}
+
+.table-row-hover {
+    transition: all 0.15s ease;
+}
+.table-row-hover:hover {
+    background-color: rgba(240, 251, 251, 0.45);
+}
+.dark .table-row-hover:hover {
+    background-color: rgba(25, 156, 164, 0.08);
+}
+
+.glow-teal-sm {
+    box-shadow: 0 0 15px -3px rgba(25, 156, 164, 0.25);
+}
+
+.glow-teal-md {
+    box-shadow: 0 4px 24px -2px rgba(25, 156, 164, 0.35);
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.dark .glass-panel {
+    background: rgba(14, 26, 29, 0.92);
+}

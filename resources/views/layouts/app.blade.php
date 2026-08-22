@@ -9,18 +9,26 @@
         <link rel="icon" type="image/jpeg" href="{{ asset('images/caws-logo.jpg') }}">
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-                <!-- Prevent Alpine.js Flash of Unstyled Content (FOUC) -->
+        <!-- Prevent Alpine.js Flash of Unstyled Content (FOUC) & Theme Init -->
         <style>
             [x-cloak] { display: none !important; }
         </style>
+        <script>
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        </script>
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-50 text-gray-900">
+    <body class="font-sans antialiased bg-[#F4F9F9] dark:bg-[#081215] text-slate-800 dark:text-slate-100 selection:bg-[#199CA4] selection:text-white transition-colors duration-150">
         <div class="min-h-screen flex flex-col">
             <x-sidebar />
 
@@ -28,8 +36,8 @@
                 @include('layouts.navigation')
 
                 @isset($header)
-                    <header class="bg-white border-b border-gray-200">
-                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <header class="bg-white dark:bg-[#0E1A1D] border-b border-gray-200 dark:border-slate-800">
+                        <div class="w-full py-6 px-4 sm:px-6 lg:px-8">
                             {{ $header }}
                         </div>
                     </header>
