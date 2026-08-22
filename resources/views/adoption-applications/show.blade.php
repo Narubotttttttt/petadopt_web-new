@@ -1,75 +1,83 @@
 <x-app-layout>
-    <div class="max-w-5xl mx-auto py-10 px-4">
-        <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="w-full py-8 px-4 sm:px-6 lg:px-8 animate-fade-in">
+        <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-[#333634]">
-                    Application for {{ $application->pet->name ?: ($application->pet ? $application->pet->breed . ' (Pet #' . $application->pet->id . ')' : 'Pet') }}
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                    Application for Pet #{{ $application->pet_id }}
                 </h1>
-                <p class="text-sm text-gray-500 mt-1">Review the applicant details, location verification, and update adoption status.</p>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Review applicant details, verification documents, and update adoption status.</p>
             </div>
             <div class="space-x-2 flex items-center">
                 @if(in_array($application->status, ['approved', 'adopted']))
-                    <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold border border-emerald-200 hover:bg-emerald-600 hover:text-white transition shadow-sm">
+                    <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white transition shadow-2xs">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                         <span>Print Contract</span>
                     </a>
                 @endif
-                <a href="{{ route('adoption-applications.index') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">Back to List</a>
+                <a href="{{ route('adoption-applications.index') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
             </div>
         </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div class="lg:col-span-2 space-y-6">
-                <!-- Pet Overview Card -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex items-center gap-4">
+                {{-- Pet Overview Card --}}
+                <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 flex items-center gap-4 card-hover-effect">
                     @if($application->pet && $application->pet->photo_path)
-                        <img src="{{ str_starts_with($application->pet->photo_path, 'http') ? $application->pet->photo_path : asset('storage/' . ltrim($application->pet->photo_path, '/')) }}" class="w-16 h-16 rounded-2xl object-cover border border-gray-100" />
+                        <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs relative bg-[#F0FBFB] dark:bg-[#122b30]">
+                            <img src="{{ str_starts_with($application->pet->photo_path, 'http') ? $application->pet->photo_path : asset('storage/' . ltrim($application->pet->photo_path, '/')) }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div class="hidden w-full h-full bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] items-center justify-center text-2xl font-bold">🐾</div>
+                        </div>
                     @else
-                        <div class="w-16 h-16 rounded-2xl bg-[#EAF5F6] text-[#199CA4] flex items-center justify-center text-2xl font-bold">🐾</div>
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center text-2xl font-bold shrink-0">🐾</div>
                     @endif
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900">{{ $application->pet->name ?: 'Pet #' . $application->pet->id }}</h3>
-                        <p class="text-sm text-gray-500">{{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}</p>
+                        <h3 class="text-base font-extrabold text-slate-800 dark:text-white">Pet #{{ $application->pet_id }}</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}</p>
                     </div>
                 </div>
 
-                <!-- Applicant Information Card -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                        <span>👤</span> Applicant Contact Information
+                {{-- Applicant Information Card --}}
+                <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
+                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span class="text-lg">👤</span> Applicant Contact Information
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Full Name</p>
-                            <p class="mt-1 text-sm font-bold text-gray-900">{{ $application->applicant_name }}</p>
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Full Name</p>
+                            <p class="mt-1 text-sm font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_name }}</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Email Address</p>
-                            <p class="mt-1 text-sm font-bold text-gray-900">{{ $application->applicant_email }}</p>
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email Address</p>
+                            <p class="mt-1 text-sm font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_email }}</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Phone Number</p>
-                            <p class="mt-1 text-sm font-bold text-gray-900">{{ $application->applicant_phone ?? 'N/A' }}</p>
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone Number</p>
+                            <p class="mt-1 text-sm font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_phone ?? 'N/A' }}</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Current Status</p>
-                            <span class="inline-flex mt-1 items-center px-3 py-1 rounded-full text-xs font-bold 
-                                {{ $application->status === 'approved' ? 'bg-emerald-100 text-emerald-800' : '' }}
-                                {{ $application->status === 'rejected' ? 'bg-rose-100 text-rose-800' : '' }}
-                                {{ $application->status === 'under_review' ? 'bg-sky-100 text-sky-800' : '' }}
-                                {{ $application->status === 'pending' ? 'bg-amber-100 text-amber-800' : '' }}">
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Status</p>
+                            <span class="inline-flex mt-1 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
+                                {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : '' }}
+                                {{ $application->status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' : '' }}
+                                {{ $application->status === 'under_review' ? 'bg-[#199CA4]/10 dark:bg-[#199CA4]/25 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/20 dark:border-[#41C1CB]/30' : '' }}
+                                {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' : '' }}">
+                                <span class="w-1.5 h-1.5 rounded-full
+                                    {{ $application->status === 'approved' ? 'bg-emerald-500' : '' }}
+                                    {{ $application->status === 'rejected' ? 'bg-rose-500' : '' }}
+                                    {{ $application->status === 'under_review' ? 'bg-[#199CA4]' : '' }}
+                                    {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
                                 {{ ucfirst(str_replace('_', ' ', $application->status)) }}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Application Details & Questionnaire Card -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                        <span>📋</span> Mobile Application Questionnaire Responses
+                {{-- Application Details & Questionnaire Card --}}
+                <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
+                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span class="text-lg">📋</span> Mobile Application Questionnaire Responses
                     </h2>
                     
                     @php
@@ -100,71 +108,71 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($questionnaire as $key => $val)
-                            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 {{ str_contains(strtolower($key), 'address') || str_contains(strtolower($key), 'other pets') ? 'sm:col-span-2' : '' }}">
-                                <p class="text-xs font-semibold uppercase tracking-wider text-[#199CA4]">{{ is_string($key) ? $key : 'Detail' }}</p>
-                                <p class="mt-1 text-sm font-bold text-gray-900 leading-relaxed">{{ $val }}</p>
+                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800 {{ str_contains(strtolower($key), 'address') || str_contains(strtolower($key), 'other pets') ? 'sm:col-span-2' : '' }}">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">{{ is_string($key) ? $key : 'Detail' }}</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800 dark:text-slate-200 leading-relaxed">{{ $val }}</p>
                             </div>
                         @endforeach
                     </div>
 
                     @if(!empty($reasonText))
-                        <div class="bg-[#EAF5F6]/50 p-4 rounded-2xl border border-[#199CA4]/20 space-y-1">
-                            <p class="text-xs font-bold uppercase tracking-wider text-[#199CA4]">Reason for Adoption</p>
-                            <p class="text-sm font-medium text-gray-800 leading-relaxed whitespace-pre-line">{{ $reasonText }}</p>
+                        <div class="bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6]/50 dark:from-[#133036] dark:to-[#17454d]/50 p-4 rounded-2xl border border-[#199CA4]/20 dark:border-[#41C1CB]/30 space-y-1">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Reason for Adoption</p>
+                            <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line">{{ $reasonText }}</p>
                         </div>
                     @endif
                 </div>
 
-                <!-- Uploaded Screening Documents Card -->
-                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
-                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                        <span>🪪</span> Uploaded Verification Documents
+                {{-- Uploaded Screening Documents Card --}}
+                <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
+                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span class="text-lg">🪪</span> Uploaded Verification Documents
                     </h2>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Valid Government ID -->
-                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col justify-between space-y-3">
+                        {{-- Valid Government ID --}}
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-wider text-[#199CA4]">Valid Government ID</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Submitted ID photo</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Valid Government ID</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Submitted ID photo</p>
                             </div>
                             @if($application->valid_id_path)
-                                <div class="group relative rounded-xl overflow-hidden border border-gray-200 bg-white">
-                                    <img src="{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}" class="w-full h-40 object-cover cursor-pointer hover:scale-105 transition-transform" onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" />
-                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">🔍 Click to Enlarge</button>
+                                <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
+                                    <img src="{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}" class="w-full h-40 object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" />
+                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">🔍 Click to Enlarge</button>
                                 </div>
                             @else
-                                <div class="p-6 rounded-xl border border-dashed border-gray-200 text-center text-xs text-gray-400">No Valid ID uploaded</div>
+                                <div class="p-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No Valid ID uploaded</div>
                             @endif
                         </div>
 
-                        <!-- Barangay Certificate -->
-                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col justify-between space-y-3">
+                        {{-- Barangay Certificate --}}
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-wider text-[#199CA4]">Barangay Certificate</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Submitted residency clearance photo</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Barangay Certificate</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Submitted residency clearance photo</p>
                             </div>
                             @if($application->barangay_certificate_path)
-                                <div class="group relative rounded-xl overflow-hidden border border-gray-200 bg-white">
-                                    <img src="{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}" class="w-full h-40 object-cover cursor-pointer hover:scale-105 transition-transform" onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" />
-                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">🔍 Click to Enlarge</button>
+                                <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
+                                    <img src="{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}" class="w-full h-40 object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" />
+                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">🔍 Click to Enlarge</button>
                                 </div>
                             @else
-                                <div class="p-6 rounded-xl border border-dashed border-gray-200 text-center text-xs text-gray-400">No Barangay Certificate uploaded</div>
+                                <div class="p-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No Barangay Certificate uploaded</div>
                             @endif
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Action Sidebar -->
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-6 h-fit" x-data="{ currentStatus: '{{ old('status', $application->status) }}' }">
+            {{-- Quick Action Sidebar --}}
+            <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-6 h-fit" x-data="{ currentStatus: '{{ old('status', $application->status) }}' }">
                 <div>
-                    <h2 class="text-base font-bold text-gray-900">Application Status & Actions</h2>
+                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Application Decision</h2>
                     @if(Auth::user()->role === 'admin')
-                        <p class="text-xs text-gray-500 mt-1">Make the final decision or schedule an adoption event.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Make the final decision or schedule an adoption event.</p>
                     @else
-                        <p class="text-xs text-gray-500 mt-1">Review applicant details and forward to admin for decision.</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review applicant details and forward to admin for decision.</p>
                     @endif
                 </div>
 
@@ -173,8 +181,8 @@
                     @method('PATCH')
 
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Update Status</label>
-                        <select name="status" x-model="currentStatus" class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white text-sm text-gray-800 font-semibold focus:ring-2 focus:ring-[#199CA4]">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Update Status</label>
+                        <select name="status" x-model="currentStatus" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                             <option value="under_review" {{ $application->status == 'under_review' ? 'selected' : '' }}>Under Review</option>
                             <option value="pending" {{ $application->status == 'pending' ? 'selected' : '' }}>Pending Decision</option>
                             @if(Auth::user()->role === 'admin')
@@ -184,36 +192,36 @@
                         </select>
                     </div>
 
-                    <!-- Event Scheduling Details (Only Visible when Approved) -->
-                    <div x-show="currentStatus === 'approved'" x-transition class="space-y-4 pt-2 border-t border-gray-100">
+                    {{-- Event Scheduling Details (Only Visible when Approved) --}}
+                    <div x-show="currentStatus === 'approved'" x-transition class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Schedule Sunday Event Date</label>
-                            <input type="date" name="scheduled_at" value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-[#199CA4]">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Schedule Sunday Event Date</label>
+                            <input type="date" name="scheduled_at" value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Adoption Event / Mall Location</label>
-                            <input type="text" name="event_location" value="{{ old('event_location', $application->event_location) }}" placeholder="e.g. Centrio Mall CDO / SM City CDO" class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-[#199CA4]">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Adoption Event / Mall Location</label>
+                            <input type="text" name="event_location" value="{{ old('event_location', $application->event_location) }}" placeholder="e.g. Centrio Mall CDO / SM City CDO" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Event Instructions & Reminders</label>
-                            <textarea name="event_notes" rows="3" placeholder="e.g. Pet release, free anti-rabies vaccination, and spaying/neutering drive." class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-[#199CA4]">{{ old('event_notes', $application->event_notes) }}</textarea>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Event Instructions & Reminders</label>
+                            <textarea name="event_notes" rows="3" placeholder="e.g. Pet release, free anti-rabies vaccination, and spaying/neutering drive." class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ old('event_notes', $application->event_notes) }}</textarea>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full inline-flex items-center justify-center rounded-2xl bg-[#199CA4] px-4 py-3 text-sm font-bold text-white hover:bg-[#13787F] transition shadow-md shadow-[#199CA4]/20">Save Changes</button>
+                    <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#199CA4] to-[#14838B] px-4 py-3 text-xs sm:text-sm font-bold text-white hover:from-[#146970] hover:to-[#12585e] transition shadow-md shadow-[#199CA4]/25 cursor-pointer">Save Changes</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Document Modal Previewer -->
-    <div id="docModal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-4" onclick="closeDocModal()">
-        <div class="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100 px-2">
-                <h3 id="docModalTitle" class="text-base font-bold text-gray-900">Document Preview</h3>
-                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold">✕</button>
+    {{-- Document Modal Previewer --}}
+    <div id="docModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeDocModal()">
+        <div class="relative max-w-4xl w-full bg-white dark:bg-[#0e1d20] border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 px-2">
+                <h3 id="docModalTitle" class="text-sm font-extrabold text-slate-800 dark:text-white">Document Preview</h3>
+                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer">✕</button>
             </div>
             <div class="py-4 flex justify-center max-h-[75vh] overflow-auto">
                 <img id="docModalImage" src="" class="max-w-full max-h-[70vh] rounded-2xl object-contain shadow-md" />

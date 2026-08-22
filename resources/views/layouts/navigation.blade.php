@@ -1,14 +1,52 @@
-<nav x-data="{ mobileNavOpen: false }" class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-2xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<nav x-data="{ mobileNavOpen: false }" class="bg-white/90 dark:bg-[#0c181b]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 shadow-xs transition-colors duration-150">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             
-            {{-- Left area --}}
-            <div class="flex items-center">
+            {{-- Left area (Mobile brand logo) --}}
+            <div class="flex items-center lg:hidden">
+                <div class="flex items-center gap-2.5">
+                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover ring-1 ring-[#199CA4]/30 shadow-xs">
+                    <span class="text-xs font-extrabold text-slate-800 dark:text-white tracking-tight uppercase">CAWS Admin</span>
+                </div>
+            </div>
+
+            <div class="hidden lg:flex items-center">
             </div>
                 
             {{-- Right Header Actions --}}
-            <div class="hidden sm:flex sm:items-center sm:gap-3 sm:ms-6">
+            <div class="hidden sm:flex sm:items-center sm:gap-2.5 sm:ms-6">
                 
+                {{-- Dark / Light Theme Toggle Button --}}
+                <div x-data="{
+                    darkMode: document.documentElement.classList.contains('dark'),
+                    toggleTheme() {
+                        this.darkMode = !this.darkMode;
+                        if (this.darkMode) {
+                            document.documentElement.classList.add('dark');
+                            localStorage.theme = 'dark';
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                            localStorage.theme = 'light';
+                        }
+                        window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: this.darkMode } }));
+                    }
+                }">
+                    <button type="button" 
+                        @click="toggleTheme()"
+                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-[#199CA4]/10 dark:hover:bg-white/5 focus:outline-none transition cursor-pointer"
+                        :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+                        :aria-label="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+                        {{-- Sun icon (visible in dark mode) --}}
+                        <svg x-show="darkMode" class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        {{-- Moon icon (visible in light mode) --}}
+                        <svg x-show="!darkMode" class="w-5 h-5 text-slate-500 hover:text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                </div>
+
                 {{-- Grouped Adopter Notification Bell Component --}}
                 @php
                     $notifData = $adminNotificationData ?? [
@@ -81,7 +119,7 @@
                     {{-- Bell Trigger Button --}}
                     <button type="button" 
                         @click.stop="openNotif = !openNotif"
-                        class="relative p-2.5 rounded-xl text-gray-500 hover:text-[#199CA4] hover:bg-[#199CA4]/10 focus:outline-none transition cursor-pointer"
+                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-[#199CA4]/10 dark:hover:bg-white/5 focus:outline-none transition cursor-pointer"
                         title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -98,69 +136,68 @@
 
                     {{-- Dropdown Modal / Popover --}}
                     <div x-show="openNotif" x-cloak style="display: none;" 
-                        x-cloak
                         x-transition:enter="transition ease-out duration-200"
                         x-transition:enter-start="opacity-0 translate-y-2 scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                         x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-[#0e1d20] rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
                         
                         {{-- Dropdown Header --}}
-                        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                        <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-[#0a171a]">
                             <div class="flex items-center gap-2">
-                                <h3 class="text-sm font-extrabold text-gray-900">Notifications</h3>
+                                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Notifications</h3>
                                 <template x-if="unreadCount > 0">
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-700" x-text="unreadCount + ' new'"></span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900" x-text="unreadCount + ' new'"></span>
                                 </template>
                             </div>
                             <button type="button" 
                                 @click="markAll()"
-                                class="text-xs font-bold text-[#199CA4] hover:underline cursor-pointer">
+                                class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer">
                                 Mark all as read
                             </button>
                         </div>
 
                         {{-- Filter Tabs --}}
-                        <div class="px-3 py-2 border-b border-gray-100 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white">
+                        <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#0e1d20]">
                             <button type="button" 
                                 @click="activeTab = 'all'"
-                                :class="activeTab === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
+                                :class="activeTab === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 All (<span x-text="counts.all"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'checkin'"
-                                :class="activeTab === 'checkin' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
+                                :class="activeTab === 'checkin' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Check-ins (<span x-text="counts.checkins"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'overdue'"
-                                :class="activeTab === 'overdue' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 hover:bg-rose-50'"
+                                :class="activeTab === 'overdue' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Overdue (<span x-text="counts.overdue"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'request'"
-                                :class="activeTab === 'request' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
+                                :class="activeTab === 'request' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Requests (<span x-text="counts.requests"></span>)
                             </button>
                         </div>
 
                         {{-- Notifications List --}}
-                        <div class="max-h-[420px] overflow-y-auto divide-y divide-gray-100">
+                        <div class="max-h-[420px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                             
                             {{-- Empty State --}}
                             <template x-if="list.length === 0">
                                 <div class="py-12 px-4 text-center">
-                                    <div class="w-10 h-10 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-2 font-bold">
+                                    <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-2 font-bold">
                                         🔔
                                     </div>
-                                    <p class="text-xs font-bold text-gray-700">No notifications in this tab</p>
-                                    <p class="text-[11px] text-gray-400 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">No notifications in this tab</p>
+                                    <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
                                 </div>
                             </template>
 
@@ -168,16 +205,16 @@
                             <template x-for="item in list" :key="item.id">
                                 <a :href="item.url" 
                                     @click="markItem(item.id)"
-                                    :class="item.is_read ? 'bg-white hover:bg-gray-50/90' : 'bg-teal-50/40 hover:bg-teal-50/80'"
+                                    :class="item.is_read ? 'bg-white dark:bg-[#0e1d20] hover:bg-slate-50/90 dark:hover:bg-[#13262a]' : 'bg-[#F0FBFB]/60 dark:bg-[#142e33]/50 hover:bg-[#F0FBFB] dark:hover:bg-[#142e33]'"
                                     class="p-4 flex gap-3.5 transition block cursor-pointer group">
                                     
                                     {{-- Adopter Avatar / Initials --}}
-                                    <div class="flex-shrink-0 pt-0.5">
+                                    <div class="shrink-0 pt-0.5">
                                         <template x-if="item.avatar">
-                                            <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-gray-200 shadow-xs">
+                                            <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs">
                                         </template>
                                         <template x-if="!item.avatar">
-                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] text-[#199CA4] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 shadow-xs"
+                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shadow-xs"
                                                 x-text="item.initials">
                                             </div>
                                         </template>
@@ -189,16 +226,16 @@
                                         {{-- Adopter Header Line --}}
                                         <div class="flex items-center justify-between gap-1">
                                             <div class="flex items-center gap-1.5 min-w-0">
-                                                <span class="text-xs sm:text-sm font-extrabold text-gray-900 group-hover:text-[#199CA4] transition truncate" x-text="item.adopter_name"></span>
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-gray-100 text-gray-600 border border-gray-200" x-text="item.adopter_id_code"></span>
+                                                <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition truncate" x-text="item.adopter_name"></span>
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700" x-text="item.adopter_id_code"></span>
                                             </div>
-                                            <span class="text-[10px] font-semibold text-gray-400 whitespace-nowrap" x-text="item.time"></span>
+                                            <span class="text-[10px] font-semibold text-slate-400 whitespace-nowrap" x-text="item.time"></span>
                                         </div>
 
                                         {{-- Title & Pet Count Pill --}}
                                         <div class="flex items-center justify-between gap-2">
-                                            <span class="text-xs font-semibold text-gray-600 truncate" x-text="item.title"></span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20 flex-shrink-0">
+                                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate" x-text="item.title"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4]/10 dark:bg-[#199CA4]/25 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shrink-0">
                                                 <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet Adopted' : ' Pets Adopted')"></span>
                                             </span>
                                         </div>
@@ -206,17 +243,17 @@
                                         {{-- Multi-Pet Breakdown Chips --}}
                                         <div class="space-y-1.5 pt-1">
                                             <template x-for="(pet, idx) in item.pet_details" :key="idx">
-                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-gray-50/80 border border-gray-100 group-hover:bg-white group-hover:border-gray-200 transition">
+                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#091518] border border-slate-100 dark:border-slate-800 group-hover:bg-white dark:group-hover:bg-[#112428] group-hover:border-slate-200 dark:group-hover:border-slate-700 transition">
                                                     <div class="flex items-center gap-1.5 min-w-0">
-                                                        <span class="text-xs font-bold text-gray-900 truncate" x-text="'🐾 ' + pet.pet_name"></span>
+                                                        <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="'🐾 ' + pet.pet_name"></span>
                                                     </div>
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
                                                         :class="{
-                                                            'bg-emerald-100 text-emerald-800 border border-emerald-200': pet.status_type === 'submitted',
-                                                            'bg-rose-100 text-rose-800 border border-rose-200': pet.status_type === 'overdue',
-                                                            'bg-amber-100 text-amber-800 border border-amber-200': pet.status_type === 'due_soon',
-                                                            'bg-sky-100 text-sky-800 border border-sky-200': pet.status_type === 'pending_request',
-                                                            'bg-gray-100 text-gray-600 border border-gray-200': pet.status_type === 'pending_first'
+                                                            'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800': pet.status_type === 'submitted',
+                                                            'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue',
+                                                            'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon',
+                                                            'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
+                                                            'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700': pet.status_type === 'pending_first'
                                                         }"
                                                         x-text="pet.status_label">
                                                     </span>
@@ -226,7 +263,7 @@
 
                                         {{-- Click Action Hint --}}
                                         <div class="pt-0.5 text-right">
-                                            <span class="text-[10px] font-bold text-[#199CA4] group-hover:underline">
+                                            <span class="text-[10px] font-bold text-[#199CA4] dark:text-[#41C1CB] group-hover:underline">
                                                 View all adopted pets in directory →
                                             </span>
                                         </div>
@@ -239,8 +276,8 @@
                         </div>
 
                         {{-- Dropdown Footer --}}
-                        <div class="p-3 border-t border-gray-100 bg-gray-50/50 text-center">
-                            <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-[#199CA4] hover:underline">
+                        <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0a171a] text-center">
+                            <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline">
                                 Open Full Adopter Profiles Directory →
                             </a>
                         </div>
@@ -252,21 +289,21 @@
                 {{-- User Profile Dropdown --}}
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-gray-200 rounded-xl text-xs sm:text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition shadow-2xs cursor-pointer">
+                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#0e1d20] hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none transition shadow-2xs cursor-pointer">
                             @if(Auth::user()->avatar_url)
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-gray-200 shadow-xs">
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs">
                             @else
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] text-[#199CA4] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 shadow-xs">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shadow-xs">
                                     {{ Auth::user()->initials }}
                                 </div>
                             @endif
                             <div class="text-left">
-                                <span class="block text-xs font-bold text-gray-900 leading-tight">{{ Auth::user()->name }}</span>
-                                <span class="block text-[10px] text-gray-400 font-medium capitalize">{{ Auth::user()->role }}</span>
+                                <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ Auth::user()->name }}</span>
+                                <span class="block text-[10px] text-slate-400 font-medium capitalize">{{ Auth::user()->role }}</span>
                             </div>
 
                             <div class="ms-1">
-                                <svg class="fill-current h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <svg class="fill-current h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
                             </div>
@@ -291,9 +328,16 @@
                 </x-dropdown>
             </div>
 
-            {{-- Mobile hamburger --}}
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="mobileNavOpen = ! mobileNavOpen" class="inline-flex items-center justify-center p-2 rounded-xl text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none transition">
+            {{-- Mobile hamburger & dark toggle --}}
+            <div class="-me-2 flex items-center gap-1 sm:hidden">
+                <button type="button" 
+                    onclick="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
+                    class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition">
+                    <span class="dark:hidden">🌙</span>
+                    <span class="hidden dark:inline">☀️</span>
+                </button>
+
+                <button @click="mobileNavOpen = ! mobileNavOpen" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': mobileNavOpen, 'inline-flex': ! mobileNavOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! mobileNavOpen, 'inline-flex': mobileNavOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -304,22 +348,39 @@
     </div>
 
     {{-- Mobile Responsive Menu --}}
-    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden sm:hidden bg-white border-t border-gray-100">
+    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden sm:hidden bg-white dark:bg-[#0c181b] border-t border-slate-100 dark:border-slate-800">
         <div class="pt-4 pb-2 px-4 space-y-2">
-            <div class="font-bold text-sm text-gray-900">{{ Auth::user()->name }}</div>
-            <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
+            <div class="font-bold text-sm text-slate-900 dark:text-white">{{ Auth::user()->name }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->email }}</div>
 
-            <div class="pt-2 border-t border-gray-100 space-y-1">
-                <a href="{{ route('adopters.index') }}" class="block py-2 text-xs font-bold text-[#199CA4]">
-                    Adopters Directory
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                <a href="{{ route('dashboard') }}" class="block py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] dark:hover:text-[#41C1CB]">
+                    📊 Dashboard
                 </a>
-                <a href="{{ route('profile.edit') }}" class="block py-2 text-xs font-medium text-gray-700">
-                    {{ __('Profile') }}
+                <a href="{{ route('pets.index') }}" class="block py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] dark:hover:text-[#41C1CB]">
+                    🐾 Pets Catalog
+                </a>
+                <a href="{{ route('adoption-applications.index') }}" class="block py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] dark:hover:text-[#41C1CB]">
+                    📋 Adoption Requests
+                </a>
+                <a href="{{ route('adopters.index') }}" class="block py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] dark:hover:text-[#41C1CB]">
+                    👥 Adopters Directory
+                </a>
+                <a href="{{ route('medical-logs.index') }}" class="block py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] dark:hover:text-[#41C1CB]">
+                    🩺 Medical Logs
+                </a>
+                @if(Auth::user()->role === 'admin')
+                    <a href="{{ route('users.index') }}" class="block py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] dark:hover:text-[#41C1CB]">
+                        🛡️ User Management
+                    </a>
+                @endif
+                <a href="{{ route('profile.edit') }}" class="block py-2 text-xs font-medium text-slate-700 dark:text-slate-200">
+                    ⚙️ Profile
                 </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="block w-full text-left py-2 text-xs font-medium text-rose-600">
-                        {{ __('Log Out') }}
+                    <button type="submit" class="block w-full text-left py-2 text-xs font-medium text-rose-600 dark:text-rose-400">
+                        🚪 Log Out
                     </button>
                 </form>
             </div>
