@@ -12,7 +12,7 @@
                 </button>
 
                 <div class="flex items-center gap-2.5">
-                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover ring-1 ring-[#199CA4]/30 shadow-xs">
+                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover border border-gray-200 dark:border-gray-800 shadow-xs">
                     <div>
                         <span class="block text-xs font-bold text-gray-900 dark:text-white leading-tight">CAWS Pet Adoption</span>
                         <span class="block text-[10px] text-gray-400 font-medium leading-tight">Admin Portal</span>
@@ -43,7 +43,7 @@
                 }">
                     <button type="button" 
                         @click="toggleTheme()"
-                        class="relative p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer"
+                        class="relative p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer"
                         :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                         :aria-label="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
                         {{-- Sun icon (visible in dark mode) --}}
@@ -51,7 +51,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                         </svg>
                         {{-- Moon icon (visible in light mode) --}}
-                        <svg x-show="!darkMode" class="w-5 h-5 text-gray-500 hover:text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg x-show="!darkMode" class="w-5 h-5 text-gray-500 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                         </svg>
                     </button>
@@ -129,7 +129,7 @@
                     {{-- Bell Trigger Button --}}
                     <button type="button" 
                         @click.stop="openNotif = !openNotif"
-                        class="relative p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer"
+                        class="relative p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer"
                         title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -164,7 +164,7 @@
                             </div>
                             <button type="button" 
                                 @click="markAll()"
-                                class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer">
+                                class="text-xs font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline cursor-pointer">
                                 Mark all as read
                             </button>
                         </div>
@@ -173,13 +173,13 @@
                         <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#1e1e1e]">
                             <button type="button" 
                                 @click="activeTab = 'all'"
-                                :class="activeTab === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                :class="activeTab === 'all' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 All (<span x-text="counts.all"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'checkin'"
-                                :class="activeTab === 'checkin' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                :class="activeTab === 'checkin' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Check-ins (<span x-text="counts.checkins"></span>)
                             </button>
@@ -191,7 +191,7 @@
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'request'"
-                                :class="activeTab === 'request' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                :class="activeTab === 'request' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Requests (<span x-text="counts.requests"></span>)
                             </button>
@@ -214,7 +214,7 @@
                             <template x-for="item in list" :key="item.id">
                                 <a :href="item.action_url" 
                                     @click="markItem(item.id)"
-                                    :class="item.is_read ? 'bg-white dark:bg-[#1e1e1e] hover:bg-gray-50 dark:hover:bg-[#282828]' : 'bg-[#F0FBFB]/80 dark:bg-[#242c2d] hover:bg-[#F0FBFB] dark:hover:bg-[#283234]'"
+                                    :class="item.is_read ? 'bg-white dark:bg-[#1e1e1e] hover:bg-gray-50 dark:hover:bg-[#282828]' : 'bg-gray-50 dark:bg-[#252525] hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'"
                                     class="p-4 flex gap-3.5 transition block cursor-pointer group">
                                     
                                     {{-- Adopter Avatar / Initials --}}
@@ -223,7 +223,7 @@
                                             <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-gray-200 dark:border-gray-700 shadow-xs">
                                         </template>
                                         <template x-if="!item.avatar">
-                                            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-gray-800 dark:to-gray-700 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-gray-600 shadow-xs"
+                                            <div class="w-11 h-11 rounded-2xl bg-gray-100 dark:bg-[#282828] text-gray-700 dark:text-gray-300 flex items-center justify-center font-extrabold text-xs border border-gray-200 dark:border-gray-700 shadow-xs"
                                                 x-text="item.initials">
                                             </div>
                                         </template>
@@ -235,7 +235,7 @@
                                         {{-- Adopter Header Line --}}
                                         <div class="flex items-center justify-between gap-1">
                                             <div class="flex items-center gap-1.5 min-w-0">
-                                                <span class="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition truncate" x-text="item.adopter_name"></span>
+                                                <span class="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white group-hover:text-[#199CA4] transition truncate" x-text="item.adopter_name"></span>
                                                 <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700" x-text="item.adopter_id_code"></span>
                                             </div>
                                             <span class="text-[10px] font-semibold text-gray-400 whitespace-nowrap" x-text="item.time"></span>
@@ -244,7 +244,7 @@
                                         {{-- Title & Pet Count Pill --}}
                                         <div class="flex items-center justify-between gap-2">
                                             <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 truncate" x-text="item.title"></span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4]/10 dark:bg-[#199CA4]/25 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shrink-0">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shrink-0">
                                                 <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet Adopted' : ' Pets Adopted')"></span>
                                             </span>
                                         </div>
@@ -272,7 +272,7 @@
 
                                         {{-- Click Action Hint --}}
                                         <div class="pt-0.5 text-right">
-                                            <span class="text-[10px] font-bold text-[#199CA4] dark:text-[#41C1CB] group-hover:underline">
+                                            <span class="text-[10px] font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white group-hover:underline">
                                                 View all adopted pets in directory →
                                             </span>
                                         </div>
@@ -286,7 +286,7 @@
 
                         {{-- Dropdown Footer --}}
                         <div class="p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#252525] text-center">
-                            <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline">
+                            <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline">
                                 Open Full Adopter Profiles Directory →
                             </a>
                         </div>
@@ -302,7 +302,7 @@
                             @if(Auth::user()->avatar_url)
                                 <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-gray-200 dark:border-gray-700 shadow-xs">
                             @else
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-gray-800 dark:to-gray-700 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-xs border border-[#199CA4]/20 dark:border-gray-600 shadow-xs">
+                                <div class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-[#282828] text-gray-700 dark:text-gray-300 flex items-center justify-center font-extrabold text-xs border border-gray-200 dark:border-gray-700 shadow-xs">
                                     {{ Auth::user()->initials }}
                                 </div>
                             @endif
@@ -346,7 +346,7 @@
                 @if(Auth::user()->avatar_url)
                     <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-xl object-cover border border-gray-200 dark:border-gray-700 shadow-xs">
                 @else
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#EAF5F6] to-[#d3eef1] dark:from-gray-800 dark:to-gray-700 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-sm border border-[#199CA4]/20 dark:border-gray-600 shadow-xs">
+                    <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#282828] text-gray-700 dark:text-gray-300 flex items-center justify-center font-extrabold text-sm border border-gray-200 dark:border-gray-700 shadow-xs">
                         {{ Auth::user()->initials }}
                     </div>
                 @endif
@@ -358,24 +358,24 @@
 
             {{-- Main Navigation Links --}}
             <div class="space-y-1">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('dashboard') ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('dashboard') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                     📊 Dashboard
                 </a>
-                <a href="{{ route('pets.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('pets.*') ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('pets.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('pets.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                     🐾 Pets Catalog
                 </a>
                 @if(Auth::user()->role === 'admin')
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('users.*') ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                    <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('users.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                         🛡️ User Management
                     </a>
                 @endif
-                <a href="{{ route('adoption-applications.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adoption-applications.*') ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('adoption-applications.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adoption-applications.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                     📋 Adoption Requests
                 </a>
-                <a href="{{ route('adopters.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adopters.*') ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('adopters.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adopters.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                     👥 Adopters Directory
                 </a>
-                <a href="{{ route('medical-logs.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('medical-logs.*') ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('medical-logs.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('medical-logs.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                     🩺 Medical Logs
                 </a>
             </div>
