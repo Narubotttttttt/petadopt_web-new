@@ -1,10 +1,10 @@
-<nav x-data="{ mobileNavOpen: false }" class="bg-white/95 dark:bg-[#181818]/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30 shadow-xs transition-colors duration-150">
+<nav x-data="{ mobileNavOpen: false }" class="bg-white/90 dark:bg-[#090A0F]/90 backdrop-blur-xl border-b border-gray-200/80 dark:border-white/[0.06] sticky top-0 z-30 shadow-xs transition-colors duration-150">
     <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             
             {{-- Left area (Mobile hamburger toggle & brand logo) --}}
             <div class="flex items-center gap-3 lg:hidden">
-                <button @click="mobileNavOpen = ! mobileNavOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer">
+                <button @click="mobileNavOpen = ! mobileNavOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] focus:outline-none transition cursor-pointer">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': mobileNavOpen, 'inline-flex': ! mobileNavOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! mobileNavOpen, 'inline-flex': mobileNavOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -12,10 +12,10 @@
                 </button>
 
                 <div class="flex items-center gap-2.5">
-                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover border border-gray-200 dark:border-gray-800 shadow-xs">
+                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                     <div>
-                        <span class="block text-xs font-bold text-gray-900 dark:text-white leading-tight">CAWS Pet Adoption</span>
-                        <span class="block text-[10px] text-gray-400 font-medium leading-tight">Admin Portal</span>
+                        <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">CAWS Pet Adoption</span>
+                        <span class="block text-[10px] text-slate-400 font-medium leading-tight">Admin Portal</span>
                     </div>
                 </div>
             </div>
@@ -24,9 +24,9 @@
             </div>
                 
             {{-- Right Header Actions --}}
-            <div class="flex items-center gap-2.5 ms-auto">
+            <div class="flex items-center gap-3 ms-auto">
                 
-                {{-- Dark / Light Theme Toggle Button --}}
+                {{-- Dark / Light Theme Modern Pill Toggle Switch --}}
                 <div x-data="{
                     darkMode: document.documentElement.classList.contains('dark'),
                     toggleTheme() {
@@ -40,20 +40,43 @@
                         }
                         window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: this.darkMode } }));
                     }
-                }">
+                }" class="flex items-center">
                     <button type="button" 
                         @click="toggleTheme()"
-                        class="relative p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer"
+                        role="switch"
+                        :aria-checked="darkMode"
+                        class="relative inline-flex h-8 w-14 items-center rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer select-none bg-slate-200/90 dark:bg-[#151722] border border-slate-300/80 dark:border-white/[0.12] shadow-inner"
                         :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
                         :aria-label="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-                        {{-- Sun icon (visible in dark mode) --}}
-                        <svg x-show="darkMode" class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                        {{-- Moon icon (visible in light mode) --}}
-                        <svg x-show="!darkMode" class="w-5 h-5 text-gray-500 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                        </svg>
+                        
+                        {{-- Track Background Icons --}}
+                        <div class="absolute inset-0 flex items-center justify-between px-1.5 pointer-events-none">
+                            <span class="text-amber-500 flex items-center justify-center w-4 h-4">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+                                </svg>
+                            </span>
+                            <span class="text-slate-400 dark:text-cyan-400 flex items-center justify-center w-4 h-4">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                                </svg>
+                            </span>
+                        </div>
+
+                        {{-- Sliding Knob --}}
+                        <span class="inline-flex items-center justify-center h-6 w-6 transform rounded-full bg-white dark:bg-[#0B0C10] shadow-md transition duration-200 ease-in-out border border-slate-200/80 dark:border-white/[0.12] z-10"
+                            :class="darkMode ? 'translate-x-6' : 'translate-x-0'">
+                            <span x-show="!darkMode" class="text-amber-500 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+                                </svg>
+                            </span>
+                            <span x-show="darkMode" class="text-cyan-400 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                                </svg>
+                            </span>
+                        </span>
                     </button>
                 </div>
 
@@ -129,7 +152,7 @@
                     {{-- Bell Trigger Button --}}
                     <button type="button" 
                         @click.stop="openNotif = !openNotif"
-                        class="relative p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition cursor-pointer"
+                        class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] focus:outline-none transition cursor-pointer"
                         title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -152,34 +175,34 @@
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                         x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden z-50">
+                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl shadow-black/50 border border-slate-200 dark:border-white/[0.08] overflow-hidden z-50">
                         
                         {{-- Dropdown Header --}}
-                        <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-[#252525]">
+                        <div class="px-5 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/70 dark:bg-[#171923]">
                             <div class="flex items-center gap-2">
-                                <h3 class="text-sm font-extrabold text-gray-900 dark:text-white">Notifications</h3>
+                                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Notifications</h3>
                                 <template x-if="unreadCount > 0">
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900" x-text="unreadCount + ' new'"></span>
                                 </template>
                             </div>
                             <button type="button" 
                                 @click="markAll()"
-                                class="text-xs font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline cursor-pointer">
+                                class="text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:underline cursor-pointer">
                                 Mark all as read
                             </button>
                         </div>
 
                         {{-- Filter Tabs --}}
-                        <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800 flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#1e1e1e]">
+                        <div class="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#12141C]">
                             <button type="button" 
                                 @click="activeTab = 'all'"
-                                :class="activeTab === 'all' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                :class="activeTab === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 All (<span x-text="counts.all"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'checkin'"
-                                :class="activeTab === 'checkin' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                :class="activeTab === 'checkin' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Check-ins (<span x-text="counts.checkins"></span>)
                             </button>
@@ -191,39 +214,39 @@
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'request'"
-                                :class="activeTab === 'request' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-xs' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                                :class="activeTab === 'request' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Requests (<span x-text="counts.requests"></span>)
                             </button>
                         </div>
 
                         {{-- Notifications List --}}
-                        <div class="max-h-[420px] overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+                        <div class="max-h-[420px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.06]">
                             
                             {{-- Empty State --}}
                             <template x-if="list.length === 0">
                                 <div class="py-12 px-4 text-center">
-                                    <div class="w-10 h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-400 flex items-center justify-center mx-auto mb-2 font-bold">
+                                    <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-400 flex items-center justify-center mx-auto mb-2 font-bold">
                                         🔔
                                     </div>
-                                    <p class="text-xs font-bold text-gray-700 dark:text-gray-300">No notifications in this tab</p>
-                                    <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300">No notifications in this tab</p>
+                                    <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
                                 </div>
                             </template>
 
                             <template x-for="item in list" :key="item.id">
                                 <a :href="item.action_url" 
                                     @click="markItem(item.id)"
-                                    :class="item.is_read ? 'bg-white dark:bg-[#1e1e1e] hover:bg-gray-50 dark:hover:bg-[#282828]' : 'bg-gray-50 dark:bg-[#252525] hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'"
+                                    :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-slate-50 dark:bg-[#171923] hover:bg-slate-100 dark:hover:bg-[#1D1F2C]'"
                                     class="p-4 flex gap-3.5 transition block cursor-pointer group">
                                     
                                     {{-- Adopter Avatar / Initials --}}
                                     <div class="shrink-0 pt-0.5">
                                         <template x-if="item.avatar">
-                                            <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-gray-200 dark:border-gray-700 shadow-xs">
+                                            <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                                         </template>
                                         <template x-if="!item.avatar">
-                                            <div class="w-11 h-11 rounded-2xl bg-gray-100 dark:bg-[#282828] text-gray-700 dark:text-gray-300 flex items-center justify-center font-extrabold text-xs border border-gray-200 dark:border-gray-700 shadow-xs"
+                                            <div class="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
                                                 x-text="item.initials">
                                             </div>
                                         </template>
@@ -235,16 +258,16 @@
                                         {{-- Adopter Header Line --}}
                                         <div class="flex items-center justify-between gap-1">
                                             <div class="flex items-center gap-1.5 min-w-0">
-                                                <span class="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white group-hover:text-[#199CA4] transition truncate" x-text="item.adopter_name"></span>
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700" x-text="item.adopter_id_code"></span>
+                                                <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition truncate" x-text="item.adopter_name"></span>
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]" x-text="item.adopter_id_code"></span>
                                             </div>
-                                            <span class="text-[10px] font-semibold text-gray-400 whitespace-nowrap" x-text="item.time"></span>
+                                            <span class="text-[10px] font-semibold text-slate-400 whitespace-nowrap" x-text="item.time"></span>
                                         </div>
 
                                         {{-- Title & Pet Count Pill --}}
                                         <div class="flex items-center justify-between gap-2">
-                                            <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 truncate" x-text="item.title"></span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 shrink-0">
+                                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 truncate" x-text="item.title"></span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
                                                 <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet Adopted' : ' Pets Adopted')"></span>
                                             </span>
                                         </div>
@@ -252,9 +275,9 @@
                                         {{-- Multi-Pet Breakdown Chips --}}
                                         <div class="space-y-1.5 pt-1">
                                             <template x-for="(pet, idx) in item.pet_details" :key="idx">
-                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-gray-50/80 dark:bg-[#252525] border border-gray-100 dark:border-gray-800 group-hover:bg-white dark:group-hover:bg-gray-800 group-hover:border-gray-200 dark:group-hover:border-gray-700 transition">
+                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] group-hover:bg-white dark:group-hover:bg-[#1D1F2C] group-hover:border-slate-200 dark:group-hover:border-white/[0.12] transition">
                                                     <div class="flex items-center gap-1.5 min-w-0">
-                                                        <span class="text-xs font-bold text-gray-900 dark:text-gray-200 truncate" x-text="'🐾 ' + pet.pet_name"></span>
+                                                        <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="'🐾 ' + pet.pet_name"></span>
                                                     </div>
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
                                                         :class="{
@@ -262,7 +285,7 @@
                                                             'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue',
                                                             'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon',
                                                             'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
-                                                            'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700': pet.status_type === 'pending_first'
+                                                            'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]': pet.status_type === 'pending_first'
                                                         }"
                                                         x-text="pet.status_label">
                                                     </span>
@@ -272,7 +295,7 @@
 
                                         {{-- Click Action Hint --}}
                                         <div class="pt-0.5 text-right">
-                                            <span class="text-[10px] font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white group-hover:underline">
+                                            <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline">
                                                 View all adopted pets in directory →
                                             </span>
                                         </div>
@@ -285,8 +308,8 @@
                         </div>
 
                         {{-- Dropdown Footer --}}
-                        <div class="p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#252525] text-center">
-                            <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline">
+                        <div class="p-3 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#171923] text-center">
+                            <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:underline">
                                 Open Full Adopter Profiles Directory →
                             </a>
                         </div>
@@ -298,21 +321,21 @@
                 {{-- User Profile Dropdown --}}
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-[#1e1e1e] hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none transition shadow-2xs cursor-pointer">
+                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.06] focus:outline-none transition shadow-2xs cursor-pointer">
                             @if(Auth::user()->avatar_url)
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-gray-200 dark:border-gray-700 shadow-xs">
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                             @else
-                                <div class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-[#282828] text-gray-700 dark:text-gray-300 flex items-center justify-center font-extrabold text-xs border border-gray-200 dark:border-gray-700 shadow-xs">
+                                <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs">
                                     {{ Auth::user()->initials }}
                                 </div>
                             @endif
                             <div class="text-left">
-                                <span class="block text-xs font-bold text-gray-900 dark:text-white leading-tight">{{ Auth::user()->name }}</span>
-                                <span class="block text-[10px] text-gray-400 font-medium capitalize">{{ Auth::user()->role }}</span>
+                                <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ Auth::user()->name }}</span>
+                                <span class="block text-[10px] text-slate-400 font-medium capitalize">{{ Auth::user()->role }}</span>
                             </div>
 
                             <div class="ms-1">
-                                <svg class="fill-current h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <svg class="fill-current h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
                             </div>
@@ -340,49 +363,49 @@
     </div>
 
     {{-- Mobile Responsive Menu (Full Navigation for < lg screens) --}}
-    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden lg:hidden bg-white dark:bg-[#181818] border-t border-gray-100 dark:border-gray-800 shadow-xl">
+    <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden lg:hidden bg-white dark:bg-[#0C0D13] border-t border-slate-100 dark:border-white/[0.06] shadow-xl">
         <div class="p-4 space-y-3">
-            <div class="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
                 @if(Auth::user()->avatar_url)
-                    <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-xl object-cover border border-gray-200 dark:border-gray-700 shadow-xs">
+                    <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                 @else
-                    <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#282828] text-gray-700 dark:text-gray-300 flex items-center justify-center font-extrabold text-sm border border-gray-200 dark:border-gray-700 shadow-xs">
+                    <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-sm border border-slate-200 dark:border-white/[0.08] shadow-xs">
                         {{ Auth::user()->initials }}
                     </div>
                 @endif
                 <div>
-                    <div class="font-bold text-sm text-gray-900 dark:text-white">{{ Auth::user()->name }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ Auth::user()->email }} ({{ ucfirst(Auth::user()->role) }})</div>
+                    <div class="font-bold text-sm text-slate-900 dark:text-white">{{ Auth::user()->name }}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->email }} ({{ ucfirst(Auth::user()->role) }})</div>
                 </div>
             </div>
 
             {{-- Main Navigation Links --}}
             <div class="space-y-1">
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('dashboard') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('dashboard') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                     📊 Dashboard
                 </a>
-                <a href="{{ route('pets.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('pets.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('pets.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('pets.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                     🐾 Pets Catalog
                 </a>
                 @if(Auth::user()->role === 'admin')
-                    <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('users.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                    <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('users.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                         🛡️ User Management
                     </a>
                 @endif
-                <a href="{{ route('adoption-applications.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adoption-applications.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('adoption-applications.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adoption-applications.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                     📋 Adoption Requests
                 </a>
-                <a href="{{ route('adopters.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adopters.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('adopters.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adopters.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                     👥 Adopters Directory
                 </a>
-                <a href="{{ route('medical-logs.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('medical-logs.*') ? 'bg-gray-100 dark:bg-[#282828] text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                <a href="{{ route('medical-logs.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('medical-logs.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                     🩺 Medical Logs
                 </a>
             </div>
 
             {{-- Profile & Logout Links --}}
-            <div class="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-1">
-                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl">
+            <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] space-y-1">
+                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] rounded-xl">
                     ⚙️ {{ __('Profile') }}
                 </a>
                 <form method="POST" action="{{ route('logout') }}">

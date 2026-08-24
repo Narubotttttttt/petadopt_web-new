@@ -15,6 +15,7 @@ class PetController extends Controller
         $temperamentTags = TemperamentTag::orderBy('name')->get();
 
         return view('pets.create', [
+            'pet' => new Pet(),
             'temperamentTags' => $temperamentTags,
         ]);
     }

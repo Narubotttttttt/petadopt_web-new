@@ -28,7 +28,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-[#121212] text-gray-800 dark:text-gray-100 selection:bg-[#199CA4] selection:text-white transition-colors duration-150">
+    <body class="font-sans antialiased bg-[#F6FAFA] dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 selection:bg-[#199CA4] selection:text-white transition-colors duration-150">
         <div class="min-h-screen flex flex-col">
             <x-sidebar />
 
@@ -36,7 +36,7 @@
                 @include('layouts.navigation')
 
                 @isset($header)
-                    <header class="bg-white dark:bg-[#1e1e1e] border-b border-gray-200 dark:border-gray-800">
+                    <header class="bg-white dark:bg-[#11131A] border-b border-gray-200/80 dark:border-white/[0.06]">
                         <div class="w-full py-6 px-4 sm:px-6 lg:px-8">
                             {{ $header }}
                         </div>
