@@ -46,7 +46,7 @@ class AdminNotificationService
                 $pet = $app->pet;
                 if (!$pet) continue;
                 
-                $petName = $pet->name ?: 'Pet #' . $pet->id;
+                $petName = $pet->name ?: 'Pet no. ' . $pet->id;
                 $latestUpdate = $pet->healthUpdates->first();
                 
                 if ($latestUpdate) {
@@ -142,6 +142,8 @@ class AdminNotificationService
                     'time' => $latestTimestamp ? Carbon::createFromTimestamp($latestTimestamp)->diffForHumans() : 'Recently',
                     'is_read' => in_array($id, $readIds),
                     'url' => url('/adopters') . '?search=' . urlencode($adopterName),
+                    'action_url' => url('/adopters') . '?search=' . urlencode($adopterName),
+                    'action_hint' => 'View adopter profile & check-in history →',
                     'created_at' => $latestTimestamp ?: now()->timestamp,
                 ];
             }
@@ -150,7 +152,7 @@ class AdminNotificationService
         // 2. Pending Adoption Applications
         $pendingApps = AdoptionApplication::with('pet')->where('status', 'pending')->latest()->take(10)->get();
         foreach ($pendingApps as $pApp) {
-            $petName = $pApp->pet ? ($pApp->pet->name ?: 'Pet #' . $pApp->pet_id) : 'Pet #' . $pApp->pet_id;
+            $petName = $pApp->pet ? ($pApp->pet->name ?: 'Pet no. ' . $pApp->pet_id) : 'Pet no. ' . $pApp->pet_id;
             $id = 'app_' . $pApp->id;
 
             $applicantParts = preg_split('/\s+/', trim($pApp->applicant_name));
@@ -181,6 +183,8 @@ class AdminNotificationService
                 'time' => $pApp->created_at ? $pApp->created_at->diffForHumans() : 'Recently',
                 'is_read' => in_array($id, $readIds),
                 'url' => url('/adoption-applications/' . $pApp->id),
+                'action_url' => url('/adoption-applications/' . $pApp->id),
+                'action_hint' => 'Review submitted application & applicant details →',
                 'created_at' => $pApp->created_at ? $pApp->created_at->timestamp : 0,
             ];
         }

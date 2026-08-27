@@ -12,9 +12,9 @@
                 </button>
 
                 <div class="flex items-center gap-2.5">
-                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                    <img src="{{ asset('images/caws-logo.png') }}" alt="CDO Animal Welfare Society Inc." class="w-8 h-8 rounded-full object-contain bg-white dark:bg-white/[0.06] p-0.5 border border-slate-200 dark:border-white/[0.12] shadow-xs">
                     <div>
-                        <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">CAWS Pet Adoption</span>
+                        <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">CDO Animal Welfare Society Inc.</span>
                         <span class="block text-[10px] text-slate-400 font-medium leading-tight">Admin Portal</span>
                     </div>
                 </div>
@@ -227,7 +227,9 @@
                             <template x-if="list.length === 0">
                                 <div class="py-12 px-4 text-center">
                                     <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-400 flex items-center justify-center mx-auto mb-2 font-bold">
-                                        🔔
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                        </svg>
                                     </div>
                                     <p class="text-xs font-bold text-slate-700 dark:text-slate-300">No notifications in this tab</p>
                                     <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
@@ -235,7 +237,7 @@
                             </template>
 
                             <template x-for="item in list" :key="item.id">
-                                <a :href="item.action_url" 
+                                <a :href="item.action_url || item.url || '#'" 
                                     @click="markItem(item.id)"
                                     :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-slate-50 dark:bg-[#171923] hover:bg-slate-100 dark:hover:bg-[#1D1F2C]'"
                                     class="p-4 flex gap-3.5 transition block cursor-pointer group">
@@ -268,7 +270,7 @@
                                         <div class="flex items-center justify-between gap-2">
                                             <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 truncate" x-text="item.title"></span>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
-                                                <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet Adopted' : ' Pets Adopted')"></span>
+                                                <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet' : ' Pets')"></span>
                                             </span>
                                         </div>
 
@@ -277,7 +279,7 @@
                                             <template x-for="(pet, idx) in item.pet_details" :key="idx">
                                                 <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] group-hover:bg-white dark:group-hover:bg-[#1D1F2C] group-hover:border-slate-200 dark:group-hover:border-white/[0.12] transition">
                                                     <div class="flex items-center gap-1.5 min-w-0">
-                                                        <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="'🐾 ' + pet.pet_name"></span>
+                                                        <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="pet.pet_name"></span>
                                                     </div>
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
                                                         :class="{
@@ -295,8 +297,8 @@
 
                                         {{-- Click Action Hint --}}
                                         <div class="pt-0.5 text-right">
-                                            <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline">
-                                                View all adopted pets in directory →
+                                            <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline"
+                                                x-text="item.action_hint || (item.category === 'request' ? 'Review submitted application & applicant details →' : 'View adopter profile & check-in history →')">
                                             </span>
                                         </div>
 

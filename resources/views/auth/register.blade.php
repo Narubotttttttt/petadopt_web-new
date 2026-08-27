@@ -11,8 +11,10 @@
             <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#199CA4] via-[#41C1CB] to-[#14838B]"></div>
 
             <div class="text-center mb-8 pt-2">
-                <div class="flex justify-center mb-4">
-                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="h-16 w-16 rounded-2xl object-cover shadow-lg border-2 border-white dark:border-slate-700 ring-4 ring-[#199CA4]/20">
+                <div class="flex justify-center mb-6">
+                    <div class="relative">
+                        <img src="{{ asset('images/caws-logo.png') }}" alt="CDO Animal Welfare Society Inc." class="h-16 w-16 rounded-full object-contain bg-white dark:bg-[#0e1d20] p-1 shadow-xl border-2 border-white dark:border-slate-700 ring-4 ring-[#199CA4]/25">
+                    </div>
                 </div>
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
                     {{ $pageTitle ?? 'Create Staff Account' }}

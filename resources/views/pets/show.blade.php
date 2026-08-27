@@ -56,10 +56,10 @@
                 <div class="md:col-span-1">
                     <div class="w-full h-72 bg-slate-50 dark:bg-[#0C0D13] rounded-2xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-white/[0.08] shadow-2xs group relative">
                         @if($pet->photo_path)
-                            <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet #{{ $pet->id }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet no. {{ $pet->id }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             <div class="hidden w-full h-full bg-slate-100 dark:bg-[#0C0D13] items-center justify-center text-center p-6">
                                 <span class="text-6xl block mb-2">🐾</span>
-                                <span class="text-xs text-slate-500 font-bold">Pet #{{ $pet->id }}</span>
+                                <span class="text-xs text-slate-500 font-bold">Pet no. {{ $pet->id }}</span>
                             </div>
                         @else
                             <div class="text-center p-6">
@@ -94,7 +94,7 @@
                         </div>
                         <div class="bg-white dark:bg-[#171923] p-4 rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs">
                             <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-400">System ID</p>
-                            <p class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">Pet #{{ $pet->id }}</p>
+                            <p class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">Pet no. {{ $pet->id }}</p>
                         </div>
                     </div>
 

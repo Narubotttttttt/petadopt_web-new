@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'CAWS Pet Adoption'),
+    'name' => env('APP_NAME', 'CDO Animal Welfare Society Inc.'),
 
     /*
     |--------------------------------------------------------------------------

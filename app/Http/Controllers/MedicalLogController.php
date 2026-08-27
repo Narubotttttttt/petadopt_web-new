@@ -66,7 +66,7 @@ class MedicalLogController extends Controller
 
         $this->notifyAdoptersOfMedicalLog($log, $data['category']);
 
-        $petName = $log->pet->name ?? ('Pet #' . $log->pet_id);
+        $petName = $log->pet->name ?? ('Pet no. ' . $log->pet_id);
         session()->flash('success', "Medical log entry added for {$petName}.");
 
         if ($request->filled('redirect_to')) {
@@ -102,7 +102,7 @@ class MedicalLogController extends Controller
 
         $this->notifyAdoptersOfMedicalLog($medicalLog, $data['category']);
 
-        $petName = $medicalLog->pet->name ?? ('Pet #' . $medicalLog->pet_id);
+        $petName = $medicalLog->pet->name ?? ('Pet no. ' . $medicalLog->pet_id);
         session()->flash('success', "Medical log entry updated for {$petName}.");
 
         if ($request->filled('redirect_to')) {
@@ -115,7 +115,7 @@ class MedicalLogController extends Controller
     private function notifyAdoptersOfMedicalLog(MedicalLog $log, string $category): void
     {
         $pet = $log->pet;
-        $petName = ($pet && !empty($pet->name)) ? $pet->name : ('Pet #' . $log->pet_id);
+        $petName = ($pet && !empty($pet->name)) ? $pet->name : ('Pet no. ' . $log->pet_id);
         $categoryLabel = ucfirst(str_replace('_', ' ', $category));
 
         $title = $category === 'vaccination'

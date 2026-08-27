@@ -3,7 +3,7 @@
         <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
-                    Application for Pet #{{ $application->pet_id }}
+                    Application for Pet no. {{ $application->pet_id }}
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Review applicant details, verification documents, and update adoption status.</p>
             </div>
@@ -27,13 +27,17 @@
                     @if($application->pet && $application->pet->photo_path)
                         <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs relative bg-[#F0FBFB] dark:bg-[#122b30]">
                             <img src="{{ str_starts_with($application->pet->photo_path, 'http') ? $application->pet->photo_path : asset('storage/' . ltrim($application->pet->photo_path, '/')) }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div class="hidden w-full h-full bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] items-center justify-center text-2xl font-bold">🐾</div>
+                            <div class="hidden w-full h-full bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] items-center justify-center">
+                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 10.5C3.67 10.5 3 11.17 3 12s.67 1.5 1.5 1.5S6 12.83 6 12s-.67-1.5-1.5-1.5zm15 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm-11-4C7.67 6.5 7 7.17 7 8s.67 1.5 1.5 1.5S10 8.83 10 8s-.67-1.5-1.5-1.5zm7 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 11.5c-2.48 0-4.5 2.02-4.5 4.5 0 2.48 2.02 4.5 4.5 4.5s4.5-2.02 4.5-4.5c0-2.48-2.02-4.5-4.5-4.5z"/></svg>
+                            </div>
                         </div>
                     @else
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center text-2xl font-bold shrink-0">🐾</div>
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0">
+                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 10.5C3.67 10.5 3 11.17 3 12s.67 1.5 1.5 1.5S6 12.83 6 12s-.67-1.5-1.5-1.5zm15 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm-11-4C7.67 6.5 7 7.17 7 8s.67 1.5 1.5 1.5S10 8.83 10 8s-.67-1.5-1.5-1.5zm7 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 11.5c-2.48 0-4.5 2.02-4.5 4.5 0 2.48 2.02 4.5 4.5 4.5s4.5-2.02 4.5-4.5c0-2.48-2.02-4.5-4.5-4.5z"/></svg>
+                        </div>
                     @endif
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-800 dark:text-white">Pet #{{ $application->pet_id }}</h3>
+                        <h3 class="text-base font-extrabold text-slate-800 dark:text-white">Pet no. {{ $application->pet_id }}</h3>
                         <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}</p>
                     </div>
                 </div>
@@ -41,7 +45,8 @@
                 {{-- Applicant Information Card --}}
                 <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
                     <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span class="text-lg">👤</span> Applicant Contact Information
+                        <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span>Applicant Contact Information</span>
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
@@ -77,7 +82,8 @@
                 {{-- Application Details & Questionnaire Card --}}
                 <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
                     <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span class="text-lg">📋</span> Mobile Application Questionnaire Responses
+                        <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>Mobile Application Questionnaire Responses</span>
                     </h2>
                     
                     @php
@@ -126,7 +132,8 @@
                 {{-- Uploaded Screening Documents Card --}}
                 <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
                     <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span class="text-lg">🪪</span> Uploaded Verification Documents
+                        <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                        <span>Uploaded Verification Documents</span>
                     </h2>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -139,7 +146,7 @@
                             @if($application->valid_id_path)
                                 <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
                                     <img src="{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}" class="w-full h-40 object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" />
-                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">🔍 Click to Enlarge</button>
+                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">Click to Enlarge</button>
                                 </div>
                             @else
                                 <div class="p-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No Valid ID uploaded</div>
@@ -155,7 +162,7 @@
                             @if($application->barangay_certificate_path)
                                 <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
                                     <img src="{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}" class="w-full h-40 object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" />
-                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">🔍 Click to Enlarge</button>
+                                    <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">Click to Enlarge</button>
                                 </div>
                             @else
                                 <div class="p-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No Barangay Certificate uploaded</div>

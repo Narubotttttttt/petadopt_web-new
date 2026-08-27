@@ -69,7 +69,7 @@ class PetApiController extends Controller
 
         $data = [
             'id'             => $pet->id,
-            'name'           => $pet->name ?: ('Pet #' . $pet->id),
+            'name'           => $pet->name ?: ('Pet no. ' . $pet->id),
             'type'           => ucfirst($pet->type ?: 'Dog'),
             'breed'          => $pet->breed ?: 'Mixed Breed',
             'color'          => $pet->color ?: 'N/A',

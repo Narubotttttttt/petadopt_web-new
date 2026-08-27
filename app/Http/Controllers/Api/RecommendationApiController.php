@@ -149,7 +149,7 @@ class RecommendationApiController extends Controller
                             }
 
                             $rec['id'] = $petModel->id;
-                            $rec['name'] = $petModel->name ?: ('Pet #' . $petModel->id);
+                            $rec['name'] = $petModel->name ?: ('Pet no. ' . $petModel->id);
                             $rec['type'] = ucfirst($petModel->type ?: 'Dog');
                             $rec['breed'] = $petModel->breed ?: 'Mixed Breed';
                             $rec['color'] = $petModel->color ?: 'N/A';

@@ -10,14 +10,14 @@
             {{-- Logo --}}
             <div class="flex justify-center mb-6">
                 <div class="relative">
-                    <img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="h-20 w-20 rounded-2xl object-cover shadow-lg border-2 border-white dark:border-slate-700 ring-4 ring-[#199CA4]/20">
+                    <img src="{{ asset('images/caws-logo.png') }}" alt="CDO Animal Welfare Society Inc." class="h-20 w-20 rounded-full object-contain bg-white dark:bg-[#0e1d20] p-1.5 shadow-xl border-2 border-white dark:border-slate-700 ring-4 ring-[#199CA4]/25">
                 </div>
             </div>
 
             {{-- Title --}}
             <div class="text-center mb-8">
                 <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Staff Portal Login</h2>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">CDO Animal Welfare Society Dashboard</p>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">CDO Animal Welfare Society Inc.</p>
             </div>
 
             <x-auth-session-status class="mb-4" :status="session('status')" />

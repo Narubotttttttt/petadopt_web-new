@@ -76,7 +76,7 @@ class AdoptionApplicationController extends Controller
             $petName = $application->pet->name ?? 'your pet';
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
-                "🎉 Adoption Approved for {$petName}!",
+                "Adoption Approved for {$petName}!",
                 "Great news! Your adoption request for {$petName} was approved by CAWS staff! Check your notification bell for event details.",
                 ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id]
             );
@@ -90,7 +90,7 @@ class AdoptionApplicationController extends Controller
             foreach ($otherApplicants as $otherApp) {
                 \App\Services\FirebaseNotificationService::sendToUser(
                     $otherApp->applicant_email,
-                    "🐾 {$petName} Has Found a Home!",
+                    "{$petName} Has Found a Home!",
                     "The pet you requested ({$petName}) has found a forever home with another verified applicant. Browse other lovely pets available!",
                     ['type' => 'adoption_status', 'status' => 'adopted_by_other', 'pet_id' => $application->pet_id]
                 );
@@ -104,7 +104,7 @@ class AdoptionApplicationController extends Controller
             $petName = $application->pet->name ?? 'your requested pet';
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
-                "📋 Adoption Request Update — {$petName}",
+                "Adoption Request Update — {$petName}",
                 "Thank you for your interest in adopting {$petName}. Your application could not be approved at this time. Browse our other lovely pets waiting for a home!",
                 ['type' => 'adoption_status', 'status' => 'rejected', 'pet_id' => $application->pet_id]
             );

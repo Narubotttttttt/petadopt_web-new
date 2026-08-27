@@ -238,7 +238,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=20):
 
             results.append({
                 'pet_id'                 : pet['id'],
-                'name'                   : pet.get('name', f"Pet #{pet['id']}"),
+                'name'                   : pet.get('name', f"Pet no. {pet['id']}"),
                 'type'                   : pet.get('type', 'dog'),
                 'breed'                  : pet.get('breed', 'Mixed Breed'),
                 'age'                    : pet.get('age', 'Unknown'),
@@ -291,7 +291,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=20):
 
             results.append({
                 'pet_id'                 : pet['id'],
-                'name'                   : pet.get('name', f"Pet #{pet['id']}"),
+                'name'                   : pet.get('name', f"Pet no. {pet['id']}"),
                 'type'                   : pet.get('type', 'dog'),
                 'breed'                  : pet.get('breed', 'Mixed Breed'),
                 'age'                    : pet.get('age', 'Unknown'),

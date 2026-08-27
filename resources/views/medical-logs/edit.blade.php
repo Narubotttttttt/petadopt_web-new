@@ -26,7 +26,7 @@
                     <select name="pet_id" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white" required>
                         @foreach($pets as $p)
                             <option value="{{ $p->id }}" {{ old('pet_id', $medicalLog->pet_id) == $p->id ? 'selected' : '' }}>
-                                {{ $p->name ?? 'Pet #'.$p->id }} — {{ ucfirst($p->type) }} ({{ $p->breed }})
+                                {{ $p->name ?? 'Pet no. '.$p->id }} — {{ ucfirst($p->type) }} ({{ $p->breed }})
                             </option>
                         @endforeach
                     </select>

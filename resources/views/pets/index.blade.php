@@ -62,7 +62,7 @@
                                             @endif
                                         </div>
                                         <div>
-                                            <p class="font-extrabold text-slate-900 dark:text-white">Pet #{{ $pet->id }}</p>
+                                            <p class="font-extrabold text-slate-900 dark:text-white">Pet no. {{ $pet->id }}</p>
                                             <p class="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">{{ ucfirst($pet->gender ?? 'Unknown') }} • {{ $pet->age ?? 'Age N/A' }}</p>
                                         </div>
                                     </div>

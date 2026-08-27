@@ -44,7 +44,7 @@
                             <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] transition-colors text-xs sm:text-sm">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <a href="{{ route('pets.show', $log->pet) }}" class="font-extrabold text-slate-900 dark:text-white hover:text-[#199CA4] dark:hover:text-teal-400 hover:underline">
-                                        {{ $log->pet->name ?? 'Pet #'.$log->pet->id }}
+                                        {{ $log->pet->name ?? 'Pet no. '.$log->pet->id }}
                                     </a>
                                     <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">{{ ucfirst($log->pet->type ?? '') }}</p>
                                 </td>

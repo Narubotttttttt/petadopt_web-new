@@ -193,7 +193,7 @@ class AdoptionApiController extends Controller
                 return [
                     'log_id'       => $log->id,
                     'pet_id'       => $log->pet_id,
-                    'pet_name'     => ($pet && !empty($pet->name)) ? $pet->name : ('Pet #' . $log->pet_id),
+                    'pet_name'     => ($pet && !empty($pet->name)) ? $pet->name : ('Pet no. ' . $log->pet_id),
                     'category'     => ucfirst(str_replace('_', ' ', $log->category ?? 'checkup')),
                     'next_due_date' => $log->next_due_date->format('Y-m-d'),
                     'next_due_label' => $log->next_due_date->format('M d, Y'),

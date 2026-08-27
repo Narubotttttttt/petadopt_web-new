@@ -32,7 +32,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
                                     <div class="flex items-center gap-2.5">
                                         <span class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center text-xs">🐾</span>
-                                        <span>Pet #{{ $application->pet_id }} ({{ $application->pet->breed ?? 'Mixed Breed' }})</span>
+                                        <span>Pet no. {{ $application->pet_id }} ({{ $application->pet->breed ?? 'Mixed Breed' }})</span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">

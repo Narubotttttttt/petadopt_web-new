@@ -26,7 +26,7 @@
                         <option value="">Select pet</option>
                         @foreach($pets as $p)
                             <option value="{{ $p->id }}" {{ old('pet_id', optional($pet)->id) == $p->id ? 'selected' : '' }}>
-                                {{ $p->name ?? 'Pet #'.$p->id }} — {{ ucfirst($p->type) }} ({{ $p->breed }})
+                                {{ $p->name ?? 'Pet no. '.$p->id }} — {{ ucfirst($p->type) }} ({{ $p->breed }})
                             </option>
                         @endforeach
                     </select>

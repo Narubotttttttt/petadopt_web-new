@@ -76,7 +76,7 @@
                     <span class="inline-block px-2 py-0.5 rounded bg-white/20 text-[9px] uppercase tracking-wider font-extrabold text-teal-50 mb-0.5 backdrop-blur-xs border border-white/15">Latest Pet</span>
 
                     @if($latestPet)
-                        <h3 class="text-xl font-extrabold my-0.5 text-white tracking-tight">Pet #{{ $latestPet->id }}</h3>
+                        <h3 class="text-xl font-extrabold my-0.5 text-white tracking-tight">Pet no. {{ $latestPet->id }}</h3>
                         <p class="text-[11px] text-teal-100 font-medium truncate max-w-[130px]">{{ ucfirst($latestPet->type ?? '') }} • {{ $latestPet->breed ?? '—' }}</p>
                         <p class="text-[10px] text-teal-200/90">Added {{ $latestPet->created_at->diffForHumans() }}</p>
                     @else
@@ -153,7 +153,7 @@
                                 </div>
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ $application->applicant_name }}</div>
-                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Pet #{{ $application->pet_id }} ({{ $application->pet->name ?? ($application->pet->breed ?? 'Pet') }})</div>
+                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Pet no. {{ $application->pet_id }} ({{ $application->pet->name ?? ($application->pet->breed ?? 'Pet') }})</div>
                                 </div>
                             </div>
 

@@ -5,8 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'CAWS Pet Adoption') }}</title>
-        <link rel="icon" type="image/jpeg" href="{{ asset('images/caws-logo.jpg') }}">
+        <title>{{ config('app.name', 'CDO Animal Welfare Society Inc.') }}</title>
+        <link rel="icon" type="image/png" href="{{ asset('images/caws-logo.png') }}?v=2">
+        <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=2">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">

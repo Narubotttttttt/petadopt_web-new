@@ -3,7 +3,7 @@
 		<div class="px-4 py-6">
 			{{-- Brand Header (Clean unboxed style) --}}
 			<div class="flex items-center gap-3 mb-8 h-10 px-1">
-				<img src="{{ asset('images/caws-logo.jpg') }}" alt="CAWS Logo" class="w-10 h-10 shrink-0 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] bg-transparent">
+				<img src="{{ asset('images/caws-logo.png') }}" alt="CDO Animal Welfare Society Inc." class="w-10 h-10 shrink-0 rounded-full object-contain bg-white dark:bg-white/[0.06] p-0.5 border border-slate-200 dark:border-white/[0.12] shadow-xs">
 				<div class="whitespace-nowrap min-w-0">
 					<h2 class="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate">CDO Animal Welfare</h2>
 					<p class="text-xs text-slate-400 dark:text-slate-400 font-medium truncate">Society Inc.</p>

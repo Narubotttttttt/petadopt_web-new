@@ -237,7 +237,7 @@
                                                 @endif
 
                                                 <div class="min-w-0 flex-1">
-                                                    <span class="font-bold text-slate-800 dark:text-white block truncate text-sm leading-tight">{{ $pet && $pet->name ? $pet->name : 'Pet #'.$app->pet_id }}</span>
+                                                    <span class="font-bold text-slate-800 dark:text-white block truncate text-sm leading-tight">{{ $pet && $pet->name ? $pet->name : 'Pet no. '.$app->pet_id }}</span>
                                                     <span class="text-xs text-slate-500 dark:text-slate-400 block truncate mt-0.5 font-medium">{{ $pet ? (ucfirst($pet->type) . ' • ' . $pet->breed) : 'Adopted' }}</span>
                                                 </div>
 
@@ -306,7 +306,7 @@
                                                         'check_in_date' => $h->check_in_date ? $h->check_in_date->format('M d, Y') : '',
                                                     ];
                                                 })->values()->toArray();
-                                                $petNameStr = $pet ? ($pet->name ?: 'Pet #'.$pet->id) : 'Pet #'.$app->pet_id;
+                                                $petNameStr = $pet ? ($pet->name ?: 'Pet no. '.$pet->id) : 'Pet no. '.$app->pet_id;
                                             @endphp
                                             <div class="flex flex-col items-center justify-center min-h-[48px]">
                                                 <button type="button"
@@ -338,7 +338,7 @@
                                                         'administered_by' => $m->administered_by ?: ($m->creator ? $m->creator->name : 'Staff'),
                                                     ];
                                                 })->values()->toArray() : [];
-                                                $petNameStr = $pet ? ($pet->name ?: 'Pet #'.$pet->id) : 'Pet #'.$app->pet_id;
+                                                $petNameStr = $pet ? ($pet->name ?: 'Pet no. '.$pet->id) : 'Pet no. '.$app->pet_id;
                                             @endphp
                                             <div class="flex items-center justify-end gap-2 min-h-[48px]">
                                                 <button type="button" 
