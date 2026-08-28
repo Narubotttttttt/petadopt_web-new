@@ -13,11 +13,13 @@ use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password', 'role',
-        'avatar', 'fcm_token'])]
+        'avatar', 'fcm_token', 'digital_signature_path'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+
+    protected $appends = ['avatar_url', 'digital_signature_url'];
 
     /**
      * Get the attributes that should be cast.
@@ -59,7 +61,20 @@ class User extends Authenticatable
             return $this->avatar;
         }
 
-        return Storage::disk('public')->url($this->avatar);
+        return asset('storage/' . ltrim($this->avatar, '/'));
+    }
+
+    public function getDigitalSignatureUrlAttribute(): ?string
+    {
+        if (empty($this->digital_signature_path)) {
+            return null;
+        }
+
+        if (str_starts_with($this->digital_signature_path, 'http')) {
+            return $this->digital_signature_path;
+        }
+
+        return asset('storage/' . ltrim($this->digital_signature_path, '/'));
     }
 
     public function adopterPreference()

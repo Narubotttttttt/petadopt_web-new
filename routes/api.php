@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->first();
 
         $userData = $user->toArray();
+        $userData['digital_signature_url'] = $user->digital_signature_url;
         if ($profile) {
             $userData['adopter_code'] = $profile->adopter_code;
             $userData['phone'] = $profile->phone;
@@ -63,6 +64,9 @@ Route::middleware('auth:sanctum')->group(function () {
             $userData['city'] = $profile->city;
             $userData['province'] = $profile->province;
             $userData['status'] = $profile->status;
+            if (empty($userData['digital_signature_url'])) {
+                $userData['digital_signature_url'] = $profile->digital_signature_url;
+            }
         }
 
         return response()->json($userData);
@@ -101,6 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::post('/adoption-applications', [AdoptionApiController::class, 'store']);
     Route::get('/my-applications', [AdoptionApiController::class, 'myApplications']);
+    Route::post('/adoption-applications/{id}/sign', [AdoptionApiController::class, 'signContract']);
+    Route::post('/user/update-signature', [AdoptionApiController::class, 'updateUserSignature']);
     Route::get('/adoption-applications/{id}/contract', function (Request $request, $id) {
         $app = \App\Models\AdoptionApplication::findOrFail($id);
         // Check ownership via applicant_email since there is no user_id column

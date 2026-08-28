@@ -147,16 +147,24 @@
             padding: 0 8px;
             width: 33.3%;
         }
-        .sig-line {
+        .sig-box {
+            height: 64px;
             border-bottom: 1px solid #000;
-            height: 28px;
-            display: block;
-            width: 100%;
+            text-align: center;
+            vertical-align: bottom;
+        }
+        .sig-box img {
+            max-height: 60px;
+            max-width: 180px;
+            vertical-align: bottom;
+            display: inline-block;
+            margin-bottom: 0px;
         }
         .sig-label {
             font-size: 10px;
             text-align: center;
-            margin-top: 2px;
+            margin-top: 4px;
+            line-height: 1.3;
         }
 
         /* ── ADOPTER FIELDS ─────────────────────── */
@@ -235,13 +243,17 @@
 <div class="field-row">
     <table>
         <tr>
-            <td style="width: 50%;">
+            <td style="width: 38%;">
                 <span class="field-label">Date: </span>
-                <span class="field-value" style="min-width: 180px;">{{ \Carbon\Carbon::parse($application->approved_at ?? now())->format('F j, Y') }}</span>
+                <span class="field-value" style="min-width: 120px;">{{ \Carbon\Carbon::parse($application->scheduled_at ?? $application->approved_at ?? now())->format('F j, Y') }}</span>
             </td>
-            <td style="width: 50%;">
-                <span class="field-label">ID# Tag: </span>
-                <span class="field-value" style="min-width: 100px;">{{ $pet->id }}</span>
+            <td style="width: 42%;">
+                <span class="field-label">Pickup Location: </span>
+                <span class="field-value" style="min-width: 140px;">{{ $application->event_location ?: 'CAWS Adoption Event, CDO' }}</span>
+            </td>
+            <td style="width: 20%; text-align: right;">
+                <span class="field-label">ID Tag: </span>
+                <span class="field-value" style="min-width: 60px; text-align: center;">Pet no. {{ $pet->id }}</span>
             </td>
         </tr>
     </table>
@@ -339,16 +351,30 @@
 <div class="sig-section">
     <table>
         <tr>
-            <td>
-                <span class="sig-line"></span>
-                <div class="sig-label">Printed Name over<br>Signature of Adopter</div>
+            <td style="width: 33.3%; vertical-align: bottom;">
+                <div class="sig-box">
+                    @if(!empty($signatureBase64))
+                        <img src="{{ $signatureBase64 }}" alt="Adopter Signature" />
+                    @endif
+                </div>
+                <div class="sig-label">
+                    <strong>{{ $adopter->name ?? $application->applicant_name }}</strong><br>
+                    Printed Name over Signature of Adopter
+                </div>
             </td>
-            <td>
-                <span class="sig-line"></span>
-                <div class="sig-label">CDO Animal Welfare Society Inc.<br>Staff</div>
+            <td style="width: 33.3%; vertical-align: bottom;">
+                <div class="sig-box">
+                    @if(!empty($staffSignatureBase64))
+                        <img src="{{ $staffSignatureBase64 }}" alt="Staff Signature" />
+                    @endif
+                </div>
+                <div class="sig-label">
+                    <strong>{{ $staffName ?? 'CDO Animal Welfare Society Inc.' }}</strong><br>
+                    CAWS Authorized Representative
+                </div>
             </td>
-            <td>
-                <span class="sig-line"></span>
+            <td style="width: 33.3%; vertical-align: bottom;">
+                <div class="sig-box"></div>
                 <div class="sig-label">Printed Name over<br>Witness</div>
             </td>
         </tr>
@@ -383,9 +409,13 @@
 
 {{-- ════════════════ NOTARY ════════════════ --}}
 <div class="notary-section clearfix">
+    @php
+        $notaryDate = ($application && $application->signed_at) ? $application->signed_at : (($application && $application->scheduled_at) ? $application->scheduled_at : now());
+        $notaryLocation = !empty($application->event_location) ? $application->event_location : 'Cagayan de Oro City, Philippines';
+    @endphp
     <p>
-        SUBSCRIBED AND SWORN TO before me this _______ day of ___________________ 20___ at _____________________________,
-        affiant exhibited to me his/her residence certificate below his signature.
+        SUBSCRIBED AND SWORN TO before me this <strong><u>{{ $notaryDate->format('jS') }}</u></strong> day of <strong><u>{{ $notaryDate->format('F') }}</u></strong>, <strong><u>{{ $notaryDate->format('Y') }}</u></strong> at <strong><u>{{ $notaryLocation }}</u></strong>,
+        affiant exhibited to me his/her valid identification and residence credentials on record.
     </p>
     <div class="notary-sig">
         <div class="notary-sig-line"></div>

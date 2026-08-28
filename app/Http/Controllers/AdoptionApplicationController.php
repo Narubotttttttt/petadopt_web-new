@@ -44,6 +44,15 @@ class AdoptionApplicationController extends Controller
 
         if ($willBeApproved && ! $wasApproved) {
             $data['approved_at'] = now();
+
+            // Auto-attach approving staff member's digital signature if configured on record
+            $currentUser = Auth::user();
+            if ($currentUser && !empty($currentUser->digital_signature_path) && empty($application->staff_signature_path)) {
+                $data['staff_signature_path'] = $currentUser->digital_signature_path;
+                $data['staff_id'] = $currentUser->id;
+                $data['staff_name'] = $currentUser->name;
+                $data['staff_signed_at'] = now();
+            }
         }
 
         $application->update($data);
@@ -115,11 +124,65 @@ class AdoptionApplicationController extends Controller
         return back()->with('success', 'Adoption application updated successfully.');
     }
 
+    /**
+     * Staff signature endorsement for an adoption contract.
+     */
+    public function signAsStaff(Request $request, AdoptionApplication $application): RedirectResponse
+    {
+        $user = Auth::user();
+
+        if ($request->boolean('use_saved_signature')) {
+            if (empty($user->digital_signature_path) || !\Illuminate\Support\Facades\Storage::disk('public')->exists($user->digital_signature_path)) {
+                return back()->withErrors(['staff_signature' => 'No saved staff signature found on your profile. Please set your signature in Account Settings.']);
+            }
+
+            $application->update([
+                'staff_signature_path' => $user->digital_signature_path,
+                'staff_id'             => $user->id,
+                'staff_name'           => $user->name,
+                'staff_signed_at'      => now(),
+            ]);
+
+            return back()->with('success', 'Official CAWS staff signature attached successfully.');
+        }
+
+        $request->validate([
+            'signature_data' => ['required', 'string'],
+        ]);
+
+        $sigData = $request->signature_data;
+        if (preg_match('/^data:image\/(\w+);base64,/', $sigData, $type)) {
+            $sigData = substr($sigData, strpos($sigData, ',') + 1);
+        }
+        $decoded = base64_decode($sigData);
+        if (!$decoded) {
+            return back()->withErrors(['staff_signature' => 'Invalid signature image data.']);
+        }
+
+        $fileName = 'signatures/staff_app_' . $application->id . '_' . time() . '.png';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decoded);
+
+        $application->update([
+            'staff_signature_path' => $fileName,
+            'staff_id'             => $user->id,
+            'staff_name'           => $user->name,
+            'staff_signed_at'      => now(),
+        ]);
+
+        // Auto-sync to staff user profile if they don't have one
+        if (empty($user->digital_signature_path)) {
+            $user->digital_signature_path = $fileName;
+            $user->save();
+        }
+
+        return back()->with('success', 'Official CAWS staff signature attached successfully.');
+    }
+
     public function downloadContract($id)
     {
         $application = $id instanceof AdoptionApplication
-            ? $id->load(['pet'])
-            : AdoptionApplication::with(['pet'])->findOrFail($id);
+            ? $id->load(['pet', 'staff'])
+            : AdoptionApplication::with(['pet', 'staff'])->findOrFail($id);
 
         if (!in_array($application->status, ['approved', 'adopted'])) {
             return response()->json(['error' => 'Contract is only available for approved or adopted applications.'], 403);
@@ -157,7 +220,43 @@ class AdoptionApplicationController extends Controller
             $adopter->address = trim($addrMatches[1]);
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.adoption_contract', compact('application', 'adopter', 'pet'));
+        // 1. Prepare Adopter Digital Signature
+        $signatureBase64 = null;
+        if (!empty($application->signature_path)) {
+            $sigFullPath = storage_path('app/public/' . ltrim($application->signature_path, '/'));
+            if (file_exists($sigFullPath)) {
+                $sigData = file_get_contents($sigFullPath);
+                $signatureBase64 = 'data:image/png;base64,' . base64_encode($sigData);
+            }
+        }
+
+        // 2. Prepare Staff Digital Signature & Name
+        $staffSignatureBase64 = null;
+        $staffPath = $application->staff_signature_path;
+
+        // Fall back to staff profile signature if application path is not explicitly set
+        if (empty($staffPath) && $application->staff && !empty($application->staff->digital_signature_path)) {
+            $staffPath = $application->staff->digital_signature_path;
+        }
+
+        if (!empty($staffPath)) {
+            $staffFullPath = storage_path('app/public/' . ltrim($staffPath, '/'));
+            if (file_exists($staffFullPath)) {
+                $staffSigData = file_get_contents($staffFullPath);
+                $staffSignatureBase64 = 'data:image/png;base64,' . base64_encode($staffSigData);
+            }
+        }
+
+        $staffName = $application->staff_name ?: ($application->staff?->name ?? 'CDO Animal Welfare Society Inc.');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.adoption_contract', compact(
+            'application',
+            'adopter',
+            'pet',
+            'signatureBase64',
+            'staffSignatureBase64',
+            'staffName'
+        ));
 
         $filename = 'Adoption_Contract_' . str_replace(' ', '_', $pet->name ?? 'Pet') . '.pdf';
 

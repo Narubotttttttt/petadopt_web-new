@@ -57,6 +57,40 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the staff/admin user's digital signature on record.
+     */
+    public function updateSignature(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'signature_data' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+        $sigData = $request->signature_data;
+
+        if (preg_match('/^data:image\/(\w+);base64,/', $sigData, $type)) {
+            $sigData = substr($sigData, strpos($sigData, ',') + 1);
+        }
+
+        $decoded = base64_decode($sigData);
+        if (!$decoded) {
+            return back()->withErrors(['signature' => 'Invalid signature image data.']);
+        }
+
+        $fileName = 'signatures/staff_sig_' . $user->id . '_' . time() . '.png';
+        Storage::disk('public')->put($fileName, $decoded);
+
+        if ($user->digital_signature_path && Storage::disk('public')->exists($user->digital_signature_path)) {
+            Storage::disk('public')->delete($user->digital_signature_path);
+        }
+
+        $user->digital_signature_path = $fileName;
+        $user->save();
+
+        return Redirect::route('profile.edit')->with('status', 'signature-updated');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

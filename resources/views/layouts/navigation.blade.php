@@ -106,6 +106,7 @@
                             return this.notifications;
                         },
                         async refresh() {
+                            if (document.hidden) return;
                             try {
                                 const res = await fetch('{{ route("admin.notifications.index") }}', {
                                     headers: { 'Accept': 'application/json' }
@@ -146,12 +147,12 @@
                             } catch (e) {}
                         }
                     }" 
-                    x-init="setInterval(() => refresh(), 5000)"
+                    x-init="setInterval(() => refresh(), 30000)"
                     @click.outside="openNotif = false">
                     
                     {{-- Bell Trigger Button --}}
                     <button type="button" 
-                        @click.stop="openNotif = !openNotif"
+                        @click.stop="openNotif = !openNotif; if (openNotif) refresh();"
                         class="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] focus:outline-none transition cursor-pointer"
                         title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

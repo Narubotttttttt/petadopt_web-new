@@ -170,6 +170,108 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Adoption Contract & Digital Signatures Card --}}
+                <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            <span>Adoption Contract Digital Signatures</span>
+                        </h2>
+                        @if(in_array($application->status, ['approved', 'adopted']))
+                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline flex items-center gap-1">
+                                <span>Preview Full PDF</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        {{-- 1. Adopter Signature Box --}}
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Adopter Signature</span>
+                                @if($application->signature_path)
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Signed
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Awaiting
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($application->signature_path)
+                                <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
+                                    <img src="{{ $application->signature_url }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer" onclick="openDocModal('{{ $application->signature_url }}', 'Adopter Digital Signature')" alt="Adopter Signature" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    <p class="font-bold text-slate-800 dark:text-white">{{ $application->applicant_name }}</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Signed: {{ $application->signed_at ? $application->signed_at->format('M d, Y h:i A') : 'On file' }}</p>
+                                </div>
+                            @else
+                                <div class="py-4 text-center text-slate-400 dark:text-slate-500">
+                                    <p class="text-xs font-semibold">No adopter signature yet.</p>
+                                    <p class="text-[10px] mt-0.5">Will be signed via mobile app upon approval.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- 2. Staff Signature Box --}}
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. CAWS Staff Representative</span>
+                                @if($application->staff_signature_path || ($application->staff && $application->staff->digital_signature_path))
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Endorsed
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Pending Staff Sign
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($application->staff_signature_path || ($application->staff && $application->staff->digital_signature_path))
+                                @php
+                                    $staffSigSrc = $application->staff_signature_url ?: ($application->staff ? $application->staff->digital_signature_url : null);
+                                    $staffRepName = $application->staff_name ?: ($application->staff?->name ?? Auth::user()->name);
+                                @endphp
+                                <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
+                                    <img src="{{ $staffSigSrc }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer" onclick="openDocModal('{{ $staffSigSrc }}', 'Staff Digital Signature')" alt="Staff Signature" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    <p class="font-bold text-slate-800 dark:text-white">{{ $staffRepName }}</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">CAWS Authorized Representative</p>
+                                </div>
+                            @else
+                                <div class="py-2 text-center text-slate-400 dark:text-slate-500 space-y-2">
+                                    <p class="text-xs font-semibold">Staff signature not attached.</p>
+                                    @if(Auth::user()->digital_signature_path)
+                                        <form action="{{ route('adoption-applications.sign-as-staff', $application) }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="use_saved_signature" value="1">
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-bold shadow-2xs transition cursor-pointer">
+                                                Attach My Saved Signature
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('profile.edit') }}" class="inline-block text-[11px] text-[#199CA4] hover:underline font-bold">
+                                            Set up signature in Profile →
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
             {{-- Quick Action Sidebar --}}

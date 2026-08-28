@@ -4,8 +4,10 @@
         {{-- Page Header (Compact) --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Admin Dashboard</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Welcome back! Overview of pets, adoption applications, and medical records.</p>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    {{ Auth::user()->role === 'admin' ? 'Admin Dashboard' : 'Staff Dashboard' }}
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Welcome back, {{ Auth::user()->name }}! Overview of pets, adoption applications, and medical records.</p>
             </div>
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] shadow-2xs text-xs font-bold text-slate-700 dark:text-slate-300">

@@ -24,7 +24,14 @@ class AdoptersProfile extends Model
         'province',
         'status',
         'admin_notes',
+        'digital_signature_path',
         'last_check_in_date',
+    ];
+
+    protected $appends = [
+        'initials',
+        'avatar_url',
+        'digital_signature_url',
     ];
 
     protected $casts = [
@@ -63,6 +70,22 @@ class AdoptersProfile extends Model
         if ($this->user && $this->user->avatar_url) {
             return $this->user->avatar_url;
         }
+        return null;
+    }
+
+    public function getDigitalSignatureUrlAttribute(): ?string
+    {
+        if (!empty($this->digital_signature_path)) {
+            if (str_starts_with($this->digital_signature_path, 'http')) {
+                return $this->digital_signature_path;
+            }
+            return asset('storage/' . ltrim($this->digital_signature_path, '/'));
+        }
+
+        if ($this->user && $this->user->digital_signature_url) {
+            return $this->user->digital_signature_url;
+        }
+
         return null;
     }
 }

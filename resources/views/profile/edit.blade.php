@@ -42,10 +42,13 @@
             {{-- 1. Profile Information & Photo --}}
             @include('profile.partials.update-profile-information-form')
 
-            {{-- 2. Password Security --}}
+            {{-- 2. Official Staff E-Signature --}}
+            @include('profile.partials.update-signature-form')
+
+            {{-- 3. Password Security --}}
             @include('profile.partials.update-password-form')
 
-            {{-- 3. Danger Zone --}}
+            {{-- 4. Danger Zone --}}
             @include('profile.partials.delete-user-form')
         </div>
 

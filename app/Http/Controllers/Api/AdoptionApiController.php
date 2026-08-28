@@ -154,6 +154,9 @@ class AdoptionApiController extends Controller
                     'scheduledRaw'     => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('Y-m-d H:i:s') : null,
                     'eventLocation'    => $isApproved ? $app->event_location : null,
                     'eventNotes'       => $isApproved ? $app->event_notes : null,
+                    'signature_url'    => $app->signature_url,
+                    'signed_at'        => $app->signed_at ? $app->signed_at->format('M d, Y h:i A') : null,
+                    'is_signed'        => !empty($app->signature_path),
                     'updated_at'       => $app->updated_at ? $app->updated_at->toIso8601String() : null,
                     'created_at'       => $app->created_at ? $app->created_at->toIso8601String() : null,
                 ];
@@ -162,6 +165,134 @@ class AdoptionApiController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $applications,
+        ]);
+    }
+
+    public function signContract(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'signature_data'      => ['nullable', 'string'],
+            'use_saved_signature' => ['nullable', 'boolean'],
+        ]);
+
+        $user = $request->user();
+        $application = AdoptionApplication::with('pet')->findOrFail($id);
+
+        if ($application->applicant_email !== $user->email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.',
+            ], 403);
+        }
+
+        if (!in_array($application->status, ['approved', 'adopted'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Signing is only allowed for approved or adopted applications.',
+            ], 400);
+        }
+
+        // Case A: Using on-record saved signature (Option 1)
+        if ($request->boolean('use_saved_signature') || empty($request->input('signature_data'))) {
+            $savedPath = $user->digital_signature_path;
+            if (empty($savedPath)) {
+                $profile = \App\Models\AdoptersProfile::where('email', $user->email)->first();
+                $savedPath = $profile ? $profile->digital_signature_path : null;
+            }
+
+            if (!empty($savedPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($savedPath)) {
+                $application->update([
+                    'signature_path' => $savedPath,
+                    'signed_at'      => now(),
+                ]);
+
+                return response()->json([
+                    'success'       => true,
+                    'message'       => 'Adoption contract signed successfully using your on-record signature.',
+                    'signature_url' => $application->signature_url,
+                    'signed_at'     => $application->signed_at->format('M d, Y h:i A'),
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No saved digital signature on record. Please draw your signature.',
+            ], 422);
+        }
+
+        // Case B: Newly drawn signature
+        $sigData = $request->signature_data;
+        if (preg_match('/^data:image\/(\w+);base64,/', $sigData, $type)) {
+            $sigData = substr($sigData, strpos($sigData, ',') + 1);
+        }
+        $decoded = base64_decode($sigData);
+        if (!$decoded) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid signature image data.',
+            ], 422);
+        }
+
+        $fileName = 'signatures/sig_app_' . $application->id . '_' . time() . '.png';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decoded);
+
+        // 1. Update Adoption Application
+        $application->update([
+            'signature_path' => $fileName,
+            'signed_at'      => now(),
+        ]);
+
+        // 2. Auto-sync to User and AdoptersProfile (eGov style)
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update(['digital_signature_path' => $fileName]);
+
+        \App\Models\AdoptersProfile::where('email', $user->email)->update([
+            'digital_signature_path' => $fileName,
+        ]);
+
+        return response()->json([
+            'success'       => true,
+            'message'       => 'Adoption contract signed and saved to your profile successfully!',
+            'signature_url' => asset('storage/' . $fileName),
+            'signed_at'     => $application->signed_at->format('M d, Y h:i A'),
+        ]);
+    }
+
+    public function updateUserSignature(Request $request): JsonResponse
+    {
+        $request->validate([
+            'signature_data' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+        $sigData = $request->signature_data;
+        if (preg_match('/^data:image\/(\w+);base64,/', $sigData, $type)) {
+            $sigData = substr($sigData, strpos($sigData, ',') + 1);
+        }
+        $decoded = base64_decode($sigData);
+        if (!$decoded) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid signature image data.',
+            ], 422);
+        }
+
+        $fileName = 'signatures/sig_user_' . $user->id . '_' . time() . '.png';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decoded);
+
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update(['digital_signature_path' => $fileName]);
+
+        \App\Models\AdoptersProfile::where('email', $user->email)->update([
+            'digital_signature_path' => $fileName,
+        ]);
+
+        return response()->json([
+            'success'               => true,
+            'message'               => 'Digital signature updated successfully.',
+            'digital_signature_url' => asset('storage/' . $fileName),
         ]);
     }
 
