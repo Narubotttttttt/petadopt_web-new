@@ -25,17 +25,34 @@ class AdoptionApplicationController extends Controller
 
     public function update(Request $request, AdoptionApplication $application): RedirectResponse
     {
-        $isAdmin = Auth::user()->role === 'admin';
+        $currentUser = Auth::user();
+        $isAdmin = $currentUser->role === 'admin';
 
-        $allowedStatuses = $isAdmin
-            ? ['under_review', 'pending', 'approved', 'rejected']
-            : ['under_review', 'pending', 'rejected'];
+        if (!$isAdmin) {
+            // Stage 1: Staff Evaluator Action
+            $request->validate([
+                'evaluation_recommendation' => ['required', 'in:recommended,needs_followup,not_recommended'],
+                'evaluation_notes'          => ['nullable', 'string', 'max:2000'],
+            ]);
 
+            $application->update([
+                'evaluator_id'              => $currentUser->id,
+                'evaluator_name'            => $currentUser->name,
+                'evaluation_recommendation' => $request->evaluation_recommendation,
+                'evaluation_notes'          => $request->evaluation_notes,
+                'evaluated_at'              => now(),
+                'status'                    => 'under_review',
+            ]);
+
+            return back()->with('success', 'Staff evaluation recorded and forwarded to Administrator for decision.');
+        }
+
+        // Stage 2: Admin Executive Decision
         $request->validate([
-            'status' => ['required', Rule::in($allowedStatuses)],
-            'scheduled_at' => ['nullable', 'date'],
+            'status'         => ['required', Rule::in(['under_review', 'pending', 'approved', 'rejected'])],
+            'scheduled_at'   => ['nullable', 'date'],
             'event_location' => ['nullable', 'string', 'max:255'],
-            'event_notes' => ['nullable', 'string'],
+            'event_notes'    => ['nullable', 'string'],
         ]);
 
         $data = $request->only(['status', 'scheduled_at', 'event_location', 'event_notes']);
@@ -45,13 +62,11 @@ class AdoptionApplicationController extends Controller
         if ($willBeApproved && ! $wasApproved) {
             $data['approved_at'] = now();
 
-            // Auto-attach approving staff member's digital signature if configured on record
-            $currentUser = Auth::user();
-            if ($currentUser && !empty($currentUser->digital_signature_path) && empty($application->staff_signature_path)) {
+            if (!empty($currentUser->digital_signature_path) && empty($application->staff_signature_path)) {
                 $data['staff_signature_path'] = $currentUser->digital_signature_path;
-                $data['staff_id'] = $currentUser->id;
-                $data['staff_name'] = $currentUser->name;
-                $data['staff_signed_at'] = now();
+                $data['staff_id']             = $currentUser->id;
+                $data['staff_name']           = $currentUser->name;
+                $data['staff_signed_at']      = now();
             }
         }
 
@@ -64,7 +79,6 @@ class AdoptionApplicationController extends Controller
             }
             $application->pet->update($petUpdate);
 
-            // Auto-sync or create AdoptersProfile
             if (!empty($application->applicant_email)) {
                 $user = \App\Models\User::where('email', $application->applicant_email)->first();
                 $adopterCode = $user ? sprintf('ADP-%04d', $user->id) : sprintf('ADP-%04d', $application->id + 100);
@@ -81,16 +95,14 @@ class AdoptionApplicationController extends Controller
                 );
             }
 
-            // Send real-time FCM Push Notification to the approved adopter
             $petName = $application->pet->name ?? 'your pet';
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
                 "Adoption Approved for {$petName}!",
-                "Great news! Your adoption request for {$petName} was approved by CAWS staff! Check your notification bell for event details.",
+                "Great news! Your adoption request for {$petName} was approved by CAWS! Check your notification bell for event details.",
                 ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id]
             );
 
-            // Notify other pending applicants that the pet was adopted
             $otherApplicants = AdoptionApplication::where('pet_id', $application->pet_id)
                 ->where('id', '!=', $application->id)
                 ->whereIn('status', ['pending', 'under_review'])
@@ -113,7 +125,7 @@ class AdoptionApplicationController extends Controller
             $petName = $application->pet->name ?? 'your requested pet';
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
-                "Adoption Request Update — {$petName}",
+                "Adoption Request Update - {$petName}",
                 "Thank you for your interest in adopting {$petName}. Your application could not be approved at this time. Browse our other lovely pets waiting for a home!",
                 ['type' => 'adoption_status', 'status' => 'rejected', 'pet_id' => $application->pet_id]
             );

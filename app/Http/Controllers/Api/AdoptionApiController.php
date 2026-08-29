@@ -29,6 +29,26 @@ class AdoptionApiController extends Controller
 
         $user = $request->user();
 
+        $existing = AdoptionApplication::where('pet_id', $request->pet_id)
+            ->where(function ($q) use ($user, $request) {
+                if ($user && !empty($user->email)) {
+                    $q->where('applicant_email', $user->email);
+                } elseif ($request->filled('email')) {
+                    $q->where('applicant_email', $request->email);
+                }
+            })
+            ->whereIn('status', ['pending', 'under_review', 'approved'])
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have an active adoption application for this pet (' . ucfirst(str_replace('_', ' ', $existing->status)) . ').',
+                'application_id' => $existing->id,
+                'status' => $existing->status,
+            ], 422);
+        }
+
         $messageParts = [];
         if ($request->filled('proposed_pet_name')) {
             $messageParts[] = "Proposed Pet Name: " . $request->proposed_pet_name;
@@ -143,6 +163,14 @@ class AdoptionApiController extends Controller
 
                 return [
                     'id'               => $app->id,
+                    'pet_id'           => (int)$app->pet_id,
+                    'petId'            => (int)$app->pet_id,
+                    'pet'              => $pet ? [
+                        'id'    => (int)$pet->id,
+                        'name'  => $displayName,
+                        'type'  => $pet->type,
+                        'breed' => $pet->breed,
+                    ] : null,
                     'petName'          => $displayName,
                     'petBreed'         => $pet ? ($pet->breed ?: 'Mixed') : 'N/A',
                     'petType'          => $pet ? ucfirst($pet->type ?: 'Dog') : 'N/A',

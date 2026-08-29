@@ -29,8 +29,17 @@ class PetApiController extends Controller
             });
         }
 
-        $pets = $query->latest()->get()->map(function ($pet) {
-            return $this->transformPet($pet, true);
+        $user = $request->user('sanctum');
+        $userEmail = $user?->email;
+        $userApplications = !empty($userEmail)
+            ? \App\Models\AdoptionApplication::where('applicant_email', $userEmail)
+                ->whereIn('status', ['pending', 'under_review', 'approved'])
+                ->get()
+                ->keyBy('pet_id')
+            : collect();
+
+        $pets = $query->latest()->get()->map(function ($pet) use ($userApplications) {
+            return $this->transformPet($pet, true, $userApplications->get($pet->id));
         });
 
         return response()->json([
@@ -39,7 +48,7 @@ class PetApiController extends Controller
         ]);
     }
 
-    public function show($id): JsonResponse
+    public function show(Request $request, $id): JsonResponse
     {
         $pet = Pet::with(['temperamentTags', 'medicalLogs'])->find($id);
 
@@ -50,13 +59,22 @@ class PetApiController extends Controller
             ], 404);
         }
 
+        $user = $request->user('sanctum');
+        $userEmail = $user?->email;
+        $userApp = !empty($userEmail)
+            ? \App\Models\AdoptionApplication::where('applicant_email', $userEmail)
+                ->where('pet_id', $pet->id)
+                ->whereIn('status', ['pending', 'under_review', 'approved'])
+                ->first()
+            : null;
+
         return response()->json([
             'success' => true,
-            'data'    => $this->transformPet($pet, true),
+            'data'    => $this->transformPet($pet, true, $userApp),
         ]);
     }
 
-    private function transformPet(Pet $pet, bool $includeDetails = false): array
+    private function transformPet(Pet $pet, bool $includeDetails = false, $userApp = null): array
     {
         $photoUrl = null;
         if ($pet->photo_path) {
@@ -68,17 +86,20 @@ class PetApiController extends Controller
         }
 
         $data = [
-            'id'             => $pet->id,
-            'name'           => $pet->name ?: ('Pet no. ' . $pet->id),
-            'type'           => ucfirst($pet->type ?: 'Dog'),
-            'breed'          => $pet->breed ?: 'Mixed Breed',
-            'color'          => $pet->color ?: 'N/A',
-            'gender'         => ucfirst($pet->gender ?: 'Unknown'),
-            'age'            => $pet->age ?: 'Unknown',
-            'description'    => $pet->description ?: 'No description provided.',
-            'image'          => $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
-            'status'         => $pet->status,
-            'temperament'    => $pet->temperamentTags->pluck('name')->toArray(),
+            'id'                 => $pet->id,
+            'name'               => $pet->name ?: ('Pet no. ' . $pet->id),
+            'type'               => ucfirst($pet->type ?: 'Dog'),
+            'breed'              => $pet->breed ?: 'Mixed Breed',
+            'color'              => $pet->color ?: 'N/A',
+            'gender'             => ucfirst($pet->gender ?: 'Unknown'),
+            'age'                => $pet->age ?: 'Unknown',
+            'description'        => $pet->description ?: 'No description provided.',
+            'image'              => $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
+            'status'             => $pet->status,
+            'temperament'        => $pet->temperamentTags->pluck('name')->toArray(),
+            'has_applied'        => $userApp !== null,
+            'application_status' => $userApp?->status,
+            'application_id'     => $userApp?->id,
         ];
 
         if ($includeDetails) {

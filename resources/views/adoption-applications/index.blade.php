@@ -40,18 +40,27 @@
                                     <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">{{ $application->applicant_phone }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border
-                                        {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
-                                        {{ $application->status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : '' }}
-                                        {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
-                                        {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
-                                        <span class="w-1.5 h-1.5 rounded-full
-                                            {{ $application->status === 'approved' ? 'bg-emerald-500' : '' }}
-                                            {{ $application->status === 'rejected' ? 'bg-rose-500' : '' }}
-                                            {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
-                                            {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
-                                        {{ ucfirst(str_replace('_', ' ', $application->status)) }}
-                                    </span>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border w-fit
+                                            {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
+                                            {{ $application->status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : '' }}
+                                            {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
+                                            {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
+                                            <span class="w-1.5 h-1.5 rounded-full
+                                                {{ $application->status === 'approved' ? 'bg-emerald-500' : '' }}
+                                                {{ $application->status === 'rejected' ? 'bg-rose-500' : '' }}
+                                                {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
+                                                {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
+                                            {{ ucfirst(str_replace('_', ' ', $application->status)) }}
+                                        </span>
+
+                                        @if($application->evaluated_at)
+                                            <span class="inline-flex items-center gap-1 text-[10px] text-[#199CA4] dark:text-[#41C1CB] font-bold">
+                                                <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                <span>Screened ({{ ucfirst(str_replace('_', ' ', $application->evaluation_recommendation ?? 'Evaluated')) }})</span>
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-medium">
                                     {{ $application->created_at ? $application->created_at->format('M d, Y · h:i A') : '—' }}
@@ -71,7 +80,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500">
-                                    <div class="text-2xl mb-1">📋</div>
+                                    <svg class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                     No adoption applications submitted yet.
                                 </td>
                             </tr>

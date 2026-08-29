@@ -27,12 +27,18 @@ class AdoptionApplication extends Model
         'scheduled_at',
         'event_location',
         'event_notes',
+        'evaluator_id',
+        'evaluator_name',
+        'evaluation_recommendation',
+        'evaluation_notes',
+        'evaluated_at',
     ];
 
     protected $casts = [
         'scheduled_at'    => 'datetime',
         'signed_at'       => 'datetime',
         'staff_signed_at' => 'datetime',
+        'evaluated_at'    => 'datetime',
     ];
 
     protected $appends = [
@@ -53,13 +59,20 @@ class AdoptionApplication extends Model
 
     public function getStaffSignatureUrlAttribute(): ?string
     {
-        if (!$this->staff_signature_path) {
-            return null;
+        if ($this->staff_signature_path) {
+            if (str_starts_with($this->staff_signature_path, 'http')) {
+                return $this->staff_signature_path;
+            }
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->staff_signature_path)) {
+                return asset('storage/' . ltrim($this->staff_signature_path, '/'));
+            }
         }
-        if (str_starts_with($this->staff_signature_path, 'http')) {
-            return $this->staff_signature_path;
+
+        if ($this->staff && $this->staff->digital_signature_path) {
+            return $this->staff->digital_signature_url;
         }
-        return asset('storage/' . ltrim($this->staff_signature_path, '/'));
+
+        return null;
     }
 
     public function pet()
@@ -70,5 +83,10 @@ class AdoptionApplication extends Model
     public function staff()
     {
         return $this->belongsTo(User::class, 'staff_id');
+    }
+
+    public function evaluator()
+    {
+        return $this->belongsTo(User::class, 'evaluator_id');
     }
 }

@@ -105,6 +105,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/admin/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('admin.notifications.markRead');
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
 });
 
 // Public signed route for contract downloads — accessible by mobile browsers without web session

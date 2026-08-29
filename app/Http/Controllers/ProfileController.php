@@ -87,6 +87,12 @@ class ProfileController extends Controller
         $user->digital_signature_path = $fileName;
         $user->save();
 
+        \App\Models\AdoptionApplication::where('staff_id', $user->id)
+            ->update([
+                'staff_signature_path' => $fileName,
+                'staff_name'           => $user->name,
+            ]);
+
         return Redirect::route('profile.edit')->with('status', 'signature-updated');
     }
 

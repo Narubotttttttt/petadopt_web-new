@@ -19,36 +19,51 @@
                         <tr>
                             <th class="px-6 py-3.5">User</th>
                             <th class="px-6 py-3.5">Email</th>
-                            <th class="px-6 py-3.5">Role</th>
+                            <th class="px-6 py-3.5">Current Role</th>
                             <th class="px-6 py-3.5">Created Date</th>
+                            <th class="px-6 py-3.5 text-right">Assign Role</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06] text-xs sm:text-sm">
-                        @foreach($users as $user)
+                        @foreach($users as $u)
                             <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
-                                        @if($user->avatar_url)
-                                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-2xs flex-shrink-0">
+                                        @if($u->avatar_url)
+                                            <img src="{{ $u->avatar_url }}" alt="{{ $u->name }}" class="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-2xs flex-shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-2xs flex-shrink-0">
-                                                {{ $user->initials }}
+                                                {{ $u->initials }}
                                             </div>
                                         @endif
                                         <div>
-                                            <span class="block text-slate-900 dark:text-white font-extrabold text-sm leading-tight">{{ $user->name }}</span>
-                                            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-normal mt-0.5">ID: #{{ $user->id }}</span>
+                                            <span class="block text-slate-900 dark:text-white font-extrabold text-sm leading-tight">{{ $u->name }}</span>
+                                            <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-normal mt-0.5">ID: #{{ $u->id }}</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300 font-semibold">{{ $user->email }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300 font-semibold">{{ $u->email }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border {{ $user->role === 'admin' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60' }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $user->role === 'admin' ? 'bg-indigo-500' : 'bg-sky-500' }}"></span>
-                                        {{ ucfirst($user->role) }}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border {{ $u->role === 'admin' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $u->role === 'admin' ? 'bg-indigo-500' : 'bg-sky-500' }}"></span>
+                                        {{ ucfirst($u->role) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-medium">{{ $user->created_at->format('M d, Y') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-medium">{{ $u->created_at->format('M d, Y') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($u->id === Auth::id())
+                                        <span class="text-xs text-slate-400 font-medium italic">Current Account</span>
+                                    @else
+                                        <form action="{{ route('users.update-role', $u) }}" method="POST" class="inline-flex items-center gap-2">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="role" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#12272b] text-xs font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] cursor-pointer">
+                                                <option value="staff" {{ $u->role === 'staff' ? 'selected' : '' }}>Staff</option>
+                                                <option value="admin" {{ $u->role === 'admin' ? 'selected' : '' }}>Admin</option>
+                                            </select>
+                                        </form>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
