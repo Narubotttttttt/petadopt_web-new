@@ -93,7 +93,7 @@
                 <label class="block text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Assigned System Role</label>
                 <div class="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-[#12272b] border border-gray-200/80 dark:border-slate-700">
                     <div class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xs">
-                        🛡️
+                        
                     </div>
                     <div>
                         <span class="text-xs font-bold text-gray-900 dark:text-white capitalize">{{ $user->role }}</span>
@@ -112,7 +112,7 @@
 
                 @if (session('status') === 'profile-updated')
                     <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)" class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                        <span>✓</span>
+                        
                         <span>Profile updated successfully!</span>
                     </div>
                 @endif

@@ -5,9 +5,9 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
                 <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                    {{ Auth::user()->role === 'admin' ? 'Admin Dashboard' : 'Staff Dashboard' }}
+                    {{ Auth::user()?->role === 'admin' ? 'Admin Dashboard' : 'Staff Dashboard' }}
                 </h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Welcome back, {{ Auth::user()->name }}! Overview of pets, adoption applications, and medical records.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Welcome back, {{ Auth::user()?->name }}! Overview of pets, adoption applications, and medical records.</p>
             </div>
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] shadow-2xs text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -138,7 +138,7 @@
             <div class="lg:col-span-5 bg-white dark:bg-[#12141C] rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] flex flex-col justify-between overflow-hidden">
                 <div class="p-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/50 dark:bg-[#171923]">
                     <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-lg bg-[#199CA4]/10 dark:bg-white/[0.06] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold text-xs">📋</div>
+                        <div class="w-6 h-6 rounded-lg bg-[#199CA4]/10 dark:bg-white/[0.06] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold text-xs"></div>
                         <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Recent Requests</h2>
                     </div>
                     <a href="{{ route('adoption-applications.index') }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-slate-400 dark:hover:text-white transition-colors">
@@ -151,7 +151,7 @@
                         <div class="p-3 hover:bg-slate-50/70 dark:hover:bg-[#181A24] transition-colors flex items-center justify-between gap-2.5">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center text-xs font-bold shrink-0 border border-slate-200 dark:border-white/[0.08]">
-                                    🐾
+                                    
                                 </div>
                                 <div class="min-w-0">
                                     <div class="text-xs font-bold text-slate-900 dark:text-white truncate">{{ $application->applicant_name }}</div>

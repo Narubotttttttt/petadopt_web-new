@@ -90,7 +90,7 @@
                     {{-- Guideline Baseline --}}
                     <div class="absolute bottom-6 left-6 right-6 border-b border-gray-300/80 dark:border-white/10 pointer-events-none flex justify-between items-center text-[10px] text-gray-400 dark:text-slate-600 select-none pb-1">
                         <span>Staff Signature Line</span>
-                        <span>✕</span>
+                        
                     </div>
 
                     {{-- Placeholder hint --}}

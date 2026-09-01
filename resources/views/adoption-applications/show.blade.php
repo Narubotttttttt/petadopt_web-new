@@ -241,7 +241,7 @@
                             @if($application->staff_signature_path || ($application->staff && $application->staff->digital_signature_path))
                                 @php
                                     $staffSigSrc = $application->staff_signature_url ?: ($application->staff ? $application->staff->digital_signature_url : null);
-                                    $staffRepName = $application->staff_name ?: ($application->staff?->name ?? Auth::user()->name);
+                                    $staffRepName = $application->staff_name ?: ($application->staff?->name ?? (Auth::user()?->name ?? 'CAWS Representative'));
                                 @endphp
                                 <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
                                     <img src="{{ $staffSigSrc }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer" onclick="openDocModal('{{ $staffSigSrc }}', 'Staff Digital Signature')" alt="Staff Signature" />
@@ -253,7 +253,7 @@
                             @else
                                 <div class="py-2 text-center text-slate-400 dark:text-slate-500 space-y-2">
                                     <p class="text-xs font-semibold">Staff signature not attached.</p>
-                                    @if(Auth::user()->digital_signature_path)
+                                    @if(Auth::user()?->digital_signature_path)
                                         <form action="{{ route('adoption-applications.sign-as-staff', $application) }}" method="POST">
                                             @csrf
                                             <input type="hidden" name="use_saved_signature" value="1">
@@ -331,7 +331,7 @@
             {{-- Decision & Evaluation Sidebar --}}
             <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-6 h-fit" x-data="{ currentStatus: '{{ old('status', $application->status) }}' }">
                 
-                @if(Auth::user()->role === 'admin')
+                @if(Auth::user()?->role === 'admin')
                     {{-- Admin Decision Panel --}}
                     <div>
                         <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Administrative Decision</h2>
@@ -436,7 +436,7 @@
         <div class="relative max-w-4xl w-full bg-white dark:bg-[#0e1d20] border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 px-2">
                 <h3 id="docModalTitle" class="text-sm font-extrabold text-slate-800 dark:text-white">Document Preview</h3>
-                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer">✕</button>
+                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer"></button>
             </div>
             <div class="py-4 flex justify-center max-h-[75vh] overflow-auto">
                 <img id="docModalImage" src="" class="max-w-full max-h-[70vh] rounded-2xl object-contain shadow-md" />

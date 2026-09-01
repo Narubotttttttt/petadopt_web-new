@@ -17,6 +17,7 @@ class AdoptersProfile extends Model
         'user_id',
         'adopter_code',
         'full_name',
+        'avatar',
         'email',
         'phone',
         'address',
@@ -67,25 +68,29 @@ class AdoptersProfile extends Model
 
     public function getAvatarUrlAttribute(): ?string
     {
-        if ($this->user && $this->user->avatar_url) {
-            return $this->user->avatar_url;
+        if (empty($this->avatar)) {
+            return null;
         }
-        return null;
+
+        if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
+            return $this->avatar;
+        }
+
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
+        return $root . '/storage/' . ltrim($this->avatar, '/');
     }
 
     public function getDigitalSignatureUrlAttribute(): ?string
     {
-        if (!empty($this->digital_signature_path)) {
-            if (str_starts_with($this->digital_signature_path, 'http')) {
-                return $this->digital_signature_path;
-            }
-            return asset('storage/' . ltrim($this->digital_signature_path, '/'));
+        if (empty($this->digital_signature_path)) {
+            return null;
         }
 
-        if ($this->user && $this->user->digital_signature_url) {
-            return $this->user->digital_signature_url;
+        if (str_starts_with($this->digital_signature_path, 'http')) {
+            return $this->digital_signature_path;
         }
 
-        return null;
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
+        return $root . '/storage/' . ltrim($this->digital_signature_path, '/');
     }
 }

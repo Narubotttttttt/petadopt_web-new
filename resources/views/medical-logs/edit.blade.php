@@ -3,7 +3,7 @@
         <div class="bg-white dark:bg-[#0e1d20] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
 
             <div class="flex items-center gap-3 mb-8 border-b-2 border-[#199CA4] pb-4">
-                <span class="text-2xl">🩺</span>
+                
                 <h1 class="text-xl font-bold text-gray-900 dark:text-white">Edit Medical Log</h1>
             </div>
 
@@ -58,7 +58,7 @@
                         <template x-if="category === 'vaccination'">
                             <div>
                                 <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-800 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                    📅 By default, next due date is auto-set to <strong>6 months</strong> from the date above.
+                                     By default, next due date is auto-set to <strong>6 months</strong> from the date above.
                                     You can override it below if needed.
                                 </div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">

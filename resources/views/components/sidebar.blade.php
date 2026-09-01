@@ -47,9 +47,9 @@
 					<span class="whitespace-nowrap tracking-wide">Pets</span>
 				</a>
 
-				{{-- Users (Admin only) --}}
-				@if(Auth::user()->role === 'admin')
-					<a href="{{ route('users.index') }}" title="User Management"
+				{{-- Staff Management (Admin only) --}}
+				@if(Auth::user()?->role === 'admin')
+					<a href="{{ route('users.index') }}" title="Staff Management"
 						class="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ request()->routeIs('users.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.06] text-[#199CA4] dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/[0.03]' }}">
 						@if(request()->routeIs('users.*'))
 							<span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#199CA4]"></span>
@@ -57,7 +57,7 @@
 						<span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ request()->routeIs('users.*') ? 'bg-[#199CA4]/15 text-[#199CA4] dark:text-[#41C1CB]' : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-white/[0.08] group-hover:text-slate-900 dark:group-hover:text-white' }}">
 							<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.89 0 5.578.92 7.879 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0zm6 7v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a4 4 0 014-4h6a4 4 0 014 4z" /></svg>
 						</span>
-						<span class="whitespace-nowrap tracking-wide">User Management</span>
+						<span class="whitespace-nowrap tracking-wide">Staff Management</span>
 					</a>
 				@endif
 

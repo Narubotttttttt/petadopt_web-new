@@ -39,14 +39,24 @@ Route::middleware('auth:sanctum')->group(function () {
         $user = $request->user();
         $path = $request->file('avatar')->store('avatars', 'public');
         $avatarUrl = asset('storage/' . $path);
-        \Illuminate\Support\Facades\DB::table('users')
-            ->where('id', $user->id)
-            ->update(['avatar' => $avatarUrl]);
+
+        $profile = \App\Models\AdoptersProfile::firstOrCreate(
+            ['email' => $user->email],
+            [
+                'user_id'      => $user->id,
+                'adopter_code' => sprintf('ADP-%04d', $user->id),
+                'full_name'    => $user->name,
+                'status'       => 'active',
+            ]
+        );
+        $profile->avatar = $path;
+        $profile->save();
+
         $updatedUser = \App\Models\User::find($user->id);
         return response()->json([
-            'success' => true,
+            'success'    => true,
             'avatar_url' => $avatarUrl,
-            'user' => $updatedUser,
+            'user'       => $updatedUser,
         ]);
     });
     Route::get('/user', function (Request $request) {
@@ -55,15 +65,35 @@ Route::middleware('auth:sanctum')->group(function () {
             ->orWhere('user_id', $user->id)
             ->first();
 
+        if ($profile && empty($profile->address)) {
+            $latestApp = \App\Models\AdoptionApplication::where('applicant_email', $user->email)
+                ->latest()
+                ->first();
+            if ($latestApp) {
+                $addr = $latestApp->address;
+                if (empty($addr) && !empty($latestApp->message) && preg_match('/Address:\s*(.+?)(?=\n[A-Za-z\s]+:|$)/is', $latestApp->message, $m)) {
+                    $addr = trim($m[1]);
+                }
+                if (!empty($addr)) {
+                    $profile->address = $addr;
+                    if (empty($profile->phone) && !empty($latestApp->phone)) {
+                        $profile->phone = $latestApp->phone;
+                    }
+                    $profile->save();
+                }
+            }
+        }
+
         $userData = $user->toArray();
         $userData['digital_signature_url'] = $user->digital_signature_url;
         if ($profile) {
             $userData['adopter_code'] = $profile->adopter_code;
-            $userData['phone'] = $profile->phone;
+            $userData['phone'] = $profile->phone ?: $user->phone;
             $userData['address'] = $profile->address;
             $userData['city'] = $profile->city;
             $userData['province'] = $profile->province;
             $userData['status'] = $profile->status;
+            $userData['admin_notes'] = $profile->admin_notes;
             if (empty($userData['digital_signature_url'])) {
                 $userData['digital_signature_url'] = $profile->digital_signature_url;
             }
@@ -83,6 +113,9 @@ Route::middleware('auth:sanctum')->group(function () {
         $user = $request->user();
         $code = sprintf('ADP-%04d', $user->id);
 
+        $existingProf = \App\Models\AdoptersProfile::where('email', $user->email)->first();
+        $currentStatus = $existingProf?->status ?? 'active';
+
         $profile = \App\Models\AdoptersProfile::updateOrCreate(
             ['email' => $user->email],
             [
@@ -93,7 +126,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 'address'      => $request->address,
                 'city'         => $request->city ?: 'Cagayan de Oro City',
                 'province'     => $request->province ?: 'Misamis Oriental',
-                'status'       => 'active',
+                'status'       => $currentStatus,
             ]
         );
 

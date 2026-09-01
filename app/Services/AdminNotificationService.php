@@ -7,13 +7,40 @@ use App\Models\PetHealthUpdate;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
 
 class AdminNotificationService
 {
     public static function getNotifications(): array
     {
-        $notifications = [];
+        $rawNotifications = Cache::remember('admin_notifications_raw', 15, function () {
+            return self::buildNotifications();
+        });
+
         $readIds = Session::get('admin_read_notifications', []);
+
+        $notifications = array_map(function ($n) use ($readIds) {
+            $n['is_read'] = in_array($n['id'], $readIds);
+            return $n;
+        }, $rawNotifications);
+
+        $unreadCount = count(array_filter($notifications, fn($n) => !$n['is_read']));
+
+        return [
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount,
+            'counts' => [
+                'all' => count($notifications),
+                'checkins' => count(array_filter($notifications, fn($n) => $n['category'] === 'checkin')),
+                'overdue' => count(array_filter($notifications, fn($n) => $n['category'] === 'overdue')),
+                'requests' => count(array_filter($notifications, fn($n) => $n['category'] === 'request')),
+            ]
+        ];
+    }
+
+    private static function buildNotifications(): array
+    {
+        $notifications = [];
 
         // 1. Group check-ins and overdue alerts by Adopter
         $approvedApps = AdoptionApplication::with([
@@ -140,7 +167,7 @@ class AdminNotificationService
                     'pets_count' => count($apps),
                     'pet_details' => $petDetails,
                     'time' => $latestTimestamp ? Carbon::createFromTimestamp($latestTimestamp)->diffForHumans() : 'Recently',
-                    'is_read' => in_array($id, $readIds),
+                    'is_read' => false,
                     'url' => url('/adopters') . '?search=' . urlencode($adopterName),
                     'action_url' => url('/adopters') . '?search=' . urlencode($adopterName),
                     'action_hint' => 'View adopter profile & check-in history →',
@@ -181,7 +208,7 @@ class AdminNotificationService
                     ]
                 ],
                 'time' => $pApp->created_at ? $pApp->created_at->diffForHumans() : 'Recently',
-                'is_read' => in_array($id, $readIds),
+                'is_read' => false,
                 'url' => url('/adoption-applications/' . $pApp->id),
                 'action_url' => url('/adoption-applications/' . $pApp->id),
                 'action_hint' => 'Review submitted application & applicant details →',
@@ -192,18 +219,12 @@ class AdminNotificationService
         // Sort all by created_at desc
         usort($notifications, fn($a, $b) => $b['created_at'] <=> $a['created_at']);
 
-        $unreadCount = count(array_filter($notifications, fn($n) => !$n['is_read']));
+        return $notifications;
+    }
 
-        return [
-            'notifications' => $notifications,
-            'unread_count' => $unreadCount,
-            'counts' => [
-                'all' => count($notifications),
-                'checkins' => count(array_filter($notifications, fn($n) => $n['category'] === 'checkin')),
-                'overdue' => count(array_filter($notifications, fn($n) => $n['category'] === 'overdue')),
-                'requests' => count(array_filter($notifications, fn($n) => $n['category'] === 'request')),
-            ]
-        ];
+    public static function clearCache(): void
+    {
+        Cache::forget('admin_notifications_raw');
     }
 
     public static function markAllRead(): void

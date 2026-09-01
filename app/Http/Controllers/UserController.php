@@ -17,31 +17,59 @@ class UserController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $users = User::whereIn('role', ['admin', 'staff'])
+        $users = User::with('staffProfile')
+            ->whereIn('role', ['admin', 'staff'])
             ->orderByRaw("FIELD(role, 'admin', 'staff')")
             ->orderBy('name')
             ->get();
 
+        foreach ($users as $u) {
+            if (!$u->staffProfile) {
+                $code = $u->role === 'admin'
+                    ? 'ADM-' . str_pad($u->id, 4, '0', STR_PAD_LEFT)
+                    : 'STF-' . str_pad($u->id, 4, '0', STR_PAD_LEFT);
+                $title = $u->role === 'admin'
+                    ? 'Shelter Director / Head Administrator'
+                    : 'CAWS Adoption & Care Staff';
+                \App\Models\StaffProfile::create([
+                    'user_id' => $u->id,
+                    'staff_code' => $code,
+                    'full_name' => $u->name,
+                    'position_title' => $title,
+                    'status' => 'active',
+                ]);
+                $u->load('staffProfile');
+            }
+        }
+
         return view('users.index', compact('users'));
     }
 
-    public function updateRole(Request $request, User $user): RedirectResponse
+    public function updateStaffProfile(Request $request, User $user): RedirectResponse
     {
         $admin = auth()->user();
         if (!$admin || $admin->role !== 'admin') {
             abort(403, 'Unauthorized');
         }
 
-        $request->validate([
-            'role' => ['required', 'in:admin,staff'],
+        $validated = $request->validate([
+            'position_title' => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'specialization' => ['nullable', 'string', 'max:255'],
+            'status' => ['required', 'in:active,on_leave,inactive'],
         ]);
 
-        if ($user->id === $admin->id && $request->role !== 'admin') {
-            return back()->withErrors(['role' => 'You cannot demote your own administrator account.']);
+        $profile = $user->staffProfile ?: new \App\Models\StaffProfile(['user_id' => $user->id]);
+        $profile->full_name = $user->name;
+        $profile->position_title = $validated['position_title'];
+        $profile->phone = $validated['phone'] ?? null;
+        $profile->specialization = $validated['specialization'] ?? null;
+        $profile->status = $validated['status'];
+        if (empty($profile->staff_code)) {
+            $profile->staff_code = ($user->role === 'admin' ? 'ADM-' : 'STF-') . str_pad($user->id, 4, '0', STR_PAD_LEFT);
         }
+        $profile->save();
 
-        $user->update(['role' => $request->role]);
-
-        return back()->with('success', "Role for {$user->name} updated to " . ucfirst($request->role) . '.');
+        return back()->with('success', "Staff profile for {$user->name} updated successfully.");
     }
 }

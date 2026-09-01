@@ -76,12 +76,13 @@ class PetApiController extends Controller
 
     private function transformPet(Pet $pet, bool $includeDetails = false, $userApp = null): array
     {
+        $rootUrl = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
         $photoUrl = null;
         if ($pet->photo_path) {
             if (str_starts_with($pet->photo_path, 'http')) {
                 $photoUrl = $pet->photo_path;
             } else {
-                $photoUrl = asset('storage/' . ltrim($pet->photo_path, '/'));
+                $photoUrl = $rootUrl . '/storage/' . ltrim($pet->photo_path, '/');
             }
         }
 

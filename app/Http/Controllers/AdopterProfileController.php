@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class AdopterProfileController extends Controller
@@ -50,26 +51,6 @@ class AdopterProfileController extends Controller
             });
         }
 
-        if ($filter === 'overdue') {
-            $query->whereHas('pet.medicalLogs', function($q) {
-                $q->where('category', 'vaccination')
-                  ->whereNotNull('next_due_date')
-                  ->where('next_due_date', '<', now()->toDateString());
-            });
-        } elseif ($filter === 'due_soon') {
-            $query->whereHas('pet.medicalLogs', function($q) {
-                $q->where('category', 'vaccination')
-                  ->whereNotNull('next_due_date')
-                  ->whereBetween('next_due_date', [now()->toDateString(), now()->addDays(14)->toDateString()]);
-            });
-        } elseif ($filter === 'up_to_date') {
-            $query->whereHas('pet.medicalLogs', function($q) {
-                $q->where('category', 'vaccination')
-                  ->whereNotNull('next_due_date')
-                  ->where('next_due_date', '>', now()->addDays(14)->toDateString());
-            });
-        }
-
         $allApplications = $query->latest('updated_at')->get();
 
         // Preload users and adopters_profile by email
@@ -81,8 +62,8 @@ class AdopterProfileController extends Controller
             return strtolower(trim($p->email));
         });
 
-        // Group by adopter email / name so multi-pet adopters are presented cleanly
-        $groupedAdopters = $allApplications->groupBy(function($item) {
+        // Group by adopter email / name and compute compliance & status dynamically
+        $allGroupedAdopters = $allApplications->groupBy(function($item) {
             return strtolower(trim($item->applicant_email ?: $item->applicant_name));
         })->map(function($apps) use ($userMap, $profileMap) {
             $primary = $apps->first();
@@ -90,10 +71,22 @@ class AdopterProfileController extends Controller
             $user = $userMap->get($emailKey);
             $profile = $profileMap->get($emailKey);
 
+            if (!$profile && !empty($emailKey)) {
+                $profile = \App\Models\AdoptersProfile::firstOrCreate(
+                    ['email' => $emailKey],
+                    [
+                        'user_id'      => $user?->id,
+                        'adopter_code' => $user ? sprintf('ADP-%04d', $user->id) : sprintf('APP-%04d', $primary->id),
+                        'full_name'    => $primary->applicant_name,
+                        'phone'        => $primary->applicant_phone,
+                        'status'       => 'active',
+                    ]
+                );
+            }
+
             $adopterIdNumber = $profile?->adopter_code 
                 ?: ($user ? sprintf('ADP-%04d', $user->id) : sprintf('APP-%04d', $primary->id));
             $avatarUrl = $user && !empty($user->avatar) ? $user->avatar_url : null;
-            $adopterStatus = $profile?->status ?? 'active';
 
             // Extract address from profile or application
             $resolvedAddress = $profile?->address;
@@ -101,37 +94,113 @@ class AdopterProfileController extends Controller
                 $resolvedAddress = trim($m[1]);
             }
 
+            // Calculate Monthly Mobile Report Compliance across all adopted pets
+            $hasOverdueReport = false;
+            $maxOverdueDays = 0;
+            $hasNewAdoption = false;
+            $minDueDays = 999;
+            $nextEarliestDueDate = null;
+
+            foreach ($apps as $app) {
+                $pet = $app->pet;
+                $adoptedDate = $app->approved_at ?? $app->signed_at ?? $app->updated_at ?? $app->created_at;
+                $latestUpdate = $pet?->healthUpdates?->first();
+
+                if ($latestUpdate) {
+                    $lastReportDate = $latestUpdate->check_in_date ?? $latestUpdate->created_at;
+                    $nextDue = Carbon::parse($lastReportDate)->addDays(30);
+                    $app->next_report_due = $nextDue;
+
+                    if (now()->greaterThan($nextDue)) {
+                        $app->is_report_overdue = true;
+                        $app->report_overdue_days = (int) $nextDue->diffInDays(now());
+                        $hasOverdueReport = true;
+                        if ($app->report_overdue_days > $maxOverdueDays) {
+                            $maxOverdueDays = $app->report_overdue_days;
+                        }
+                    } else {
+                        $app->is_report_overdue = false;
+                        $app->report_due_days = (int) now()->diffInDays($nextDue);
+                        if ($app->report_due_days < $minDueDays) {
+                            $minDueDays = $app->report_due_days;
+                            $nextEarliestDueDate = $nextDue;
+                        }
+                    }
+                } else {
+                    $nextDue = Carbon::parse($adoptedDate)->addDays(30);
+                    $app->next_report_due = $nextDue;
+
+                    if (now()->greaterThan($nextDue)) {
+                        $app->is_report_overdue = true;
+                        $app->report_overdue_days = (int) $nextDue->diffInDays(now());
+                        $hasOverdueReport = true;
+                        if ($app->report_overdue_days > $maxOverdueDays) {
+                            $maxOverdueDays = $app->report_overdue_days;
+                        }
+                    } else {
+                        $app->is_report_overdue = false;
+                        $app->report_due_days = (int) now()->diffInDays($nextDue);
+                        $hasNewAdoption = true;
+                        if ($app->report_due_days < $minDueDays) {
+                            $minDueDays = $app->report_due_days;
+                            $nextEarliestDueDate = $nextDue;
+                        }
+                    }
+                }
+            }
+
+            // Determine Adopter Status Code, Label, and Badge Theme
+            $manualStatus = $profile?->status;
+            if (in_array($manualStatus, ['restricted', 'blacklisted'])) {
+                $statusCode = $manualStatus;
+                $statusLabel = ucfirst($manualStatus);
+                $badgeTheme = ($manualStatus === 'blacklisted' ? 'rose' : 'amber');
+            } elseif ($hasOverdueReport) {
+                $statusCode = 'inactive';
+                $statusLabel = "Inactive (Overdue {$maxOverdueDays}d)";
+                $badgeTheme = 'rose';
+            } elseif ($hasNewAdoption) {
+                $statusCode = 'active_new';
+                $statusLabel = "Active (New · Due in {$minDueDays}d)";
+                $badgeTheme = 'emerald';
+            } else {
+                $statusCode = 'active';
+                $statusLabel = 'Active (Up to Date)';
+                $badgeTheme = 'emerald';
+            }
+
             return (object)[
-                'profile_id'        => $profile?->id,
-                'adopter_id_code'   => $adopterIdNumber,
-                'status'            => $adopterStatus,
-                'admin_notes'       => $profile?->admin_notes,
-                'avatar'            => $avatarUrl,
-                'applicant_name'    => $primary->applicant_name,
-                'applicant_email'   => $primary->applicant_email,
-                'applicant_phone'   => $profile?->phone ?: $primary->applicant_phone,
-                'address'           => $resolvedAddress,
-                'city'              => $profile?->city,
-                'province'          => $profile?->province,
-                'latest_updated_at' => $apps->max('updated_at'),
-                'applications'      => $apps,
-                'pets_count'        => $apps->count(),
+                'profile_id'            => $profile?->id,
+                'adopter_id_code'       => $adopterIdNumber,
+                'status'                => $statusCode,
+                'status_code'           => $statusCode,
+                'status_label'          => $statusLabel,
+                'badge_theme'           => $badgeTheme,
+                'has_overdue_report'    => $hasOverdueReport,
+                'max_overdue_days'      => $maxOverdueDays,
+                'next_due_days'         => ($minDueDays === 999 ? null : $minDueDays),
+                'next_due_date'         => $nextEarliestDueDate,
+                'admin_notes'           => $profile?->admin_notes,
+                'avatar'                => $avatarUrl,
+                'applicant_name'        => $primary->applicant_name,
+                'applicant_email'       => $primary->applicant_email,
+                'applicant_phone'       => $profile?->phone ?: $primary->applicant_phone,
+                'address'               => $resolvedAddress,
+                'city'                  => $profile?->city,
+                'province'              => $profile?->province,
+                'latest_updated_at'     => $apps->max('updated_at'),
+                'applications'          => $apps,
+                'pets_count'            => $apps->count(),
             ];
         })->sortByDesc('latest_updated_at')->values();
 
-        $page = (int) $request->query('page', 1);
-        $perPage = 10;
-        $adopters = new LengthAwarePaginator(
-            $groupedAdopters->forPage($page, $perPage)->values(),
-            $groupedAdopters->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        $totalApprovedAdopters = $groupedAdopters->count();
+        // Calculate summary counts across all adopters
+        $totalApprovedAdopters = $allGroupedAdopters->count();
+        $activeCount = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['active', 'active_new']))->count();
+        $inactiveCount = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'inactive')->count();
+        $restrictedCount = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['restricted', 'blacklisted']))->count();
         $totalApprovedApplications = AdoptionApplication::where('status', 'approved')->count();
-        
+
         $overdueCount = AdoptionApplication::where('status', 'approved')
             ->whereHas('pet.medicalLogs', function($q) {
                 $q->where('category', 'vaccination')
@@ -146,12 +215,49 @@ class AdopterProfileController extends Controller
                   ->whereBetween('next_due_date', [now()->toDateString(), now()->addDays(14)->toDateString()]);
             })->count();
 
+        // Apply active filter
+        $filteredAdopters = $allGroupedAdopters;
+        if ($filter === 'active') {
+            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['active', 'active_new']));
+        } elseif ($filter === 'inactive') {
+            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'inactive');
+        } elseif ($filter === 'restricted') {
+            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['restricted', 'blacklisted']));
+        } elseif ($filter === 'overdue') {
+            $filteredAdopters = $allGroupedAdopters->filter(function($a) {
+                return $a->applications->some(function($app) {
+                    $latestVaccine = $app->pet?->medicalLogs->where('category', 'vaccination')->first();
+                    return $latestVaccine && $latestVaccine->next_due_date && $latestVaccine->next_due_date->isPast();
+                });
+            });
+        } elseif ($filter === 'due_soon') {
+            $filteredAdopters = $allGroupedAdopters->filter(function($a) {
+                return $a->applications->some(function($app) {
+                    $latestVaccine = $app->pet?->medicalLogs->where('category', 'vaccination')->first();
+                    return $latestVaccine && $latestVaccine->next_due_date && $latestVaccine->next_due_date->isBetween(now(), now()->addDays(14));
+                });
+            });
+        }
+
+        $page = (int) $request->query('page', 1);
+        $perPage = 10;
+        $adopters = new LengthAwarePaginator(
+            $filteredAdopters->forPage($page, $perPage)->values(),
+            $filteredAdopters->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         return view('adopters.index', compact(
             'adopters',
             'search',
             'filter',
             'totalApprovedAdopters',
             'totalApprovedApplications',
+            'activeCount',
+            'inactiveCount',
+            'restrictedCount',
             'overdueCount',
             'dueSoonCount'
         ));
@@ -170,6 +276,13 @@ class AdopterProfileController extends Controller
             'admin_notes' => $request->admin_notes,
         ]);
 
-        return back()->with('success', "Updated status for {$profile->full_name} to " . ucfirst(str_replace('_', ' ', $request->status)) . ".");
+        $statusDisplayName = match($request->status) {
+            'blacklisted' => 'Banned / Blacklisted',
+            'restricted' => 'Restricted',
+            'good_standing' => 'Good Standing',
+            default => 'Active'
+        };
+
+        return back()->with('success', "Updated status for {$profile->full_name} to {$statusDisplayName}.");
     }
 }

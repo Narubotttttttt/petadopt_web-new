@@ -10,7 +10,9 @@
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden">
             <div class="p-6 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/50 dark:bg-[#171923]">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center font-bold text-sm">📋</div>
+                    <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30 flex items-center justify-center font-bold text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
                     <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Submitted Applications</h2>
                 </div>
             </div>
@@ -30,9 +32,31 @@
                         @forelse($applications as $application)
                             <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center text-xs">🐾</span>
-                                        <span>Pet no. {{ $application->pet_id }} ({{ $application->pet->breed ?? 'Mixed Breed' }})</span>
+                                    <div class="flex items-center gap-3">
+                                        @php
+                                            $pet = $application->pet;
+                                            $petImg = $pet && $pet->photo_path ? (str_starts_with($pet->photo_path, 'http') ? $pet->photo_path : asset('storage/' . ltrim($pet->photo_path, '/'))) : null;
+                                        @endphp
+                                        @if($petImg)
+                                            <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                                                <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
+                                                    <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                                            </div>
+                                        @endif
+                                        <div>
+                                            <div class="font-extrabold text-slate-900 dark:text-white">
+                                                {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $application->pet_id }}
+                                            </div>
+                                            <div class="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                                                Pet no. {{ $application->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">

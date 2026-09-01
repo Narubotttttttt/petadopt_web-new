@@ -178,7 +178,7 @@
     <div class="mb-8">
         <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Photo</label>
         <div class="relative border-2 border-dashed border-gray-200 dark:border-white/[0.1] hover:border-[#199CA4] rounded-2xl p-6 text-center transition bg-gray-50/50 dark:bg-white/[0.02]">
-            <span class="text-3xl block mb-2">📸</span>
+            
             <span class="text-sm text-gray-600 dark:text-slate-300 block font-medium mb-1">Choose a high-quality photo</span>
             <input type="file" name="photo" accept="image/*"
                 class="block w-full text-sm text-gray-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#199CA4]/10 file:text-[#199CA4] hover:file:bg-[#199CA4]/20 file:transition cursor-pointer">

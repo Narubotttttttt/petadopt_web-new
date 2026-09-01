@@ -15,7 +15,7 @@
                     </div>
                     <button type="submit" class="px-5 py-2.5 bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-xs transition-all cursor-pointer">Search</button>
                 </form>
-                @if(in_array(Auth::user()->role, ['admin', 'staff']))
+                @if(in_array(Auth::user()?->role, ['admin', 'staff']))
                     <a href="{{ route('pets.create') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold shadow-xs transition-all duration-200">
                         <span>+</span> Add New Pet
                     </a>
@@ -27,7 +27,9 @@
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden relative">
             <div class="p-6 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/50 dark:bg-[#171923]">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center font-bold text-sm">🐾</div>
+                    <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30 flex items-center justify-center font-bold text-sm">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                    </div>
                     <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Pet Profiles</h2>
                 </div>
                 <span class="text-xs text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider bg-slate-100 dark:bg-white/[0.06] px-3 py-1 rounded-full border border-slate-200 dark:border-white/[0.08]">Total: {{ $pets->total() }} Pets</span>
@@ -54,11 +56,13 @@
                                         <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-[#171923] overflow-hidden flex items-center justify-center border border-slate-200 dark:border-white/[0.08] shadow-2xs shrink-0 group relative">
                                             @if($pet->photo_path)
                                                 <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet photo" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                <div class="hidden w-full h-full bg-slate-100 dark:bg-[#171923] items-center justify-center text-xl text-slate-400">
-                                                    🐾
+                                                <div class="hidden w-full h-full bg-[#199CA4]/10 dark:bg-[#199CA4]/20 items-center justify-center text-[#199CA4] dark:text-[#41C1CB]">
+                                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
                                                 </div>
                                             @else
-                                                <span class="text-xl">🐾</span>
+                                                <div class="w-full h-full bg-[#199CA4]/10 dark:bg-[#199CA4]/20 flex items-center justify-center text-[#199CA4] dark:text-[#41C1CB]">
+                                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                                                </div>
                                             @endif
                                         </div>
                                         <div>
@@ -72,7 +76,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-medium">{{ $pet->created_at->diffForHumans() }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
-                                        @if(strtolower($pet->type) === 'dog') 🐕 @elseif(strtolower($pet->type) === 'cat') 🐈 @endif
+                                        @if(strtolower($pet->type) === 'dog')  @elseif(strtolower($pet->type) === 'cat')  @endif
                                         {{ ucfirst($pet->type ?? 'Unknown') }}
                                     </span>
                                 </td>
@@ -99,7 +103,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="inline-flex items-center gap-1.5">
                                         <a href="{{ route('pets.show', $pet) }}" class="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white/[0.08] text-white dark:text-slate-200 hover:bg-slate-800 dark:hover:bg-white/[0.12] border border-slate-800 dark:border-white/[0.08] font-extrabold transition-all duration-200 shadow-2xs text-xs">View</a>
-                                        @if(in_array(Auth::user()->role, ['admin', 'staff']))
+                                        @if(in_array(Auth::user()?->role, ['admin', 'staff']))
                                             <a href="{{ route('pets.edit', $pet) }}" class="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] hover:text-[#199CA4] dark:hover:text-white font-bold transition-all text-xs">Edit</a>
                                             <form action="{{ route('pets.destroy', $pet) }}" method="POST" onsubmit="return confirm('Delete this pet?');" class="inline">
                                                 @csrf
@@ -113,7 +117,7 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
-                                    <div class="text-3xl mb-2">🐾</div>
+                                    
                                     <p class="font-bold text-slate-600 dark:text-slate-300 mb-1">No pets found</p>
                                     <p class="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search query or add a new rescue pet.</p>
                                 </td>

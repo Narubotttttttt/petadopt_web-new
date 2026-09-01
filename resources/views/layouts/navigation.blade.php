@@ -107,17 +107,23 @@
                         },
                         async refresh() {
                             if (document.hidden) return;
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 3000);
                             try {
                                 const res = await fetch('{{ route("admin.notifications.index") }}', {
-                                    headers: { 'Accept': 'application/json' }
+                                    headers: { 'Accept': 'application/json' },
+                                    signal: controller.signal
                                 });
+                                clearTimeout(timeoutId);
                                 if (res.ok) {
                                     const d = await res.json();
                                     this.notifications = d.notifications || [];
                                     this.unreadCount = d.unread_count || 0;
                                     this.counts = d.counts || this.counts;
                                 }
-                            } catch (e) {}
+                            } catch (e) {
+                                clearTimeout(timeoutId);
+                            }
                         },
                         async markAll() {
                             this.unreadCount = 0;
@@ -147,7 +153,7 @@
                             } catch (e) {}
                         }
                     }" 
-                    x-init="setInterval(() => refresh(), 30000)"
+                    x-init="setInterval(() => refresh(), 60000)"
                     @click.outside="openNotif = false">
                     
                     {{-- Bell Trigger Button --}}
@@ -325,16 +331,16 @@
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.06] focus:outline-none transition shadow-2xs cursor-pointer">
-                            @if(Auth::user()->avatar_url)
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                            @if(Auth::user()?->avatar_url)
+                                <img src="{{ Auth::user()?->avatar_url }}" alt="{{ Auth::user()?->name }}" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                             @else
                                 <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs">
-                                    {{ Auth::user()->initials }}
+                                    {{ Auth::user()?->initials }}
                                 </div>
                             @endif
                             <div class="text-left">
-                                <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ Auth::user()->name }}</span>
-                                <span class="block text-[10px] text-slate-400 font-medium capitalize">{{ Auth::user()->role }}</span>
+                                <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ Auth::user()?->name }}</span>
+                                <span class="block text-[10px] text-slate-400 font-medium capitalize">{{ Auth::user()?->role }}</span>
                             </div>
 
                             <div class="ms-1">
@@ -369,52 +375,52 @@
     <div :class="{'block': mobileNavOpen, 'hidden': ! mobileNavOpen}" class="hidden lg:hidden bg-white dark:bg-[#0C0D13] border-t border-slate-100 dark:border-white/[0.06] shadow-xl">
         <div class="p-4 space-y-3">
             <div class="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
-                @if(Auth::user()->avatar_url)
-                    <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                @if(Auth::user()?->avatar_url)
+                    <img src="{{ Auth::user()?->avatar_url }}" alt="{{ Auth::user()?->name }}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                 @else
                     <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-sm border border-slate-200 dark:border-white/[0.08] shadow-xs">
-                        {{ Auth::user()->initials }}
+                        {{ Auth::user()?->initials }}
                     </div>
                 @endif
                 <div>
-                    <div class="font-bold text-sm text-slate-900 dark:text-white">{{ Auth::user()->name }}</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()->email }} ({{ ucfirst(Auth::user()->role) }})</div>
+                    <div class="font-bold text-sm text-slate-900 dark:text-white">{{ Auth::user()?->name }}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ Auth::user()?->email }} ({{ ucfirst(Auth::user()?->role) }})</div>
                 </div>
             </div>
 
             {{-- Main Navigation Links --}}
             <div class="space-y-1">
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('dashboard') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
-                    📊 Dashboard
+                    Dashboard
                 </a>
                 <a href="{{ route('pets.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('pets.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
-                    🐾 Pets Catalog
+                    Pets Catalog
                 </a>
-                @if(Auth::user()->role === 'admin')
+                @if(Auth::user()?->role === 'admin')
                     <a href="{{ route('users.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('users.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
-                        🛡️ User Management
+                        Staff Management
                     </a>
                 @endif
                 <a href="{{ route('adoption-applications.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adoption-applications.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
-                    📋 Adoption Requests
+                    Adoption Requests
                 </a>
                 <a href="{{ route('adopters.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('adopters.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
-                    👥 Adopters Directory
+                    Adopters Directory
                 </a>
                 <a href="{{ route('medical-logs.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold {{ request()->routeIs('medical-logs.*') ? 'bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
-                    🩺 Medical Logs
+                    Medical Logs
                 </a>
             </div>
 
             {{-- Profile & Logout Links --}}
             <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] space-y-1">
                 <a href="{{ route('profile.edit') }}" class="block px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] rounded-xl">
-                    ⚙️ {{ __('Profile') }}
+                     {{ __('Profile') }}
                 </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="block w-full text-left px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl cursor-pointer">
-                        🚪 {{ __('Log Out') }}
+                         {{ __('Log Out') }}
                     </button>
                 </form>
             </div>

@@ -90,6 +90,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/adoption-applications/{application}/contract', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('adoption-applications.contract');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
+    Route::patch('/adopters/{id}/status', [\App\Http\Controllers\AdopterProfileController::class, 'updateStatus'])->name('adopters.update-status');
 
     Route::get('/medical-logs', [MedicalLogController::class, 'index'])->name('medical-logs.index');
     Route::get('/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create');
@@ -105,7 +106,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/admin/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('admin.notifications.markRead');
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update-role');
+    Route::patch('/users/{user}/staff-profile', [UserController::class, 'updateStaffProfile'])->name('users.update-staff-profile');
 });
 
 // Public signed route for contract downloads — accessible by mobile browsers without web session

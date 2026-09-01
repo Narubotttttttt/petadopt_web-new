@@ -21,7 +21,7 @@
 
         @if(session('success'))
             <div class="mb-6 px-4 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 rounded-2xl flex items-center gap-2 text-sm font-semibold shadow-2xs">
-                <span>✅</span>
+                
                 <span>{{ session('success') }}</span>
             </div>
         @endif
@@ -76,7 +76,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="inline-flex items-center gap-1.5">
                                         <a href="{{ route('medical-logs.edit', $log) }}" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs">Edit</a>
-                                        @if(Auth::user()->role === 'admin')
+                                        @if(Auth::user()?->role === 'admin')
                                             <form action="{{ route('medical-logs.destroy', $log) }}" method="POST" onsubmit="return confirm('Delete this medical log entry?');" class="inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -89,8 +89,8 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
-                                    <div class="text-3xl mb-2">🩺</div>
-                                    No medical log entries yet. Use the button above to add one.
+                                    <p class="font-bold text-sm text-slate-600 dark:text-slate-300">No medical log entries yet</p>
+                                    <p class="text-xs text-slate-400 mt-1">Use the "+ Add Entry" button above to record clinical logs.</p>
                                 </td>
                             </tr>
                         @endforelse

@@ -7,6 +7,7 @@ use App\Models\Pet;
 use App\Models\AdoptionApplication;
 use App\Models\TemperamentTag;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class PetController extends Controller
 {
@@ -70,23 +71,38 @@ class PetController extends Controller
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
         }
 
-        $pet = Pet::create([
-            'breed' => $data['breed'],
-            'color' => $data['color'],
-            'gender' => $data['gender'],
-            'type' => $data['type'],
-            'age' => $data['age'] ?? null,
-            'medical_history' => $data['medical_history'] ?? null,
-            'description' => $data['description'] ?? null,
-            'photo_path' => $data['photo_path'] ?? null,
-            'status' => 'available',
-        ]);
+        $lockKey = 'pet_store_lock_' . (Auth::id() ?? $request->ip());
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 5);
 
-        $pet->temperamentTags()->sync($data['temperament_tags'] ?? []);
+        if (! $lock->get()) {
+            return redirect()->route('pets.index')->with('success', 'Pet profile is already being submitted.');
+        }
 
-        session()->flash('success', 'Pet added successfully.');
+        try {
+            $user = Auth::user();
 
-        return redirect()->route('dashboard');
+            $pet = Pet::create([
+                'breed' => $data['breed'],
+                'color' => $data['color'],
+                'gender' => $data['gender'],
+                'type' => $data['type'],
+                'age' => $data['age'] ?? null,
+                'medical_history' => $data['medical_history'] ?? null,
+                'description' => $data['description'] ?? null,
+                'photo_path' => $data['photo_path'] ?? null,
+                'status' => 'available',
+                'added_by_user_id' => $user?->id,
+                'added_by_name' => $user?->name,
+            ]);
+
+            $pet->temperamentTags()->sync($data['temperament_tags'] ?? []);
+
+            session()->flash('success', 'Pet added successfully.');
+
+            return redirect()->route('pets.index');
+        } finally {
+            $lock->release();
+        }
     }
 
     public function show(Pet $pet)

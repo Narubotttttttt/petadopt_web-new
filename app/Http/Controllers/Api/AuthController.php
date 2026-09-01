@@ -76,16 +76,15 @@ class AuthController extends Controller
         }
 
         // Auto-create AdoptersProfile for registered adopter
-        if ($user->role === 'adopter') {
-            \App\Models\AdoptersProfile::firstOrCreate(
-                ['email' => $user->email],
-                [
-                    'user_id'      => $user->id,
-                    'adopter_code' => sprintf('ADP-%04d', $user->id),
-                    'full_name'    => $user->name,
-                    'status'       => 'active',
-                ]
-            );
+        $adopterProfile = \App\Models\AdoptersProfile::where('email', $user->email)->first();
+        if ($user->role === 'adopter' && !$adopterProfile) {
+            $adopterProfile = \App\Models\AdoptersProfile::create([
+                'user_id'      => $user->id,
+                'adopter_code' => sprintf('ADP-%04d', $user->id),
+                'full_name'    => $user->name,
+                'email'        => $user->email,
+                'status'       => 'active',
+            ]);
         }
 
         $token = $user->createToken('mobile-app')->plainTextToken;
@@ -94,10 +93,17 @@ class AuthController extends Controller
             'message' => 'Login successful.',
             'token'   => $token,
             'user'    => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,
+                'id'          => $user->id,
+                'name'        => $user->name,
+                'email'       => $user->email,
+                'role'        => $user->role,
+                'phone'       => $adopterProfile?->phone ?: $user->phone,
+                'address'     => $adopterProfile?->address,
+                'city'        => $adopterProfile?->city,
+                'province'    => $adopterProfile?->province,
+                'status'      => $adopterProfile?->status ?? 'active',
+                'admin_notes' => $adopterProfile?->admin_notes,
+                'digital_signature_url' => $user->digital_signature_url ?: $adopterProfile?->digital_signature_url,
             ],
         ]);
     }

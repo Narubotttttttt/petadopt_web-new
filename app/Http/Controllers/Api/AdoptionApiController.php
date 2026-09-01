@@ -12,7 +12,7 @@ class AdoptionApiController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'pet_id'          => ['required', 'exists:pets,id'],
             'full_name'       => ['required', 'string', 'max:255'],
             'phone'           => ['required', 'string', 'max:50'],
@@ -28,6 +28,26 @@ class AdoptionApiController extends Controller
         ]);
 
         $user = $request->user();
+        $applicantEmail = strtolower(trim($user?->email ?: $request->input('applicant_email', $request->input('email', ''))));
+
+        $adopterProfile = null;
+        if ($user) {
+            $adopterProfile = \App\Models\AdoptersProfile::where('user_id', $user->id)
+                ->orWhere('email', strtolower(trim($user->email)))
+                ->first();
+        }
+        if (!$adopterProfile && !empty($applicantEmail)) {
+            $adopterProfile = \App\Models\AdoptersProfile::where('email', $applicantEmail)->first();
+        }
+
+        if ($adopterProfile && in_array($adopterProfile->status, ['blacklisted', 'restricted'])) {
+            $statusName = $adopterProfile->status === 'blacklisted' ? 'Banned / Blacklisted' : 'Restricted';
+            $reason = !empty($adopterProfile->admin_notes) ? " Reason: {$adopterProfile->admin_notes}." : "";
+            return response()->json([
+                'success' => false,
+                'message' => "You are prohibited from submitting adoption applications. Your account is {$statusName}.{$reason} Please contact the shelter office for assistance.",
+            ], 403);
+        }
 
         $existing = AdoptionApplication::where('pet_id', $request->pet_id)
             ->where(function ($q) use ($user, $request) {
@@ -88,11 +108,11 @@ class AdoptionApiController extends Controller
         }
 
         // Extract or record address to adopters_profile
-        if (!empty($validated['address']) || !empty($user->email)) {
-            $adopterAddress = $validated['address'] ?? null;
-            if (empty($adopterAddress) && !empty($message) && preg_match('/Address:\s*(.+?)(?=\n[A-Za-z\s]+:|$)/is', $message, $m)) {
-                $adopterAddress = trim($m[1]);
-            }
+        $adopterAddress = $validated['address'] ?? null;
+        $adopterPhone = $validated['phone'] ?? null;
+        if (!empty($user?->email)) {
+            $existingProf = \App\Models\AdoptersProfile::where('email', $user->email)->first();
+            $profStatus = $existingProf?->status ?? 'active';
 
             \App\Models\AdoptersProfile::updateOrCreate(
                 ['email' => $user->email],
@@ -100,11 +120,11 @@ class AdoptionApiController extends Controller
                     'user_id'      => $user->id,
                     'adopter_code' => sprintf('ADP-%04d', $user->id),
                     'full_name'    => $user->name,
-                    'phone'        => $validated['applicant_phone'] ?? null,
-                    'address'      => $adopterAddress,
-                    'city'         => 'Cagayan de Oro City',
-                    'province'     => 'Misamis Oriental',
-                    'status'       => 'active',
+                    'phone'        => $adopterPhone ?: ($existingProf?->phone ?: $user->phone),
+                    'address'      => $adopterAddress ?: $existingProf?->address,
+                    'city'         => $existingProf?->city ?: 'Cagayan de Oro City',
+                    'province'     => $existingProf?->province ?: 'Misamis Oriental',
+                    'status'       => $profStatus,
                 ]
             );
         }
@@ -135,18 +155,20 @@ class AdoptionApiController extends Controller
     {
         $user = $request->user();
 
-        $applications = AdoptionApplication::with('pet')
+        $rootUrl = $request->getSchemeAndHttpHost();
+
+        $applications = AdoptionApplication::with('pet', 'staff')
             ->where('applicant_email', $user->email)
             ->latest()
             ->get()
-            ->map(function ($app) {
+            ->map(function ($app) use ($rootUrl) {
                 $pet = $app->pet;
                 $photoUrl = null;
                 if ($pet && $pet->photo_path) {
                     if (str_starts_with($pet->photo_path, 'http')) {
                         $photoUrl = $pet->photo_path;
                     } else {
-                        $photoUrl = asset('storage/' . ltrim($pet->photo_path, '/'));
+                        $photoUrl = $rootUrl . '/storage/' . ltrim($pet->photo_path, '/');
                     }
                 }
 
@@ -161,15 +183,19 @@ class AdoptionApiController extends Controller
 
                 $displayName = ($pet && !empty($pet->name)) ? $pet->name : ($proposedName ?: ($pet ? ($pet->breed ?: 'Rescued Pet') : 'Pet'));
 
+                $sigUrl = $app->signature_path ? (str_starts_with($app->signature_path, 'http') ? $app->signature_path : $rootUrl . '/storage/' . ltrim($app->signature_path, '/')) : null;
+                $staffSigUrl = $app->staff_signature_url;
+
                 return [
                     'id'               => $app->id,
                     'pet_id'           => (int)$app->pet_id,
                     'petId'            => (int)$app->pet_id,
                     'pet'              => $pet ? [
-                        'id'    => (int)$pet->id,
-                        'name'  => $displayName,
-                        'type'  => $pet->type,
-                        'breed' => $pet->breed,
+                        'id'        => (int)$pet->id,
+                        'name'      => $displayName,
+                        'type'      => $pet->type,
+                        'breed'     => $pet->breed,
+                        'photo_url' => $photoUrl,
                     ] : null,
                     'petName'          => $displayName,
                     'petBreed'         => $pet ? ($pet->breed ?: 'Mixed') : 'N/A',
@@ -182,7 +208,10 @@ class AdoptionApiController extends Controller
                     'scheduledRaw'     => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('Y-m-d H:i:s') : null,
                     'eventLocation'    => $isApproved ? $app->event_location : null,
                     'eventNotes'       => $isApproved ? $app->event_notes : null,
-                    'signature_url'    => $app->signature_url,
+                    'signature_url'    => $sigUrl,
+                    'staff_signature_url' => $staffSigUrl,
+                    'valid_id_url'     => $app->valid_id_url,
+                    'barangay_certificate_url' => $app->barangay_certificate_url,
                     'signed_at'        => $app->signed_at ? $app->signed_at->format('M d, Y h:i A') : null,
                     'is_signed'        => !empty($app->signature_path),
                     'updated_at'       => $app->updated_at ? $app->updated_at->toIso8601String() : null,
@@ -270,14 +299,17 @@ class AdoptionApiController extends Controller
             'signed_at'      => now(),
         ]);
 
-        // 2. Auto-sync to User and AdoptersProfile (eGov style)
-        \Illuminate\Support\Facades\DB::table('users')
-            ->where('id', $user->id)
-            ->update(['digital_signature_path' => $fileName]);
-
-        \App\Models\AdoptersProfile::where('email', $user->email)->update([
-            'digital_signature_path' => $fileName,
-        ]);
+        // 2. Auto-sync to AdoptersProfile
+        \App\Models\AdoptersProfile::updateOrCreate(
+            ['email' => $user->email],
+            [
+                'user_id'                => $user->id,
+                'adopter_code'           => sprintf('ADP-%04d', $user->id),
+                'full_name'              => $user->name,
+                'digital_signature_path' => $fileName,
+                'status'                 => 'active',
+            ]
+        );
 
         return response()->json([
             'success'       => true,
@@ -309,13 +341,16 @@ class AdoptionApiController extends Controller
         $fileName = 'signatures/sig_user_' . $user->id . '_' . time() . '.png';
         \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decoded);
 
-        \Illuminate\Support\Facades\DB::table('users')
-            ->where('id', $user->id)
-            ->update(['digital_signature_path' => $fileName]);
-
-        \App\Models\AdoptersProfile::where('email', $user->email)->update([
-            'digital_signature_path' => $fileName,
-        ]);
+        \App\Models\AdoptersProfile::updateOrCreate(
+            ['email' => $user->email],
+            [
+                'user_id'                => $user->id,
+                'adopter_code'           => sprintf('ADP-%04d', $user->id),
+                'full_name'              => $user->name,
+                'digital_signature_path' => $fileName,
+                'status'                 => 'active',
+            ]
+        );
 
         return response()->json([
             'success'               => true,

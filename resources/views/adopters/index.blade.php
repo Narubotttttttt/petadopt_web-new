@@ -56,7 +56,7 @@
             <div class="mb-6 px-4 py-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center text-emerald-600 dark:text-emerald-300 flex-shrink-0 font-bold">
-                        ✓
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                     </div>
                     <span class="text-sm font-medium">{{ session('success') }}</span>
                 </div>
@@ -96,17 +96,21 @@
                    class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]' }}">
                     All ({{ $totalApprovedAdopters }})
                 </a>
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'active'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
+                    Active ({{ $activeCount ?? 0 }})
+                </a>
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'inactive'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'inactive' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
+                    Inactive · Overdue ({{ $inactiveCount ?? 0 }})
+                </a>
+                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'restricted'])) }}"
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'restricted' ? 'bg-amber-600 text-white shadow-xs' : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
+                    Restricted ({{ $restrictedCount ?? 0 }})
+                </a>
                 <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'overdue'])) }}"
-                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'overdue' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
-                    Overdue ({{ $overdueCount ?? 0 }})
-                </a>
-                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'due_soon'])) }}"
-                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'due_soon' ? 'bg-amber-500 text-white shadow-xs' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
-                    Due Soon ({{ $dueSoonCount ?? 0 }})
-                </a>
-                <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'up_to_date'])) }}"
-                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'up_to_date' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
-                    Up to Date
+                   class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap {{ ($filter ?? '') === 'overdue' ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]' }}">
+                    Vaccines Overdue ({{ $overdueCount ?? 0 }})
                 </a>
             </div>
 
@@ -181,9 +185,9 @@
                                             
                                             {{-- Adopter Status Chip --}}
                                             <div class="flex items-center gap-2 mt-1">
-                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $adopter->status === 'blacklisted' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60' : ($adopter->status === 'restricted' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60') }}">
-                                                    <span class="w-1.5 h-1.5 rounded-full {{ $adopter->status === 'blacklisted' ? 'bg-rose-500' : ($adopter->status === 'restricted' ? 'bg-amber-500' : 'bg-emerald-500') }}"></span>
-                                                    {{ ucfirst(str_replace('_', ' ', $adopter->status ?? 'active')) }}
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border {{ $adopter->badge_theme === 'rose' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : ($adopter->badge_theme === 'amber' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60') }}">
+                                                    <span class="w-1.5 h-1.5 rounded-full {{ $adopter->badge_theme === 'rose' ? 'bg-rose-500' : ($adopter->badge_theme === 'amber' ? 'bg-amber-500' : 'bg-emerald-500') }}"></span>
+                                                    {{ $adopter->status_label }}
                                                 </span>
 
                                                 @if($adopter->profile_id)
@@ -200,7 +204,7 @@
 
                                             @if(!empty($adopter->address))
                                                 <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-start gap-1 leading-snug">
-                                                    <span class="text-slate-400">📍</span>
+                                                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                                     <span class="truncate max-w-[200px]" title="{{ $adopter->address }}">{{ $adopter->address }}</span>
                                                 </div>
                                             @endif
@@ -227,12 +231,12 @@
                                                     <div class="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
                                                         <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                         <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
-                                                            🐾
+                                                            
                                                         </div>
                                                     </div>
                                                 @else
                                                     <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 flex items-center justify-center font-bold text-sm shrink-0 border border-slate-200 dark:border-white/[0.08]">
-                                                        🐾
+                                                        
                                                     </div>
                                                 @endif
 
@@ -314,9 +318,19 @@
                                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer {{ $healthUpdates->count() > 0 ? 'bg-slate-100 dark:bg-white/[0.08] text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/[0.12]' : 'bg-slate-50 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.08]' }} border border-slate-200 dark:border-white/[0.08]">
                                                     <span>Reports ({{ $healthUpdates->count() }})</span>
                                                 </button>
-                                                <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                                    {{ $latestCheckin && $latestCheckin->check_in_date ? $latestCheckin->check_in_date->format('M d') : 'None' }}
-                                                </span>
+                                                @if(!empty($app->is_report_overdue))
+                                                    <span class="inline-flex items-center text-[10px] font-extrabold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded-md border border-rose-200 dark:border-rose-800/40 mt-1">
+                                                        Overdue ({{ $app->report_overdue_days }}d)
+                                                    </span>
+                                                @elseif(isset($app->report_due_days))
+                                                    <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
+                                                        Due in {{ $app->report_due_days }}d
+                                                    </span>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                                        {{ $latestCheckin && $latestCheckin->check_in_date ? $latestCheckin->check_in_date->format('M d') : 'None' }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>
@@ -362,7 +376,7 @@
                             <tr>
                                 <td colspan="5" class="py-12 text-center">
                                     <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-400 flex items-center justify-center text-lg mx-auto mb-3 font-bold">
-                                        🐾
+                                        
                                     </div>
                                     <h3 class="text-sm font-bold text-slate-900 dark:text-white">No Adopter Records Found</h3>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">When adoption applications are approved, the adopters and their pets will appear here.</p>
@@ -394,7 +408,7 @@
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-white/[0.06]">
                         <div class="flex items-center gap-2.5">
                             <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                                🩺
+                                
                             </div>
                             <div>
                                 <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Record Medical Log</h3>
@@ -419,13 +433,13 @@
                                     @click="selectedCategory = 'vaccination'"
                                     :class="selectedCategory === 'vaccination' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]'"
                                     class="py-2.5 rounded-xl font-bold text-xs transition cursor-pointer">
-                                    💉 Vaccination
+                                     Vaccination
                                 </button>
                                 <button type="button" 
                                     @click="selectedCategory = 'deworming'"
                                     :class="selectedCategory === 'deworming' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]'"
                                     class="py-2.5 rounded-xl font-bold text-xs transition cursor-pointer">
-                                    💊 Deworming
+                                     Deworming
                                 </button>
                             </div>
                             <input type="hidden" name="category" :value="selectedCategory">
@@ -472,12 +486,12 @@
                             <div class="flex items-center justify-between px-3.5 py-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl">
                                 <div class="flex items-center gap-2">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    <span class="text-xs font-bold text-emerald-900 dark:text-emerald-300">{{ Auth::user()->name }}</span>
-                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 uppercase">{{ Auth::user()->role }}</span>
+                                    <span class="text-xs font-bold text-emerald-900 dark:text-emerald-300">{{ Auth::user()?->name }}</span>
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 uppercase">{{ Auth::user()?->role }}</span>
                                 </div>
                                 <span class="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">Logged in staff</span>
                             </div>
-                            <input type="hidden" name="administered_by" value="{{ Auth::user()->name }}">
+                            <input type="hidden" name="administered_by" value="{{ Auth::user()?->name }}">
                         </div>
 
                         {{-- Modal Actions --}}
@@ -503,7 +517,7 @@
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-white/[0.06]">
                         <div class="flex items-center gap-2.5">
                             <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                                📜
+                                
                             </div>
                             <div>
                                 <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Medical History Timeline</h3>
@@ -520,7 +534,7 @@
                         <template x-if="historyLogs.length === 0">
                             <div class="py-10 text-center">
                                 <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-400 flex items-center justify-center text-sm mx-auto mb-2 font-bold">
-                                    🩺
+                                    
                                 </div>
                                 <p class="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">No medical records registered yet</p>
                                 <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Click "+ Record" on the table to add the first vaccine or deworming entry.</p>
@@ -573,7 +587,7 @@
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-white/[0.06]">
                         <div class="flex items-center gap-2.5">
                             <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                                📋
+                                
                             </div>
                             <div>
                                 <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Monthly Pet Health Reports</h3>
@@ -590,7 +604,7 @@
                         <template x-if="healthLogs.length === 0">
                             <div class="py-10 text-center">
                                 <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-400 flex items-center justify-center text-sm mx-auto mb-2 font-bold">
-                                    📋
+                                    
                                 </div>
                                 <p class="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">No monthly check-ins submitted yet</p>
                                 <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">When the adopter submits monthly photos and health updates via the mobile app, they will appear here.</p>
@@ -652,7 +666,7 @@
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-white/[0.06]">
                         <div class="flex items-center gap-2.5">
                             <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                                🛡️
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                             </div>
                             <div>
                                 <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Shelter Safety Status</h3>
@@ -684,7 +698,7 @@
                                 <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/30 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer">
                                     <input type="radio" name="status" value="good_standing" x-model="selectedStatus" class="text-emerald-600 focus:ring-emerald-500">
                                     <div>
-                                        <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">Good Standing ⭐</span>
+                                        <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">Good Standing </span>
                                         <span class="text-[11px] text-emerald-700 dark:text-emerald-400">Excellent track record with timely check-ins.</span>
                                     </div>
                                 </label>
@@ -692,25 +706,37 @@
                                 <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/30 dark:bg-amber-950/20 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer">
                                     <input type="radio" name="status" value="restricted" x-model="selectedStatus" class="text-amber-600 focus:ring-amber-500">
                                     <div>
-                                        <span class="text-xs font-bold text-amber-800 dark:text-amber-300 block">Restricted ⚠️</span>
-                                        <span class="text-[11px] text-amber-700 dark:text-amber-400">Requires additional verification or home visits.</span>
+                                        <span class="text-xs font-bold text-amber-800 dark:text-amber-300 block">Restricted</span>
+                                        <span class="text-[11px] text-amber-700 dark:text-amber-400">Temporarily frozen from adoptions (Requires shelter review).</span>
                                     </div>
                                 </label>
 
                                 <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/60 bg-rose-50/30 dark:bg-rose-950/20 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer">
                                     <input type="radio" name="status" value="blacklisted" x-model="selectedStatus" class="text-rose-600 focus:ring-rose-500">
                                     <div>
-                                        <span class="text-xs font-bold text-rose-800 dark:text-rose-300 block">Blacklisted 🚫</span>
-                                        <span class="text-[11px] text-rose-700 dark:text-rose-400">Banned from future pet adoptions due to violations.</span>
+                                        <span class="text-xs font-bold text-rose-800 dark:text-rose-300 block">Banned / Blacklisted</span>
+                                        <span class="text-[11px] text-rose-700 dark:text-rose-400">Permanently banned from adoptions; mobile access revoked.</span>
                                     </div>
                                 </label>
                             </div>
                         </div>
 
-                        {{-- Internal Shelter Notes --}}
+                        {{-- Internal Shelter Notes & Official Violation Reasons --}}
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Internal Shelter Remarks (Private)</label>
-                            <textarea name="admin_notes" rows="3" x-model="statusAdminNotes" placeholder="Private shelter observations, housing conditions, or warnings..."
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Sanction Reason / Remarks</label>
+                                <span class="text-[10px] text-slate-400">Visible to adopter on mobile</span>
+                            </div>
+                            
+                            {{-- Quick Preset Tags --}}
+                            <div class="flex flex-wrap gap-1.5 mb-2">
+                                <button type="button" @click="statusAdminNotes = 'Failure to submit mandatory 30-day monthly health reports.'" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12] transition cursor-pointer">Missing monthly reports</button>
+                                <button type="button" @click="statusAdminNotes = 'Violation of signed Adoption Agreement (unauthorized re-homing/sale).'" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12] transition cursor-pointer">Contract violation</button>
+                                <button type="button" @click="statusAdminNotes = 'Unsafe home environment reported during shelter follow-up inspection.'" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12] transition cursor-pointer">Unsafe home</button>
+                                <button type="button" @click="statusAdminNotes = 'Providing false information or unverified application credentials.'" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12] transition cursor-pointer">False info</button>
+                            </div>
+
+                            <textarea name="admin_notes" rows="3" x-model="statusAdminNotes" placeholder="Reason for ban/restriction (e.g. Failure to submit mandatory 30-day health updates)..."
                                 class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500"></textarea>
                         </div>
 

@@ -34,7 +34,7 @@
 
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-300 flex items-center justify-center font-bold text-lg">
-                        ⚠️
+                        
                     </div>
                     <div>
                         <h2 class="text-base font-extrabold text-gray-900 dark:text-white">

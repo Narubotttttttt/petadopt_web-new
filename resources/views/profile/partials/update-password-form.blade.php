@@ -76,7 +76,7 @@
 
                 @if (session('status') === 'password-updated')
                     <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)" class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                        <span>✓</span>
+                        
                         <span>Password changed successfully!</span>
                     </div>
                 @endif

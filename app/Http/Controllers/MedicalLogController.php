@@ -56,24 +56,35 @@ class MedicalLogController extends Controller
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
-        $administeredBy = trim($request->input('administered_by', '')) ?: Auth::user()->name;
+        $lockKey = 'med_log_store_lock_' . (Auth::id() ?? $request->ip()) . '_' . ($data['pet_id'] ?? '');
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 5);
 
-        $log = MedicalLog::create([
-            ...$data,
-            'administered_by' => $administeredBy,
-            'created_by' => Auth::id(),
-        ]);
-
-        $this->notifyAdoptersOfMedicalLog($log, $data['category']);
-
-        $petName = $log->pet->name ?? ('Pet no. ' . $log->pet_id);
-        session()->flash('success', "Medical log entry added for {$petName}.");
-
-        if ($request->filled('redirect_to')) {
-            return redirect($request->input('redirect_to'));
+        if (! $lock->get()) {
+            return redirect()->back()->with('success', 'Medical log entry is already being processed.');
         }
 
-        return redirect()->back();
+        try {
+            $administeredBy = trim($request->input('administered_by', '')) ?: Auth::user()->name;
+
+            $log = MedicalLog::create([
+                ...$data,
+                'administered_by' => $administeredBy,
+                'created_by' => Auth::id(),
+            ]);
+
+            $this->notifyAdoptersOfMedicalLog($log, $data['category']);
+
+            $petName = $log->pet->name ?? ('Pet no. ' . $log->pet_id);
+            session()->flash('success', "Medical log entry added for {$petName}.");
+
+            if ($request->filled('redirect_to')) {
+                return redirect($request->input('redirect_to'));
+            }
+
+            return redirect()->back();
+        } finally {
+            $lock->release();
+        }
     }
 
     public function edit(MedicalLog $medicalLog): View

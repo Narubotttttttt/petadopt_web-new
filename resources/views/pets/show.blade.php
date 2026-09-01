@@ -7,12 +7,21 @@
 
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between pb-8 border-b border-slate-100 dark:border-white/[0.06]">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-2xl border border-slate-200 dark:border-white/[0.08]">
-                        🐾
-                    </div>
+                    @if($pet->photo_path)
+                        <div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                            <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet no. {{ $pet->id }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="hidden w-full h-full bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] items-center justify-center">
+                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                            </div>
+                        </div>
+                    @else
+                        <div class="w-14 h-14 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-extrabold text-2xl border border-[#199CA4]/20 dark:border-[#41C1CB]/30 shrink-0">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                        </div>
+                    @endif
                     <div>
                         <div class="flex items-center gap-3">
-                            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ ucfirst($pet->type ?? 'Pet') }} #{{ $pet->id }}</h1>
+                            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Pet no. {{ $pet->id }}</h1>
                             @php
                                 $statusStyles = [
                                     'available' => 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60',
@@ -37,11 +46,11 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2.5">
-                    @if(in_array(Auth::user()->role, ['admin', 'staff']))
+                    @if(in_array(Auth::user()?->role, ['admin', 'staff']))
                         <a href="{{ route('pets.edit', $pet) }}" class="px-5 py-2.5 bg-[#199CA4] hover:bg-[#13787F] text-white rounded-xl text-xs sm:text-sm font-extrabold shadow-xs transition-all">Edit Profile</a>
                     @endif
 
-                    @unless(in_array(Auth::user()->role, ['admin', 'staff']))
+                    @unless(in_array(Auth::user()?->role, ['admin', 'staff']))
                         @if($pet->status === 'available')
                             <a href="{{ route('adoption-applications.create', $pet) }}" class="px-5 py-2.5 bg-[#199CA4] hover:bg-[#13787F] text-white rounded-xl text-xs sm:text-sm font-extrabold shadow-xs transition-all">Apply to adopt</a>
                         @endif
@@ -57,13 +66,13 @@
                     <div class="w-full h-72 bg-slate-50 dark:bg-[#0C0D13] rounded-2xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-white/[0.08] shadow-2xs group relative">
                         @if($pet->photo_path)
                             <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet no. {{ $pet->id }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="hidden w-full h-full bg-slate-100 dark:bg-[#0C0D13] items-center justify-center text-center p-6">
-                                <span class="text-6xl block mb-2">🐾</span>
+                            <div class="hidden w-full h-full bg-slate-100 dark:bg-[#0C0D13] flex-col items-center justify-center text-center p-6">
+                                <svg class="w-12 h-12 text-slate-400 dark:text-slate-600 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
                                 <span class="text-xs text-slate-500 font-bold">Pet no. {{ $pet->id }}</span>
                             </div>
                         @else
-                            <div class="text-center p-6">
-                                <span class="text-6xl block mb-2">🐾</span>
+                            <div class="flex flex-col items-center justify-center text-center p-6">
+                                <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c-1.66 0-3 1.34-3 3 0 2 2 3.5 3 3.5s3-1.5 3-3.5c0-1.66-1.34-3-3-3zm-4.5-2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm9 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
                                 <span class="text-xs text-slate-400 font-semibold">No photo uploaded</span>
                             </div>
                         @endif
@@ -96,19 +105,33 @@
                             <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-400">System ID</p>
                             <p class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">Pet no. {{ $pet->id }}</p>
                         </div>
+                        <div class="bg-white dark:bg-[#171923] p-4 rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs col-span-2 sm:col-span-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-400">Registered In System By</p>
+                                    <p class="text-sm font-extrabold text-slate-900 dark:text-white mt-0.5">
+                                        {{ $pet->added_by_name ?: ($pet->addedBy?->name ?? 'CAWS Administration') }}
+                                        @if($pet->addedBy?->staffProfile)
+                                            <span class="text-xs font-semibold text-[#199CA4] dark:text-teal-400">({{ $pet->addedBy->staffProfile->position_title }})</span>
+                                        @endif
+                                    </p>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Logged on {{ $pet->created_at ? $pet->created_at->format('M d, Y') : 'N/A' }}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="space-y-4">
                         <div class="p-4 bg-white dark:bg-[#171923] rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs">
-                            <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                <span>🩺</span> Medical Background
+                            <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-1.5">
+                                Medical Background
                             </p>
                             <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-bold leading-relaxed">{{ $pet->medical_history ?? 'No specific medical background recorded.' }}</p>
                         </div>
 
                         <div class="p-4 bg-white dark:bg-[#171923] rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs">
-                            <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <span>🏷️</span> Temperament Traits
+                            <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-2">
+                                Temperament Traits
                             </p>
                             @if($pet->temperamentTags->isNotEmpty())
                                 <div class="flex flex-wrap gap-1.5">
@@ -123,8 +146,8 @@
 
                         @if($pet->description)
                             <div class="p-4 bg-white dark:bg-[#171923] rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs">
-                                <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                                    <span>📝</span> About This Pet
+                                <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-1.5">
+                                    About This Pet
                                 </p>
                                 <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">{{ $pet->description }}</p>
                             </div>
@@ -134,11 +157,13 @@
             </div>
 
             {{-- Vaccination & Medical Logs --}}
-            @if(in_array(Auth::user()->role, ['admin', 'staff']))
+            @if(in_array(Auth::user()?->role, ['admin', 'staff']))
                 <div class="mt-10 pt-8 border-t border-slate-100 dark:border-white/[0.06]">
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-sm border border-slate-200 dark:border-white/[0.08]">🩺</span>
+                            <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold text-sm border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                            </div>
                             <div>
                                 <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Vaccination & Clinical Log History</h2>
                                 <p class="text-xs text-slate-400">Chronological healthcare and vaccination treatments</p>
@@ -187,7 +212,7 @@
                         </div>
                     @else
                         <div class="p-8 text-center bg-slate-50/50 dark:bg-[#171923]/50 rounded-2xl border border-dashed border-slate-200 dark:border-white/[0.08]">
-                            <span class="text-3xl block mb-1">🩺</span>
+                            <svg class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                             <p class="text-xs text-slate-400 font-medium">No medical log entries recorded for this pet yet.</p>
                         </div>
                     @endif

@@ -21,6 +21,8 @@ class Pet extends Model
         'description',
         'photo_path',
         'status',
+        'added_by_user_id',
+        'added_by_name',
     ];
 
     protected $appends = [
@@ -38,12 +40,18 @@ class Pet extends Model
             return $this->photo_path;
         }
 
-        return Storage::disk('public')->url($this->photo_path);
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
+        return $root . '/storage/' . ltrim($this->photo_path, '/');
     }
 
     public function getPrimaryImageUrlAttribute(): ?string
     {
         return $this->photo_url;
+    }
+
+    public function addedBy()
+    {
+        return $this->belongsTo(User::class, 'added_by_user_id');
     }
 
     public function adoptionApplications()

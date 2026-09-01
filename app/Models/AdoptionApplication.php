@@ -44,6 +44,8 @@ class AdoptionApplication extends Model
     protected $appends = [
         'signature_url',
         'staff_signature_url',
+        'valid_id_url',
+        'barangay_certificate_url',
     ];
 
     public function getSignatureUrlAttribute(): ?string
@@ -54,17 +56,19 @@ class AdoptionApplication extends Model
         if (str_starts_with($this->signature_path, 'http')) {
             return $this->signature_path;
         }
-        return asset('storage/' . ltrim($this->signature_path, '/'));
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
+        return $root . '/storage/' . ltrim($this->signature_path, '/');
     }
 
     public function getStaffSignatureUrlAttribute(): ?string
     {
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
         if ($this->staff_signature_path) {
             if (str_starts_with($this->staff_signature_path, 'http')) {
                 return $this->staff_signature_path;
             }
             if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->staff_signature_path)) {
-                return asset('storage/' . ltrim($this->staff_signature_path, '/'));
+                return $root . '/storage/' . ltrim($this->staff_signature_path, '/');
             }
         }
 
@@ -73,6 +77,30 @@ class AdoptionApplication extends Model
         }
 
         return null;
+    }
+
+    public function getValidIdUrlAttribute(): ?string
+    {
+        if (!$this->valid_id_path) {
+            return null;
+        }
+        if (str_starts_with($this->valid_id_path, 'http')) {
+            return $this->valid_id_path;
+        }
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
+        return $root . '/storage/' . ltrim($this->valid_id_path, '/');
+    }
+
+    public function getBarangayCertificateUrlAttribute(): ?string
+    {
+        if (!$this->barangay_certificate_path) {
+            return null;
+        }
+        if (str_starts_with($this->barangay_certificate_path, 'http')) {
+            return $this->barangay_certificate_path;
+        }
+        $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
+        return $root . '/storage/' . ltrim($this->barangay_certificate_path, '/');
     }
 
     public function pet()

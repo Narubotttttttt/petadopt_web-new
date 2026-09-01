@@ -12,8 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'role',
-        'avatar', 'fcm_token', 'digital_signature_path'])]
+#[Fillable(['name', 'email', 'password', 'role', 'fcm_token'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -51,30 +50,36 @@ class User extends Authenticatable
         return strtoupper(mb_substr($name, 0, 1));
     }
 
+    public function getAvatarAttribute(): ?string
+    {
+        if ($this->role === 'adopter') {
+            return $this->adoptersProfile?->avatar;
+        }
+        return $this->staffProfile?->avatar;
+    }
+
     public function getAvatarUrlAttribute(): ?string
     {
-        if (empty($this->avatar)) {
-            return null;
+        if ($this->role === 'adopter') {
+            return $this->adoptersProfile?->avatar_url;
         }
+        return $this->staffProfile?->avatar_url;
+    }
 
-        if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
-            return $this->avatar;
+    public function getDigitalSignaturePathAttribute(): ?string
+    {
+        if ($this->role === 'adopter') {
+            return $this->adoptersProfile?->digital_signature_path;
         }
-
-        return asset('storage/' . ltrim($this->avatar, '/'));
+        return $this->staffProfile?->digital_signature_path;
     }
 
     public function getDigitalSignatureUrlAttribute(): ?string
     {
-        if (empty($this->digital_signature_path)) {
-            return null;
+        if ($this->role === 'adopter') {
+            return $this->adoptersProfile?->digital_signature_url;
         }
-
-        if (str_starts_with($this->digital_signature_path, 'http')) {
-            return $this->digital_signature_path;
-        }
-
-        return asset('storage/' . ltrim($this->digital_signature_path, '/'));
+        return $this->staffProfile?->digital_signature_url;
     }
 
     public function adopterPreference()
@@ -90,5 +95,15 @@ class User extends Authenticatable
     public function adoptersProfile()
     {
         return $this->hasOne(AdoptersProfile::class);
+    }
+
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    public function addedPets()
+    {
+        return $this->hasMany(Pet::class, 'added_by_user_id');
     }
 }

@@ -13,7 +13,7 @@
             padding: 28px 32px;
         }
 
-        /* ── HEADER (centered) ──────────────────── */
+        /*  HEADER (centered)  */
         .header-wrap {
             text-align: center;
             margin-bottom: 6px;
@@ -49,7 +49,7 @@
             text-align: center;
         }
 
-        /* ── TITLE ──────────────────────────────── */
+        /*  TITLE  */
         .contract-title {
             text-align: center;
             font-size: 18px;
@@ -64,7 +64,7 @@
             margin: 6px 0;
         }
 
-        /* ── FIELD ROWS ─────────────────────────── */
+        /*  FIELD ROWS  */
         .field-row {
             margin-bottom: 5px;
             font-size: 11px;
@@ -94,7 +94,7 @@
             padding-bottom: 1px;
         }
 
-        /* ── AGREEMENT ──────────────────────────── */
+        /*  AGREEMENT  */
         .agreement-title {
             text-align: center;
             font-size: 13px;
@@ -119,7 +119,7 @@
             font-size: 10.5px;
             line-height: 1.45;
         }
-        /* !! Key fix: DejaVu Sans supports Unicode checkmark ✓ */
+        /* !! Key fix: DejaVu Sans supports Unicode checkmark  */
         .check-cell {
             display: table-cell;
             width: 18px;
@@ -133,7 +133,7 @@
             vertical-align: top;
         }
 
-        /* ── SIGNATURES ─────────────────────────── */
+        /*  SIGNATURES  */
         .sig-section {
             margin-top: 18px;
         }
@@ -167,7 +167,7 @@
             line-height: 1.3;
         }
 
-        /* ── ADOPTER FIELDS ─────────────────────── */
+        /*  ADOPTER FIELDS  */
         .adopter-fields {
             margin-top: 12px;
         }
@@ -184,7 +184,7 @@
             padding: 0;
         }
 
-        /* ── NOTARY ─────────────────────────────── */
+        /*  NOTARY  */
         .notary-section {
             margin-top: 14px;
             font-size: 10.5px;
@@ -206,7 +206,7 @@
 </head>
 <body>
 
-{{-- ════════════════ HEADER (centered) ════════════════ --}}
+{{--  HEADER (centered)  --}}
 <div class="header-wrap">
     <div class="header-inner">
         <table class="header-table">
@@ -235,11 +235,11 @@
     </div>
 </div>
 
-{{-- ════════════════ TITLE ════════════════ --}}
+{{--  TITLE  --}}
 <div class="contract-title">ADOPTION CONTRACT</div>
 <hr class="divider">
 
-{{-- ════════════════ DATE & ID TAG ════════════════ --}}
+{{--  DATE & ID TAG  --}}
 <div class="field-row">
     <table>
         <tr>
@@ -259,7 +259,7 @@
     </table>
 </div>
 
-{{-- ════════════════ PET'S RECORD ════════════════ --}}
+{{--  PET'S RECORD  --}}
 <div class="field-row">
     <span class="field-label">Pet's Record:</span>
     &nbsp;&nbsp;
@@ -274,13 +274,13 @@
     Birthdate: <span class="field-value" style="min-width: 70px;"></span>
 </div>
 
-{{-- ════════════════ DESCRIPTION ════════════════ --}}
+{{--  DESCRIPTION  --}}
 <div class="field-row">
     <span class="field-label">Description: </span>
     <span class="field-value-wide">{{ $pet->description ?? '' }}</span>
 </div>
 
-{{-- ════════════════ BREED ════════════════ --}}
+{{--  BREED  --}}
 <div class="field-row">
     <span class="field-label">Breed: </span>
     <span>{{ $pet->breed ?? 'Aspin/Puspin' }}</span>
@@ -288,7 +288,7 @@
 
 <hr class="divider">
 
-{{-- ════════════════ ADOPTION AGREEMENT ════════════════ --}}
+{{--  ADOPTION AGREEMENT  --}}
 <div class="agreement-title">ADOPTION AGREEMENT</div>
 
 <div class="agreement-intro">
@@ -347,7 +347,7 @@
     </li>
 </ul>
 
-{{-- ════════════════ SIGNATURES ════════════════ --}}
+{{--  SIGNATURES  --}}
 <div class="sig-section">
     <table>
         <tr>
@@ -381,7 +381,7 @@
     </table>
 </div>
 
-{{-- ════════════════ ADOPTER FIELDS ════════════════ --}}
+{{--  ADOPTER FIELDS  --}}
 <div class="adopter-fields">
     <div class="adopter-row">
         <table>
@@ -407,7 +407,7 @@
     </div>
 </div>
 
-{{-- ════════════════ NOTARY ════════════════ --}}
+{{--  NOTARY  --}}
 <div class="notary-section clearfix">
     @php
         $notaryDate = ($application && $application->signed_at) ? $application->signed_at : (($application && $application->scheduled_at) ? $application->scheduled_at : now());

@@ -33,18 +33,29 @@ class ProfileController extends Controller
         $user->name = $validated['name'];
         $user->email = $validated['email'];
 
-        // Handle Avatar Upload
+        // Handle Avatar Upload for Staff/Admin
+        $staffProfile = \App\Models\StaffProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'staff_code' => sprintf('STF-%04d', $user->id),
+                'full_name'  => $user->name,
+                'status'     => 'active',
+            ]
+        );
+
         if ($request->hasFile('avatar')) {
-            if ($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL)) {
-                Storage::disk('public')->delete($user->avatar);
+            if ($staffProfile->avatar && !filter_var($staffProfile->avatar, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($staffProfile->avatar)) {
+                Storage::disk('public')->delete($staffProfile->avatar);
             }
             $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $path;
+            $staffProfile->avatar = $path;
+            $staffProfile->save();
         } elseif ($request->boolean('remove_avatar')) {
-            if ($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL)) {
-                Storage::disk('public')->delete($user->avatar);
+            if ($staffProfile->avatar && !filter_var($staffProfile->avatar, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($staffProfile->avatar)) {
+                Storage::disk('public')->delete($staffProfile->avatar);
             }
-            $user->avatar = null;
+            $staffProfile->avatar = null;
+            $staffProfile->save();
         }
 
         if ($user->isDirty('email')) {
@@ -80,12 +91,21 @@ class ProfileController extends Controller
         $fileName = 'signatures/staff_sig_' . $user->id . '_' . time() . '.png';
         Storage::disk('public')->put($fileName, $decoded);
 
-        if ($user->digital_signature_path && Storage::disk('public')->exists($user->digital_signature_path)) {
-            Storage::disk('public')->delete($user->digital_signature_path);
+        $staffProfile = \App\Models\StaffProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'staff_code' => sprintf('STF-%04d', $user->id),
+                'full_name'  => $user->name,
+                'status'     => 'active',
+            ]
+        );
+
+        if ($staffProfile->digital_signature_path && Storage::disk('public')->exists($staffProfile->digital_signature_path)) {
+            Storage::disk('public')->delete($staffProfile->digital_signature_path);
         }
 
-        $user->digital_signature_path = $fileName;
-        $user->save();
+        $staffProfile->digital_signature_path = $fileName;
+        $staffProfile->save();
 
         \App\Models\AdoptionApplication::where('staff_id', $user->id)
             ->update([
