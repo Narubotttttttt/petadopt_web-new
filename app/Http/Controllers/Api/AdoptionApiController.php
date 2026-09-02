@@ -17,6 +17,7 @@ class AdoptionApiController extends Controller
             'full_name'       => ['required', 'string', 'max:255'],
             'phone'           => ['required', 'string', 'max:50'],
             'address'         => ['required', 'string'],
+            'id_type'         => ['nullable', 'string', 'max:100'],
             'home_type'          => ['nullable', 'string'],
             'has_other_pets'     => ['nullable'],
             'other_pets_details' => ['nullable', 'string'],
@@ -70,6 +71,9 @@ class AdoptionApiController extends Controller
         }
 
         $messageParts = [];
+        if ($request->filled('id_type')) {
+            $messageParts[] = "Valid ID Type: " . $request->id_type;
+        }
         if ($request->filled('proposed_pet_name')) {
             $messageParts[] = "Proposed Pet Name: " . $request->proposed_pet_name;
         }
@@ -134,6 +138,7 @@ class AdoptionApiController extends Controller
             'applicant_name'            => $request->full_name,
             'applicant_email'           => $user->email ?? $request->email ?? 'adopter@email.com',
             'applicant_phone'           => $request->phone,
+            'id_type'                   => $request->input('id_type', 'Philippine National ID (PhilSys)'),
             'message'                   => $fullMessage,
             'valid_id_path'             => $validIdPath,
             'barangay_certificate_path' => $barangayCertPath,

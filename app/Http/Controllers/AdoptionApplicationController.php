@@ -259,7 +259,11 @@ class AdoptionApplicationController extends Controller
             }
         }
 
-        $staffName = $application->staff_name ?: ($application->staff?->name ?? 'CDO Animal Welfare Society Inc.');
+        $staffSigner = $application->staff ?: ($application->staff_id ? \App\Models\User::find($application->staff_id) : null);
+        $staffName = $application->staff_name ?: ($staffSigner?->name ?? 'CDO Animal Welfare Society Inc.');
+        $staffTitle = ($staffSigner && $staffSigner->role === 'admin')
+            ? 'Shelter Administrator'
+            : ($staffSigner?->staffProfile?->position_title ?? 'CAWS Authorized Representative');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.adoption_contract', compact(
             'application',
@@ -267,7 +271,8 @@ class AdoptionApplicationController extends Controller
             'pet',
             'signatureBase64',
             'staffSignatureBase64',
-            'staffName'
+            'staffName',
+            'staffTitle'
         ));
 
         $filename = 'Adoption_Contract_' . str_replace(' ', '_', $pet->name ?? 'Pet') . '.pdf';

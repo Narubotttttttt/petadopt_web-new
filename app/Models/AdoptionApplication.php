@@ -14,6 +14,7 @@ class AdoptionApplication extends Model
         'applicant_name',
         'applicant_email',
         'applicant_phone',
+        'id_type',
         'message',
         'valid_id_path',
         'barangay_certificate_path',

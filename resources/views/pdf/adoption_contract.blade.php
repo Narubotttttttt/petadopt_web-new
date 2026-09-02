@@ -370,7 +370,7 @@
                 </div>
                 <div class="sig-label">
                     <strong>{{ $staffName ?? 'CDO Animal Welfare Society Inc.' }}</strong><br>
-                    CAWS Authorized Representative
+                    {{ $staffTitle ?? 'CAWS Authorized Representative' }}
                 </div>
             </td>
             <td style="width: 33.3%; vertical-align: bottom;">

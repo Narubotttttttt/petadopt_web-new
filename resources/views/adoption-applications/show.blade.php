@@ -139,9 +139,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {{-- Valid Government ID --}}
                         <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Valid Government ID</p>
-                                <p class="text-xs text-slate-400 mt-0.5">Submitted ID photo</p>
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Valid Government ID</p>
+                                    <p class="text-xs font-bold text-slate-800 dark:text-white mt-0.5">{{ $application->id_type ?? 'Government Issued ID' }}</p>
+                                </div>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Valid ID Attached
+                                </span>
                             </div>
                             @if($application->valid_id_path)
                                 <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
@@ -241,14 +247,18 @@
                             @if($application->staff_signature_path || ($application->staff && $application->staff->digital_signature_path))
                                 @php
                                     $staffSigSrc = $application->staff_signature_url ?: ($application->staff ? $application->staff->digital_signature_url : null);
-                                    $staffRepName = $application->staff_name ?: ($application->staff?->name ?? (Auth::user()?->name ?? 'CAWS Representative'));
+                                    $staffSigner = $application->staff ?: Auth::user();
+                                    $staffRepName = $application->staff_name ?: ($staffSigner?->name ?? 'CAWS Representative');
+                                    $signerRoleTitle = ($staffSigner && $staffSigner->role === 'admin') 
+                                        ? 'Shelter Administrator' 
+                                        : ($staffSigner?->staffProfile?->position_title ?? 'CAWS Authorized Representative');
                                 @endphp
                                 <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
                                     <img src="{{ $staffSigSrc }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer" onclick="openDocModal('{{ $staffSigSrc }}', 'Staff Digital Signature')" alt="Staff Signature" />
                                 </div>
                                 <div class="text-[11px] text-slate-500 dark:text-slate-400">
                                     <p class="font-bold text-slate-800 dark:text-white">{{ $staffRepName }}</p>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">CAWS Authorized Representative</p>
+                                    <p class="text-[10px] text-[#199CA4] dark:text-[#41C1CB] font-semibold mt-0.5">{{ $signerRoleTitle }}</p>
                                 </div>
                             @else
                                 <div class="py-2 text-center text-slate-400 dark:text-slate-500 space-y-2">
