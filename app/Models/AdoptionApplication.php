@@ -118,4 +118,9 @@ class AdoptionApplication extends Model
     {
         return $this->belongsTo(User::class, 'evaluator_id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'applicant_email', 'email');
+    }
 }

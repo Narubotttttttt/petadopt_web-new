@@ -181,10 +181,7 @@ class MedicalLogController extends Controller
             return Carbon::parse($date)->addMonths(6)->format('Y-m-d');
         }
 
-        if ($category === 'deworming') {
-            return Carbon::parse($date)->addMonths(3)->format('Y-m-d');
-        }
-
+        // Deworming is optional (only set if manualNextDueDate is explicitly provided)
         return null;
     }
 }

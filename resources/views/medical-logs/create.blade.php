@@ -32,18 +32,57 @@
                     </select>
                 </div>
 
-                <div x-data="{ category: '{{ old('category', '') }}' }">
+                <div x-data="{ 
+                    category: '{{ old('category', 'vaccination') }}',
+                    date: '{{ old('date', now()->format('Y-m-d')) }}',
+                    nextDueDate: '{{ old('next_due_date', '') }}',
+                    calcDueDate(months) {
+                        if (!this.date) return '';
+                        const d = new Date(this.date + 'T00:00:00');
+                        if (isNaN(d.getTime())) return '';
+                        d.setMonth(d.getMonth() + months);
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    },
+                    get formattedDueDate() {
+                        if (!this.nextDueDate) {
+                            return (this.category === 'deworming') ? 'None (Optional)' : 'Select date';
+                        }
+                        const d = new Date(this.nextDueDate + 'T00:00:00');
+                        if (isNaN(d.getTime())) return this.nextDueDate;
+                        return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    },
+                    updateForCategory(cat) {
+                        if (cat === 'vaccination') {
+                            this.nextDueDate = this.calcDueDate(6);
+                        } else {
+                            this.nextDueDate = '';
+                        }
+                    },
+                    init() {
+                        this.updateForCategory(this.category);
+                        this.$watch('category', (val) => {
+                            this.updateForCategory(val);
+                        });
+                        this.$watch('date', () => {
+                            if (this.category === 'vaccination') {
+                                this.nextDueDate = this.calcDueDate(6);
+                            }
+                        });
+                    }
+                }">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Date</label>
-                            <input type="date" name="date" value="{{ old('date', now()->format('Y-m-d')) }}"
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Date Administered</label>
+                            <input type="date" name="date" x-model="date"
                                 class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white" required>
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Category</label>
                             <select name="category" x-model="category" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white" required>
-                                <option value="">Select category</option>
                                 <option value="vaccination">Vaccination</option>
                                 <option value="deworming">Deworming</option>
                             </select>
@@ -51,17 +90,28 @@
                     </div>
 
                     <div class="mt-6">
-                        <template x-if="category === 'vaccination'">
-                            <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-800 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300">
-                                Next due date will be automatically calculated as <strong>6 months</strong> from the date above.
-                            </div>
-                        </template>
-                        <template x-if="category !== 'vaccination' && category !== ''">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Next Due Date <span class="text-gray-400 dark:text-slate-500 font-normal normal-case">(optional)</span></label>
-                                <input type="date" name="next_due_date" value="{{ old('next_due_date') }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                            </div>
-                        </template>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+                                <span x-show="category === 'vaccination'">Next Due Date</span>
+                                <span x-show="category === 'deworming'">Next Due Date (Optional)</span>
+                            </label>
+                            <template x-if="category === 'deworming' && !nextDueDate">
+                                <button type="button" @click="nextDueDate = calcDueDate(3)" class="text-xs text-[#199CA4] hover:underline font-bold cursor-pointer">+3 Months</button>
+                            </template>
+                            <template x-if="category === 'deworming' && nextDueDate">
+                                <button type="button" @click="nextDueDate = ''" class="text-xs text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                            </template>
+                        </div>
+                        <div class="relative flex items-center">
+                            <input type="date" name="next_due_date" x-model="nextDueDate" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-transparent focus:text-gray-800 dark:focus:text-white cursor-pointer">
+                            <span class="absolute left-4 pointer-events-none text-sm font-bold"
+                                :class="nextDueDate ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-gray-400 dark:text-slate-500'"
+                                x-text="formattedDueDate"></span>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-2">
+                            <span x-show="category === 'vaccination'" class="font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-calculated: 6 months ahead for next vaccination booster</span>
+                            <span x-show="category === 'deworming'" class="font-normal text-gray-400 dark:text-slate-500">Optional for routine deworming</span>
+                        </p>
                     </div>
                 </div>
 

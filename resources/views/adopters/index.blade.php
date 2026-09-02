@@ -463,19 +463,75 @@
                         </div>
 
                         {{-- Date & Next Due Date --}}
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-3" x-data="{
+                            administeredDate: '{{ date('Y-m-d') }}',
+                            nextDueDate: '',
+                            calcDueDate(months) {
+                                if (!this.administeredDate) return '';
+                                const d = new Date(this.administeredDate + 'T00:00:00');
+                                if (isNaN(d.getTime())) return '';
+                                d.setMonth(d.getMonth() + months);
+                                const yyyy = d.getFullYear();
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                return `${yyyy}-${mm}-${dd}`;
+                            },
+                            get formattedDueDate() {
+                                if (!this.nextDueDate) {
+                                    return (selectedCategory === 'deworming') ? 'None (Optional)' : 'Select date';
+                                }
+                                const d = new Date(this.nextDueDate + 'T00:00:00');
+                                if (isNaN(d.getTime())) return this.nextDueDate;
+                                return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            },
+                            updateForCategory(cat) {
+                                if (cat === 'vaccination') {
+                                    this.nextDueDate = this.calcDueDate(6);
+                                } else {
+                                    // Deworming is optional by default
+                                    this.nextDueDate = '';
+                                }
+                            },
+                            init() {
+                                this.updateForCategory(selectedCategory);
+                                this.$watch('selectedCategory', (val) => {
+                                    this.updateForCategory(val);
+                                });
+                                this.$watch('administeredDate', () => {
+                                    if (selectedCategory === 'vaccination') {
+                                        this.nextDueDate = this.calcDueDate(6);
+                                    }
+                                });
+                            }
+                        }">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date Administered *</label>
-                                <input type="date" name="date" value="{{ date('Y-m-d') }}" required
+                                <input type="date" name="date" x-model="administeredDate" required
                                     class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Next Due Date (Optional)</label>
-                                <input type="date" name="next_due_date" 
-                                    class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        <span x-show="selectedCategory === 'vaccination'">Next Due Date</span>
+                                        <span x-show="selectedCategory === 'deworming'">Next Due Date (Optional)</span>
+                                    </label>
+                                    <template x-if="selectedCategory === 'deworming' && !nextDueDate">
+                                        <button type="button" @click="nextDueDate = calcDueDate(3)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+3 Months</button>
+                                    </template>
+                                    <template x-if="selectedCategory === 'deworming' && nextDueDate">
+                                        <button type="button" @click="nextDueDate = ''" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                                    </template>
+                                </div>
+                                <div class="relative flex items-center">
+                                    <input type="date" name="next_due_date" x-model="nextDueDate"
+                                        class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-transparent focus:text-slate-800 dark:focus:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition cursor-pointer">
+                                    <span class="absolute left-3 pointer-events-none text-xs font-bold"
+                                        :class="nextDueDate ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-400 dark:text-slate-500'"
+                                        x-text="formattedDueDate"></span>
+                                </div>
                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                                    <span x-show="selectedCategory === 'vaccination'">Auto-calculates +6 months if left empty</span>
-                                    <span x-show="selectedCategory === 'deworming'">Auto-calculates +3 months if left empty</span>
+                                    <span x-show="selectedCategory === 'vaccination'" class="font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-calculated: 6 months ahead</span>
+                                    <span x-show="selectedCategory === 'deworming'" class="font-normal text-slate-400">Optional for deworming routine</span>
                                 </p>
                             </div>
                         </div>
