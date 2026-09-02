@@ -53,27 +53,32 @@ class FirebaseNotificationService
 
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
-        $payload = [
-            'message' => [
-                'token' => $fcmToken,
+        $messageObj = [
+            'token' => $fcmToken,
+            'notification' => [
+                'title' => $title,
+                'body'  => $body,
+            ],
+            'android' => [
+                'priority' => 'HIGH',
                 'notification' => [
-                    'title' => $title,
-                    'body'  => $body,
-                ],
-                'data' => array_map('strval', $data),
-                'android' => [
-                    'priority' => 'HIGH',
-                    'notification' => [
-                        'sound' => 'default',
-                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-                        'channel_id' => 'adoption_status_channel',
-                        'notification_priority' => 'PRIORITY_MAX',
-                        'default_sound' => true,
-                        'default_vibrate_timings' => true,
-                        'visibility' => 'PUBLIC',
-                    ],
+                    'sound' => 'default',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    'channel_id' => 'adoption_status_channel',
+                    'notification_priority' => 'PRIORITY_MAX',
+                    'default_sound' => true,
+                    'default_vibrate_timings' => true,
+                    'visibility' => 'PUBLIC',
                 ],
             ],
+        ];
+
+        if (!empty($data)) {
+            $messageObj['data'] = array_map('strval', $data);
+        }
+
+        $payload = [
+            'message' => $messageObj,
         ];
 
         $response = Http::withToken($accessToken)
