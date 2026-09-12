@@ -50,6 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
             ]
         );
         $profile->avatar = $path;
+        if (empty($profile->user_id)) {
+            $profile->user_id = $user->id;
+        }
         $profile->save();
 
         $updatedUser = \App\Models\User::find($user->id);
@@ -87,6 +90,8 @@ Route::middleware('auth:sanctum')->group(function () {
         $userData = $user->toArray();
         $userData['digital_signature_url'] = $user->digital_signature_url;
         if ($profile) {
+            $userData['avatar'] = $profile->avatar;
+            $userData['avatar_url'] = $profile->avatar_url;
             $userData['adopter_code'] = $profile->adopter_code;
             $userData['phone'] = $profile->phone ?: $user->phone;
             $userData['address'] = $profile->address;
@@ -144,6 +149,12 @@ Route::middleware('auth:sanctum')->group(function () {
         $app = \App\Models\AdoptionApplication::findOrFail($id);
         // Check ownership via applicant_email since there is no user_id column
         if ($app->applicant_email !== auth()->user()->email) abort(403);
+        if (empty($app->signature_path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The adoption contract must be digitally signed by the adopter before downloading.',
+            ], 422);
+        }
         \Illuminate\Support\Facades\URL::forceRootUrl($request->root());
         return response()->json([
             'url' => \Illuminate\Support\Facades\URL::temporarySignedRoute('contract.download', now()->addMinutes(60), ['id' => $id])

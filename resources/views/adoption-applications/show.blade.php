@@ -9,12 +9,21 @@
             </div>
             <div class="space-x-2 flex items-center">
                 @if(in_array($application->status, ['approved', 'adopted']))
-                    <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white transition shadow-2xs">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        <span>Print Contract</span>
-                    </a>
+                    @if($application->signature_path)
+                        <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white transition shadow-2xs">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            <span>Print Contract</span>
+                        </a>
+                    @else
+                        <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs sm:text-sm font-bold border border-amber-200 dark:border-amber-800/60 cursor-not-allowed opacity-90" title="The adopter must digitally sign the agreement via the mobile app before contract can be printed">
+                            <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Awaiting Adopter Signature</span>
+                        </span>
+                    @endif
                 @endif
                 <a href="{{ route('adoption-applications.index') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
             </div>
@@ -76,6 +85,12 @@
                                 {{ ucfirst(str_replace('_', ' ', $application->status)) }}
                             </span>
                         </div>
+                        @if($application->status === 'rejected' && !empty($application->rejection_reason ?? $application->evaluation_notes))
+                            <div class="sm:col-span-2 bg-rose-50/80 dark:bg-rose-950/40 p-3.5 rounded-2xl border border-rose-200/80 dark:border-rose-900/60">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400">Rejection Reason Given to Adopter</p>
+                                <p class="mt-1 text-xs font-semibold text-rose-800 dark:text-rose-200 leading-relaxed">{{ $application->rejection_reason ?? $application->evaluation_notes }}</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -205,8 +220,8 @@
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                        Awaiting
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        Required · Pending
                                     </span>
                                 @endif
                             </div>
@@ -220,9 +235,9 @@
                                     <p class="text-[10px] text-slate-400 mt-0.5">Signed: {{ $application->signed_at ? $application->signed_at->format('M d, Y h:i A') : 'On file' }}</p>
                                 </div>
                             @else
-                                <div class="py-4 text-center text-slate-400 dark:text-slate-500">
-                                    <p class="text-xs font-semibold">No adopter signature yet.</p>
-                                    <p class="text-[10px] mt-0.5">Will be signed via mobile app upon approval.</p>
+                                <div class="py-3 px-2 text-center text-slate-400 dark:text-slate-500 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                                    <p class="text-xs font-bold text-amber-700 dark:text-amber-400">Digital Signature Required</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">The applicant must review and digitally sign the adoption agreement in the mobile app before contract release.</p>
                                 </div>
                             @endif
                         </div>
@@ -273,7 +288,7 @@
                                         </form>
                                     @else
                                         <a href="{{ route('profile.edit') }}" class="inline-block text-[11px] text-[#199CA4] hover:underline font-bold">
-                                            Set up signature in Profile →
+                                            Set up signature in Profile
                                         </a>
                                     @endif
                                 </div>
@@ -282,160 +297,145 @@
 
                     </div>
                 </div>
-                {{-- Staff Evaluation Report Card --}}
-                @if($application->evaluated_at)
-                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                                <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Staff Screening Assessment Report</span>
-                            </h2>
-                            <span class="text-xs text-slate-400 font-medium">{{ $application->evaluated_at->format('M d, Y h:i A') }}</span>
-                        </div>
-
-                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
-                            <div class="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Screening Officer</p>
-                                    <p class="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5">{{ $application->evaluator_name ?? 'CAWS Staff' }}</p>
-                                </div>
-
-                                <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Staff Recommendation</p>
-                                    <div class="mt-0.5">
-                                        @if($application->evaluation_recommendation === 'recommended')
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                Recommended for Approval
-                                            </span>
-                                        @elseif($application->evaluation_recommendation === 'needs_followup')
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                                Needs Follow-Up / Additional Screening
-                                            </span>
-                                        @elseif($application->evaluation_recommendation === 'not_recommended')
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                                Not Recommended
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                                                Screened
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-
-                            @if($application->evaluation_notes)
-                                <div class="pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Staff Screening Notes</p>
-                                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium bg-white dark:bg-[#0e1d20] p-3 rounded-xl border border-slate-200/60 dark:border-slate-800 whitespace-pre-line">{{ $application->evaluation_notes }}</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                @endif
             </div>
 
-            {{-- Decision & Evaluation Sidebar --}}
-            <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-6 h-fit" x-data="{ currentStatus: '{{ old('status', $application->status) }}' }">
+            {{-- Decision Sidebar --}}
+            <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-6 h-fit" 
+                 x-data="{ 
+                     currentStatus: '{{ old('status', in_array($application->status, ['approved', 'rejected']) ? $application->status : '') }}',
+                     presetLocation: ['Centrio Mall CDO', 'SM City CDO Uptown', 'SM CDO Downtown Premier', 'Limketkai Center CDO', 'CAWS Shelter & Adoption Center'].includes('{{ addslashes(old('event_location', $application->event_location ?? '')) }}') ? '{{ addslashes(old('event_location', $application->event_location ?? '')) }}' : '',
+                     eventLocation: '{{ addslashes(old('event_location', $application->event_location ?? '')) }}',
+                     eventNotes: '{{ addslashes(old('event_notes', $application->event_notes ?? '')) }}',
+                     presetReason: '',
+                     rejectionReason: '{{ addslashes(old('rejection_reason', $application->rejection_reason ?? $application->evaluation_notes ?? '')) }}',
+                     get isSaveDisabled() {
+                         if (!this.currentStatus) return true;
+                         if (this.currentStatus === 'approved') {
+                             return !this.eventLocation || !this.eventLocation.trim() || !this.eventNotes || !this.eventNotes.trim();
+                         }
+                         if (this.currentStatus === 'rejected') {
+                             return !this.rejectionReason || !this.rejectionReason.trim();
+                         }
+                         return false;
+                     }
+                 }">
                 
-                @if(Auth::user()?->role === 'admin')
-                    {{-- Admin Decision Panel --}}
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adoption Decision</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review applicant screening details and record the adoption decision.</p>
+                </div>
+
+                <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-4">
+                    @csrf
+                    @method('PATCH')
+
                     <div>
-                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Administrative Decision</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review staff screening notes and render the final adoption decision.</p>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Decision</label>
+                        <select name="status" x-model="currentStatus" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                            <option value="" disabled {{ !in_array($application->status, ['approved', 'rejected']) ? 'selected' : '' }}>Select Decision...</option>
+                            <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approve</option>
+                            <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject</option>
+                        </select>
                     </div>
 
-                    @if($application->evaluated_at)
-                        <div class="p-3.5 rounded-xl bg-teal-50/60 dark:bg-[#12272b] border border-teal-100 dark:border-teal-900/50 space-y-1">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Staff Evaluation Status</p>
-                            <p class="text-xs font-bold text-slate-800 dark:text-white">
-                                Screened by {{ $application->evaluator_name }} &bull; 
-                                <span class="capitalize text-[#199CA4] dark:text-[#41C1CB]">{{ str_replace('_', ' ', $application->evaluation_recommendation ?? 'evaluated') }}</span>
-                            </p>
+                    {{-- Event Scheduling Details --}}
+                    <div x-show="currentStatus === 'approved'" x-transition class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Schedule Sunday Event Date</label>
+                            <input type="date" name="scheduled_at" value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                         </div>
-                    @endif
 
-                    <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-4">
-                        @csrf
-                        @method('PATCH')
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Adoption Event / Mall Location <span class="text-rose-500 font-bold">*</span>
+                            </label>
+
+                            {{-- Standard Location Presets Dropdown --}}
+                            <select x-model="presetLocation" 
+                                    @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (['Centrio Mall CDO', 'SM City CDO Uptown', 'SM CDO Downtown Premier', 'Limketkai Center CDO', 'CAWS Shelter & Adoption Center'].includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
+                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                                <option value="">Select standard venue (or type custom below)...</option>
+                                <option value="Centrio Mall CDO">Centrio Mall CDO</option>
+                                <option value="SM City CDO Uptown">SM City CDO Uptown</option>
+                                <option value="SM CDO Downtown Premier">SM CDO Downtown Premier</option>
+                                <option value="Limketkai Center CDO">Limketkai Center CDO</option>
+                                <option value="CAWS Shelter & Adoption Center">CAWS Shelter & Adoption Center</option>
+                                <option value="custom">Other / Custom Location...</option>
+                            </select>
+
+                            {{-- Editable Location Input --}}
+                            <input type="text" 
+                                   name="event_location" 
+                                   x-ref="customLocationInput"
+                                   x-model="eventLocation"
+                                   placeholder="e.g. Centrio Mall CDO, Activity Center Booth #2" 
+                                   class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500">Pick a preset venue above to auto-fill, then customize booth or activity area details as needed.</p>
+                        </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Final Decision</label>
-                            <select name="status" x-model="currentStatus" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="" disabled {{ !in_array($application->status, ['approved', 'rejected']) ? 'selected' : '' }}>Select Decision...</option>
-                                <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approve</option>
-                                <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject</option>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                                Event Instructions & Reminders <span class="text-rose-500 font-bold">*</span>
+                            </label>
+                            <textarea name="event_notes" 
+                                      x-model="eventNotes"
+                                      rows="3" 
+                                      placeholder="e.g. Pet release, free anti-rabies vaccination, and spaying/neutering drive." 
+                                      class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ old('event_notes', $application->event_notes) }}</textarea>
+                        </div>
+                    </div>
+
+                    {{-- Rejection Details & Reason for Adopter --}}
+                    <div x-show="currentStatus === 'rejected'" x-transition class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div class="p-3.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60">
+                            <p class="text-xs font-bold text-rose-800 dark:text-rose-300">Feedback for Adopter</p>
+                            <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
+                                Please provide a clear reason explaining why this application was not approved. This feedback will be sent directly to the applicant via push notification.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Preset Reason Template</label>
+                            <select x-model="presetReason" @change="if (presetReason) { rejectionReason = presetReason; }" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                                <option value="">Select a common reason or type custom...</option>
+                                <option value="Incomplete or unverifiable identity and proof of residence documents.">Incomplete or Unverifiable Documents</option>
+                                <option value="Rental property lease or landlord rules do not permit keeping pets.">Landlord or Rental Pet Restrictions</option>
+                                <option value="Living space or fencing security does not meet requirements for this pet.">Inadequate Fencing or Living Environment</option>
+                                <option value="Care schedule and time commitment do not match this pet's requirements.">Schedule and Care Commitment Mismatch</option>
+                                <option value="Household has already reached the safe pet capacity limit.">Maximum Pet Capacity Reached</option>
                             </select>
                         </div>
 
-                        {{-- Event Scheduling Details --}}
-                        <div x-show="currentStatus === 'approved'" x-transition class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Schedule Sunday Event Date</label>
-                                <input type="date" name="scheduled_at" value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Adoption Event / Mall Location</label>
-                                <input type="text" name="event_location" value="{{ old('event_location', $application->event_location) }}" placeholder="e.g. Centrio Mall CDO / SM City CDO" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Event Instructions & Reminders</label>
-                                <textarea name="event_notes" rows="3" placeholder="e.g. Pet release, free anti-rabies vaccination, and spaying/neutering drive." class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ old('event_notes', $application->event_notes) }}</textarea>
-                            </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                                Reason for Rejection <span class="text-rose-500 font-bold">*</span>
+                            </label>
+                            <textarea 
+                                name="rejection_reason" 
+                                x-model="rejectionReason"
+                                :required="currentStatus === 'rejected'" 
+                                rows="3" 
+                                placeholder="Explain specifically what needs improvement or why the application was declined..." 
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition"></textarea>
                         </div>
-
-                        <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#199CA4] to-[#14838B] px-4 py-3 text-xs sm:text-sm font-bold text-white hover:from-[#146970] hover:to-[#12585e] transition shadow-md shadow-[#199CA4]/25 cursor-pointer">
-                            Save Administrative Decision
-                        </button>
-                    </form>
-
-                @else
-                    {{-- Staff Adopter Screening Panel --}}
-                    <div>
-                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adopter Screening & Evaluation</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Screen applicant documents and record your evaluation recommendation for Admin decision.</p>
                     </div>
 
-                    @if($application->evaluated_at)
-                        <div class="p-4 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                                <span class="text-xs font-extrabold text-emerald-800 dark:text-emerald-300">Screening Evaluation Submitted</span>
-                            </div>
-                            <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                                Submitted on <strong class="text-slate-800 dark:text-white">{{ $application->evaluated_at->format('M d, Y \a\t h:i A') }}</strong> by <strong class="text-slate-800 dark:text-white">{{ $application->evaluator_name }}</strong>. Forwarded to Admin for decision.
-                            </p>
-                        </div>
-                    @endif
-
-                    <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-4">
-                        @csrf
-                        @method('PATCH')
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Screening Recommendation</label>
-                            <select name="evaluation_recommendation" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="recommended" {{ old('evaluation_recommendation', $application->evaluation_recommendation) === 'recommended' ? 'selected' : '' }}>Recommended for Approval</option>
-                                <option value="needs_followup" {{ old('evaluation_recommendation', $application->evaluation_recommendation) === 'needs_followup' ? 'selected' : '' }}>Needs Follow-Up / Additional Screening</option>
-                                <option value="not_recommended" {{ old('evaluation_recommendation', $application->evaluation_recommendation) === 'not_recommended' ? 'selected' : '' }}>Not Recommended</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Staff Screening Notes</label>
-                            <textarea name="evaluation_notes" rows="4" placeholder="Enter findings from phone interview, verification of residence, housing security, and pet care experience." class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ old('evaluation_notes', $application->evaluation_notes) }}</textarea>
-                        </div>
-
-                        <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#199CA4] to-[#14838B] px-4 py-3 text-xs sm:text-sm font-bold text-white hover:from-[#146970] hover:to-[#12585e] transition shadow-md shadow-[#199CA4]/25 cursor-pointer">
-                            {{ $application->evaluated_at ? 'Update Screening Evaluation' : 'Submit Evaluation & Forward to Admin' }}
+                    <div class="pt-2">
+                        <button type="submit" 
+                                :disabled="isSaveDisabled"
+                                :class="isSaveDisabled ? 'opacity-40 cursor-not-allowed bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shadow-none pointer-events-none' : 'bg-gradient-to-r from-[#199CA4] to-[#14838B] text-white hover:from-[#146970] hover:to-[#12585e] shadow-md shadow-[#199CA4]/25 cursor-pointer'"
+                                class="w-full inline-flex items-center justify-center rounded-xl px-4 py-3 text-xs sm:text-sm font-bold transition">
+                            Save Decision
                         </button>
-                    </form>
-                @endif
+
+                        <p x-show="currentStatus === 'approved' && isSaveDisabled" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold text-center mt-2">
+                            Please provide both event location and instructions to approve.
+                        </p>
+                        <p x-show="currentStatus === 'rejected' && isSaveDisabled" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold text-center mt-2">
+                            Please provide a rejection reason to proceed.
+                        </p>
+                    </div>
+                </form>
 
             </div>
         </div>

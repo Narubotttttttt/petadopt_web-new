@@ -7,11 +7,15 @@ return new class extends Migration
 {
     public function up()
     {
-        DB::statement("ALTER TABLE adoption_applications MODIFY status ENUM('under_review', 'pending', 'approved', 'rejected') DEFAULT 'under_review'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE adoption_applications MODIFY status ENUM('under_review', 'pending', 'approved', 'rejected') DEFAULT 'under_review'");
+        }
     }
 
     public function down()
     {
-        DB::statement("ALTER TABLE adoption_applications MODIFY status ENUM('under_review', 'approved', 'rejected') DEFAULT 'under_review'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE adoption_applications MODIFY status ENUM('under_review', 'approved', 'rejected') DEFAULT 'under_review'");
+        }
     }
 };

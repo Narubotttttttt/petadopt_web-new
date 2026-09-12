@@ -9,12 +9,7 @@
                 </h1>
                 <p class="text-xs text-slate-500 dark:text-slate-400">Welcome back, {{ Auth::user()?->name }}! Overview of pets, adoption applications, and medical records.</p>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] shadow-2xs text-xs font-bold text-slate-700 dark:text-slate-300">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    {{ now()->format('l, F j, Y') }}
-                </span>
-            </div>
+
         </div>
 
         {{-- Metric Cards Row --}}
@@ -146,7 +141,7 @@
                         <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Recent Requests</h2>
                     </div>
                     <a href="{{ route('adoption-applications.index') }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-slate-400 dark:hover:text-white transition-colors">
-                        View All →
+                        View All
                     </a>
                 </div>
 
@@ -182,8 +177,8 @@
                                     {{ !in_array($application->status, ['approved', 'rejected', 'pending']) ? 'bg-slate-50 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '' }}">
                                     {{ ucfirst($application->status ?? 'pending') }}
                                 </span>
-                                <a href="{{ route('adoption-applications.show', $application) }}" class="p-1 text-slate-400 hover:text-[#199CA4] dark:hover:text-white transition">
-                                    →
+                                <a href="{{ route('adoption-applications.show', $application) }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-slate-400 dark:hover:text-white transition-colors">
+                                    View
                                 </a>
                             </div>
                         </div>
@@ -193,6 +188,136 @@
                             <p class="text-[10px] text-slate-400 dark:text-slate-500">New applications will appear here.</p>
                         </div>
                     @endforelse
+                </div>
+            </div>
+
+        </div>
+
+        {{-- Shelter Reports & Performance Analytics Section --}}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            
+            {{-- Reports & Activity Analytics Chart (8 cols) --}}
+            <div class="lg:col-span-8 bg-white dark:bg-[#12141C] rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] p-4 sm:p-5 flex flex-col justify-between">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Shelter Reports & Performance</h2>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4]/10 dark:bg-white/[0.06] text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-white/[0.08]">
+                                Year {{ $selectedYear }}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
+                            Annual shelter report analytics comparing rescued intakes, approved adoptions, and clinical medical procedures.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('reports.export.pdf', ['preset' => 'this_year']) }}" target="_blank"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold shadow-xs transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>PDF Report</span>
+                        </a>
+                        <a href="{{ route('reports.index') }}" 
+                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-[#199CA4] dark:text-[#41C1CB] text-[11px] font-bold border border-slate-200/80 dark:border-white/[0.08] transition">
+                            <span>Full Reports</span>
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Chart Canvas --}}
+                <div class="h-60 sm:h-64 relative w-full">
+                    <canvas id="dashboardPetHistoryChart"></canvas>
+                </div>
+
+                {{-- Chart Summary Badges --}}
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+                    <div class="flex flex-wrap items-center gap-3 text-xs font-semibold">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-[#199CA4]"></span>
+                            <span class="text-slate-600 dark:text-slate-300">Intakes: <strong class="text-slate-900 dark:text-white">{{ $totalYearIntakes }}</strong></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                            <span class="text-slate-600 dark:text-slate-300">Adoptions: <strong class="text-slate-900 dark:text-white">{{ $totalYearAdoptions }}</strong></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-indigo-500"></span>
+                            <span class="text-slate-600 dark:text-slate-300">Medical Logs: <strong class="text-slate-900 dark:text-white">{{ $totalYearMedicals }}</strong></span>
+                        </div>
+                    </div>
+
+                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                        Conversion: {{ $yearConversionRate }}%
+                    </span>
+                </div>
+            </div>
+
+            {{-- Shelter Population & Status Distribution (4 cols) --}}
+            <div class="lg:col-span-4 bg-white dark:bg-[#12141C] rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] p-4 sm:p-5 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Shelter Status Overview</h2>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">Current state of rescued pets in system.</p>
+                </div>
+
+                <div class="space-y-3.5 my-4">
+                    {{-- Available Pets --}}
+                    @php
+                        $availableCount = $statusBreakdown['available'] ?? 0;
+                        $pendingCount = $statusBreakdown['pending'] ?? 0;
+                        $adoptedCount = $statusBreakdown['adopted'] ?? 0;
+                        $totalAll = max(1, $totalPets);
+                    @endphp
+                    <div>
+                        <div class="flex items-center justify-between text-xs font-semibold mb-1">
+                            <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+                                Available for Adoption
+                            </span>
+                            <span class="font-bold text-slate-900 dark:text-white">{{ $availableCount }}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                            <div class="h-full bg-[#199CA4] rounded-full" style="width: {{ round(($availableCount / $totalAll) * 100) }}%"></div>
+                        </div>
+                    </div>
+
+                    {{-- Pending Applications --}}
+                    <div>
+                        <div class="flex items-center justify-between text-xs font-semibold mb-1">
+                            <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                Pending Review
+                            </span>
+                            <span class="font-bold text-slate-900 dark:text-white">{{ $pendingCount }}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                            <div class="h-full bg-amber-500 rounded-full" style="width: {{ round(($pendingCount / $totalAll) * 100) }}%"></div>
+                        </div>
+                    </div>
+
+                    {{-- Successfully Adopted --}}
+                    <div>
+                        <div class="flex items-center justify-between text-xs font-semibold mb-1">
+                            <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Successfully Adopted
+                            </span>
+                            <span class="font-bold text-slate-900 dark:text-white">{{ $adoptedCount }}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 rounded-full" style="width: {{ round(($adoptedCount / $totalAll) * 100) }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center gap-2">
+                    <a href="{{ route('reports.index') }}" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#199CA4]/10 dark:bg-white/[0.06] hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] text-xs font-bold transition">
+                        <span>Reports Hub</span>
+                    </a>
+                    <a href="{{ route('pet-history.index') }}" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 text-xs font-bold transition">
+                        <span>Pet History</span>
+                    </a>
                 </div>
             </div>
 
@@ -225,7 +350,8 @@
 
             const colors = getChartColors();
 
-            const chart = new Chart(ctx, {
+            // 1. Adoption Trends Line Chart
+            const adoptionChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: months,
@@ -308,14 +434,124 @@
                 }
             });
 
+            // 2. Pet History & Intake Flow Bar Chart
+            const histCtx = document.getElementById('dashboardPetHistoryChart');
+            let historyChart = null;
+
+            if (histCtx) {
+                const intakes = @json($chartIntakes);
+                const adoptions = @json($chartCounts);
+                const medicals = @json($chartMedicals);
+
+                historyChart = new Chart(histCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            {
+                                label: 'Intakes',
+                                data: intakes,
+                                backgroundColor: 'rgba(25, 156, 164, 0.85)',
+                                borderColor: '#199CA4',
+                                borderWidth: 1.5,
+                                borderRadius: 6,
+                                barPercentage: 0.6,
+                                categoryPercentage: 0.8,
+                            },
+                            {
+                                label: 'Adoptions',
+                                data: adoptions,
+                                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                                borderColor: '#10B981',
+                                borderWidth: 1.5,
+                                borderRadius: 6,
+                                barPercentage: 0.6,
+                                categoryPercentage: 0.8,
+                            },
+                            {
+                                label: 'Medical Logs',
+                                data: medicals,
+                                backgroundColor: 'rgba(99, 102, 241, 0.85)',
+                                borderColor: '#6366F1',
+                                borderWidth: 1.5,
+                                borderRadius: 6,
+                                barPercentage: 0.6,
+                                categoryPercentage: 0.8,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                display: false,
+                            },
+                            tooltip: {
+                                backgroundColor: '#12141C',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                titleColor: '#ffffff',
+                                bodyColor: '#e2e8f0',
+                                titleFont: { size: 11, weight: 'bold' },
+                                bodyFont: { size: 11, weight: 'bold' },
+                                padding: 8,
+                                cornerRadius: 10,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false,
+                                },
+                                ticks: {
+                                    color: colors.tickColor,
+                                    font: { size: 10, weight: '600' }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    precision: 0,
+                                    color: colors.tickColor,
+                                    font: { size: 10, weight: '600' }
+                                },
+                                grid: {
+                                    color: colors.gridColor,
+                                    strokeDash: [3, 3],
+                                },
+                                border: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
             // Reactively update Chart colors on theme change
             window.addEventListener('theme-changed', function () {
                 const c = getChartColors();
-                chart.options.scales.x.ticks.color = c.tickColor;
-                chart.options.scales.y.ticks.color = c.tickColor;
-                chart.options.scales.y.grid.color = c.gridColor;
-                chart.data.datasets[0].pointBorderColor = c.pointBorderColor;
-                chart.update();
+                
+                if (adoptionChart) {
+                    adoptionChart.options.scales.x.ticks.color = c.tickColor;
+                    adoptionChart.options.scales.y.ticks.color = c.tickColor;
+                    adoptionChart.options.scales.y.grid.color = c.gridColor;
+                    adoptionChart.data.datasets[0].pointBorderColor = c.pointBorderColor;
+                    adoptionChart.update();
+                }
+
+                if (historyChart) {
+                    historyChart.options.scales.x.ticks.color = c.tickColor;
+                    historyChart.options.scales.y.ticks.color = c.tickColor;
+                    historyChart.options.scales.y.grid.color = c.gridColor;
+                    historyChart.update();
+                }
             });
         });
     </script>

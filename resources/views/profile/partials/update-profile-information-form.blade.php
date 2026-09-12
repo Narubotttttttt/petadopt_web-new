@@ -98,7 +98,7 @@
                     <div>
                         <span class="text-xs font-bold text-gray-900 dark:text-white capitalize">{{ $user->role }}</span>
                         <p class="text-[11px] text-gray-500 dark:text-slate-400">
-                            {{ $user->role === 'admin' ? 'Full system administrator privileges and user management.' : 'Standard staff access to pets and adoption logs.' }}
+                            {{ $user->role === 'admin' ? 'Full system administrator privileges and staff account management.' : 'Staff access to pets, adoption decisions, medical logs, and reports.' }}
                         </p>
                     </div>
                 </div>

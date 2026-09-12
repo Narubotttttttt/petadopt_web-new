@@ -17,7 +17,11 @@ class AdminNotificationService
             return self::buildNotifications();
         });
 
-        $readIds = Session::get('admin_read_notifications', []);
+        $userId = auth()->id();
+        $cacheKey = $userId ? 'admin_read_notifications_' . $userId : 'admin_read_notifications_guest';
+        $sessionRead = Session::get('admin_read_notifications', []);
+        $cachedRead  = Cache::get($cacheKey, []);
+        $readIds     = array_unique(array_merge($sessionRead, $cachedRead));
 
         $notifications = array_map(function ($n) use ($readIds) {
             $n['is_read'] = in_array($n['id'], $readIds);
@@ -170,7 +174,7 @@ class AdminNotificationService
                     'is_read' => false,
                     'url' => url('/adopters') . '?search=' . urlencode($adopterName),
                     'action_url' => url('/adopters') . '?search=' . urlencode($adopterName),
-                    'action_hint' => 'View adopter profile & check-in history →',
+                    'action_hint' => 'View adopter profile & check-in history',
                     'created_at' => $latestTimestamp ?: now()->timestamp,
                 ];
             }
@@ -211,7 +215,7 @@ class AdminNotificationService
                 'is_read' => false,
                 'url' => url('/adoption-applications/' . $pApp->id),
                 'action_url' => url('/adoption-applications/' . $pApp->id),
-                'action_hint' => 'Review submitted application & applicant details →',
+                'action_hint' => 'Review submitted application & applicant details',
                 'created_at' => $pApp->created_at ? $pApp->created_at->timestamp : 0,
             ];
         }
@@ -231,7 +235,17 @@ class AdminNotificationService
     {
         $data = self::getNotifications();
         $allIds = array_column($data['notifications'], 'id');
-        Session::put('admin_read_notifications', $allIds);
+
+        $userId = auth()->id();
+        $cacheKey = $userId ? 'admin_read_notifications_' . $userId : 'admin_read_notifications_guest';
+        $sessionRead = Session::get('admin_read_notifications', []);
+        $cachedRead  = Cache::get($cacheKey, []);
+        $merged = array_values(array_unique(array_merge($sessionRead, $cachedRead, $allIds)));
+
+        Session::put('admin_read_notifications', $merged);
+        Session::save();
+
+        Cache::put($cacheKey, $merged, now()->addDays(60));
     }
 
     public static function markAsRead(string $id): void
@@ -240,6 +254,15 @@ class AdminNotificationService
         if (!in_array($id, $readIds)) {
             $readIds[] = $id;
             Session::put('admin_read_notifications', $readIds);
+            Session::save();
+        }
+
+        $userId = auth()->id();
+        $cacheKey = $userId ? 'admin_read_notifications_' . $userId : 'admin_read_notifications_guest';
+        $cached = Cache::get($cacheKey, []);
+        if (!in_array($id, $cached)) {
+            $cached[] = $id;
+            Cache::put($cacheKey, $cached, now()->addDays(60));
         }
     }
 }

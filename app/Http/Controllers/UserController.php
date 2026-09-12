@@ -19,7 +19,7 @@ class UserController extends Controller
 
         $users = User::with('staffProfile')
             ->whereIn('role', ['admin', 'staff'])
-            ->orderByRaw("FIELD(role, 'admin', 'staff')")
+            ->orderByRaw("CASE WHEN role = 'admin' THEN 1 ELSE 2 END")
             ->orderBy('name')
             ->get();
 

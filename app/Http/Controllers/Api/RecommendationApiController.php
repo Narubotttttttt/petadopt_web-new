@@ -97,7 +97,7 @@ class RecommendationApiController extends Controller
         if (empty($pets)) {
             return response()->json([
                 'success'         => true,
-                'algorithm'       => 'Scikit-Learn Cosine Similarity & Multi-Attribute Vector Space Model',
+                'algorithm'       => 'Scikit-Learn Random Forest Classifier (Color, Age, Gender Prioritized)',
                 'count'           => 0,
                 'recommendations' => [],
             ]);
@@ -179,19 +179,20 @@ class RecommendationApiController extends Controller
             \Illuminate\Support\Facades\Log::warning('Python stderr: ' . $process->getErrorOutput());
         }
 
-        // 4. Built-in Native Vector Cosine Similarity Fallback (Ensures 100% Zero-Downtime)
+        // 4. Built-in Native Multi-Attribute Engine Fallback (Ensures 100% Zero-Downtime)
         $fallbackRecs = $this->nativeCosineSimilarityMatch($pets, $profile);
 
         return response()->json([
             'success'         => true,
-            'algorithm'       => 'Scikit-Learn Cosine Similarity & Multi-Attribute Vector Space Model (Native Engine)',
+            'algorithm'       => 'Multi-Attribute Scoring Engine (Color, Age, Gender Prioritized Native Fallback)',
             'count'           => count($fallbackRecs),
             'recommendations' => $fallbackRecs,
         ]);
     }
 
     /**
-     * High-performance Native Vector Cosine Similarity engine (Fallback).
+     * High-performance Native Multi-Attribute & Vector Cosine Similarity engine (Fallback).
+     * Enforces: Color (22%) + Age (20%) + Gender (20%) = 62% > Temperament (19%) + Capability (19%) = 38%
      */
     private function nativeCosineSimilarityMatch(array $pets, array $profile): array
     {
@@ -206,7 +207,21 @@ class RecommendationApiController extends Controller
             $pets = array_values(array_filter($pets, fn($p) => strtolower($p['type'] ?? '') === $prefSpecies));
         }
 
-        // Adopter vector
+        $prefColor = strtolower(trim($profile['preferred_color'] ?? 'any'));
+        $prefAge = strtolower(trim($profile['preferred_age'] ?? 'any'));
+        $prefGender = strtolower(trim($profile['preferred_gender'] ?? 'any'));
+
+        $colorFamilies = [
+            'orange'   => ['orange', 'ginger', 'red', 'yellow', 'gold'],
+            'black'    => ['black', 'dark', 'charcoal'],
+            'white'    => ['white', 'cream', 'ivory', 'light'],
+            'brown'    => ['brown', 'tan', 'chocolate', 'fawn', 'buff'],
+            'tricolor' => ['tricolor', 'calico', 'tortie', 'torbie', 'multi'],
+            'gray'     => ['gray', 'grey', 'silver', 'blue', 'smoke'],
+            'tabby'    => ['tabby', 'striped', 'brindle', 'tiger'],
+        ];
+
+        // Adopter temperament vector
         $userVec = array_map(fn($t) => in_array($t, $desiredTags) ? 1.0 : 0.0, $allTags);
         $userMagnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $userVec))) ?: 1.0;
 
@@ -216,34 +231,109 @@ class RecommendationApiController extends Controller
             $petVec = array_map(fn($t) => in_array($t, $petTags) ? 1.0 : 0.0, $allTags);
             $petMagnitude = sqrt(array_sum(array_map(fn($v) => $v * $v, $petVec))) ?: 1.0;
 
-            // Dot product
+            // 1. Temperament Cosine Similarity
             $dotProduct = 0;
             for ($i = 0; $i < count($allTags); $i++) {
                 $dotProduct += ($userVec[$i] * $petVec[$i]);
             }
             $cosineSim = count($petTags) > 0 ? ($dotProduct / ($userMagnitude * $petMagnitude)) : 0.5;
 
-            // Lifestyle match
-            $lifestyleScore = 0.8;
-            $reasons = [];
+            // 2. Color Match (22%)
+            $colorScore = 1.0;
+            $petColor = strtolower(trim($pet['color'] ?? ''));
+            if (!in_array($prefColor, ['any', 'all', '', 'any color'])) {
+                $colorScore = 0.0;
+                if (str_contains($petColor, $prefColor) || str_contains($prefColor, $petColor)) {
+                    $colorScore = 1.0;
+                } else {
+                    foreach ($colorFamilies as $fam => $aliases) {
+                        $prefInFam = str_contains($prefColor, $fam) || collect($aliases)->contains(fn($a) => str_contains($prefColor, $a));
+                        $petInFam = str_contains($petColor, $fam) || collect($aliases)->contains(fn($a) => str_contains($petColor, $a));
+                        if ($prefInFam && $petInFam) {
+                            $colorScore = 1.0;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 3. Age Match (20%)
+            $ageScore = 1.0;
+            $petAge = strtolower(trim($pet['age'] ?? ''));
+            if (!in_array($prefAge, ['any', 'all', '', 'any age'])) {
+                $ageScore = 0.0;
+                $isPuppyKitten = str_contains($petAge, 'puppy') || str_contains($petAge, 'kitten') || str_contains($petAge, 'month') || str_contains($petAge, '< 1');
+                $isYoung = str_contains($petAge, 'young') || str_contains($petAge, '1 year') || str_contains($petAge, '2 year');
+                $isSenior = str_contains($petAge, 'senior') || str_contains($petAge, 'old') || str_contains($petAge, '8') || str_contains($petAge, '9') || str_contains($petAge, '10');
+                $isAdult = !$isPuppyKitten && !$isYoung && !$isSenior;
+
+                if (str_contains($prefAge, 'puppy') || str_contains($prefAge, 'kitten')) {
+                    $ageScore = $isPuppyKitten ? 1.0 : ($isYoung ? 0.4 : 0.0);
+                } elseif (str_contains($prefAge, 'young')) {
+                    $ageScore = $isYoung ? 1.0 : (($isPuppyKitten || $isAdult) ? 0.4 : 0.0);
+                } elseif (str_contains($prefAge, 'senior')) {
+                    $ageScore = $isSenior ? 1.0 : ($isAdult ? 0.4 : 0.0);
+                } else {
+                    $ageScore = $isAdult ? 1.0 : (($isYoung || $isSenior) ? 0.4 : 0.0);
+                }
+            }
+
+            // 4. Gender Match (20%)
+            $genderScore = 1.0;
+            $petGender = strtolower(trim($pet['gender'] ?? ''));
+            if (!in_array($prefGender, ['any', 'all', '', 'any gender'])) {
+                if ($prefGender === 'male') {
+                    $genderScore = (str_contains($petGender, 'male') && !str_contains($petGender, 'female')) ? 1.0 : 0.0;
+                } elseif ($prefGender === 'female') {
+                    $genderScore = str_contains($petGender, 'female') ? 1.0 : 0.0;
+                }
+            }
+
+            // 5. Lifestyle & Capability Match (19%)
+            $lifestylePts = 0.60;
             $livingEnv = strtolower($profile['living_environment'] ?? 'apartment');
             if (str_contains($livingEnv, 'apartment')) {
-                if (in_array('Calm', $petTags) || in_array('Independent', $petTags) || ($pet['type'] ?? '') === 'cat') {
-                    $lifestyleScore += 0.15;
-                    $reasons[] = 'Well-suited for apartment or indoor living';
+                if (in_array('Calm', $petTags) || in_array('Independent', $petTags) || strtolower($pet['type'] ?? '') === 'cat') {
+                    $lifestylePts += 0.20;
+                } elseif (strtolower($pet['type'] ?? '') === 'dog' && in_array('Energetic', $petTags)) {
+                    $lifestylePts -= 0.20;
                 }
             } else {
+                $lifestylePts += 0.20;
+            }
+
+            $activityLevel = strtolower($profile['activity_level'] ?? 'moderate');
+            if (in_array($activityLevel, ['high', 'active']) && (in_array('Energetic', $petTags) || in_array('Playful', $petTags))) {
+                $lifestylePts += 0.15;
+            } elseif ($activityLevel === 'relaxed' && in_array('Calm', $petTags)) {
+                $lifestylePts += 0.15;
+            }
+
+            $lifestyleNormalized = min(1.0, max(0.0, $lifestylePts));
+
+            // Composite Weighted Score: Color (22%) + Age (20%) + Gender (20%) + Temperament (19%) + Capability (19%)
+            $finalScore = (0.22 * $colorScore) + (0.20 * $ageScore) + (0.20 * $genderScore) + (0.19 * $cosineSim) + (0.19 * $lifestyleNormalized);
+            $matchPct = round(min(99.0, max(50.0, ($finalScore * 48.0) + 51.0)), 1);
+
+            // Prioritized Match Reasons
+            $reasons = [];
+            if (!in_array($prefColor, ['any', 'all', '', 'any color']) && $colorScore >= 0.75) {
+                $reasons[] = 'Matches your preferred ' . ($pet['color'] ?: 'coat') . ' color';
+            }
+            if (!in_array($prefAge, ['any', 'all', '', 'any age']) && $ageScore >= 0.75) {
+                $reasons[] = 'Matches your desired ' . ($pet['age'] ?: 'age') . ' group';
+            }
+            if (!in_array($prefGender, ['any', 'all', '', 'any gender']) && $genderScore >= 0.75) {
+                $reasons[] = 'Matches your preferred ' . ucfirst($pet['gender'] ?: 'gender') . ' gender';
+            }
+            if ($cosineSim >= 0.65) {
+                $reasons[] = 'Shares your preferred temperament traits';
+            }
+            if (str_contains($livingEnv, 'apartment') && (in_array('Calm', $petTags) || strtolower($pet['type'] ?? '') === 'cat')) {
+                $reasons[] = 'Well-suited for apartment or indoor living';
+            } elseif (!str_contains($livingEnv, 'apartment')) {
                 $reasons[] = 'Great match for your home living space';
             }
-
-            if (! empty($profile['preferred_color']) && ! in_array(strtolower($profile['preferred_color']), ['any', 'all'])) {
-                if (str_contains(strtolower($pet['color'] ?? ''), strtolower($profile['preferred_color']))) {
-                    $reasons[] = 'Matches your preferred ' . $profile['preferred_color'] . ' color';
-                }
-            }
-
-            $finalScore = (0.50 * $cosineSim) + (0.50 * min(1.0, $lifestyleScore));
-            $matchPct = round(min(99.0, max(50.0, ($finalScore * 45.0) + 54.0)), 1);
 
             $results[] = [
                 'pet_id'                 => $pet['id'],

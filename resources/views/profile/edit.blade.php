@@ -47,9 +47,6 @@
 
             {{-- 3. Password Security --}}
             @include('profile.partials.update-password-form')
-
-            {{-- 4. Danger Zone --}}
-            @include('profile.partials.delete-user-form')
         </div>
 
     </div>

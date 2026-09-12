@@ -1,1 +1,0 @@
-<img src="{{ asset('images/caws-logo.png') }}" alt="{{ config('app.name', 'CDO Animal Welfare Society Inc.') }}" {{ $attributes->merge(['class' => 'h-10 w-10 rounded-full object-contain bg-white dark:bg-white/[0.06] p-0.5 border border-slate-200 dark:border-white/[0.12] shadow-xs']) }}>

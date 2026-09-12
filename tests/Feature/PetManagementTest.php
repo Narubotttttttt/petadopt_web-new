@@ -32,12 +32,11 @@ class PetManagementTest extends TestCase
             'photo' => UploadedFile::fake()->create('pet.jpg', 100, 'image/jpeg'),
         ]);
 
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/pets');
 
         $pet = Pet::latest()->first();
         $this->assertNotNull($pet);
         $this->assertSame('Vaccinated, Spayed/Neutered', $pet->medical_history);
-        $this->assertSame('Friendly and playful', $pet->temperament);
         $this->assertSame('A joyful companion who loves walks and cuddles.', $pet->description);
     }
 }

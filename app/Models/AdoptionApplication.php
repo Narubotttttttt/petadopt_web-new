@@ -28,6 +28,7 @@ class AdoptionApplication extends Model
         'scheduled_at',
         'event_location',
         'event_notes',
+        'rejection_reason',
         'evaluator_id',
         'evaluator_name',
         'evaluation_recommendation',

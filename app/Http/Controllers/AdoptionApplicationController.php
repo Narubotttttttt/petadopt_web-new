@@ -26,38 +26,29 @@ class AdoptionApplicationController extends Controller
     public function update(Request $request, AdoptionApplication $application): RedirectResponse
     {
         $currentUser = Auth::user();
-        $isAdmin = $currentUser->role === 'admin';
 
-        if (!$isAdmin) {
-            // Stage 1: Staff Evaluator Action
-            $request->validate([
-                'evaluation_recommendation' => ['required', 'in:recommended,needs_followup,not_recommended'],
-                'evaluation_notes'          => ['nullable', 'string', 'max:2000'],
-            ]);
-
-            $application->update([
-                'evaluator_id'              => $currentUser->id,
-                'evaluator_name'            => $currentUser->name,
-                'evaluation_recommendation' => $request->evaluation_recommendation,
-                'evaluation_notes'          => $request->evaluation_notes,
-                'evaluated_at'              => now(),
-                'status'                    => 'under_review',
-            ]);
-
-            return back()->with('success', 'Staff evaluation recorded and forwarded to Administrator for decision.');
-        }
-
-        // Stage 2: Admin Executive Decision
         $request->validate([
-            'status'         => ['required', Rule::in(['under_review', 'pending', 'approved', 'rejected'])],
-            'scheduled_at'   => ['nullable', 'date'],
-            'event_location' => ['nullable', 'string', 'max:255'],
-            'event_notes'    => ['nullable', 'string'],
+            'status'           => ['required', Rule::in(['approved', 'rejected'])],
+            'scheduled_at'     => ['nullable', 'date'],
+            'event_location'   => ['nullable', 'required_if:status,approved', 'string', 'max:255'],
+            'event_notes'      => ['nullable', 'required_if:status,approved', 'string'],
+            'rejection_reason' => ['nullable', 'required_if:status,rejected', 'string', 'max:2000'],
         ]);
 
         $data = $request->only(['status', 'scheduled_at', 'event_location', 'event_notes']);
-        $wasApproved = $application->status === 'approved';
+
+        if ($request->filled('rejection_reason')) {
+            $data['rejection_reason'] = $request->rejection_reason;
+        }
+
+        $data['evaluator_id']   = $currentUser->id;
+        $data['evaluator_name'] = $currentUser->name;
+        $data['evaluated_at']   = now();
+
+        $wasApproved    = $application->status === 'approved';
         $willBeApproved = $request->status === 'approved';
+        $wasRejected    = $application->status === 'rejected';
+        $willBeRejected = $request->status === 'rejected';
 
         if ($willBeApproved && ! $wasApproved) {
             $data['approved_at'] = now();
@@ -72,12 +63,16 @@ class AdoptionApplicationController extends Controller
 
         $application->update($data);
 
+        if ($wasApproved && ! $willBeApproved) {
+            $application->pet?->update(['status' => 'available']);
+        }
+
         if ($willBeApproved && ! $wasApproved) {
             $petUpdate = ['status' => 'adopted'];
             if (empty($application->pet->name) && $application->message && preg_match('/Proposed Pet Name:\s*(.+)/i', $application->message, $matches)) {
                 $petUpdate['name'] = trim($matches[1]);
             }
-            $application->pet->update($petUpdate);
+            $application->pet?->update($petUpdate);
 
             if (!empty($application->applicant_email)) {
                 $user = \App\Models\User::where('email', $application->applicant_email)->first();
@@ -95,12 +90,12 @@ class AdoptionApplicationController extends Controller
                 );
             }
 
-            $petName = $application->pet->name ?? 'your pet';
+            $petName = $application->pet?->name ?? 'your pet';
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
                 "Adoption Approved for {$petName}!",
-                "Great news! Your adoption request for {$petName} was approved by CAWS! Check your notification bell for event details.",
-                ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id]
+                "Great news! Your adoption request for {$petName} was approved by CAWS! Please open the app to review and digitally sign your adoption contract to finalize the pickup.",
+                ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id, 'requires_signature' => true]
             );
 
             $otherApplicants = AdoptionApplication::where('pet_id', $application->pet_id)
@@ -121,16 +116,27 @@ class AdoptionApplicationController extends Controller
                 ->where('id', '!=', $application->id)
                 ->whereIn('status', ['pending', 'under_review'])
                 ->update(['status' => 'rejected']);
-        } elseif ($request->status === 'rejected' && $application->getOriginal('status') !== 'rejected') {
-            $petName = $application->pet->name ?? 'your requested pet';
+        } elseif ($willBeRejected && ! $wasRejected) {
+            $petName = $application->pet?->name ?? 'your requested pet';
+            $reason = !empty($application->rejection_reason)
+                ? $application->rejection_reason
+                : (!empty($application->evaluation_notes)
+                    ? $application->evaluation_notes
+                    : 'Your application could not be approved based on shelter adoption requirements.');
+
+            $body = "Your adoption request for {$petName} was not approved. Reason: {$reason}";
+
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
                 "Adoption Request Update - {$petName}",
-                "Thank you for your interest in adopting {$petName}. Your application could not be approved at this time. Browse our other lovely pets waiting for a home!",
-                ['type' => 'adoption_status', 'status' => 'rejected', 'pet_id' => $application->pet_id]
+                $body,
+                [
+                    'type'             => 'adoption_status',
+                    'status'           => 'rejected',
+                    'pet_id'           => (string) $application->pet_id,
+                    'rejection_reason' => $reason,
+                ]
             );
-        } elseif ($wasApproved && ! $willBeApproved) {
-            $application->pet->update(['status' => 'available']);
         }
 
         return back()->with('success', 'Adoption application updated successfully.');
@@ -198,6 +204,12 @@ class AdoptionApplicationController extends Controller
 
         if (!in_array($application->status, ['approved', 'adopted'])) {
             return response()->json(['error' => 'Contract is only available for approved or adopted applications.'], 403);
+        }
+
+        if (empty($application->signature_path)) {
+            return response()->json([
+                'error' => 'The adoption contract must be digitally signed by the adopter before downloading or printing.'
+            ], 422);
         }
 
         $pet = $application->pet;
