@@ -77,7 +77,7 @@ class PetHistoryTest extends TestCase
         $response->assertDontSee('Bella');
     }
 
-    public function test_dashboard_renders_with_pet_history_chart_data(): void
+    public function test_dashboard_renders_successfully(): void
     {
         $staff = User::factory()->create([
             'role' => 'staff',
@@ -94,8 +94,8 @@ class PetHistoryTest extends TestCase
         $response = $this->actingAs($staff)->get(route('dashboard'));
 
         $response->assertStatus(200);
-        $response->assertSee('Pet History');
-        $response->assertSee('dashboardPetHistoryChart');
+        $response->assertSee('Adoption Trends');
+        $response->assertDontSee('dashboardPetHistoryChart');
     }
 
     public function test_guest_cannot_access_pet_history(): void

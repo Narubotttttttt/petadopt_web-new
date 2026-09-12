@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="w-full py-6 sm:py-8 px-4 sm:px-6 lg:px-8 animate-fade-in space-y-6">
+    <div class="w-full py-6 sm:py-8 px-4 sm:px-6 lg:px-8 animate-fade-in space-y-6" x-data>
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Medical & Vaccination Logs</h1>
@@ -77,11 +77,18 @@
                                     <div class="inline-flex items-center gap-1.5">
                                         <a href="{{ route('medical-logs.edit', $log) }}" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs">Edit</a>
                                         @if(Auth::user()?->role === 'admin')
-                                            <form action="{{ route('medical-logs.destroy', $log) }}" method="POST" onsubmit="return confirm('Delete this medical log entry?');" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition text-xs cursor-pointer">Delete</button>
-                                            </form>
+                                            <button 
+                                                type="button" 
+                                                data-title='Delete "<strong>Medical Log for {{ $log->pet->name ?? ('Pet no. ' . $log->pet_id) }}</strong>"?'
+                                                data-message="This action cannot be undone."
+                                                data-action="{{ route('medical-logs.destroy', $log) }}"
+                                                data-confirm-text="Delete"
+                                                data-method="DELETE"
+                                                onclick="openConfirmModal(this.dataset)"
+                                                class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition text-xs cursor-pointer"
+                                            >
+                                                Delete
+                                            </button>
                                         @endif
                                     </div>
                                 </td>

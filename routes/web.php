@@ -7,7 +7,6 @@ use App\Http\Controllers\MedicalLogController;
 use App\Http\Controllers\PetHistoryController;
 use App\Http\Controllers\ReportController;
 use App\Models\AdoptionApplication;
-use App\Models\MedicalLog;
 use App\Models\Pet;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,40 +30,20 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
         $isSqlite = DB::getDriverName() === 'sqlite';
         $monthAdoption = $isSqlite ? "CAST(strftime('%m', COALESCE(approved_at, updated_at)) AS INTEGER)" : 'MONTH(COALESCE(approved_at, updated_at))';
         $yearAdoption  = $isSqlite ? "CAST(strftime('%Y', COALESCE(approved_at, updated_at)) AS INTEGER)" : 'YEAR(COALESCE(approved_at, updated_at))';
-        $monthIntake   = $isSqlite ? "CAST(strftime('%m', created_at) AS INTEGER)" : 'MONTH(created_at)';
-        $yearIntake    = $isSqlite ? "CAST(strftime('%Y', created_at) AS INTEGER)" : 'YEAR(created_at)';
-        $monthMedical  = $isSqlite ? "CAST(strftime('%m', date) AS INTEGER)" : 'MONTH(date)';
-        $yearMedical   = $isSqlite ? "CAST(strftime('%Y', date) AS INTEGER)" : 'YEAR(date)';
 
-        // 1. Adoption Trends
+        // Adoption Trends
         $adoptionTrends = AdoptionApplication::selectRaw("{$monthAdoption} as month, COUNT(*) as total")
             ->where('status', 'approved')
             ->whereRaw("{$yearAdoption} = ?", [$selectedYear])
             ->groupBy('month')
             ->pluck('total', 'month');
 
-        // 2. Pet Intake History Trends
-        $intakeTrends = Pet::selectRaw("{$monthIntake} as month, COUNT(*) as total")
-            ->whereRaw("{$yearIntake} = ?", [$selectedYear])
-            ->groupBy('month')
-            ->pluck('total', 'month');
-
-        // 3. Clinical Medical History Trends
-        $medicalTrends = MedicalLog::selectRaw("{$monthMedical} as month, COUNT(*) as total")
-            ->whereRaw("{$yearMedical} = ?", [$selectedYear])
-            ->groupBy('month')
-            ->pluck('total', 'month');
-
         $chartMonths = [];
         $chartCounts = [];
-        $chartIntakes = [];
-        $chartMedicals = [];
 
         foreach (range(1, 12) as $m) {
             $chartMonths[] = Carbon::create()->month($m)->format('M');
             $chartCounts[] = (int) ($adoptionTrends->get($m, 0));
-            $chartIntakes[] = (int) ($intakeTrends->get($m, 0));
-            $chartMedicals[] = (int) ($medicalTrends->get($m, 0));
         }
 
         // Available years for dropdown
@@ -74,30 +53,14 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
             ->map(fn($y) => (int)$y)
             ->toArray();
 
-        $intakeYears = Pet::selectRaw("DISTINCT {$yearIntake} as yr")
-            ->pluck('yr')
-            ->map(fn($y) => (int)$y)
-            ->toArray();
-
-        $availableYears = array_values(array_unique(array_merge([now()->year], $adoptionYears, $intakeYears)));
+        $availableYears = array_values(array_unique(array_merge([now()->year], $adoptionYears)));
         rsort($availableYears);
 
         $totalYearAdoptions = array_sum($chartCounts);
-        $totalYearIntakes = array_sum($chartIntakes);
-        $totalYearMedicals = array_sum($chartMedicals);
-        $totalYearApplications = AdoptionApplication::whereRaw("{$yearAdoption} = ?", [$selectedYear])->count();
-        $yearConversionRate = $totalYearApplications > 0 ? round(($totalYearAdoptions / $totalYearApplications) * 100, 1) : 0;
 
         $peakCount = !empty($chartCounts) ? max($chartCounts) : 0;
         $peakMonthIdx = array_search($peakCount, $chartCounts);
         $peakMonth = ($peakCount > 0 && $peakMonthIdx !== false) ? $chartMonths[$peakMonthIdx] : 'None';
-
-        // Historical status breakdown
-        $statusBreakdown = [
-            'available' => Pet::where('status', 'available')->count(),
-            'pending'   => Pet::where('status', 'pending')->count(),
-            'adopted'   => Pet::where('status', 'adopted')->count(),
-        ];
 
         return view('dashboard', [
             'totalPets'              => Pet::count(),
@@ -107,18 +70,11 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
             'recentApplications'     => AdoptionApplication::with(['pet', 'user.adoptersProfile'])->latest('created_at')->take(5)->get(),
             'chartMonths'            => $chartMonths,
             'chartCounts'            => $chartCounts,
-            'chartIntakes'           => $chartIntakes,
-            'chartMedicals'          => $chartMedicals,
             'selectedYear'           => $selectedYear,
             'availableYears'         => $availableYears,
             'totalYearAdoptions'     => $totalYearAdoptions,
-            'totalYearIntakes'       => $totalYearIntakes,
-            'totalYearMedicals'      => $totalYearMedicals,
-            'totalYearApplications'  => $totalYearApplications,
-            'yearConversionRate'     => $yearConversionRate,
             'peakMonth'              => $peakMonth,
             'peakCount'              => $peakCount,
-            'statusBreakdown'        => $statusBreakdown,
         ]);
     })->name('dashboard');
 

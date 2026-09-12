@@ -155,69 +155,6 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Vaccination & Medical Logs --}}
-            @if(in_array(Auth::user()?->role, ['admin', 'staff']))
-                <div class="mt-10 pt-8 border-t border-slate-100 dark:border-white/[0.06]">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold text-sm border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-                            </div>
-                            <div>
-                                <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Vaccination & Clinical Log History</h2>
-                                <p class="text-xs text-slate-400">Chronological healthcare and vaccination treatments</p>
-                            </div>
-                        </div>
-                        <a href="{{ route('medical-logs.create-for-pet', $pet) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white rounded-xl text-xs font-extrabold shadow-xs transition cursor-pointer">+ Add Medical Entry</a>
-                    </div>
-
-                    @if($pet->medicalLogs->isNotEmpty())
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            @foreach($pet->medicalLogs as $log)
-                                <div class="border border-slate-200/80 dark:border-white/[0.06] rounded-2xl p-4 bg-white dark:bg-[#171923] card-hover-effect flex flex-col justify-between shadow-2xs">
-                                    <div>
-                                        <div class="flex items-center justify-between gap-2 mb-2">
-                                            <span class="text-xs font-extrabold text-slate-900 dark:text-white">{{ $log->date->format('F d, Y') }}</span>
-                                            @php
-                                                $categoryStyles = [
-                                                    'vaccination' => 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60',
-                                                    'deworming' => 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60',
-                                                    'treatment' => 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60',
-                                                    'checkup' => 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60',
-                                                    'surgery' => 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60',
-                                                    'injury_illness' => 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/60',
-                                                ];
-                                                $catStyle = $categoryStyles[$log->category] ?? 'bg-slate-50 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]';
-                                            @endphp
-                                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border {{ $catStyle }}">{{ ucfirst(str_replace('_', ' ', $log->category)) }}</span>
-                                        </div>
-                                        @if($log->administered_by)
-                                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">By: <span class="font-bold text-slate-700 dark:text-slate-200">{{ $log->administered_by }}</span></p>
-                                        @endif
-                                        @if($log->notes)
-                                            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 italic">"{{ $log->notes }}"</p>
-                                        @endif
-                                    </div>
-                                    <div class="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 dark:border-white/[0.06]">
-                                        @if($log->next_due_date)
-                                            <span class="text-[11px] font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60">Next Due: {{ $log->next_due_date->format('M d, Y') }}</span>
-                                        @else
-                                            <span class="text-[11px] text-slate-400">No follow-up set</span>
-                                        @endif
-                                        <a href="{{ route('medical-logs.edit', $log) }}" class="text-xs font-extrabold text-slate-700 dark:text-slate-300 hover:text-[#199CA4] dark:hover:text-teal-400 hover:underline">Edit Log</a>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="p-8 text-center bg-slate-50/50 dark:bg-[#171923]/50 rounded-2xl border border-dashed border-slate-200 dark:border-white/[0.08]">
-                            <svg class="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            <p class="text-xs text-slate-400 font-medium">No medical log entries recorded for this pet yet.</p>
-                        </div>
-                    @endif
-                </div>
-            @endif
         </div>
     </div>
 </x-app-layout>

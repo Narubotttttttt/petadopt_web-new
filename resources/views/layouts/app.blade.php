@@ -49,5 +49,8 @@
                 </main>
             </div>
         </div>
+
+        {{-- Global Custom Confirmation Modal --}}
+        <x-confirm-modal />
     </body>
 </html>
