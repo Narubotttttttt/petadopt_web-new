@@ -45,11 +45,119 @@
                             <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 10.5C3.67 10.5 3 11.17 3 12s.67 1.5 1.5 1.5S6 12.83 6 12s-.67-1.5-1.5-1.5zm15 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm-11-4C7.67 6.5 7 7.17 7 8s.67 1.5 1.5 1.5S10 8.83 10 8s-.67-1.5-1.5-1.5zm7 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 11.5c-2.48 0-4.5 2.02-4.5 4.5 0 2.48 2.02 4.5 4.5 4.5s4.5-2.02 4.5-4.5c0-2.48-2.02-4.5-4.5-4.5z"/></svg>
                         </div>
                     @endif
-                    <div>
-                        <h3 class="text-base font-extrabold text-slate-800 dark:text-white">Pet no. {{ $application->pet_id }}</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}</p>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">Pet no. {{ $application->pet_id }}</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}</p>
+                            </div>
+                            @if($application->pet)
+                                <a href="{{ route('pets.show', $application->pet) }}" class="shrink-0 text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline flex items-center gap-1">
+                                    <span>View Pet Profile</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                            @endif
+                        </div>
                     </div>
                 </div>
+
+                {{-- Pet Medical Clearance & Immunization Card --}}
+                @if($application->pet)
+                    @php
+                        $medLogs = $application->pet->medicalLogs ?? collect();
+                        $latestVaccine = $medLogs->where('category', 'vaccination')->sortByDesc('date')->first();
+                        $latestDeworming = $medLogs->where('category', 'deworming')->sortByDesc('date')->first();
+                        $nowDay = now()->startOfDay();
+                        $vacDue = $latestVaccine?->next_due_date ? $latestVaccine->next_due_date->copy()->startOfDay() : null;
+                        $isVacOverdue = $vacDue && $vacDue->lt($nowDay);
+                        $isVacDueSoon = $vacDue && !$isVacOverdue && $vacDue->lte($nowDay->copy()->addDays(30)->endOfDay());
+                        $hasVaccine = (bool) $latestVaccine;
+                    @endphp
+                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-bold text-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Clinical & Vaccination Clearance</h2>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Verify pet health status before finalizing adoption approval.</p>
+                                </div>
+                            </div>
+                            @if(in_array(Auth::user()?->role, ['admin', 'staff']))
+                                <a href="{{ route('medical-logs.create-for-pet', $application->pet->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] text-xs font-bold transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    <span>Log Treatment</span>
+                                </a>
+                            @endif
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {{-- Vaccination Clearance Item --}}
+                            <div class="p-3.5 rounded-xl border {{ $hasVaccine ? ($isVacOverdue ? 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : ($isVacDueSoon ? 'bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' : 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40')) : 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' }}">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Vaccination Status</p>
+                                    @if(!$hasVaccine)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">
+                                            Missing Record
+                                        </span>
+                                    @elseif($isVacOverdue)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">
+                                            Overdue
+                                        </span>
+                                    @elseif($isVacDueSoon)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+                                            Due Soon
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                                            Cleared
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="mt-2">
+                                    @if($hasVaccine)
+                                        <p class="text-xs font-extrabold text-slate-800 dark:text-white">Core Vaccination Dose</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Administered: {{ $latestVaccine->date?->format('M d, Y') ?? 'N/A' }}</p>
+                                        <p class="text-[11px] font-semibold {{ $isVacOverdue ? 'text-rose-600 dark:text-rose-400' : ($isVacDueSoon ? 'text-amber-600 dark:text-amber-400' : 'text-slate-600 dark:text-slate-300') }} mt-0.5">
+                                            Booster Due: {{ $latestVaccine->next_due_date ? $latestVaccine->next_due_date->format('M d, Y') : 'None scheduled' }}
+                                        </p>
+                                    @else
+                                        <p class="text-xs font-bold text-rose-700 dark:text-rose-400">No vaccination recorded</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Ensure pet receives initial vaccine prior to release.</p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Deworming Status Item --}}
+                            <div class="p-3.5 rounded-xl border bg-slate-50/80 dark:bg-[#12272b] border-slate-200/60 dark:border-slate-800">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deworming Status</p>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $latestDeworming ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+                                        {{ $latestDeworming ? 'Administered' : 'Optional / Pending' }}
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    @if($latestDeworming)
+                                        <p class="text-xs font-extrabold text-slate-800 dark:text-white">Preventative Deworming</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Given on: {{ $latestDeworming->date?->format('M d, Y') ?? 'N/A' }}</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Next Due: {{ $latestDeworming->next_due_date ? $latestDeworming->next_due_date->format('M d, Y') : 'As advised' }}</p>
+                                    @else
+                                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">No deworming record logged</p>
+                                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Optional preventative care.</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        @if(!$hasVaccine || $isVacOverdue)
+                            <div class="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
+                                <svg class="w-4 h-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <span>Clinical Advisory: Please confirm pet vaccination schedule is updated before approving hand-over.</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 {{-- Applicant Information Card --}}
                 <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">

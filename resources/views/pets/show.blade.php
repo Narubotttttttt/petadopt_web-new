@@ -122,11 +122,108 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div class="p-4 bg-white dark:bg-[#171923] rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs">
-                            <p class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider mb-1.5">
-                                Medical Background
-                            </p>
-                            <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-bold leading-relaxed">{{ $pet->medical_history ?? 'No specific medical background recorded.' }}</p>
+                        {{-- Clinical & Vaccination History Card --}}
+                        <div class="p-5 bg-white dark:bg-[#171923] rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs space-y-4">
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-bold text-xs">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                                    </div>
+                                    <h2 class="text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                                        Immunization & Clinical Records
+                                    </h2>
+                                </div>
+                                @if(in_array(Auth::user()?->role, ['admin', 'staff']))
+                                    <a href="{{ route('medical-logs.create-for-pet', $pet->id) }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline">
+                                        <span>+ Add Record</span>
+                                    </a>
+                                @endif
+                            </div>
+
+                            @if($pet->medical_history)
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/[0.04] text-xs text-slate-700 dark:text-slate-300">
+                                    <span class="font-bold text-slate-900 dark:text-white">Medical Notes:</span> {{ $pet->medical_history }}
+                                </div>
+                            @endif
+
+                            @php
+                                $latestVaccine = $pet->medicalLogs->where('category', 'vaccination')->first();
+                                $latestDeworming = $pet->medicalLogs->where('category', 'deworming')->first();
+                                $today = now()->startOfDay();
+                                $vaccineDueDate = $latestVaccine?->next_due_date ? $latestVaccine->next_due_date->copy()->startOfDay() : null;
+                                $isVaccineOverdue = $vaccineDueDate && $vaccineDueDate->lt($today);
+                                $isVaccineDueSoon = $vaccineDueDate && !$isVaccineOverdue && $vaccineDueDate->diffInDays($today) <= 30;
+                            @endphp
+
+                            {{-- Vaccine Status Highlights --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="p-3 rounded-xl border {{ $latestVaccine ? ($isVaccineOverdue ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40' : ($isVaccineDueSoon ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40')) : 'bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.06]' }}">
+                                    <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Vaccination Status</p>
+                                    @if($latestVaccine)
+                                        <div class="flex items-center gap-1.5 mt-1">
+                                            @if($isVaccineOverdue)
+                                                <span class="text-xs font-black text-rose-600 dark:text-rose-400">Booster Overdue</span>
+                                            @elseif($isVaccineDueSoon)
+                                                <span class="text-xs font-black text-amber-600 dark:text-amber-400">Booster Due Soon</span>
+                                            @else
+                                                <span class="text-xs font-black text-emerald-600 dark:text-emerald-400">Up to Date</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                            Next booster: <span class="font-bold">{{ $latestVaccine->next_due_date ? $latestVaccine->next_due_date->format('M d, Y') : 'None scheduled' }}</span>
+                                        </p>
+                                    @else
+                                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">No vaccination logged yet</p>
+                                    @endif
+                                </div>
+
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06]">
+                                    <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Deworming Status</p>
+                                    @if($latestDeworming)
+                                        <p class="text-xs font-black text-purple-600 dark:text-purple-400 mt-1">Administered</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                            Last dose: <span class="font-bold">{{ $latestDeworming->date->format('M d, Y') }}</span>
+                                        </p>
+                                    @else
+                                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">No deworming logged</p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Detailed Log History Timeline --}}
+                            @if($pet->medicalLogs->isNotEmpty())
+                                <div class="space-y-2 pt-2">
+                                    <p class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Past Clinical Entries</p>
+                                    <div class="divide-y divide-slate-100 dark:divide-white/[0.06] border border-slate-100 dark:border-white/[0.06] rounded-xl overflow-hidden">
+                                        @foreach($pet->medicalLogs->take(5) as $log)
+                                            <div class="p-2.5 hover:bg-slate-50/60 dark:hover:bg-white/[0.02] flex items-center justify-between text-xs transition">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-bold text-slate-800 dark:text-white">{{ $log->date->format('M d, Y') }}</span>
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border
+                                                        {{ $log->category === 'vaccination' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200' : '' }}
+                                                        {{ $log->category === 'deworming' ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200' : '' }}
+                                                        {{ !in_array($log->category, ['vaccination', 'deworming']) ? 'bg-slate-100 text-slate-700 dark:bg-white/[0.06] dark:text-slate-300 border-slate-200' : '' }}">
+                                                        {{ ucfirst(str_replace('_', ' ', $log->category)) }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-right text-[11px] text-slate-500 dark:text-slate-400">
+                                                    By: <span class="font-semibold">{{ $log->administered_by ?: ($log->creator?->name ?? 'Staff') }}</span>
+                                                    @if($log->next_due_date)
+                                                        • Due: <span class="font-semibold">{{ $log->next_due_date->format('M d, Y') }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    @if($pet->medicalLogs->count() > 5)
+                                        <div class="text-center pt-1">
+                                            <a href="{{ route('medical-logs.index', ['q' => $pet->id]) }}" class="text-[11px] font-bold text-[#199CA4] hover:underline">
+                                                View all {{ $pet->medicalLogs->count() }} clinical records
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
 
                         <div class="p-4 bg-white dark:bg-[#171923] rounded-2xl border border-slate-200 dark:border-white/[0.06] shadow-2xs">

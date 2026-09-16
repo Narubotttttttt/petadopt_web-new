@@ -7,6 +7,7 @@ use App\Http\Controllers\MedicalLogController;
 use App\Http\Controllers\PetHistoryController;
 use App\Http\Controllers\ReportController;
 use App\Models\AdoptionApplication;
+use App\Models\MedicalLog;
 use App\Models\Pet;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
         $peakMonth = ($peakCount > 0 && $peakMonthIdx !== false) ? $chartMonths[$peakMonthIdx] : 'None';
 
         return view('dashboard', [
-            'totalPets'              => Pet::count(),
+            'totalPets'              => Pet::where('status', '!=', 'adopted')->count(),
             'totalUsers'             => User::whereIn('role', ['admin', 'staff'])->count(),
             'totalAdoptions'         => AdoptionApplication::where('status', 'approved')->count(),
             'latestPet'              => Pet::latest('created_at')->first(),

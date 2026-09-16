@@ -1,41 +1,133 @@
 <x-app-layout>
     <div class="w-full py-6 sm:py-8 px-4 sm:px-6 lg:px-8 animate-fade-in space-y-6" x-data>
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+        {{-- Header Bar --}}
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Medical & Vaccination Logs</h1>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Vaccination, deworming, checkups, and surgical history of rescued pets.</p>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Medical Logs</h1>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Monitor shelter immunizations, 6-month booster schedules, and routine deworming records.</p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <form method="GET" action="{{ route('medical-logs.index') }}" class="flex items-center gap-2">
+                    @if(request('filter') && request('filter') !== 'all')
+                        <input type="hidden" name="filter" value="{{ request('filter') }}" />
+                    @endif
                     <div class="relative">
-                        <input name="q" value="{{ old('q', request('q')) }}" placeholder="Search by pet..." class="pl-9 pr-4 py-2 bg-white dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-xs sm:text-sm w-48 sm:w-60 focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs transition" />
+                        <input name="q" value="{{ old('q', request('q')) }}" placeholder="Search pet, breed, or vet..." class="pl-9 pr-4 py-2 bg-white dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-xs sm:text-sm w-48 sm:w-64 focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs transition font-medium" />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                     <button type="submit" class="px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white font-bold rounded-xl text-xs sm:text-sm shadow-xs transition-colors cursor-pointer">Search</button>
+                    @if(request('q'))
+                        <a href="{{ route('medical-logs.index', ['filter' => request('filter', 'all')]) }}" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-semibold underline">Clear</a>
+                    @endif
                 </form>
                 <a href="{{ route('medical-logs.create') }}" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-bold shadow-xs transition-all duration-200">
-                    <span>+</span> Add Entry
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span>Record Medical Log</span>
                 </a>
             </div>
         </div>
 
         @if(session('success'))
-            <div class="mb-6 px-4 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 rounded-2xl flex items-center gap-2 text-sm font-semibold shadow-2xs">
-                
+            <div class="px-4 py-3 bg-[#199CA4]/10 dark:bg-[#199CA4]/15 border border-[#199CA4]/25 text-[#146970] dark:text-[#41C1CB] rounded-2xl flex items-center gap-2 text-sm font-semibold shadow-2xs">
+                <svg class="w-5 h-5 text-[#199CA4] dark:text-[#41C1CB] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 <span>{{ session('success') }}</span>
             </div>
         @endif
 
+        {{-- Clinical KPI Metric Summary Cards --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {{-- Core Vaccinations Card --}}
+            <a href="{{ route('medical-logs.index', ['filter' => 'vaccination']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'vaccination' ? 'border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#199CA4]/50 shadow-2xs transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Core Vaccinations</span>
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2">
+                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ $vaccineCount }}</span>
+                    <span class="text-xs font-semibold text-slate-400">doses logged</span>
+                </div>
+                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Core immunization records</p>
+            </a>
+
+            {{-- Booster Schedules Card --}}
+            <a href="{{ route('medical-logs.index', ['filter' => 'scheduled']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'scheduled' ? 'border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#199CA4]/50 shadow-2xs transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Booster Schedules</span>
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2">
+                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ $scheduledCount }}</span>
+                    <span class="text-xs font-semibold text-slate-400">scheduled reminders</span>
+                </div>
+                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Automated push reminder triggers</p>
+            </a>
+
+            {{-- Total Routine Dewormings --}}
+            <a href="{{ route('medical-logs.index', ['filter' => 'deworming']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'deworming' ? 'border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#199CA4]/50 shadow-2xs transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deworming Records</span>
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2">
+                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ $dewormingCount }}</span>
+                    <span class="text-xs font-semibold text-slate-400">doses logged</span>
+                </div>
+                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Routine parasite prevention</p>
+            </a>
+
+            {{-- Total Clinical Records --}}
+            <a href="{{ route('medical-logs.index', ['filter' => 'all']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'all' ? 'border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#199CA4]/50 shadow-2xs transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Total Clinical Logs</span>
+                    <div class="w-9 h-9 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center border border-[#199CA4]/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline gap-2">
+                    <span class="text-3xl font-black text-slate-900 dark:text-white">{{ $totalLogsCount }}</span>
+                    <span class="text-xs font-semibold text-slate-400">entries</span>
+                </div>
+                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Complete veterinary records</p>
+            </a>
+        </div>
+
+        {{-- Interactive Filter Navigation Chips --}}
+        <div class="flex flex-wrap items-center gap-2 pt-2">
+            <a href="{{ route('medical-logs.index', ['filter' => 'all', 'q' => request('q')]) }}"
+               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border {{ $filter === 'all' ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.07] hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
+                All Records ({{ $totalLogsCount }})
+            </a>
+            <a href="{{ route('medical-logs.index', ['filter' => 'vaccination', 'q' => request('q')]) }}"
+               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border {{ $filter === 'vaccination' ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.07] hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
+                Vaccinations ({{ $vaccineCount }})
+            </a>
+            <a href="{{ route('medical-logs.index', ['filter' => 'scheduled', 'q' => request('q')]) }}"
+               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border {{ $filter === 'scheduled' ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.07] hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
+                Booster Schedules ({{ $scheduledCount }})
+            </a>
+            <a href="{{ route('medical-logs.index', ['filter' => 'deworming', 'q' => request('q')]) }}"
+               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border {{ $filter === 'deworming' ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.07] hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
+                Deworming ({{ $dewormingCount }})
+            </a>
+        </div>
+
+        {{-- Data Table Card --}}
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-left border-collapse">
                     <thead class="bg-slate-50/80 dark:bg-[#171923] border-b border-slate-200/80 dark:border-white/[0.06]">
                         <tr>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet Information</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date Administered</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Category</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Administered By</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Next Due</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Next Scheduled Booster</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -43,38 +135,72 @@
                         @forelse($logs as $log)
                             <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] transition-colors text-xs sm:text-sm">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="{{ route('pets.show', $log->pet) }}" class="font-extrabold text-slate-900 dark:text-white hover:text-[#199CA4] dark:hover:text-teal-400 hover:underline">
-                                        {{ $log->pet->name ?? 'Pet no. '.$log->pet->id }}
-                                    </a>
-                                    <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">{{ ucfirst($log->pet->type ?? '') }}</p>
+                                    <div class="flex items-center gap-3">
+                                        @if($log->pet?->photo_path)
+                                            <img src="{{ asset('storage/'.ltrim($log->pet->photo_path, '/')) }}" alt="Pet no. {{ $log->pet->id }}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="hidden w-10 h-10 rounded-xl bg-[#199CA4]/10 text-[#199CA4] items-center justify-center font-bold text-xs shrink-0">#{{ $log->pet->id }}</div>
+                                        @else
+                                            <div class="w-10 h-10 rounded-xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-bold text-xs shrink-0">#{{ $log->pet_id }}</div>
+                                        @endif
+                                        <div>
+                                            <a href="{{ route('pets.show', $log->pet_id) }}" class="font-extrabold text-slate-900 dark:text-white hover:text-[#199CA4] dark:hover:text-teal-400 hover:underline">
+                                                {{ $log->pet->name ?? ('Pet no. ' . $log->pet_id) }}
+                                            </a>
+                                            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                                {{ ucfirst($log->pet->type ?? 'Pet') }} • {{ $log->pet->breed ?? 'Mixed Breed' }}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300 font-medium">{{ $log->date->format('M d, Y') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300 font-semibold">{{ $log->date->format('M d, Y') }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
-                                        $categoryStyles = [
-                                            'vaccination' => 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60',
-                                            'deworming' => 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60',
-                                            'treatment' => 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60',
-                                            'checkup' => 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60',
-                                            'surgery' => 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60',
-                                            'injury_illness' => 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800/60',
-                                        ];
-                                        $style = $categoryStyles[$log->category] ?? 'bg-slate-50 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]';
+                                        // Preventive care uses Primary Teal; Specialized / clinical treatments use Secondary Slate
+                                        $isPreventive = in_array($log->category, ['vaccination', 'deworming', 'checkup']);
+                                        $style = $isPreventive 
+                                            ? 'bg-[#199CA4]/10 dark:bg-[#199CA4]/15 text-[#15838B] dark:text-[#41C1CB] border-[#199CA4]/25' 
+                                             : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]';
                                     @endphp
-                                    <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-bold border {{ $style }}">
-                                        {{ ucfirst(str_replace('_', ' ', $log->category)) }}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border {{ $style }}">
+                                        @if($isPreventive)
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4]"></span>
+                                        @endif
+                                        <span>{{ ucfirst(str_replace('_', ' ', $log->category)) }}</span>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300 font-medium">{{ $log->administered_by ?? '—' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300 font-medium">
+                                    {{ $log->administered_by ?: ($log->creator?->name ?? 'Shelter Staff') }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($log->next_due_date)
-                                        <span class="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/60">{{ $log->next_due_date->format('M d, Y') }}</span>
+                                        @php
+                                            $today = now()->startOfDay();
+                                            $dueDate = $log->next_due_date->copy()->startOfDay();
+                                            $daysDiff = (int)$today->diffInDays($dueDate, false);
+                                        @endphp
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                {{ $log->next_due_date->format('M d, Y') }}
+                                            </span>
+                                            @if($daysDiff > 0)
+                                                <span class="text-[11px] text-[#15838B] dark:text-[#41C1CB] font-semibold">(in {{ $daysDiff }}d)</span>
+                                            @elseif($daysDiff === 0)
+                                                <span class="text-[11px] text-[#199CA4] dark:text-[#41C1CB] font-bold">(Today)</span>
+                                            @else
+                                                <span class="text-[11px] text-slate-400 font-medium">({{ abs($daysDiff) }}d ago)</span>
+                                            @endif
+                                        </div>
                                     @else
-                                        <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">—</span>
+                                        <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">No booster needed</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="inline-flex items-center gap-1.5">
+                                        @if($log->next_due_date && $log->category === 'vaccination')
+                                            <a href="{{ route('medical-logs.create-for-pet', $log->pet_id) }}" title="Record next booster vaccination" class="px-2.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-bold transition text-xs shadow-2xs">
+                                                Record Booster
+                                            </a>
+                                        @endif
                                         <a href="{{ route('medical-logs.edit', $log) }}" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs">Edit</a>
                                         @if(Auth::user()?->role === 'admin')
                                             <button 
@@ -85,7 +211,7 @@
                                                 data-confirm-text="Delete"
                                                 data-method="DELETE"
                                                 onclick="openConfirmModal(this.dataset)"
-                                                class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition text-xs cursor-pointer"
+                                                class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs cursor-pointer"
                                             >
                                                 Delete
                                             </button>
@@ -96,8 +222,11 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
-                                    <p class="font-bold text-sm text-slate-600 dark:text-slate-300">No medical log entries yet</p>
-                                    <p class="text-xs text-slate-400 mt-1">Use the "+ Add Entry" button above to record clinical logs.</p>
+                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    </div>
+                                    <p class="font-bold text-sm text-slate-700 dark:text-slate-200">No medical log records found</p>
+                                    <p class="text-xs text-slate-400 mt-1">Try switching filter tabs or click "Record Medical Log" to record a new clinical entry.</p>
                                 </td>
                             </tr>
                         @endforelse

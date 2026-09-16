@@ -488,4 +488,134 @@ class AdoptionApiController extends Controller
             'data'    => $updates,
         ]);
     }
+
+    public function petMedicalPassport(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        $pet = Pet::with(['medicalLogs.creator'])->findOrFail($id);
+
+        $isStaff = in_array($user->role, ['admin', 'staff']);
+        $application = AdoptionApplication::where('pet_id', $pet->id)
+            ->where('applicant_email', $user->email)
+            ->latest()
+            ->first();
+
+        if (!$isStaff && !$application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. You do not have an adoption record for this pet.',
+            ], 403);
+        }
+
+        if (!$application) {
+            $application = AdoptionApplication::where('pet_id', $pet->id)
+                ->whereIn('status', ['approved', 'adopted'])
+                ->latest()
+                ->first();
+        }
+
+        $adopterProfile = null;
+        if ($application) {
+            $adopterProfile = \App\Models\AdoptersProfile::where('email', $application->applicant_email)->first();
+        }
+        if (!$adopterProfile && $user->role === 'adopter') {
+            $adopterProfile = \App\Models\AdoptersProfile::where('email', $user->email)->first();
+        }
+
+        $today = now()->startOfDay();
+        $thirtyDaysAhead = $today->copy()->addDays(30)->endOfDay();
+        $logs = $pet->medicalLogs->sortByDesc('date');
+        $latestVaccine = $logs->where('category', 'vaccination')->first();
+        $latestDeworming = $logs->where('category', 'deworming')->first();
+
+        $vacDue = $latestVaccine?->next_due_date ? $latestVaccine->next_due_date->copy()->startOfDay() : null;
+        $isVacOverdue = $vacDue && $vacDue->lt($today);
+        $isVacDueSoon = $vacDue && !$isVacOverdue && $vacDue->lte($thirtyDaysAhead);
+        $daysUntilBooster = $vacDue ? (int) $today->diffInDays($vacDue, false) : null;
+
+        $vacStatus = 'Not Vaccinated';
+        if ($latestVaccine) {
+            if ($isVacOverdue) {
+                $vacStatus = 'Booster Overdue';
+            } elseif ($isVacDueSoon) {
+                $vacStatus = 'Booster Due Soon';
+            } else {
+                $vacStatus = 'Up to Date';
+            }
+        }
+
+        $formattedLogs = $logs->values()->map(function ($log) use ($today, $thirtyDaysAhead) {
+            $nextDue = $log->next_due_date ? $log->next_due_date->copy()->startOfDay() : null;
+            $isOverdue = $nextDue && $nextDue->lt($today);
+            $isDueSoon = $nextDue && !$isOverdue && $nextDue->lte($thirtyDaysAhead);
+
+            return [
+                'id'                 => $log->id,
+                'category'           => $log->category,
+                'category_label'     => ucfirst(str_replace('_', ' ', $log->category)),
+                'date'               => $log->date?->format('Y-m-d'),
+                'date_formatted'     => $log->date?->format('M d, Y'),
+                'next_due_date'      => $log->next_due_date?->format('Y-m-d'),
+                'next_due_formatted' => $log->next_due_date?->format('M d, Y'),
+                'administered_by'    => $log->administered_by ?: ($log->creator?->name ?? 'CAWS Veterinary Officer'),
+                'is_overdue'         => $isOverdue,
+                'is_due_soon'        => $isDueSoon,
+            ];
+        });
+
+        $photoUrl = $pet->photo_path
+            ? (str_starts_with($pet->photo_path, 'http') ? $pet->photo_path : asset('storage/' . ltrim($pet->photo_path, '/')))
+            : null;
+
+        $cardData = [
+            'shelter_info' => [
+                'organization'   => 'CDO Animal Welfare Society (CAWS)',
+                'address'        => 'Cagayan de Oro City, Philippines',
+                'contact_email'  => 'caws.cdo@gmail.com',
+                'passport_title' => 'OFFICIAL PET CARD',
+                'card_title'     => 'OFFICIAL PET CARD',
+                'issued_date'    => now()->format('M d, Y'),
+            ],
+            'pet' => [
+                'id'              => $pet->id,
+                'registry_number' => 'CAWS-PET-' . str_pad($pet->id, 5, '0', STR_PAD_LEFT),
+                'name'            => !empty($pet->name) ? $pet->name : ('Pet no. ' . $pet->id),
+                'type'            => ucfirst($pet->type ?? 'Pet'),
+                'breed'           => $pet->breed ?? 'Mixed Breed',
+                'age'             => $pet->age ?? 'N/A',
+                'gender'          => ucfirst($pet->gender ?? 'Unknown'),
+                'color'           => $pet->color ?? 'Standard',
+                'photo_url'       => $photoUrl,
+                'status'          => $pet->status,
+                'medical_history' => $pet->medical_history,
+            ],
+            'guardian' => [
+                'name'               => $application?->applicant_name ?? $adopterProfile?->full_name ?? $user->name,
+                'adopter_code'       => $adopterProfile?->adopter_code ?? sprintf('ADP-%04d', $user->id),
+                'phone'              => $application?->applicant_phone ?? $adopterProfile?->phone ?? $user->phone ?? 'N/A',
+                'email'              => $application?->applicant_email ?? $adopterProfile?->email ?? $user->email,
+                'address'            => $adopterProfile?->address ?? 'Cagayan de Oro City',
+                'application_id'     => $application?->id,
+                'application_status' => $application?->status,
+            ],
+            'clinical_summary' => [
+                'vaccine_status'          => $vacStatus,
+                'is_vaccine_overdue'      => $isVacOverdue,
+                'is_vaccine_due_soon'     => $isVacDueSoon,
+                'days_until_booster'      => $daysUntilBooster,
+                'latest_vaccine_date'     => $latestVaccine?->date?->format('M d, Y'),
+                'next_vaccine_due_date'   => $latestVaccine?->next_due_date?->format('M d, Y'),
+                'latest_deworming_date'   => $latestDeworming?->date?->format('M d, Y'),
+                'next_deworming_due_date' => $latestDeworming?->next_due_date?->format('M d, Y'),
+                'total_records_count'     => $logs->count(),
+            ],
+            'records' => $formattedLogs,
+        ];
+
+        return response()->json([
+            'success'  => true,
+            'passport' => $cardData,
+            'pet_card' => $cardData,
+        ]);
+    }
 }

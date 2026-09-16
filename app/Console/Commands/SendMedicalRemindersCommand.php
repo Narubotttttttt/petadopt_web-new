@@ -54,19 +54,19 @@ class SendMedicalRemindersCommand extends Command
                 $category = ucfirst(str_replace('_', ' ', $log->category ?? 'healthcare'));
                 $dueDateFormatted = $log->next_due_date->format('M d, Y');
 
-                // Build notification content
+                // Build advisory notification content
                 if ($daysAhead === 0) {
-                    $title = "Due Today: {$petName}'s {$category}!";
-                    $body = "{$petName}'s {$category} is due today ({$dueDateFormatted}). Please visit CAWS or your local veterinary clinic.";
+                    $title = "Booster Due Today: {$petName}";
+                    $body = "{$petName}'s {$category} booster is scheduled for today ({$dueDateFormatted}). Please consult your private veterinarian or visit CAWS.";
                 } elseif ($daysAhead === 2) {
-                    $title = "Urgent: {$petName}'s {$category} due in 2 days!";
-                    $body = "Reminder: {$petName}'s {$category} is due on {$dueDateFormatted}. Make sure your pet is prepared!";
+                    $title = "Booster Due in 2 Days: {$petName}";
+                    $body = "Reminder: {$petName}'s {$category} booster is due on {$dueDateFormatted}. Remember to present your CAWS Pet Card during checkup.";
                 } elseif ($daysAhead === 7) {
-                    $title = "Upcoming: {$petName}'s {$category} due in 1 week";
-                    $body = "Reminder: {$petName}'s {$category} is scheduled for {$dueDateFormatted}.";
+                    $title = "Upcoming Booster: {$petName}";
+                    $body = "Advisory: {$petName}'s {$category} booster is scheduled for {$dueDateFormatted} (in 1 week). Check your Pet Health Card for details.";
                 } else {
-                    $title = "Healthcare Reminder for {$petName}";
-                    $body = "{$petName}'s {$category} will be due in 1 month ({$dueDateFormatted}).";
+                    $title = "Healthcare Advisory: {$petName}";
+                    $body = "Advisory: {$petName}'s {$category} booster will be due in 1 month ({$dueDateFormatted}). Plan ahead with your veterinarian.";
                 }
 
                 // Find adopter email

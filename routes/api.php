@@ -163,6 +163,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vaccine-reminders', [AdoptionApiController::class, 'vaccineReminders']);
     Route::post('/health-updates', [AdoptionApiController::class, 'storeHealthUpdate']);
     Route::get('/my-health-updates', [AdoptionApiController::class, 'getHealthUpdates']);
+    Route::get('/pets/{id}/medical-passport', [AdoptionApiController::class, 'petMedicalPassport']);
+    Route::get('/pets/{id}/medical-card', [AdoptionApiController::class, 'petMedicalPassport']);
     Route::post('/save-fcm-token', function (Request $request) {
         $request->validate(['fcm_token' => 'required|string']);
         $user = $request->user();

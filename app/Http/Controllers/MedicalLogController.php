@@ -16,15 +16,52 @@ class MedicalLogController extends Controller
     public function index(): View
     {
         $q = request()->input('q');
+        $filter = request()->input('filter', 'all');
 
         $query = MedicalLog::with('pet', 'creator');
 
         if ($q) {
-            $query->whereHas('pet', function ($sub) use ($q) {
-                $sub->where('breed', 'like', "%{$q}%")
-                    ->orWhere('color', 'like', "%{$q}%")
-                    ->orWhere('type', 'like', "%{$q}%");
+            $query->where(function ($b) use ($q) {
+                $b->where('administered_by', 'like', "%{$q}%")
+                    ->orWhereHas('pet', function ($sub) use ($q) {
+                        $sub->where('breed', 'like', "%{$q}%")
+                            ->orWhere('color', 'like', "%{$q}%")
+                            ->orWhere('name', 'like', "%{$q}%")
+                            ->orWhere('id', 'like', "%{$q}%")
+                            ->orWhere('type', 'like', "%{$q}%");
+                    });
             });
+        }
+
+        $today = now()->startOfDay();
+        $thirtyDaysAhead = now()->addDays(30)->endOfDay();
+
+        $totalLogsCount = MedicalLog::count();
+        $vaccineCount = MedicalLog::where('category', 'vaccination')->count();
+        $dewormingCount = MedicalLog::where('category', 'deworming')->count();
+        $scheduledCount = MedicalLog::whereNotNull('next_due_date')->count();
+
+        $overdueCount = MedicalLog::whereNotNull('next_due_date')
+            ->whereDate('next_due_date', '<', $today)
+            ->count();
+
+        $dueSoonCount = MedicalLog::whereNotNull('next_due_date')
+            ->whereDate('next_due_date', '>=', $today)
+            ->whereDate('next_due_date', '<=', $thirtyDaysAhead)
+            ->count();
+
+        if ($filter === 'scheduled') {
+            $query->whereNotNull('next_due_date');
+        } elseif ($filter === 'overdue') {
+            $query->whereNotNull('next_due_date')->whereDate('next_due_date', '<', $today);
+        } elseif ($filter === 'due_soon') {
+            $query->whereNotNull('next_due_date')->whereDate('next_due_date', '>=', $today)->whereDate('next_due_date', '<=', $thirtyDaysAhead);
+        } elseif ($filter === 'attention') {
+            $query->whereNotNull('next_due_date')->whereDate('next_due_date', '<=', $thirtyDaysAhead);
+        } elseif ($filter === 'vaccination') {
+            $query->where('category', 'vaccination');
+        } elseif ($filter === 'deworming') {
+            $query->where('category', 'deworming');
         }
 
         $logs = $query->latest('date')->paginate(15)->withQueryString();
@@ -32,6 +69,13 @@ class MedicalLogController extends Controller
         return view('medical-logs.index', [
             'logs' => $logs,
             'q' => $q,
+            'filter' => $filter,
+            'totalLogsCount' => $totalLogsCount,
+            'vaccineCount' => $vaccineCount,
+            'dewormingCount' => $dewormingCount,
+            'scheduledCount' => $scheduledCount,
+            'overdueCount' => $overdueCount,
+            'dueSoonCount' => $dueSoonCount,
         ]);
     }
 
@@ -72,6 +116,14 @@ class MedicalLogController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
+            // Fulfill and clear prior open booster schedules for this pet & category that are now completed by this dose
+            MedicalLog::where('pet_id', $data['pet_id'])
+                ->where('category', $data['category'])
+                ->where('id', '!=', $log->id)
+                ->whereNotNull('next_due_date')
+                ->whereDate('next_due_date', '<=', $data['date'])
+                ->update(['next_due_date' => null]);
+
             $this->notifyAdoptersOfMedicalLog($log, $data['category']);
 
             $petName = $log->pet->name ?? ('Pet no. ' . $log->pet_id);
@@ -110,6 +162,14 @@ class MedicalLogController extends Controller
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
         $medicalLog->update($data);
+
+        // Fulfill and clear prior open booster schedules for this pet & category that are now completed by this dose
+        MedicalLog::where('pet_id', $data['pet_id'])
+            ->where('category', $data['category'])
+            ->where('id', '!=', $medicalLog->id)
+            ->whereNotNull('next_due_date')
+            ->whereDate('next_due_date', '<=', $data['date'])
+            ->update(['next_due_date' => null]);
 
         $this->notifyAdoptersOfMedicalLog($medicalLog, $data['category']);
 

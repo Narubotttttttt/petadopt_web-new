@@ -18,7 +18,7 @@
             {{-- Total Pets --}}
             <div class="bg-white dark:bg-[#12141C] p-4 rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] card-hover-effect flex justify-between items-center">
                 <div>
-                    <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-500">Total Pets</p>
+                    <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-500">Available Pets</p>
                     <h3 class="text-2xl font-extrabold text-slate-900 dark:text-white my-0.5 tracking-tight">{{ $totalPets }}</h3>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#199CA4]"></span>
@@ -38,11 +38,11 @@
                     <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-500">Approved Adoptions</p>
                     <h3 class="text-2xl font-extrabold text-slate-900 dark:text-white my-0.5 tracking-tight">{{ $totalAdoptions }}</h3>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#199CA4]"></span>
                         Total finalized
                     </p>
                 </div>
-                <div class="p-2.5 bg-slate-100 dark:bg-white/[0.06] rounded-xl text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-white/[0.08] shadow-2xs">
+                <div class="p-2.5 bg-slate-100 dark:bg-white/[0.06] rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.08] shadow-2xs">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -55,11 +55,11 @@
                     <p class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 dark:text-slate-500">Total Users</p>
                     <h3 class="text-2xl font-extrabold text-slate-900 dark:text-white my-0.5 tracking-tight">{{ $totalUsers }}</h3>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
                         Authorized staff
                     </p>
                 </div>
-                <div class="p-2.5 bg-slate-100 dark:bg-white/[0.06] rounded-xl text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-white/[0.08] shadow-2xs">
+                <div class="p-2.5 bg-slate-100 dark:bg-white/[0.06] rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/[0.08] shadow-2xs">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -89,6 +89,8 @@
             </a>
 
         </div>
+
+
 
         {{-- Side-by-Side Main Section: Adoption Trends Chart (Left 7 cols) & Recent Requests (Right 5 cols) --}}
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
@@ -171,9 +173,9 @@
 
                             <div class="flex items-center gap-2 shrink-0">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold border
-                                    {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
-                                    {{ $application->status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : '' }}
-                                    {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}
+                                    {{ $application->status === 'approved' ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/30' : '' }}
+                                    {{ $application->status === 'rejected' ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/[0.08]' : '' }}
+                                    {{ $application->status === 'pending' ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/[0.12]' : '' }}
                                     {{ !in_array($application->status, ['approved', 'rejected', 'pending']) ? 'bg-slate-50 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '' }}">
                                     {{ ucfirst($application->status ?? 'pending') }}
                                 </span>

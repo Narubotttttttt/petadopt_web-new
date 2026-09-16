@@ -20,6 +20,8 @@ class AdoptionApplicationController extends Controller
 
     public function show(AdoptionApplication $application): View
     {
+        $application->load(['pet.medicalLogs.creator', 'staff.staffProfile', 'evaluator']);
+
         return view('adoption-applications.show', compact('application'));
     }
 

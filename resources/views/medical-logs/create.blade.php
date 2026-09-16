@@ -33,7 +33,7 @@
                             'photo_url' => $p->photo_path ? asset('storage/' . ltrim($p->photo_path, '/')) : null,
                         ];
                     });
-                    $initialPetId = old('pet_id', optional($pet)->id ?? '');
+                    $initialPetId = old('pet_id', optional($pet)->id ?: request('pet_id', ''));
                 @endphp
 
                 <div x-data="{

@@ -169,7 +169,7 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Mail::html("
                 <div style='font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 16px; background-color: #ffffff;'>
                     <div style='text-align: center; margin-bottom: 20px;'>
-                        <h2 style='color: #0A6B72; margin: 0;'>🐾 CAWS Pet Adoption</h2>
+                        <h2 style='color: #0A6B72; margin: 0;'>CAWS Pet Adoption</h2>
                         <p style='color: #666; font-size: 13px; margin: 4px 0 0 0;'>CDO Animal Welfare Society Inc.</p>
                     </div>
                     <p style='color: #333; font-size: 15px;'>Hello!</p>
@@ -180,7 +180,7 @@ class AuthController extends Controller
                     <p style='color: #888; font-size: 12px; text-align: center;'>This code will expire in 10 minutes. If you did not request this verification, please ignore this email.</p>
                 </div>
             ", function ($m) use ($email) {
-                $m->to($email)->subject('🐾 Your CAWS Verification Code');
+                $m->to($email)->subject('Your CAWS Verification Code');
             });
 
             return response()->json([
