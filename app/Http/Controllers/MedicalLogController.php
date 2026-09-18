@@ -100,8 +100,8 @@ class MedicalLogController extends Controller
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
-        $lockKey = 'med_log_store_lock_' . (Auth::id() ?? $request->ip()) . '_' . ($data['pet_id'] ?? '');
-        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 5);
+        $lockKey = 'med_log_store_lock_' . ($request->session()->getId() ?: (Auth::id() ?? $request->ip())) . '_' . ($data['pet_id'] ?? '');
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 3);
 
         if (! $lock->get()) {
             return redirect()->back()->with('success', 'Medical log entry is already being processed.');

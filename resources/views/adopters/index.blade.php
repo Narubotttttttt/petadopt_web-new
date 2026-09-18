@@ -95,6 +95,23 @@
             </div>
         @endif
 
+        {{-- Adopters Section Navigation Tabs --}}
+        <div class="flex items-center gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-3">
+            <a href="{{ route('adopters.index') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs bg-[#199CA4] text-white">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                <span>Adopter Profiles</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">{{ $totalApprovedAdopters }}</span>
+            </a>
+
+            <a href="{{ route('adopters.reports') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                <svg class="w-4 h-4 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Monthly Pet Updates</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-[#41C1CB]">{{ $totalMonthlyReports ?? 0 }}</span>
+            </a>
+        </div>
+
         {{-- Page Header --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -104,11 +121,17 @@
                         {{ $totalApprovedAdopters }} Adopters &bull; {{ $totalApprovedApplications }} Pets
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage approved adopters, shelter safety standing, post-adoption vaccine schedules, and monthly health reports.</p>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage approved adopters, shelter safety standing, and monthly health update compliance.</p>
             </div>
             
             {{-- Header Action --}}
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+                <a href="{{ route('adopters.reports') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold transition shadow-xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Monthly Updates Report</span>
+                </a>
+
                 <a href="{{ route('adoption-applications.index') }}" 
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
                     <svg class="w-4 h-4 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -181,18 +204,18 @@
                 </div>
             </a>
 
-            {{-- 5. Vaccines Overdue --}}
-            <a href="{{ route('adopters.index', array_merge(request()->except('filter', 'page'), ['filter' => 'overdue'])) }}"
-               class="col-span-2 sm:col-span-1 p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($filter ?? '') === 'overdue' ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-950/30 dark:border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
+            {{-- 5. Monthly Pet Reports --}}
+            <a href="{{ route('adopters.reports') }}"
+               class="col-span-2 sm:col-span-1 p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-[#199CA4] dark:hover:border-[#41C1CB] hover:shadow-xs group">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">Vaccines Overdue</span>
-                    <div class="w-7 h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Monthly Reports</span>
+                    <div class="w-7 h-7 rounded-xl bg-[#199CA4]/10 dark:bg-white/[0.06] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
                 </div>
                 <div class="flex items-baseline gap-1.5">
-                    <span class="text-2xl font-black text-indigo-700 dark:text-indigo-400">{{ $overdueCount ?? 0 }}</span>
-                    <span class="text-[11px] font-semibold text-indigo-600/70 dark:text-indigo-500/70">pets need clinic</span>
+                    <span class="text-2xl font-black text-[#199CA4] dark:text-[#41C1CB]">{{ $totalMonthlyReports ?? 0 }}</span>
+                    <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-500">submitted check-ins</span>
                 </div>
             </a>
         </div>
@@ -326,7 +349,7 @@
                                     </svg>
                                 </button>
 
-                                @if($adopter->profile_id)
+                                @if($adopter->profile_id && Auth::user()?->role === 'admin')
                                     <button type="button" 
                                         @click='openStatusModal(@json($adopter->profile_id), @json($adopter->applicant_name), @json($adopter->status ?? "active"), @json($adopter->admin_notes ?? ""))'
                                         class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-[#1D1F2C] transition shadow-2xs cursor-pointer">
@@ -363,8 +386,8 @@
                             <thead class="bg-slate-100/70 dark:bg-[#12141C] border-b border-slate-200/80 dark:border-white/[0.06] text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 <tr>
                                     <th class="py-3 px-5 w-72">Adopted Pet</th>
-                                    <th class="py-3 px-5 w-72">Medical & Vaccine Status</th>
-                                    <th class="py-3 px-5 text-center w-48">Monthly Health Reports</th>
+                                    <th class="py-3 px-5 w-72">Clinical History</th>
+                                    <th class="py-3 px-5 text-center w-52">Monthly Health Reports</th>
                                     <th class="py-3 px-5 text-right w-48">Clinical Actions</th>
                                 </tr>
                             </thead>
@@ -444,9 +467,9 @@
                                             </div>
                                         </td>
 
-                                        {{-- Medical & Vaccine Status Column --}}
+                                        {{-- Clinical History Column --}}
                                         <td class="py-3.5 px-5 align-middle">
-                                            <div class="flex flex-col gap-1.5">
+                                            <div class="flex flex-col gap-1">
                                                 @if($latestLog)
                                                     <div class="flex items-center gap-2 flex-wrap">
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold {{ $latestLog->category === 'vaccination' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60' }}">
@@ -459,16 +482,9 @@
                                                 @endif
 
                                                 @if($latestVaccine && $latestVaccine->next_due_date)
-                                                    @php
-                                                        $isPastDue = $latestVaccine->next_due_date->isPast();
-                                                        $isSoon = $latestVaccine->next_due_date->isBetween(now(), now()->addDays(14));
-                                                    @endphp
-                                                    <div>
-                                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md {{ $isPastDue ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60' : ($isSoon ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60') }}">
-                                                            <span class="w-1.5 h-1.5 rounded-full {{ $isPastDue ? 'bg-rose-500' : ($isSoon ? 'bg-amber-500' : 'bg-emerald-500') }}"></span>
-                                                            {{ $isPastDue ? 'Overdue' : ($isSoon ? 'Due Soon' : 'Valid') }}: {{ $latestVaccine->next_due_date->format('M d, Y') }}
-                                                        </span>
-                                                    </div>
+                                                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                                        Scheduled: {{ $latestVaccine->next_due_date->format('M d, Y') }}
+                                                    </span>
                                                 @endif
                                             </div>
                                         </td>
@@ -497,6 +513,11 @@
                                                         {{ $latestCheckin && $latestCheckin->check_in_date ? 'Last: ' . $latestCheckin->check_in_date->format('M d') : 'No check-ins' }}
                                                     </span>
                                                 @endif
+
+                                                <a href="{{ route('adopters.reports', ['search' => $pet && $pet->name ? $pet->name : $adopter->applicant_name]) }}" 
+                                                   class="text-[10px] font-bold text-[#199CA4] hover:underline dark:text-[#41C1CB] mt-0.5">
+                                                    View All Reports &rarr;
+                                                </a>
                                             </div>
                                         </td>
 
@@ -882,7 +903,8 @@
             </div>
         </div>
 
-        {{-- Modal 4: Edit Adopter Shelter Safety Status & Notes Modal --}}
+        {{-- Modal 4: Edit Adopter Shelter Safety Status & Notes Modal (Admin Only) --}}
+        @if(Auth::user()?->role === 'admin')
         <div x-show="showStatusModal" x-cloak style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 transition-opacity bg-black/80 backdrop-blur-xs" @click="showStatusModal = false"></div>
@@ -978,6 +1000,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- Modal 5: Adopter Profile Picture Preview Lightbox Modal --}}
         <div x-show="showAvatarModal" x-cloak style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" @keydown.escape.window="showAvatarModal = false">

@@ -3,18 +3,18 @@
         <div class="flex items-center justify-between h-16">
             
             {{-- Left area (Mobile hamburger toggle & brand logo) --}}
-            <div class="flex items-center gap-3 lg:hidden">
-                <button @click="mobileNavOpen = ! mobileNavOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] focus:outline-none transition cursor-pointer">
+            <div class="flex items-center gap-2.5 lg:hidden min-w-0">
+                <button @click="mobileNavOpen = ! mobileNavOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] focus:outline-none transition cursor-pointer shrink-0">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': mobileNavOpen, 'inline-flex': ! mobileNavOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! mobileNavOpen, 'inline-flex': mobileNavOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
 
-                <div class="flex items-center gap-2.5">
-                    <img src="{{ asset('images/caws-logo.png') }}" alt="CDO Animal Welfare Society Inc." class="w-8 h-8 rounded-full object-contain bg-white dark:bg-white/[0.06] p-0.5 border border-slate-200 dark:border-white/[0.12] shadow-xs">
-                    <div>
-                        <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">CDO Animal Welfare Society Inc.</span>
+                <div class="flex items-center gap-2 min-w-0">
+                    <img src="{{ asset('images/caws-logo.png') }}" alt="CDO Animal Welfare Society Inc." class="w-8 h-8 rounded-full object-contain bg-white dark:bg-white/[0.06] p-0.5 border border-slate-200 dark:border-white/[0.12] shadow-xs shrink-0">
+                    <div class="min-w-0">
+                        <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">CDO Animal Welfare</span>
                         <span class="block text-[10px] text-slate-400 font-medium leading-tight">Admin Portal</span>
                     </div>
                 </div>
@@ -24,9 +24,9 @@
             </div>
                 
             {{-- Right Header Actions --}}
-            <div class="flex items-center gap-3 ms-auto">
+            <div class="flex items-center gap-2 sm:gap-3 ms-auto shrink-0">
                 
-                {{-- Light & Dark Theme Segmented Pill Switch --}}
+                {{-- Light & Dark Theme Segmented Pill Switch (Hidden on mobile header, available in mobile drawer) --}}
                 <div x-data="{
                     darkMode: document.documentElement.classList.contains('dark'),
                     init() {
@@ -46,7 +46,7 @@
                         }
                         window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: this.darkMode } }));
                     }
-                }" class="flex items-center">
+                }" class="hidden sm:flex items-center">
                     <div class="inline-flex items-center p-0.5 rounded-full bg-[#EEF2F6] dark:bg-[#12141D] border border-slate-200/90 dark:border-white/[0.08] shadow-inner select-none gap-0.5 transition-colors duration-200">
                         {{-- Light Option (Sun) --}}
                         <button 
@@ -344,10 +344,10 @@
 
                 </div>
 
-                {{-- User Profile Dropdown --}}
-                <x-dropdown align="right" width="48">
+                {{-- User Profile Dropdown (Hidden on mobile header, available in mobile drawer) --}}
+                <x-dropdown align="right" width="48" class="hidden sm:block">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.06] focus:outline-none transition shadow-2xs cursor-pointer">
+                        <button class="hidden sm:inline-flex items-center gap-2.5 px-3 py-1.5 border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.06] focus:outline-none transition shadow-2xs cursor-pointer">
                             @if(Auth::user()?->avatar_url)
                                 <img src="{{ Auth::user()?->avatar_url }}" alt="{{ Auth::user()?->name }}" class="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                             @else
@@ -356,8 +356,8 @@
                                 </div>
                             @endif
                             <div class="text-left">
-                                <span class="block text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ Auth::user()?->name }}</span>
-                                <span class="block text-[10px] text-slate-400 font-medium capitalize">{{ Auth::user()?->role }}</span>
+                                <span class="block text-sm font-bold text-slate-900 dark:text-white leading-tight">{{ Auth::user()?->name }}</span>
+                                <span class="block text-xs text-slate-400 font-medium capitalize">{{ Auth::user()?->role }}</span>
                             </div>
 
                             <div class="ms-1">

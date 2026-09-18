@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'firebase' => [
+        'app_distribution_url' => env('FIREBASE_APP_DISTRIBUTION_URL', 'https://appdistribution.firebase.dev'),
+    ],
+
 ];

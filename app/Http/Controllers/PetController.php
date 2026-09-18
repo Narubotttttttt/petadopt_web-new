@@ -71,8 +71,8 @@ class PetController extends Controller
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
         }
 
-        $lockKey = 'pet_store_lock_' . (Auth::id() ?? $request->ip());
-        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 5);
+        $lockKey = 'pet_store_lock_' . ($request->session()->getId() ?: (Auth::id() ?? $request->ip()));
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 3);
 
         if (! $lock->get()) {
             return redirect()->route('pets.index')->with('success', 'Pet profile is already being submitted.');
@@ -180,6 +180,10 @@ class PetController extends Controller
 
     public function destroy(Pet $pet)
     {
+        if (Auth::user()?->role !== 'admin') {
+            abort(403, 'Only an administrator can delete pet records.');
+        }
+
         if ($pet->photo_path && Storage::disk('public')->exists($pet->photo_path)) {
             Storage::disk('public')->delete($pet->photo_path);
         }

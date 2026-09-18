@@ -41,9 +41,11 @@ class PetHistoryTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Pet History');
-        $response->assertSee('Historical Rescues');
+        $response->assertSee('Pets in History');
+        $response->assertDontSee('Historical Rescues');
         $response->assertSee('Max');
-        $response->assertSee('Vaccinations');
+        $response->assertSee('Vaccination');
+        $response->assertDontSee('petHistoryCombinedChart');
     }
 
     public function test_staff_can_filter_pet_history_by_event_type_and_species(): void
@@ -161,7 +163,41 @@ class PetHistoryTest extends TestCase
             $this->assertArrayHasKey('id', $event);
             $this->assertArrayHasKey('intake_date', $event);
             $this->assertArrayHasKey('pet_description', $event);
+            $this->assertArrayHasKey('timeline', $event);
+            $this->assertNotEmpty($event['timeline']);
         }
+    }
+
+    public function test_staff_can_filter_pet_history_by_status(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        Pet::create([
+            'name' => 'Rusty',
+            'breed' => 'Poodle',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        Pet::create([
+            'name' => 'Milo',
+            'breed' => 'Siamese',
+            'type' => 'cat',
+            'status' => 'adopted',
+        ]);
+
+        $responseAdopted = $this->actingAs($staff)->get(route('pet-history.index', ['status' => 'adopted']));
+        $responseAdopted->assertStatus(200);
+        $responseAdopted->assertSee('Milo');
+        $responseAdopted->assertDontSee('Rusty');
+
+        $responseShelter = $this->actingAs($staff)->get(route('pet-history.index', ['status' => 'in_shelter']));
+        $responseShelter->assertStatus(200);
+        $responseShelter->assertSee('Rusty');
+        $responseShelter->assertDontSee('Milo');
     }
 }
 

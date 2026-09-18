@@ -33,15 +33,37 @@ Route::middleware('guest')->group(function () {
 Route::get('register', [RegisteredUserController::class, 'create'])
     ->name('register');
 
+Route::post('register/step-1', [RegisteredUserController::class, 'processStep1'])
+    ->name('register.step-1');
+
+Route::get('register/set-password', [RegisteredUserController::class, 'createPassword'])
+    ->name('register.set-password');
+
+Route::post('register/set-password', [RegisteredUserController::class, 'storePassword'])
+    ->name('register.set-password.store');
+
 Route::post('register', [RegisteredUserController::class, 'store']);
+
+Route::post('register/send-code', [RegisteredUserController::class, 'sendVerificationCode'])
+    ->middleware('throttle:20,1')
+    ->name('register.send-code');
+
+Route::post('register/verify-code', [RegisteredUserController::class, 'verifyCode'])
+    ->middleware('throttle:30,1')
+    ->name('register.verify-code');
+
+// Signed verification link: accessible by mobile and desktop browsers with cryptographic signature
+Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
-        ->name('verification.verify');
+    Route::post('verify-email/otp', [VerifyEmailController::class, 'verifyOtp'])
+        ->middleware('throttle:6,1')
+        ->name('verification.otp');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
         ->middleware('throttle:6,1')

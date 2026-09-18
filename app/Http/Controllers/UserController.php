@@ -72,4 +72,20 @@ class UserController extends Controller
 
         return back()->with('success', "Staff profile for {$user->name} updated successfully.");
     }
+
+    public function resendVerification(User $user): RedirectResponse
+    {
+        $admin = auth()->user();
+        if (! $admin || $admin->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return back()->with('info', "{$user->name} has already verified their email address.");
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return back()->with('success', "A new verification email has been sent to {$user->email}.");
+    }
 }

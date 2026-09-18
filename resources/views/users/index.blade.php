@@ -12,6 +12,25 @@
             </div>
         </div>
 
+        {{-- Flash Messages --}}
+        @if(session('success'))
+            <div role="alert" class="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-3 shadow-xs animate-fade-in">
+                <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                </svg>
+                <span class="font-semibold">{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if(session('info'))
+            <div role="alert" class="p-4 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 rounded-2xl text-xs text-sky-800 dark:text-sky-300 flex items-center gap-3 shadow-xs animate-fade-in">
+                <svg class="w-5 h-5 text-sky-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="font-semibold">{{ session('info') }}</span>
+            </div>
+        @endif
+
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -20,8 +39,9 @@
                             <th class="px-6 py-3.5">Staff Member</th>
                             <th class="px-6 py-3.5">Staff Code</th>
                             <th class="px-6 py-3.5">Designation / Role</th>
+                            <th class="px-6 py-3.5">Email Status</th>
                             <th class="px-6 py-3.5">Contact</th>
-                            <th class="px-6 py-3.5">Status</th>
+                            <th class="px-6 py-3.5">Duty Status</th>
                             <th class="px-6 py-3.5 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -29,10 +49,11 @@
                         @foreach($users as $u)
                             @php
                                 $profile = $u->staffProfile;
-                                $staffCode = $profile?->staff_code ?? (($u->role === 'admin' ? 'ADM-' : 'STF-') . str_pad($u->id, 4, '0', STR_PAD_LEFT));
+                                $staffCode = $profile?->staff_code ?? (($u->role === 'admin' ? 'ADM-' : 'STF-') . str_pad((string) $u->id, 4, '0', STR_PAD_LEFT));
                                 $positionTitle = $profile?->position_title ?? ($u->role === 'admin' ? 'Shelter Director / Head Administrator' : 'CAWS Staff Member');
                                 $phone = $profile?->phone ?: 'No phone set';
                                 $status = $profile?->status ?? 'active';
+                                $isEmailVerified = $u->hasVerifiedEmail();
                             @endphp
                             <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -63,6 +84,27 @@
                                             {{ ucfirst($u->role) }} Access
                                         </span>
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($isEmailVerified)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Verified
+                                        </span>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                Pending
+                                            </span>
+                                            <form method="POST" action="{{ route('users.resend-verification', $u) }}" class="inline">
+                                                @csrf
+                                                <button type="submit" class="px-2 py-0.5 rounded-lg border border-[#199CA4]/30 bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[10px] font-bold text-[#199CA4] hover:text-[#13787F] transition cursor-pointer" title="Resend verification email to {{ $u->email }}">
+                                                    Resend Link
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 text-xs">
                                     {{ $phone }}

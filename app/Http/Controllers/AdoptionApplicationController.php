@@ -189,10 +189,18 @@ class AdoptionApplicationController extends Controller
             'staff_signed_at'      => now(),
         ]);
 
-        // Auto-sync to staff user profile if they don't have one
-        if (empty($user->digital_signature_path)) {
-            $user->digital_signature_path = $fileName;
-            $user->save();
+        // Auto-sync to staff profile if they don't have one
+        $staffProfile = $user->staffProfile ?: \App\Models\StaffProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'staff_code' => sprintf('STF-%04d', $user->id),
+                'full_name'  => $user->name,
+                'status'     => 'active',
+            ]
+        );
+        if (empty($staffProfile->digital_signature_path)) {
+            $staffProfile->digital_signature_path = $fileName;
+            $staffProfile->save();
         }
 
         return back()->with('success', 'Official CAWS staff signature attached successfully.');

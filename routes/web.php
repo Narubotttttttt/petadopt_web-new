@@ -68,7 +68,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
             'totalUsers'             => User::whereIn('role', ['admin', 'staff'])->count(),
             'totalAdoptions'         => AdoptionApplication::where('status', 'approved')->count(),
             'latestPet'              => Pet::latest('created_at')->first(),
-            'recentApplications'     => AdoptionApplication::with(['pet', 'user.adoptersProfile'])->latest('created_at')->take(5)->get(),
+            'recentApplications'     => AdoptionApplication::with(['pet', 'user.adoptersProfile'])->latest('created_at')->take(10)->get(),
             'chartMonths'            => $chartMonths,
             'chartCounts'            => $chartCounts,
             'selectedYear'           => $selectedYear,
@@ -88,7 +88,6 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
     Route::get('/pets/{pet}/edit', [PetController::class, 'edit'])->name('pets.edit');
     Route::match(['put','patch'],'/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
-    Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
 
     Route::get('/adoption-applications', [\App\Http\Controllers\AdoptionApplicationController::class, 'index'])->name('adoption-applications.index');
     Route::get('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'show'])->name('adoption-applications.show');
@@ -97,7 +96,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/adoption-applications/{application}/contract', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('adoption-applications.contract');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
-    Route::patch('/adopters/{id}/status', [\App\Http\Controllers\AdopterProfileController::class, 'updateStatus'])->name('adopters.update-status');
+    Route::get('/adopters/reports', [\App\Http\Controllers\AdopterProfileController::class, 'monthlyReports'])->name('adopters.reports');
 
     Route::get('/medical-logs', [MedicalLogController::class, 'index'])->name('medical-logs.index');
     Route::get('/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create');
@@ -105,7 +104,6 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/pets/{pet}/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create-for-pet');
     Route::get('/medical-logs/{medicalLog}/edit', [MedicalLogController::class, 'edit'])->name('medical-logs.edit');
     Route::match(['put', 'patch'], '/medical-logs/{medicalLog}', [MedicalLogController::class, 'update'])->name('medical-logs.update');
-    Route::delete('/medical-logs/{medicalLog}', [MedicalLogController::class, 'destroy'])->name('medical-logs.destroy');
 
     Route::get('/pet-history', [PetHistoryController::class, 'index'])->name('pet-history.index');
 
@@ -121,8 +119,15 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    // Admin Exclusive Actions
+    Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
+    Route::delete('/medical-logs/{medicalLog}', [MedicalLogController::class, 'destroy'])->name('medical-logs.destroy');
+    Route::patch('/adopters/{id}/status', [\App\Http\Controllers\AdopterProfileController::class, 'updateStatus'])->name('adopters.update-status');
+
+    // Staff Management
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::patch('/users/{user}/staff-profile', [UserController::class, 'updateStaffProfile'])->name('users.update-staff-profile');
+    Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
 });
 
 // Public signed route for contract downloads — accessible by mobile browsers without web session

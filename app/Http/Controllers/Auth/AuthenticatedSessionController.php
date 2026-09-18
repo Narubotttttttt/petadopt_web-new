@@ -17,7 +17,9 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        $adminExists = \App\Models\User::where('role', 'admin')->exists();
+
+        return view('auth.login', compact('adminExists'));
     }
 
     /**

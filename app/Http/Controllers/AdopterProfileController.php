@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AdoptersProfile;
 use App\Models\AdoptionApplication;
+use App\Models\PetHealthUpdate;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class AdopterProfileController extends Controller
@@ -201,19 +203,7 @@ class AdopterProfileController extends Controller
         $restrictedCount = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['restricted', 'blacklisted']))->count();
         $totalApprovedApplications = AdoptionApplication::where('status', 'approved')->count();
 
-        $overdueCount = AdoptionApplication::where('status', 'approved')
-            ->whereHas('pet.medicalLogs', function($q) {
-                $q->where('category', 'vaccination')
-                  ->whereNotNull('next_due_date')
-                  ->where('next_due_date', '<', now()->toDateString());
-            })->count();
-
-        $dueSoonCount = AdoptionApplication::where('status', 'approved')
-            ->whereHas('pet.medicalLogs', function($q) {
-                $q->where('category', 'vaccination')
-                  ->whereNotNull('next_due_date')
-                  ->whereBetween('next_due_date', [now()->toDateString(), now()->addDays(14)->toDateString()]);
-            })->count();
+        $totalMonthlyReports = PetHealthUpdate::count();
 
         // Apply active filter
         $filteredAdopters = $allGroupedAdopters;
@@ -223,20 +213,6 @@ class AdopterProfileController extends Controller
             $filteredAdopters = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'inactive');
         } elseif ($filter === 'restricted') {
             $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['restricted', 'blacklisted']));
-        } elseif ($filter === 'overdue') {
-            $filteredAdopters = $allGroupedAdopters->filter(function($a) {
-                return $a->applications->some(function($app) {
-                    $latestVaccine = $app->pet?->medicalLogs->where('category', 'vaccination')->first();
-                    return $latestVaccine && $latestVaccine->next_due_date && $latestVaccine->next_due_date->isPast();
-                });
-            });
-        } elseif ($filter === 'due_soon') {
-            $filteredAdopters = $allGroupedAdopters->filter(function($a) {
-                return $a->applications->some(function($app) {
-                    $latestVaccine = $app->pet?->medicalLogs->where('category', 'vaccination')->first();
-                    return $latestVaccine && $latestVaccine->next_due_date && $latestVaccine->next_due_date->isBetween(now(), now()->addDays(14));
-                });
-            });
         }
 
         $page = (int) $request->query('page', 1);
@@ -258,13 +234,16 @@ class AdopterProfileController extends Controller
             'activeCount',
             'inactiveCount',
             'restrictedCount',
-            'overdueCount',
-            'dueSoonCount'
+            'totalMonthlyReports'
         ));
     }
 
     public function updateStatus(Request $request, int $id): RedirectResponse
     {
+        if (Auth::user()?->role !== 'admin') {
+            abort(403, 'Only an administrator can modify adopter standing and sanctions.');
+        }
+
         $request->validate([
             'status'      => 'required|in:active,good_standing,restricted,blacklisted',
             'admin_notes' => 'nullable|string|max:1000',
@@ -284,5 +263,80 @@ class AdopterProfileController extends Controller
         };
 
         return back()->with('success', "Updated status for {$profile->full_name} to {$statusDisplayName}.");
+    }
+
+    /**
+     * Display the dedicated Monthly Pet Updates Report page.
+     */
+    public function monthlyReports(Request $request): View
+    {
+        $search   = trim((string) $request->query('search', ''));
+        $status   = $request->query('status', 'all'); // all, healthy, minor_issue, under_treatment
+        $species  = $request->query('species', 'all'); // all, dog, cat
+        $period   = $request->query('period', 'all');  // all, this_month, last_month, last_3_months
+
+        $query = PetHealthUpdate::with([
+            'pet',
+            'user.adoptersProfile',
+            'application'
+        ]);
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('pet', function ($petQ) use ($search) {
+                    $petQ->where('name', 'like', "%{$search}%")
+                        ->orWhere('breed', 'like', "%{$search}%")
+                        ->orWhere('type', 'like', "%{$search}%");
+                })->orWhereHas('user', function ($userQ) use ($search) {
+                    $userQ->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })->orWhereHas('user.adoptersProfile', function ($profQ) use ($search) {
+                    $profQ->where('adopter_code', 'like', "%{$search}%")
+                        ->orWhere('full_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status !== 'all') {
+            $query->where('health_status', $status);
+        }
+
+        if ($species !== 'all') {
+            $query->whereHas('pet', function ($petQ) use ($species) {
+                $petQ->where('type', $species);
+            });
+        }
+
+        if ($period === 'this_month') {
+            $query->whereBetween('check_in_date', [now()->startOfMonth(), now()->endOfMonth()]);
+        } elseif ($period === 'last_month') {
+            $query->whereBetween('check_in_date', [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()]);
+        } elseif ($period === 'last_3_months') {
+            $query->where('check_in_date', '>=', now()->subMonths(3)->startOfDay());
+        }
+
+        $reports = $query->latest('check_in_date')->latest('created_at')->paginate(12)->withQueryString();
+
+        // Summary KPI statistics
+        $totalReports     = PetHealthUpdate::count();
+        $thisMonthReports = PetHealthUpdate::whereBetween('check_in_date', [now()->startOfMonth(), now()->endOfMonth()])->count();
+        $healthyReports   = PetHealthUpdate::where('health_status', 'healthy')->count();
+        $attentionReports = PetHealthUpdate::whereIn('health_status', ['minor_issue', 'under_treatment'])->count();
+
+        $totalApprovedAdopters = AdoptionApplication::where('status', 'approved')->distinct('applicant_email')->count();
+
+        return view('adopters.reports', compact(
+            'reports',
+            'search',
+            'status',
+            'species',
+            'period',
+            'totalReports',
+            'thisMonthReports',
+            'healthyReports',
+            'attentionReports',
+            'totalApprovedAdopters'
+        ));
     }
 }

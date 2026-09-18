@@ -105,18 +105,20 @@
                                         <a href="{{ route('pets.show', $pet) }}" class="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white/[0.08] text-white dark:text-slate-200 hover:bg-slate-800 dark:hover:bg-white/[0.12] border border-slate-800 dark:border-white/[0.08] font-extrabold transition-all duration-200 shadow-2xs text-xs">View</a>
                                         @if(in_array(Auth::user()?->role, ['admin', 'staff']))
                                             <a href="{{ route('pets.edit', $pet) }}" class="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] hover:text-[#199CA4] dark:hover:text-white font-bold transition-all text-xs">Edit</a>
-                                            <button 
-                                                type="button" 
-                                                data-title='Delete "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>"?'
-                                                data-message="This action cannot be undone."
-                                                data-action="{{ route('pets.destroy', $pet) }}"
-                                                data-confirm-text="Delete"
-                                                data-method="DELETE"
-                                                onclick="openConfirmModal(this.dataset)"
-                                                class="px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors text-xs cursor-pointer"
-                                            >
-                                                Delete
-                                            </button>
+                                            @if(Auth::user()?->role === 'admin')
+                                                <button 
+                                                    type="button" 
+                                                    data-title='Delete "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>"?'
+                                                    data-message="This action cannot be undone."
+                                                    data-action="{{ route('pets.destroy', $pet) }}"
+                                                    data-confirm-text="Delete"
+                                                    data-method="DELETE"
+                                                    onclick="openConfirmModal(this.dataset)"
+                                                    class="px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors text-xs cursor-pointer"
+                                                >
+                                                    Delete
+                                                </button>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>

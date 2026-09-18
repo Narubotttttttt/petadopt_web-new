@@ -32,7 +32,7 @@
                 @csrf
                 @method('PATCH')
 
-                @include('pets._form')
+                @include('pets._form', ['isWizard' => false])
 
                 <div class="flex items-center gap-3 justify-end border-t border-gray-100 dark:border-white/[0.06] pt-6">
                     <a href="{{ route('pets.index') }}"

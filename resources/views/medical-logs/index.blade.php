@@ -15,7 +15,7 @@
                         <input name="q" value="{{ old('q', request('q')) }}" placeholder="Search pet, breed, or vet..." class="pl-9 pr-4 py-2 bg-white dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-xs sm:text-sm w-48 sm:w-64 focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs transition font-medium" />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <button type="submit" class="px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white font-bold rounded-xl text-xs sm:text-sm shadow-xs transition-colors cursor-pointer">Search</button>
+                    <button type="submit" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs sm:text-sm border border-slate-200 dark:border-white/[0.08] shadow-2xs transition-colors cursor-pointer">Search</button>
                     @if(request('q'))
                         <a href="{{ route('medical-logs.index', ['filter' => request('filter', 'all')]) }}" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-semibold underline">Clear</a>
                     @endif
@@ -40,13 +40,13 @@
             <a href="{{ route('medical-logs.index', ['filter' => 'vaccination']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'vaccination' ? 'border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#199CA4]/50 shadow-2xs transition-all">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Core Vaccinations</span>
-                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+                    <div class="w-9 h-9 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/15 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center border border-[#199CA4]/20">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline gap-2">
                     <span class="text-3xl font-black text-slate-900 dark:text-white">{{ $vaccineCount }}</span>
-                    <span class="text-xs font-semibold text-slate-400">doses logged</span>
+                    <span class="text-xs font-semibold text-slate-400">{{ Str::plural('dose', $vaccineCount) }} logged</span>
                 </div>
                 <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Core immunization records</p>
             </a>
@@ -66,17 +66,17 @@
                 <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Automated push reminder triggers</p>
             </a>
 
-            {{-- Total Routine Dewormings --}}
-            <a href="{{ route('medical-logs.index', ['filter' => 'deworming']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'deworming' ? 'border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#199CA4]/50 shadow-2xs transition-all">
+            {{-- Total Routine Dewormings (Theme Toggle Indigo Accent) --}}
+            <a href="{{ route('medical-logs.index', ['filter' => 'deworming']) }}" class="group block p-5 rounded-2xl bg-white dark:bg-[#12141C] border {{ $filter === 'deworming' ? 'border-[#4F46E5] ring-2 ring-[#4F46E5]/20' : 'border-slate-200/80 dark:border-white/[0.07]' }} hover:border-[#4F46E5]/50 shadow-2xs transition-all">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deworming Records</span>
-                    <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+                    <div class="w-9 h-9 rounded-xl bg-[#4F46E5]/10 dark:bg-[#6366F1]/15 text-[#4F46E5] dark:text-[#818CF8] flex items-center justify-center border border-[#4F46E5]/20 dark:border-[#6366F1]/25">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline gap-2">
                     <span class="text-3xl font-black text-slate-900 dark:text-white">{{ $dewormingCount }}</span>
-                    <span class="text-xs font-semibold text-slate-400">doses logged</span>
+                    <span class="text-xs font-semibold text-slate-400">{{ Str::plural('dose', $dewormingCount) }} logged</span>
                 </div>
                 <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Routine parasite prevention</p>
             </a>
@@ -112,7 +112,7 @@
                 Booster Schedules ({{ $scheduledCount }})
             </a>
             <a href="{{ route('medical-logs.index', ['filter' => 'deworming', 'q' => request('q')]) }}"
-               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border {{ $filter === 'deworming' ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.07] hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
+               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border {{ $filter === 'deworming' ? 'bg-[#4F46E5] text-white border-[#4F46E5] shadow-xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.07] hover:bg-slate-50 dark:hover:bg-white/[0.04]' }}">
                 Deworming ({{ $dewormingCount }})
             </a>
         </div>
@@ -127,7 +127,7 @@
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date Administered</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Category</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Administered By</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Next Scheduled Booster</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Next Due Date</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -155,15 +155,24 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300 font-semibold">{{ $log->date->format('M d, Y') }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
-                                        // Preventive care uses Primary Teal; Specialized / clinical treatments use Secondary Slate
-                                        $isPreventive = in_array($log->category, ['vaccination', 'deworming', 'checkup']);
-                                        $style = $isPreventive 
-                                            ? 'bg-[#199CA4]/10 dark:bg-[#199CA4]/15 text-[#15838B] dark:text-[#41C1CB] border-[#199CA4]/25' 
-                                             : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]';
+                                        // Category color coding:
+                                        // Vaccination: Primary Teal (#199CA4)
+                                        // Deworming: Theme Toggle Indigo (#4F46E5 / #818CF8)
+                                        // Other: Secondary Slate
+                                        if ($log->category === 'vaccination') {
+                                            $badgeStyle = 'bg-[#199CA4]/10 dark:bg-[#199CA4]/15 text-[#15838B] dark:text-[#41C1CB] border-[#199CA4]/25';
+                                            $dotStyle = 'bg-[#199CA4] dark:bg-[#41C1CB]';
+                                        } elseif ($log->category === 'deworming') {
+                                            $badgeStyle = 'bg-[#4F46E5]/10 dark:bg-[#6366F1]/15 text-[#4338CA] dark:text-[#A5B4FC] border-[#4F46E5]/25 dark:border-[#6366F1]/30';
+                                            $dotStyle = 'bg-[#4F46E5] dark:bg-[#818CF8]';
+                                        } else {
+                                            $badgeStyle = 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]';
+                                            $dotStyle = null;
+                                        }
                                     @endphp
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border {{ $style }}">
-                                        @if($isPreventive)
-                                            <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4]"></span>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border {{ $badgeStyle }}">
+                                        @if($dotStyle)
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $dotStyle }}"></span>
                                         @endif
                                         <span>{{ ucfirst(str_replace('_', ' ', $log->category)) }}</span>
                                     </span>
@@ -187,7 +196,7 @@
                                             @elseif($daysDiff === 0)
                                                 <span class="text-[11px] text-[#199CA4] dark:text-[#41C1CB] font-bold">(Today)</span>
                                             @else
-                                                <span class="text-[11px] text-slate-400 font-medium">({{ abs($daysDiff) }}d ago)</span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">Overdue ({{ abs($daysDiff) }}d)</span>
                                             @endif
                                         </div>
                                     @else
@@ -196,9 +205,9 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="inline-flex items-center gap-1.5">
-                                        @if($log->next_due_date && $log->category === 'vaccination')
-                                            <a href="{{ route('medical-logs.create-for-pet', $log->pet_id) }}" title="Record next booster vaccination" class="px-2.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-bold transition text-xs shadow-2xs">
-                                                Record Booster
+                                        @if($log->next_due_date)
+                                            <a href="{{ route('medical-logs.create-for-pet', $log->pet_id) }}" title="Record follow-up dose" class="px-2.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-bold transition text-xs shadow-2xs">
+                                                {{ $log->category === 'vaccination' ? 'Record Booster' : 'Record Dose' }}
                                             </a>
                                         @endif
                                         <a href="{{ route('medical-logs.edit', $log) }}" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs">Edit</a>

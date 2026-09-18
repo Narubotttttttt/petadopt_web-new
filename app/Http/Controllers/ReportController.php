@@ -288,8 +288,7 @@ class ReportController extends Controller
         $records = [];
         $chartData = [];
 
-        $isSqlite = DB::getDriverName() === 'sqlite';
-        $monthExpr = fn($col) => $isSqlite ? "CAST(strftime('%m', {$col}) AS INTEGER)" : "MONTH({$col})";
+
 
         // 2. Fetch specific dataset based on reportType
         switch ($reportType) {
@@ -330,44 +329,7 @@ class ReportController extends Controller
                     'approvalRate'      => $approvalRate,
                 ];
 
-                // Monthly trend chart for adoptions
-                $adoptionTrends = AdoptionApplication::selectRaw("{$monthExpr('created_at')} as month, COUNT(*) as total")
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
 
-                $approvedTrends = AdoptionApplication::selectRaw("{$monthExpr('approved_at')} as month, COUNT(*) as total")
-                    ->where('status', 'approved')
-                    ->whereBetween('approved_at', [$startDate, $endDate])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
-
-                $chartMonths = [];
-                $applicationsSeries = [];
-                $approvedSeries = [];
-                foreach (range(1, 12) as $m) {
-                    $chartMonths[] = Carbon::create()->month($m)->format('M');
-                    $applicationsSeries[] = (int) ($adoptionTrends->get($m, 0));
-                    $approvedSeries[] = (int) ($approvedTrends->get($m, 0));
-                }
-
-                $chartData = [
-                    'labels'   => $chartMonths,
-                    'datasets' => [
-                        [
-                            'label'           => 'Applications Submitted',
-                            'data'            => $applicationsSeries,
-                            'borderColor'     => '#199CA4',
-                            'backgroundColor' => 'rgba(25, 156, 164, 0.15)',
-                        ],
-                        [
-                            'label'           => 'Approved & Finalized',
-                            'data'            => $approvedSeries,
-                            'borderColor'     => '#10B981',
-                            'backgroundColor' => 'rgba(16, 185, 129, 0.15)',
-                        ],
-                    ],
-                ];
 
                 $records = $isExport ? $query->latest('created_at')->get() : $query->latest('created_at')->paginate(20)->withQueryString();
                 break;
@@ -408,30 +370,7 @@ class ReportController extends Controller
                     'pendingCount'   => $pendingCount,
                 ];
 
-                // Monthly intake trends
-                $intakeTrends = Pet::selectRaw("{$monthExpr('created_at')} as month, COUNT(*) as total")
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
 
-                $chartMonths = [];
-                $intakeSeries = [];
-                foreach (range(1, 12) as $m) {
-                    $chartMonths[] = Carbon::create()->month($m)->format('M');
-                    $intakeSeries[] = (int) ($intakeTrends->get($m, 0));
-                }
-
-                $chartData = [
-                    'labels'   => $chartMonths,
-                    'datasets' => [
-                        [
-                            'label'           => 'Pet Intakes',
-                            'data'            => $intakeSeries,
-                            'borderColor'     => '#199CA4',
-                            'backgroundColor' => 'rgba(25, 156, 164, 0.25)',
-                        ],
-                    ],
-                ];
 
                 $records = $isExport ? $query->latest('created_at')->get() : $query->latest('created_at')->paginate(20)->withQueryString();
                 break;
@@ -473,30 +412,7 @@ class ReportController extends Controller
                     'checkupCount'     => $checkupCount,
                 ];
 
-                // Monthly clinical trends
-                $medicalTrends = MedicalLog::selectRaw("{$monthExpr('date')} as month, COUNT(*) as total")
-                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
 
-                $chartMonths = [];
-                $medicalSeries = [];
-                foreach (range(1, 12) as $m) {
-                    $chartMonths[] = Carbon::create()->month($m)->format('M');
-                    $medicalSeries[] = (int) ($medicalTrends->get($m, 0));
-                }
-
-                $chartData = [
-                    'labels'   => $chartMonths,
-                    'datasets' => [
-                        [
-                            'label'           => 'Medical Procedures',
-                            'data'            => $medicalSeries,
-                            'borderColor'     => '#6366F1',
-                            'backgroundColor' => 'rgba(99, 102, 241, 0.25)',
-                        ],
-                    ],
-                ];
 
                 $records = $isExport ? $query->latest('date')->get() : $query->latest('date')->paginate(20)->withQueryString();
                 break;
@@ -586,16 +502,7 @@ class ReportController extends Controller
                     'goodStandingRate'  => $goodStandingRate,
                 ];
 
-                $chartData = [
-                    'labels'   => ['Up to Date', 'Due Soon', 'Overdue', 'Pending First'],
-                    'datasets' => [
-                        [
-                            'label'           => 'Adopter Status',
-                            'data'            => [$counts['submitted'], $counts['due_soon'], $counts['overdue'], $counts['pending_first']],
-                            'backgroundColor' => ['#10B981', '#F59E0B', '#EF4444', '#94A3B8'],
-                        ],
-                    ],
-                ];
+
 
                 if ($isExport) {
                     $records = $processedList;
@@ -618,90 +525,68 @@ class ReportController extends Controller
                 $reportType = 'overview';
 
                 $totalIntakes = Pet::whereBetween('created_at', [$startDate, $endDate])->count();
-                $totalAdoptions = AdoptionApplication::where('status', 'approved')
+                $dogIntakes   = Pet::where('type', 'dog')->whereBetween('created_at', [$startDate, $endDate])->count();
+                $catIntakes   = Pet::where('type', 'cat')->whereBetween('created_at', [$startDate, $endDate])->count();
+
+                $totalAdoptions       = AdoptionApplication::where('status', 'approved')
                     ->whereBetween('approved_at', [$startDate, $endDate])
                     ->count();
-                $totalApplications = AdoptionApplication::whereBetween('created_at', [$startDate, $endDate])->count();
-                $totalMedicals = MedicalLog::whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])->count();
+                $totalApplications    = AdoptionApplication::whereBetween('created_at', [$startDate, $endDate])->count();
+                $underReviewAdoptions = AdoptionApplication::where('status', 'under_review')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count();
+                $pendingAdoptions     = AdoptionApplication::where('status', 'pending')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count();
+                $rejectedAdoptions    = AdoptionApplication::where('status', 'rejected')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->count();
+
+                $totalMedicals    = MedicalLog::whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])->count();
+                $vaccinationCount = MedicalLog::where('category', 'like', '%vaccin%')
+                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->count();
+                $surgeryCount     = MedicalLog::where('category', 'like', '%surg%')
+                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->count();
+                $checkupCount     = MedicalLog::where(function ($q) {
+                    $q->where('category', 'like', '%check%')
+                      ->orWhere('category', 'like', '%routine%')
+                      ->orWhere('category', 'like', '%deworm%');
+                })->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])->count();
+
                 $activeShelter = Pet::whereIn('status', ['available', 'pending'])->count();
-                $totalDogs = Pet::where('type', 'dog')->whereIn('status', ['available', 'pending'])->count();
-                $totalCats = Pet::where('type', 'cat')->whereIn('status', ['available', 'pending'])->count();
+                $totalDogs     = Pet::where('type', 'dog')->whereIn('status', ['available', 'pending'])->count();
+                $totalCats     = Pet::where('type', 'cat')->whereIn('status', ['available', 'pending'])->count();
 
                 $conversionRate = $totalApplications > 0 ? round(($totalAdoptions / $totalApplications) * 100, 1) : 0;
 
                 $stats = [
-                    'totalIntakes'       => $totalIntakes,
-                    'approvedAdoptions'  => $totalAdoptions,
-                    'totalApplications'  => $totalApplications,
-                    'conversionRate'     => $conversionRate,
-                    'totalMedicals'      => $totalMedicals,
-                    'activeShelter'      => $activeShelter,
-                    'totalDogs'          => $totalDogs,
-                    'totalCats'          => $totalCats,
+                    'totalIntakes'         => $totalIntakes,
+                    'dogIntakes'           => $dogIntakes,
+                    'catIntakes'           => $catIntakes,
+                    'approvedAdoptions'    => $totalAdoptions,
+                    'totalApplications'    => $totalApplications,
+                    'underReviewAdoptions' => $underReviewAdoptions,
+                    'pendingAdoptions'     => $pendingAdoptions,
+                    'rejectedAdoptions'    => $rejectedAdoptions,
+                    'conversionRate'       => $conversionRate,
+                    'totalMedicals'        => $totalMedicals,
+                    'vaccinationCount'     => $vaccinationCount,
+                    'surgeryCount'         => $surgeryCount,
+                    'checkupCount'         => $checkupCount,
+                    'activeShelter'        => $activeShelter,
+                    'totalDogs'            => $totalDogs,
+                    'totalCats'            => $totalCats,
                 ];
 
-                // Comparative monthly trends: Intakes vs Adoptions vs Medicals
-                $intakeTrends = Pet::selectRaw("{$monthExpr('created_at')} as month, COUNT(*) as total")
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
-
-                $adoptionTrends = AdoptionApplication::selectRaw("{$monthExpr('approved_at')} as month, COUNT(*) as total")
+                // Key milestone records for the overview table
+                $recordsQuery = AdoptionApplication::with(['pet', 'staff'])
                     ->where('status', 'approved')
                     ->whereBetween('approved_at', [$startDate, $endDate])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
+                    ->latest('approved_at');
 
-                $medicalTrends = MedicalLog::selectRaw("{$monthExpr('date')} as month, COUNT(*) as total")
-                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->groupBy('month')
-                    ->pluck('total', 'month');
-
-                $chartMonths = [];
-                $intakesSeries = [];
-                $adoptionsSeries = [];
-                $medicalsSeries = [];
-
-                foreach (range(1, 12) as $m) {
-                    $chartMonths[] = Carbon::create()->month($m)->format('M');
-                    $intakesSeries[] = (int) ($intakeTrends->get($m, 0));
-                    $adoptionsSeries[] = (int) ($adoptionTrends->get($m, 0));
-                    $medicalsSeries[] = (int) ($medicalTrends->get($m, 0));
-                }
-
-                $chartData = [
-                    'labels'   => $chartMonths,
-                    'datasets' => [
-                        [
-                            'label'           => 'Pet Intakes',
-                            'data'            => $intakesSeries,
-                            'borderColor'     => '#199CA4',
-                            'backgroundColor' => 'rgba(25, 156, 164, 0.85)',
-                        ],
-                        [
-                            'label'           => 'Finalized Adoptions',
-                            'data'            => $adoptionsSeries,
-                            'borderColor'     => '#10B981',
-                            'backgroundColor' => 'rgba(16, 185, 129, 0.85)',
-                        ],
-                        [
-                            'label'           => 'Medical Procedures',
-                            'data'            => $medicalsSeries,
-                            'borderColor'     => '#6366F1',
-                            'backgroundColor' => 'rgba(99, 102, 241, 0.85)',
-                        ],
-                    ],
-                ];
-
-                // Recent key milestones for the overview table
-                $recentAdoptions = AdoptionApplication::with(['pet', 'staff'])
-                    ->where('status', 'approved')
-                    ->whereBetween('approved_at', [$startDate, $endDate])
-                    ->latest('approved_at')
-                    ->take(10)
-                    ->get();
-
-                $records = $recentAdoptions;
+                $records = $isExport ? $recordsQuery->get() : $recordsQuery->paginate(20)->withQueryString();
                 break;
         }
 

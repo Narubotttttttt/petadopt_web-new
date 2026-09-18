@@ -134,4 +134,23 @@ class ReportTest extends TestCase
         $this->assertStringContainsString('Adopter Code', $content);
         $this->assertStringContainsString('Full Name', $content);
     }
+
+    public function test_staff_can_view_reports_index_without_charts(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        foreach (['overview', 'adoptions', 'intakes', 'medical', 'compliance'] as $type) {
+            $response = $this->actingAs($staff)->get(route('reports.index', ['type' => $type]));
+
+            $response->assertStatus(200);
+            $response->assertDontSee('id="reportAnalyticsChart"', false);
+            $response->assertDontSee('chart.umd.min.js', false);
+            $response->assertDontSee('Trends & Visual Analytics', false);
+            $response->assertSee('System Reports');
+        }
+    }
 }
+
