@@ -18,7 +18,9 @@ class MedicalLogController extends Controller
         $q = request()->input('q');
         $filter = request()->input('filter', 'all');
 
-        $query = MedicalLog::with('pet', 'creator');
+        $query = MedicalLog::with(['pet.medicalLogs' => function ($q) {
+            $q->latest('date');
+        }, 'creator']);
 
         if ($q) {
             $query->where(function ($b) use ($q) {
@@ -33,32 +35,11 @@ class MedicalLogController extends Controller
             });
         }
 
-        $today = now()->startOfDay();
-        $thirtyDaysAhead = now()->addDays(30)->endOfDay();
-
         $totalLogsCount = MedicalLog::count();
         $vaccineCount = MedicalLog::where('category', 'vaccination')->count();
         $dewormingCount = MedicalLog::where('category', 'deworming')->count();
-        $scheduledCount = MedicalLog::whereNotNull('next_due_date')->count();
 
-        $overdueCount = MedicalLog::whereNotNull('next_due_date')
-            ->whereDate('next_due_date', '<', $today)
-            ->count();
-
-        $dueSoonCount = MedicalLog::whereNotNull('next_due_date')
-            ->whereDate('next_due_date', '>=', $today)
-            ->whereDate('next_due_date', '<=', $thirtyDaysAhead)
-            ->count();
-
-        if ($filter === 'scheduled') {
-            $query->whereNotNull('next_due_date');
-        } elseif ($filter === 'overdue') {
-            $query->whereNotNull('next_due_date')->whereDate('next_due_date', '<', $today);
-        } elseif ($filter === 'due_soon') {
-            $query->whereNotNull('next_due_date')->whereDate('next_due_date', '>=', $today)->whereDate('next_due_date', '<=', $thirtyDaysAhead);
-        } elseif ($filter === 'attention') {
-            $query->whereNotNull('next_due_date')->whereDate('next_due_date', '<=', $thirtyDaysAhead);
-        } elseif ($filter === 'vaccination') {
+        if ($filter === 'vaccination') {
             $query->where('category', 'vaccination');
         } elseif ($filter === 'deworming') {
             $query->where('category', 'deworming');
@@ -66,21 +47,27 @@ class MedicalLogController extends Controller
 
         $logs = $query->latest('date')->paginate(15)->withQueryString();
 
+        $pets = Pet::with(['medicalLogs' => function ($q) {
+            $q->latest('date')->take(5);
+        }])->orderBy('name')->orderBy('id')->get();
+
         return view('medical-logs.index', [
             'logs' => $logs,
+            'pets' => $pets,
             'q' => $q,
             'filter' => $filter,
             'totalLogsCount' => $totalLogsCount,
             'vaccineCount' => $vaccineCount,
             'dewormingCount' => $dewormingCount,
-            'scheduledCount' => $scheduledCount,
-            'overdueCount' => $overdueCount,
-            'dueSoonCount' => $dueSoonCount,
         ]);
     }
 
     public function create(?Pet $pet = null): View
     {
+        if ((!$pet || !$pet->exists) && request()->filled('pet_id')) {
+            $pet = Pet::find(request('pet_id'));
+        }
+
         if ($pet && $pet->exists) {
             $pet->load(['medicalLogs' => function ($q) {
                 $q->latest('date');
@@ -125,13 +112,36 @@ class MedicalLogController extends Controller
         try {
             $administeredBy = trim($request->input('administered_by', '')) ?: Auth::user()->name;
 
-            $log = MedicalLog::create([
-                ...$data,
-                'administered_by' => $administeredBy,
-                'created_by' => Auth::id(),
-            ]);
+            // If an entry already exists for this pet, category, and date, update it in-place to avoid duplicates
+            $targetLogId = $request->input('log_id') ?: $request->input('medical_log_id');
+            $existingLog = null;
+            if ($targetLogId) {
+                $existingLog = MedicalLog::where('id', $targetLogId)->first();
+            }
+            if (! $existingLog) {
+                $existingLog = MedicalLog::where('pet_id', $data['pet_id'])
+                    ->where('category', $data['category'])
+                    ->where('date', $data['date'])
+                    ->first();
+            }
 
-            // Fulfill and clear prior open booster schedules for this pet & category that are now completed by this dose
+            if ($existingLog) {
+                $existingLog->update([
+                    ...$data,
+                    'administered_by' => $administeredBy,
+                ]);
+                $log = $existingLog;
+                $actionVerb = 'updated';
+            } else {
+                $log = MedicalLog::create([
+                    ...$data,
+                    'administered_by' => $administeredBy,
+                    'created_by' => Auth::id(),
+                ]);
+                $actionVerb = 'added';
+            }
+
+            // Fulfill and clear any other open booster schedules for this pet & category that are completed
             MedicalLog::where('pet_id', $data['pet_id'])
                 ->where('category', $data['category'])
                 ->where('id', '!=', $log->id)
@@ -142,13 +152,13 @@ class MedicalLogController extends Controller
             $this->notifyAdoptersOfMedicalLog($log, $data['category']);
 
             $petName = $log->pet->name ?? ('Pet no. ' . $log->pet_id);
-            session()->flash('success', "Medical log entry added for {$petName}.");
+            session()->flash('success', "Medical log entry {$actionVerb} for {$petName}.");
 
             if ($request->filled('redirect_to')) {
                 return redirect($request->input('redirect_to'));
             }
 
-            return redirect()->back();
+            return redirect()->route('medical-logs.index');
         } finally {
             $lock->release();
         }
@@ -156,10 +166,17 @@ class MedicalLogController extends Controller
 
     public function edit(MedicalLog $medicalLog): View
     {
-        $pets = Pet::orderBy('breed')->get();
+        $medicalLog->load(['pet.medicalLogs' => function ($q) {
+            $q->latest('date');
+        }, 'pet.addedBy']);
+
+        $pets = Pet::with(['medicalLogs' => function ($q) {
+            $q->latest('date')->take(5);
+        }])->orderBy('name')->orderBy('id')->get();
 
         return view('medical-logs.edit', [
             'medicalLog' => $medicalLog,
+            'pet' => $medicalLog->pet,
             'pets' => $pets,
         ]);
     }
@@ -203,7 +220,7 @@ class MedicalLogController extends Controller
             return redirect($request->input('redirect_to'));
         }
 
-        return redirect()->back();
+        return redirect()->route('medical-logs.index');
     }
 
     private function notifyAdoptersOfMedicalLog(MedicalLog $log, string $category): void

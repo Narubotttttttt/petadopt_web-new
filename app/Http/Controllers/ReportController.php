@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
@@ -30,14 +29,17 @@ class ReportController extends Controller
 
     /**
      * Export the filtered report as an official branded PDF document.
+     * Accessible exclusively by administrators.
      */
     public function exportPdf(Request $request)
     {
+        abort_if(Auth::user()?->role !== 'admin', 403, 'Unauthorized. Only administrators are authorized to export PDF reports.');
+
         $reportData = $this->generateReportData($request, true);
 
         $currentUser = Auth::user();
         $generatedByName = $currentUser ? $currentUser->name : 'CAWS Authorized Staff';
-        $generatedByRole = $currentUser ? ucfirst($currentUser->role) : 'Staff';
+        $generatedByRole = $currentUser ? ucfirst($currentUser->role) : 'Administrator';
 
         // Load organization logo base64 if available for DomPDF embedding
         $logoBase64 = null;
@@ -57,170 +59,6 @@ class ReportController extends Controller
         $filename = 'CAWS_' . ucfirst($reportData['reportType']) . '_Report_' . now()->format('Ymd_His') . '.pdf';
 
         return $pdf->stream($filename);
-    }
-
-    /**
-     * Export the filtered report records as a standard CSV file.
-     */
-    public function exportCsv(Request $request): StreamedResponse
-    {
-        $reportData = $this->generateReportData($request, true);
-        $reportType = $reportData['reportType'];
-        $records    = $reportData['records'];
-
-        $filename = 'CAWS_' . ucfirst($reportType) . '_Report_' . now()->format('Ymd_His') . '.csv';
-
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0',
-        ];
-
-        $callback = function () use ($reportType, $records, $reportData) {
-            $file = fopen('php://output', 'w');
-            // Write UTF-8 BOM for Microsoft Excel compatibility
-            fputs($file, "\xEF\xBB\xBF");
-
-            switch ($reportType) {
-                case 'adoptions':
-                    fputcsv($file, [
-                        'Application ID',
-                        'Applicant Name',
-                        'Applicant Email',
-                        'Applicant Phone',
-                        'Pet ID',
-                        'Pet Name',
-                        'Species',
-                        'Status',
-                        'Scheduled Date',
-                        'Evaluator',
-                        'Submitted Date',
-                        'Approved / Finalized Date',
-                    ]);
-                    foreach ($records as $item) {
-                        fputcsv($file, [
-                            $item->id,
-                            $item->applicant_name ?? 'N/A',
-                            $item->applicant_email ?? 'N/A',
-                            $item->applicant_phone ?? 'N/A',
-                            $item->pet_id ?? 'N/A',
-                            $item->pet ? $item->pet->name : 'N/A',
-                            $item->pet ? ucfirst($item->pet->type ?? 'N/A') : 'N/A',
-                            ucfirst(str_replace('_', ' ', $item->status ?? 'pending')),
-                            $item->scheduled_at ? $item->scheduled_at->format('Y-m-d H:i') : 'N/A',
-                            $item->evaluator_name ?? 'N/A',
-                            $item->created_at ? $item->created_at->format('Y-m-d H:i') : 'N/A',
-                            $item->approved_at ? Carbon::parse($item->approved_at)->format('Y-m-d H:i') : 'N/A',
-                        ]);
-                    }
-                    break;
-
-                case 'intakes':
-                    fputcsv($file, [
-                        'Pet ID',
-                        'Pet Name',
-                        'Species',
-                        'Breed',
-                        'Color',
-                        'Gender',
-                        'Age',
-                        'Current Status',
-                        'Rescued / Intake Date',
-                        'Added By',
-                    ]);
-                    foreach ($records as $item) {
-                        fputcsv($file, [
-                            $item->id,
-                            $item->name ?? 'Pet no. ' . $item->id,
-                            ucfirst($item->type ?? 'N/A'),
-                            $item->breed ?? 'Mixed / Unknown',
-                            $item->color ?? 'N/A',
-                            ucfirst($item->gender ?? 'N/A'),
-                            $item->age ?? 'N/A',
-                            ucfirst($item->status ?? 'available'),
-                            $item->created_at ? $item->created_at->format('Y-m-d H:i') : 'N/A',
-                            $item->added_by_name ?? ($item->addedBy ? $item->addedBy->name : 'Staff'),
-                        ]);
-                    }
-                    break;
-
-                case 'medical':
-                    fputcsv($file, [
-                        'Log ID',
-                        'Date',
-                        'Pet ID',
-                        'Pet Name',
-                        'Species',
-                        'Procedure Category',
-                        'Administered By',
-                        'Next Due Date',
-                        'Recorded By',
-                    ]);
-                    foreach ($records as $item) {
-                        fputcsv($file, [
-                            $item->id,
-                            $item->date ? $item->date->format('Y-m-d') : 'N/A',
-                            $item->pet_id ?? 'N/A',
-                            $item->pet ? $item->pet->name : 'Pet no. ' . $item->pet_id,
-                            $item->pet ? ucfirst($item->pet->type ?? 'N/A') : 'N/A',
-                            ucfirst($item->category ?? 'General Checkup'),
-                            $item->administered_by ?? 'CAWS Clinic Staff',
-                            $item->next_due_date ? $item->next_due_date->format('Y-m-d') : 'None',
-                            $item->creator ? $item->creator->name : 'System',
-                        ]);
-                    }
-                    break;
-
-                case 'compliance':
-                    fputcsv($file, [
-                        'Adopter Code',
-                        'Full Name',
-                        'Email',
-                        'Phone',
-                        'City / Province',
-                        'Adopted Pets Count',
-                        'Compliance Status',
-                        'Last Check-in Date',
-                        'Admin Notes',
-                    ]);
-                    foreach ($records as $item) {
-                        fputcsv($file, [
-                            $item['adopter_code'],
-                            $item['full_name'],
-                            $item['email'],
-                            $item['phone'],
-                            $item['location'],
-                            $item['adopted_count'],
-                            $item['status_label'],
-                            $item['last_check_in_date'],
-                            $item['admin_notes'],
-                        ]);
-                    }
-                    break;
-
-                case 'overview':
-                default:
-                    fputcsv($file, [
-                        'Metric',
-                        'Value',
-                        'Reporting Period',
-                    ]);
-                    fputcsv($file, ['Total Rescued Pets (Intakes)', $reportData['stats']['totalIntakes'] ?? 0, $reportData['dateRangeLabel']]);
-                    fputcsv($file, ['Approved Adoptions', $reportData['stats']['approvedAdoptions'] ?? 0, $reportData['dateRangeLabel']]);
-                    fputcsv($file, ['Total Adoption Applications', $reportData['stats']['totalApplications'] ?? 0, $reportData['dateRangeLabel']]);
-                    fputcsv($file, ['Adoption Conversion Rate', ($reportData['stats']['conversionRate'] ?? 0) . '%', $reportData['dateRangeLabel']]);
-                    fputcsv($file, ['Clinical Medical Procedures', $reportData['stats']['totalMedicals'] ?? 0, $reportData['dateRangeLabel']]);
-                    fputcsv($file, ['Current Active Shelter Residents', $reportData['stats']['activeShelter'] ?? 0, 'Current Status']);
-                    fputcsv($file, ['Dogs in Shelter', $reportData['stats']['totalDogs'] ?? 0, 'Current Status']);
-                    fputcsv($file, ['Cats in Shelter', $reportData['stats']['totalCats'] ?? 0, 'Current Status']);
-                    break;
-            }
-
-            fclose($file);
-        };
-
-        return response()->streamDownload($callback, $filename, $headers);
     }
 
     /**

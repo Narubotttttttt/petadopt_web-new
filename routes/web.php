@@ -110,8 +110,6 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 
     // System Reports & Analytics
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
-    Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
 
     // Admin Notification Routes
     Route::get('/admin/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('admin.notifications.index');
@@ -120,6 +118,9 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    // Admin Exclusive Reports Export
+    Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+
     // Admin Exclusive Actions
     Route::delete('/pets/{pet}', [PetController::class, 'destroy'])->name('pets.destroy');
     Route::delete('/medical-logs/{medicalLog}', [MedicalLogController::class, 'destroy'])->name('medical-logs.destroy');

@@ -111,13 +111,14 @@ class PetApiController extends Controller
         $data = [
             'id'                 => $pet->id,
             'name'               => $pet->name ?: ('Pet no. ' . $pet->id),
-            'type'               => ucfirst($pet->type ?: 'Dog'),
-            'breed'              => $pet->breed ?: 'Mixed Breed',
-            'color'              => $pet->color ?: 'N/A',
-            'gender'             => ucfirst($pet->gender ?: 'Unknown'),
-            'age'                => $pet->age ?: 'Unknown',
-            'description'        => $pet->description ?: 'No description provided.',
-            'image'              => $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
+            'type'               => $pet->type ? ucfirst($pet->type) : null,
+            'breed'              => $pet->breed ?: null,
+            'color'              => $pet->color ?: null,
+            'gender'             => $pet->gender ? ucfirst($pet->gender) : null,
+            'age'                => $pet->age ?: null,
+            'description'        => $pet->description ?: null,
+            'image'              => $photoUrl,
+            'photo_url'          => $photoUrl,
             'status'             => $pet->status,
             'temperament'        => $pet->temperamentTags->pluck('name')->toArray(),
             'has_applied'        => $userApp !== null,
@@ -126,13 +127,17 @@ class PetApiController extends Controller
         ];
 
         if ($includeDetails) {
-            $data['medical_history'] = $pet->medical_history ?: 'No medical history recorded.';
+            $data['medical_history'] = $pet->medical_history ?: null;
             $data['medical_logs'] = $pet->medicalLogs->map(function ($log) {
                 return [
-                    'id'          => $log->id,
-                    'title'       => $log->title ?? 'Checkup',
-                    'date'        => $log->date ? $log->date->format('Y-m-d') : null,
-                    'notes'       => $log->notes,
+                    'id'              => $log->id,
+                    'category'        => $log->category,
+                    'vaccine_name'    => $log->vaccine_name,
+                    'title'           => $log->vaccine_name ?: ($log->category ? ucfirst(str_replace('_', ' ', $log->category)) : 'Clinical Entry'),
+                    'date'            => $log->date ? $log->date->format('Y-m-d') : null,
+                    'administered_by' => $log->administered_by,
+                    'next_due_date'   => $log->next_due_date ? $log->next_due_date->format('Y-m-d') : null,
+                    'notes'           => $log->administered_by ? ('Administered by ' . $log->administered_by) : null,
                 ];
             });
         }

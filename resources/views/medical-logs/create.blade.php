@@ -49,6 +49,7 @@
             });
 
             $initialPetId = old('pet_id', optional($pet)->id ?: request('pet_id', ''));
+            $pageTitle = 'Add Medical Log';
         @endphp
 
         {{-- Top Navigation Bar --}}
@@ -58,8 +59,8 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     <span>{{ $pet ? 'Back to Pet Profile' : 'Back to Medical Logs' }}</span>
                 </a>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Add Medical Log</h1>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Record shelter immunizations and routine dewormings with automatic adopter push reminders.</p>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ $pageTitle }}</h1>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Record shelter immunizations and routine parasite prevention logs.</p>
             </div>
             <div class="flex items-center gap-2 self-start sm:self-auto">
                 <a href="{{ route('medical-logs.index') }}" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#171923] text-xs font-bold transition shadow-2xs">
@@ -89,8 +90,8 @@
                 isOpen: false,
                 submitting: false,
 
-                category: '{{ old('category', 'vaccination') }}',
-                vaccineName: '{{ old('vaccine_name', '') }}',
+                category: '{{ old('category', request('category', 'vaccination')) }}',
+                vaccineName: '{{ old('vaccine_name', request('vaccine_name', '')) }}',
                 date: '{{ old('date', now()->format('Y-m-d')) }}',
                 administeredBy: '{{ old('administered_by', Auth::user()->name) }}',
                 nextDueDate: '{{ old('next_due_date', '') }}',
@@ -443,12 +444,12 @@
                         </div>
                     </div>
 
-                    {{-- 5. Next Due Date & Booster Schedule --}}
+                    {{-- 5. Adopter Reminder / Next Due Date --}}
                     <div class="p-4 rounded-2xl bg-slate-50/70 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-3">
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="block text-xs font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                                    Next Booster / Due Date
+                                    Adopter Reminder Date (Optional)
                                 </span>
                                 <span class="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5" x-text="formattedDueDate"></span>
                             </div>
@@ -494,7 +495,7 @@
                         >
 
                         <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                            Once this pet is adopted, CAWS push notifications are automatically dispatched to the adopter's mobile app at 1 month, 7 days, 3 days, and on the day of vaccination.
+                            The shelter does not monitor or track this date. If set, an automatic push notification will be sent to the adopter 1 month prior to this date.
                         </p>
                     </div>
 
@@ -513,7 +514,7 @@
                             class="px-6 py-2.5 rounded-xl bg-[#199CA4] text-white text-xs font-bold transition-all duration-200 flex items-center gap-2"
                         >
                             <svg x-show="submitting" class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <span x-text="submitting ? 'Saving Entry...' : 'Save Entry'"></span>
+                            <span x-text="submitting ? 'Saving Entry...' : 'Save Medical Entry'"></span>
                         </button>
                     </div>
                 </form>
@@ -562,20 +563,13 @@
                                 <div class="p-3 rounded-2xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.04] space-y-1">
                                     <div class="flex items-center justify-between">
                                         <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Vaccination</span>
-                                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
-                                            :class="{
-                                                'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300': selectedPet.vaccine_status === 'Up to Date',
-                                                'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300': selectedPet.vaccine_status === 'Due Soon',
-                                                'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300': selectedPet.vaccine_status === 'Overdue',
-                                                'bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400': selectedPet.vaccine_status === 'None logged'
-                                            }"
-                                            x-text="selectedPet.vaccine_status"
-                                        ></span>
+                                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                            Recorded
+                                        </span>
                                     </div>
                                     <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100 block truncate" x-text="selectedPet.latest_vaccine_name || 'Core Vaccine'"></span>
-                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-0.5">
-                                        <span x-show="selectedPet.vaccine_date" x-text="'Dose: ' + selectedPet.vaccine_date"></span>
-                                        <span class="font-mono font-bold text-[#199CA4] dark:text-[#41C1CB]" x-show="selectedPet.vaccine_due_date" x-text="'Due: ' + selectedPet.vaccine_due_date"></span>
+                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                        <span x-show="selectedPet.vaccine_date" x-text="'Administered: ' + selectedPet.vaccine_date"></span>
                                     </div>
                                 </div>
 
@@ -583,20 +577,13 @@
                                 <div class="p-3 rounded-2xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.04] space-y-1">
                                     <div class="flex items-center justify-between">
                                         <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Deworming</span>
-                                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
-                                            :class="{
-                                                'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300': selectedPet.deworming_status === 'Up to Date',
-                                                'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300': selectedPet.deworming_status === 'Due Soon',
-                                                'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300': selectedPet.deworming_status === 'Overdue',
-                                                'bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400': selectedPet.deworming_status === 'None logged'
-                                            }"
-                                            x-text="selectedPet.deworming_status"
-                                        ></span>
+                                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                                            Recorded
+                                        </span>
                                     </div>
                                     <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100 block truncate" x-text="selectedPet.latest_deworming_name || 'Routine Dewormer'"></span>
-                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-0.5">
-                                        <span x-show="selectedPet.deworming_date" x-text="'Dose: ' + selectedPet.deworming_date"></span>
-                                        <span class="font-mono font-bold text-indigo-600 dark:text-indigo-400" x-show="selectedPet.deworming_due_date" x-text="'Due: ' + selectedPet.deworming_due_date"></span>
+                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                        <span x-show="selectedPet.deworming_date" x-text="'Administered: ' + selectedPet.deworming_date"></span>
                                     </div>
                                 </div>
                             </div>
@@ -656,12 +643,7 @@
                                         </template>
                                         <span class="text-[11px] text-slate-400 dark:text-slate-500 block truncate" x-text="'By: ' + log.administered_by"></span>
                                     </div>
-                                    <template x-if="log.next_due_date">
-                                        <div class="text-right shrink-0">
-                                            <span class="text-[10px] text-slate-400 block">Next Due:</span>
-                                            <span class="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400" x-text="log.next_due_date"></span>
-                                        </div>
-                                    </template>
+
                                 </div>
                             </template>
                         </div>
@@ -700,7 +682,7 @@
                         </li>
                         <li class="flex items-start gap-2">
                             <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4] mt-1.5 shrink-0"></span>
-                            <span><strong>Mobile Push Alerts:</strong> Automatically sent to adopters at 1 month, 7 days, 3 days, and on booster day.</span>
+                            <span><strong>Adopter Push Reminders:</strong> Automatically sent to adopters 1 month prior to the reminder date. Shelter does not enforce or monitor follow-up dates.</span>
                         </li>
                     </ul>
                 </div>

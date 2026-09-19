@@ -15,6 +15,15 @@
              modalPetId: null,
              modalPetName: '',
              modalAdopterName: '',
+             modalPetPhoto: '',
+             modalPetType: '',
+             modalPetBreed: '',
+             modalVaccineName: '',
+             modalVaccineDate: '',
+             modalDewormName: '',
+             modalDewormDate: '',
+             vaccineInput: '5-in-1 (DHPP)',
+             dewormInput: 'Heartgard Plus',
              selectedCategory: 'vaccination',
              historyLogs: [],
              historyPetName: '',
@@ -59,11 +68,36 @@
                  this.showStatusModal = true;
              },
 
-             openAddModal(petId, petName, adopterName) {
-                 this.modalPetId = petId;
-                 this.modalPetName = petName;
-                 this.modalAdopterName = adopterName;
-                 this.selectedCategory = 'vaccination';
+             openAddModal(data, legacyPetName, legacyAdopterName) {
+                 if (typeof data === 'object' && data !== null) {
+                     this.modalPetId = data.id;
+                     this.modalPetName = data.name || ('Pet #' + data.id);
+                     this.modalAdopterName = data.adopter || 'Adopter';
+                     this.modalPetPhoto = data.photo || '';
+                     this.modalPetType = data.type || 'Dog';
+                     this.modalPetBreed = data.breed || 'Mixed Breed';
+                     this.modalVaccineName = data.latestVaccineName || '';
+                     this.modalVaccineDate = data.latestVaccineDate || '';
+                     this.modalDewormName = data.latestDewormName || '';
+                     this.modalDewormDate = data.latestDewormDate || '';
+                     this.selectedCategory = data.defaultCategory || 'vaccination';
+                     this.vaccineInput = data.latestVaccineName || '5-in-1 (DHPP)';
+                     this.dewormInput = data.latestDewormName || 'Heartgard Plus';
+                 } else {
+                     this.modalPetId = data;
+                     this.modalPetName = legacyPetName || '';
+                     this.modalAdopterName = legacyAdopterName || '';
+                     this.modalPetPhoto = '';
+                     this.modalPetType = 'Dog';
+                     this.modalPetBreed = 'Mixed Breed';
+                     this.modalVaccineName = '';
+                     this.modalVaccineDate = '';
+                     this.modalDewormName = '';
+                     this.modalDewormDate = '';
+                     this.selectedCategory = 'vaccination';
+                     this.vaccineInput = '5-in-1 (DHPP)';
+                     this.dewormInput = 'Heartgard Plus';
+                 }
                  this.showAddModal = true;
              },
 
@@ -402,6 +436,8 @@
                                         $latestLog = $pet ? $pet->medicalLogs->first() : null;
                                         $vaccineLogs = $pet ? $pet->medicalLogs->where('category', 'vaccination') : collect();
                                         $latestVaccine = $vaccineLogs->first();
+                                        $dewormLogs = $pet ? $pet->medicalLogs->where('category', 'deworming') : collect();
+                                        $latestDeworm = $dewormLogs->first();
 
                                         // Monthly health updates
                                         $healthUpdates = $pet ? $pet->healthUpdates : collect();
@@ -532,7 +568,19 @@
                                                 </button>
 
                                                 <button type="button" 
-                                                    @click='openAddModal(@json($app->pet_id), @json($petNameStr), @json($adopter->applicant_name))'
+                                                    @click='openAddModal({
+                                                        id: {{ $app->pet_id }},
+                                                        name: @json($petNameStr),
+                                                        photo: @json($petImg),
+                                                        type: @json(ucfirst($pet?->type ?? "Dog")),
+                                                        breed: @json($pet?->breed ?? "Mixed Breed"),
+                                                        adopter: @json($adopter->applicant_name),
+                                                        latestVaccineName: @json($latestVaccine?->vaccine_name),
+                                                        latestVaccineDate: @json($latestVaccine?->date ? $latestVaccine->date->format("M d, Y") : null),
+                                                        latestDewormName: @json($latestDeworm?->vaccine_name),
+                                                        latestDewormDate: @json($latestDeworm?->date ? $latestDeworm->date->format("M d, Y") : null),
+                                                        defaultCategory: "vaccination"
+                                                    })'
                                                     class="px-3.5 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-extrabold transition shadow-xs flex items-center gap-1 cursor-pointer">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                                                     <span>Record</span>
@@ -579,22 +627,55 @@
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-                <div class="inline-block px-5 sm:px-6 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-200 dark:border-white/[0.08]">
+                <div class="inline-block px-5 sm:px-7 pt-5 pb-6 overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200 dark:border-white/[0.08]">
                     
                     {{-- Modal Header --}}
                     <div class="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-white/[0.06]">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center text-sm font-bold shadow-xs shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
                             </div>
                             <div>
-                                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">Record Medical Log</h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">
-                                    Pet: <span class="font-bold text-[#199CA4] dark:text-[#41C1CB]" x-text="modalPetName"></span> | Adopter: <span class="font-semibold text-slate-700 dark:text-slate-300" x-text="modalAdopterName"></span>
-                                </p>
+                                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Record Medical Log</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Clinical immunization and deworming administration workstation</p>
                             </div>
                         </div>
                         <button type="button" @click="showAddModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer">&times;</button>
+                    </div>
+
+                    {{-- Patient & Adopter Dossier Card --}}
+                    <div class="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] mb-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-12 h-12 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] overflow-hidden flex items-center justify-center shrink-0 shadow-2xs">
+                                    <template x-if="modalPetPhoto">
+                                        <img :src="modalPetPhoto" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!modalPetPhoto">
+                                        <svg class="w-6 h-6 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                    </template>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 class="font-extrabold text-sm text-slate-900 dark:text-white truncate" x-text="modalPetName"></h4>
+                                        <span class="text-[10px] font-mono font-bold text-[#199CA4] dark:text-[#41C1CB] bg-[#199CA4]/10 dark:bg-[#199CA4]/20 px-1.5 py-0.5 rounded" x-text="'ID #' + modalPetId"></span>
+                                        <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400" x-text="modalPetType + ' • ' + modalPetBreed"></span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Adopter: <span class="font-semibold text-slate-700 dark:text-slate-200" x-text="modalAdopterName"></span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0 hidden sm:block">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Current Status</span>
+                                <template x-if="selectedCategory === 'vaccination'">
+                                    <span class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB]" x-text="modalVaccineName ? modalVaccineName + (modalVaccineDate ? ' (' + modalVaccineDate + ')' : '') : 'No prior vaccines'"></span>
+                                </template>
+                                <template x-if="selectedCategory === 'deworming'">
+                                    <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400" x-text="modalDewormName ? modalDewormName + (modalDewormDate ? ' (' + modalDewormDate + ')' : '') : 'No prior deworming'"></span>
+                                </template>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Modal Form --}}
@@ -604,43 +685,78 @@
 
                         {{-- Category Selector --}}
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Record Type</label>
-                            <div class="grid grid-cols-2 gap-2">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Record Category</label>
+                            <div class="grid grid-cols-2 gap-3">
                                 <button type="button" 
                                     @click="selectedCategory = 'vaccination'"
-                                    :class="selectedCategory === 'vaccination' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]'"
-                                    class="py-2.5 rounded-xl font-bold text-xs transition cursor-pointer">
-                                     Vaccination
+                                    :class="selectedCategory === 'vaccination' ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4] ring-2 ring-[#199CA4]/20' : 'bg-slate-50 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-white/[0.08]'"
+                                    class="p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-xl bg-[#199CA4]/15 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs sm:text-sm font-extrabold">Vaccination</span>
+                                        <span class="block text-[10px] text-slate-400 dark:text-slate-500">Immunization & 6-Mo Booster</span>
+                                    </div>
                                 </button>
                                 <button type="button" 
                                     @click="selectedCategory = 'deworming'"
-                                    :class="selectedCategory === 'deworming' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]'"
-                                    class="py-2.5 rounded-xl font-bold text-xs transition cursor-pointer">
-                                     Deworming
+                                    :class="selectedCategory === 'deworming' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-slate-50 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-white/[0.08]'"
+                                    class="p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                                    </div>
+                                    <div>
+                                        <span class="block text-xs sm:text-sm font-extrabold">Deworming</span>
+                                        <span class="block text-[10px] text-slate-400 dark:text-slate-500">Parasite Control & 3-Mo Dose</span>
+                                    </div>
                                 </button>
                             </div>
                             <input type="hidden" name="category" :value="selectedCategory">
                         </div>
 
-                        {{-- Dynamic Fields --}}
-                        <div x-show="selectedCategory === 'vaccination'" class="space-y-3.5">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaccine Name *</label>
-                                <input type="text" name="vaccine_name" placeholder="e.g. Anti-Rabies, 5-in-1, DHPP" 
-                                    class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
+                        {{-- Vaccination Fields & Presets --}}
+                        <div x-show="selectedCategory === 'vaccination'" class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Vaccine Name *</label>
+                                <span class="text-[10px] text-slate-400">Click preset chip to select</span>
                             </div>
+                            <div class="flex flex-wrap gap-1.5 mb-2">
+                                @foreach(['Anti-Rabies', '5-in-1 (DHPP)', '6-in-1', '4-in-1 (FVRCP)', 'Bordetella', 'Kennel Cough'] as $preset)
+                                    <button type="button" 
+                                        @click="vaccineInput = '{{ $preset }}'"
+                                        :class="vaccineInput === '{{ $preset }}' ? 'bg-[#199CA4] text-white border-[#199CA4]' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1] border-slate-200/80 dark:border-white/[0.06]'"
+                                        class="px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-colors cursor-pointer">
+                                        {{ $preset }}
+                                    </button>
+                                @endforeach
+                            </div>
+                            <input type="text" name="vaccine_name" x-model="vaccineInput" placeholder="e.g. Anti-Rabies, 5-in-1, DHPP" 
+                                class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
                         </div>
 
-                        <div x-show="selectedCategory === 'deworming'" class="space-y-3.5">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Deworming Brand / Medicine *</label>
-                                <input type="text" name="deworming_name" placeholder="e.g. Canex, Pyrantel, Drontal" 
-                                    class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
+                        {{-- Deworming Fields & Presets --}}
+                        <div x-show="selectedCategory === 'deworming'" class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Deworming Brand / Medicine *</label>
+                                <span class="text-[10px] text-slate-400">Click preset chip to select</span>
                             </div>
+                            <div class="flex flex-wrap gap-1.5 mb-2">
+                                @foreach(['Heartgard Plus', 'Pyrantel Embonate', 'Canex Multi-Spectrum', 'Drontal Plus', 'NexGard Spectra', 'Ivermectin'] as $preset)
+                                    <button type="button" 
+                                        @click="dewormInput = '{{ $preset }}'"
+                                        :class="dewormInput === '{{ $preset }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1] border-slate-200/80 dark:border-white/[0.06]'"
+                                        class="px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-colors cursor-pointer">
+                                        {{ $preset }}
+                                    </button>
+                                @endforeach
+                            </div>
+                            <input type="text" name="deworming_name" x-model="dewormInput" placeholder="e.g. Canex, Pyrantel, Drontal" 
+                                class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
                         </div>
 
                         {{-- Date & Next Due Date --}}
-                        <div class="grid grid-cols-2 gap-3" x-data="{
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" x-data="{
                             administeredDate: '{{ date('Y-m-d') }}',
                             nextDueDate: '',
                             calcDueDate(months) {
@@ -685,22 +801,20 @@
                             }
                         }">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date Administered *</label>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Date Administered *</label>
+                                    <button type="button" @click="administeredDate = '{{ date('Y-m-d') }}'" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">Today</button>
+                                </div>
                                 <input type="date" name="date" x-model="administeredDate" required
-                                    class="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition font-medium">
+                                    class="w-full px-3 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition font-medium">
                             </div>
                             <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        <span>Next Due Date</span>
-                                    </label>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Next Booster / Due Date</label>
                                     <div class="flex items-center gap-1.5">
-                                        <template x-if="selectedCategory === 'deworming'">
-                                            <button type="button" @click="nextDueDate = calcDueDate(3)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+3 Months</button>
-                                        </template>
-                                        <template x-if="selectedCategory === 'vaccination'">
-                                            <button type="button" @click="nextDueDate = calcDueDate(6)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+6 Months</button>
-                                        </template>
+                                        <button type="button" @click="nextDueDate = calcDueDate(3)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+3M</button>
+                                        <button type="button" @click="nextDueDate = calcDueDate(6)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+6M</button>
+                                        <button type="button" @click="nextDueDate = calcDueDate(12)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+1Y</button>
                                         <template x-if="nextDueDate">
                                             <button type="button" @click="nextDueDate = ''" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
                                         </template>
@@ -708,36 +822,48 @@
                                 </div>
                                 <div class="relative flex items-center">
                                     <input type="date" name="next_due_date" x-model="nextDueDate"
-                                        class="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-transparent focus:text-slate-800 dark:focus:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition cursor-pointer font-medium">
+                                        class="w-full px-3 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-transparent focus:text-slate-800 dark:focus:text-white rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition cursor-pointer font-medium">
                                     <span class="absolute left-3 pointer-events-none text-xs font-bold"
                                         :class="nextDueDate ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-400 dark:text-slate-500'"
                                         x-text="formattedDueDate"></span>
                                 </div>
                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                                     <span x-show="selectedCategory === 'vaccination'" class="font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-calculated: 6 months ahead</span>
-                                    <span x-show="selectedCategory === 'deworming'" class="font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-calculated: 3 months ahead</span>
+                                    <span x-show="selectedCategory === 'deworming'" class="font-semibold text-indigo-600 dark:text-indigo-400">Auto-calculated: 3 months ahead</span>
                                 </p>
+                            </div>
+                        </div>
+
+                        {{-- Push Notification Reminder Alert Pill --}}
+                        <div class="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <div class="text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed">
+                                <span class="font-bold">Automated Adopter Push Alerts:</span>
+                                Reminders will be automatically dispatched to <span class="font-semibold" x-text="modalAdopterName"></span> at 30 days, 7 days, 3 days, and on the booster due date.
                             </div>
                         </div>
 
                         {{-- Administered By (Auto-detected) --}}
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Administered By (Staff / Admin)</label>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Attending Staff / Admin</label>
                             <div class="flex items-center justify-between px-3.5 py-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl">
                                 <div class="flex items-center gap-2">
                                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                                     <span class="text-xs font-bold text-emerald-900 dark:text-emerald-300">{{ Auth::user()?->name }}</span>
                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 uppercase">{{ Auth::user()?->role }}</span>
                                 </div>
-                                <span class="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">Logged in staff</span>
+                                <span class="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">Logged in clinician</span>
                             </div>
                             <input type="hidden" name="administered_by" value="{{ Auth::user()?->name }}">
                         </div>
 
                         {{-- Modal Actions --}}
-                        <div class="pt-3 border-t border-slate-200/80 dark:border-white/[0.06] flex items-center justify-end gap-2.5">
-                            <button type="button" @click="showAddModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-xl transition cursor-pointer">Cancel</button>
-                            <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-extrabold text-white bg-[#199CA4] hover:bg-[#13787F] rounded-xl shadow-xs transition cursor-pointer">Save Record</button>
+                        <div class="pt-3.5 border-t border-slate-200/80 dark:border-white/[0.06] flex items-center justify-end gap-2.5">
+                            <button type="button" @click="showAddModal = false" class="px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-xl transition cursor-pointer">Cancel</button>
+                            <button type="submit" class="px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white bg-[#199CA4] hover:bg-[#13787F] rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                <span>Save Medical Record</span>
+                            </button>
                         </div>
                     </form>
                 </div>
