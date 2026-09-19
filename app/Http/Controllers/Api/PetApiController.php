@@ -19,13 +19,35 @@ class PetApiController extends Controller
 
         if ($request->filled('search')) {
             $search = strtolower(trim($request->search));
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+            $extractedId = null;
+            if (preg_match('/^(?:pet\s*(?:no\.?|#)?\s*|(?:no\.?|#)\s*)(\d+)$/i', $search, $matches)) {
+                $extractedId = (int) $matches[1];
+            } elseif (ctype_digit($search)) {
+                $extractedId = (int) $search;
+            } elseif (preg_match('/(?:pet\s*(?:no\.?|#)?\s*|(?:no\.?|#)\s*)(\d+)/i', $search, $matches)) {
+                $extractedId = (int) $matches[1];
+            }
+
+            $query->where(function ($q) use ($search, $extractedId) {
+                if ($extractedId !== null) {
+                    $q->where('id', $extractedId);
+                }
+
+                $q->orWhereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(breed) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(color) LIKE ?', ["%{$search}%"])
                   ->orWhereRaw('LOWER(type) LIKE ?', ["%{$search}%"])
                   ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"])
                   ->orWhereHas('temperamentTags', function ($tq) use ($search) {
                       $tq->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
                   });
+
+                if ($extractedId === null) {
+                    $q->orWhereRaw("LOWER(CONCAT('pet no. ', id)) LIKE ?", ["%{$search}%"])
+                      ->orWhereRaw("LOWER(CONCAT('pet no.', id)) LIKE ?", ["%{$search}%"])
+                      ->orWhereRaw("LOWER(CONCAT('pet #', id)) LIKE ?", ["%{$search}%"])
+                      ->orWhereRaw("LOWER(CONCAT('pet ', id)) LIKE ?", ["%{$search}%"]);
+                }
             });
         }
 

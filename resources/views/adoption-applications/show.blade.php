@@ -48,7 +48,12 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between gap-2">
                             <div>
-                                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">Pet no. {{ $application->pet_id }}</h3>
+                                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">
+                                    {{ $application->pet && !empty($application->pet->name) ? $application->pet->name : ('Pet no. ' . $application->pet_id) }}
+                                    @if($application->pet && !empty($application->pet->name))
+                                        <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 ml-1">(Pet no. {{ $application->pet_id }})</span>
+                                    @endif
+                                </h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}</p>
                             </div>
                             @if($application->pet)

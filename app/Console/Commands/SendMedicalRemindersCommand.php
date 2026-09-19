@@ -22,7 +22,7 @@ class SendMedicalRemindersCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Send automated push notifications for upcoming vaccination and deworming due dates (30 days, 7 days, 2 days, and today)';
+    protected $description = 'Send automated push notifications for upcoming vaccination and deworming due dates (30 days, 7 days, 3 days, and today)';
 
     /**
      * Execute the console command.
@@ -35,7 +35,7 @@ class SendMedicalRemindersCommand extends Command
         $targetDays = [
             30 => 'in 1 month',
             7  => 'in 7 days',
-            2  => 'in 2 days',
+            3  => 'in 3 days',
             0  => 'today',
         ];
 
@@ -52,21 +52,32 @@ class SendMedicalRemindersCommand extends Command
                 $pet = $log->pet;
                 $petName = ($pet && !empty($pet->name)) ? $pet->name : ('Pet no. ' . $log->pet_id);
                 $category = ucfirst(str_replace('_', ' ', $log->category ?? 'healthcare'));
+                $itemLabel = !empty($log->vaccine_name) ? $log->vaccine_name : $category;
                 $dueDateFormatted = $log->next_due_date->format('M d, Y');
+
+                $isDeworming = ($log->category === 'deworming');
+                $actionNoun = $isDeworming ? 'deworming dose' : 'booster';
+                $advisoryType = $isDeworming ? 'Deworming Advisory' : 'Vaccination Advisory';
 
                 // Build advisory notification content
                 if ($daysAhead === 0) {
-                    $title = "Booster Due Today: {$petName}";
-                    $body = "{$petName}'s {$category} booster is scheduled for today ({$dueDateFormatted}). Please consult your private veterinarian or visit CAWS.";
-                } elseif ($daysAhead === 2) {
-                    $title = "Booster Due in 2 Days: {$petName}";
-                    $body = "Reminder: {$petName}'s {$category} booster is due on {$dueDateFormatted}. Remember to present your CAWS Pet Card during checkup.";
+                    $title = $isDeworming
+                        ? "Deworming Due Today: {$petName}"
+                        : "Vaccine Booster Due Today: {$petName}";
+                    $body = "{$petName}'s {$itemLabel} {$actionNoun} is scheduled for today ({$dueDateFormatted}). Please consult your private veterinarian or visit CAWS.";
+                } elseif ($daysAhead === 3) {
+                    $title = $isDeworming
+                        ? "Deworming Due in 3 Days: {$petName}"
+                        : "Vaccine Booster Due in 3 Days: {$petName}";
+                    $body = "Reminder: {$petName}'s {$itemLabel} {$actionNoun} is due on {$dueDateFormatted} (in 3 days). Remember to present your CAWS Pet Card during checkup.";
                 } elseif ($daysAhead === 7) {
-                    $title = "Upcoming Booster: {$petName}";
-                    $body = "Advisory: {$petName}'s {$category} booster is scheduled for {$dueDateFormatted} (in 1 week). Check your Pet Health Card for details.";
+                    $title = $isDeworming
+                        ? "Upcoming Deworming: {$petName}"
+                        : "Upcoming Vaccine Booster: {$petName}";
+                    $body = "Advisory: {$petName}'s {$itemLabel} {$actionNoun} is scheduled for {$dueDateFormatted} (in 1 week). Check your Pet Health Card for details.";
                 } else {
-                    $title = "Healthcare Advisory: {$petName}";
-                    $body = "Advisory: {$petName}'s {$category} booster will be due in 1 month ({$dueDateFormatted}). Plan ahead with your veterinarian.";
+                    $title = "{$advisoryType}: {$petName}";
+                    $body = "Advisory: {$petName}'s {$itemLabel} {$actionNoun} will be due in 1 month ({$dueDateFormatted}). Plan ahead with your veterinarian.";
                 }
 
                 // Find adopter email
@@ -83,11 +94,12 @@ class SendMedicalRemindersCommand extends Command
                         $title,
                         $body,
                         [
-                            'type'      => 'vaccine_reminder',
-                            'pet_id'    => (string) $log->pet_id,
-                            'category'  => (string) $log->category,
-                            'due_date'  => $log->next_due_date->format('Y-m-d'),
-                            'days_left' => (string) $daysAhead,
+                            'type'         => 'vaccine_reminder',
+                            'pet_id'       => (string) $log->pet_id,
+                            'category'     => (string) $log->category,
+                            'vaccine_name' => (string) ($log->vaccine_name ?? ''),
+                            'due_date'     => $log->next_due_date->format('Y-m-d'),
+                            'days_left'    => (string) $daysAhead,
                         ]
                     );
 

@@ -233,11 +233,17 @@
                         </div>
                     </div>
 
-                    <div class="mt-6">
+                    <div class="mt-4">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Vaccine / Medicine Detail</label>
+                        <input type="text" name="vaccine_name" value="{{ old('vaccine_name', $medicalLog->vaccine_name) }}"
+                            placeholder="e.g. 5-in-1 (DHPP), Anti-Rabies, Canex..."
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
+                    </div>
+
                         <template x-if="category === 'vaccination'">
                             <div>
                                 <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-800 rounded-xl p-4 text-sm text-blue-700 dark:text-blue-300 mb-3">
-                                     By default, next due date is auto-set to <strong>6 months</strong> from the date above.
+                                    By default, next due date is auto-set to <strong>6 months</strong> from the date above.
                                     You can override it below if needed.
                                 </div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">
@@ -248,10 +254,18 @@
                                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
                             </div>
                         </template>
-                        <template x-if="category !== 'vaccination' && category !== ''">
+                        <template x-if="category === 'deworming'">
                             <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Next Due Date <span class="text-gray-400 dark:text-slate-500 font-normal normal-case">(optional)</span></label>
-                                <input type="date" name="next_due_date" x-model="nextDueDate" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
+                                <div class="bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800 rounded-xl p-4 text-sm text-indigo-700 dark:text-indigo-300 mb-3">
+                                    By default, next due date is auto-set to <strong>3 months</strong> from the date above for routine parasite prevention.
+                                    You can override it below if needed.
+                                </div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">
+                                    Next Due Date
+                                    <span class="text-gray-400 dark:text-slate-500 font-normal normal-case">(leave blank to auto-calculate 3 months)</span>
+                                </label>
+                                <input type="date" name="next_due_date" x-model="nextDueDate"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
                             </div>
                         </template>
                     </div>
@@ -259,7 +273,12 @@
 
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Administered By</label>
-                    <input type="text" name="administered_by" value="{{ old('administered_by', $medicalLog->administered_by) }}" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#12272b] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
+                    <div class="relative">
+                        <input type="text" name="administered_by" value="{{ old('administered_by', $medicalLog->administered_by) }}" readonly class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-100/90 dark:bg-white/[0.04] text-gray-600 dark:text-slate-300 cursor-not-allowed select-none outline-none shadow-sm text-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-3 justify-end border-t border-gray-100 dark:border-slate-800 pt-6">

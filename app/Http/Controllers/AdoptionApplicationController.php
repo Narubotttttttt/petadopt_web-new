@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdoptionApplication;
+use App\Services\AdminNotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,6 +15,8 @@ class AdoptionApplicationController extends Controller
 {
     public function index(): View
     {
+        AdminNotificationService::markAdoptionRequestsViewed();
+
         $applications = AdoptionApplication::with('pet')->latest()->paginate(10);
 
         return view('adoption-applications.index', compact('applications'));
@@ -20,9 +24,18 @@ class AdoptionApplicationController extends Controller
 
     public function show(AdoptionApplication $application): View
     {
+        AdminNotificationService::markAdoptionRequestsViewed();
+
         $application->load(['pet.medicalLogs.creator', 'staff.staffProfile', 'evaluator']);
 
         return view('adoption-applications.show', compact('application'));
+    }
+
+    public function markViewed(): JsonResponse
+    {
+        AdminNotificationService::markAdoptionRequestsViewed();
+
+        return response()->json(['success' => true]);
     }
 
     public function update(Request $request, AdoptionApplication $application): RedirectResponse

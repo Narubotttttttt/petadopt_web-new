@@ -391,4 +391,150 @@ class AdoptionApplicationTest extends TestCase
         $responseWithSig->assertStatus(200);
         $responseWithSig->assertSee('Print Contract');
     }
+
+    public function test_sidebar_displays_red_circle_when_new_request_exists(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Bruno',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'John Doe',
+            'applicant_email' => 'john@example.com',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertSee('data-testid="new-adoption-request-indicator"', false);
+    }
+
+    public function test_sidebar_does_not_display_red_circle_when_no_new_requests(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('data-testid="new-adoption-request-indicator"', false);
+    }
+
+    public function test_sidebar_red_circle_disappears_when_adoption_requests_viewed_and_reappears_on_new_request(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Bruno',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $app1 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'John Doe',
+            'applicant_email' => 'john@example.com',
+            'status' => 'pending',
+        ]);
+
+        // Indicator visible before visiting
+        $beforeVisit = $this->actingAs($staff)->get(route('dashboard'));
+        $beforeVisit->assertSee('data-testid="new-adoption-request-indicator"', false);
+
+        // Staff visits Adoption Requests (simulating click / navigation)
+        $visit = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $visit->assertStatus(200);
+
+        // Indicator should now disappear on Dashboard and across other pages
+        $afterVisit = $this->actingAs($staff)->get(route('dashboard'));
+        $afterVisit->assertDontSee('data-testid="new-adoption-request-indicator"', false);
+
+        // A new adoption application arrives later
+        AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Jane Smith',
+            'applicant_email' => 'jane@example.com',
+            'status' => 'pending',
+        ]);
+
+        // Indicator should reappear
+        $afterNewApp = $this->actingAs($staff)->get(route('dashboard'));
+        $afterNewApp->assertSee('data-testid="new-adoption-request-indicator"', false);
+
+        // Staff clicks it via mark-viewed endpoint
+        $this->actingAs($staff)->post(route('adoption-applications.mark-viewed'));
+
+        // Indicator disappears again
+        $afterDismiss = $this->actingAs($staff)->get(route('dashboard'));
+        $afterDismiss->assertDontSee('data-testid="new-adoption-request-indicator"', false);
+    }
+
+    public function test_adopter_can_update_pet_name_via_api(): void
+    {
+        $adopter = User::factory()->create([
+            'role' => 'adopter',
+            'email' => 'milo_parent@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => null,
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'adopted',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Milo Parent',
+            'applicant_email' => $adopter->email,
+            'status' => 'approved',
+            'message' => "Address: Carmen, CDO\nHome Type: House",
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')->postJson("/api/pets/{$pet->id}/update-name", [
+            'name' => 'Rocky Balboa',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'pet_name' => 'Rocky Balboa',
+            'pet' => [
+                'id' => $pet->id,
+                'name' => 'Rocky Balboa',
+            ],
+        ]);
+
+        // Verify Pet database record was updated
+        $pet->refresh();
+        $this->assertEquals('Rocky Balboa', $pet->name);
+
+        // Verify application message updated with Proposed Pet Name
+        $app->refresh();
+        $this->assertStringContainsString('Proposed Pet Name: Rocky Balboa', $app->message);
+
+        // Verify unauthorized user cannot update someone else's pet
+        $stranger = User::factory()->create(['role' => 'adopter', 'email' => 'stranger@example.com']);
+        $unauthResponse = $this->actingAs($stranger, 'sanctum')->postJson("/api/pets/{$pet->id}/update-name", [
+            'name' => 'Hacked Name',
+        ]);
+        $unauthResponse->assertStatus(403);
+    }
 }
+
+

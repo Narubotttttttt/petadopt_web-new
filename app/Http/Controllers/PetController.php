@@ -23,15 +23,44 @@ class PetController extends Controller
 
     public function index()
     {
-        $q = request()->input('q');
+        $q = trim((string) request()->input('q', ''));
 
         $query = Pet::where('status', '!=', 'adopted');
 
-        if ($q) {
-            $query->where(function ($sub) use ($q) {
-                $sub->where('breed', 'like', "%{$q}%")
+        if ($q !== '') {
+            // Extract possible pet ID from expressions like:
+            // "pet no. 1", "pet no.1", "pet no 1", "pet #1", "pet 1", "no. 1", "no.1", "#1", "no 1", or pure digits like "1"
+            $extractedId = null;
+            if (preg_match('/^(?:pet\s*(?:no\.?|#)?\s*|(?:no\.?|#)\s*)(\d+)$/i', $q, $matches)) {
+                $extractedId = (int) $matches[1];
+            } elseif (ctype_digit($q)) {
+                $extractedId = (int) $q;
+            } elseif (preg_match('/(?:pet\s*(?:no\.?|#)?\s*|(?:no\.?|#)\s*)(\d+)/i', $q, $matches)) {
+                $extractedId = (int) $matches[1];
+            }
+
+            $query->where(function ($sub) use ($q, $extractedId) {
+                if ($extractedId !== null) {
+                    $sub->where('id', $extractedId);
+                }
+
+                $sub->orWhere('name', 'like', "%{$q}%")
+                    ->orWhere('breed', 'like', "%{$q}%")
                     ->orWhere('color', 'like', "%{$q}%")
-                    ->orWhere('type', 'like', "%{$q}%");
+                    ->orWhere('type', 'like', "%{$q}%")
+                    ->orWhere('gender', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%")
+                    ->orWhereHas('temperamentTags', function ($tq) use ($q) {
+                        $tq->where('name', 'like', "%{$q}%");
+                    });
+
+                if ($extractedId === null) {
+                    $sub->orWhereRaw("CONCAT('pet no. ', id) LIKE ?", ["%{$q}%"])
+                        ->orWhereRaw("CONCAT('pet no.', id) LIKE ?", ["%{$q}%"])
+                        ->orWhereRaw("CONCAT('pet #', id) LIKE ?", ["%{$q}%"])
+                        ->orWhereRaw("CONCAT('pet ', id) LIKE ?", ["%{$q}%"])
+                        ->orWhereRaw("CONCAT('#', id) LIKE ?", ["%{$q}%"]);
+                }
             });
         }
 

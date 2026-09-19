@@ -303,4 +303,129 @@ class MedicalLogTest extends TestCase
         $this->assertNotNull($newLog->next_due_date);
         $this->assertTrue($newLog->next_due_date->isFuture());
     }
+
+    public function test_store_medical_log_with_vaccine_name_detail(): void
+    {
+        $pet = Pet::create([
+            'name' => 'Bella',
+            'breed' => 'Shih Tzu',
+            'color' => 'White',
+            'gender' => 'female',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($this->staff)->post(route('medical-logs.store'), [
+            'pet_id' => $pet->id,
+            'date' => now()->toDateString(),
+            'category' => 'vaccination',
+            'vaccine_name' => '5-in-1 (DHPP)',
+            'administered_by' => 'Dr. Santos',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('medical_logs', [
+            'pet_id' => $pet->id,
+            'category' => 'vaccination',
+            'vaccine_name' => '5-in-1 (DHPP)',
+            'administered_by' => 'Dr. Santos',
+        ]);
+    }
+
+    public function test_send_medical_reminders_command_runs_successfully(): void
+    {
+        $pet = Pet::create([
+            'name' => 'Rocky',
+            'breed' => 'German Shepherd',
+            'color' => 'Black and Tan',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'adopted',
+        ]);
+
+        MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->subMonths(6)->toDateString(),
+            'category' => 'vaccination',
+            'vaccine_name' => 'Anti-Rabies',
+            'administered_by' => 'Shelter Vet',
+            'next_due_date' => now()->addDays(3)->toDateString(),
+            'created_by' => $this->staff->id,
+        ]);
+
+        \App\Models\AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Carlos Dalisay',
+            'applicant_email' => 'carlos@example.com',
+            'applicant_phone' => '09123456789',
+            'status' => 'approved',
+            'message' => 'Good home',
+        ]);
+
+        $this->artisan('reminders:send')
+            ->expectsOutputToContain('Checking medical logs for scheduled reminders...')
+            ->assertExitCode(0);
+    }
+
+    public function test_store_deworming_log_auto_calculates_3_months_due_date(): void
+    {
+        $pet = Pet::create([
+            'name' => 'Brownie',
+            'breed' => 'Aspin',
+            'color' => 'Brown',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $todayStr = now()->toDateString();
+        $expectedDueDate = now()->addMonths(3)->toDateString();
+
+        $response = $this->actingAs($this->staff)->post(route('medical-logs.store'), [
+            'pet_id' => $pet->id,
+            'date' => $todayStr,
+            'category' => 'deworming',
+            'vaccine_name' => 'Canex Puppy/Dog',
+            'administered_by' => 'Dr. Santos',
+        ]);
+
+        $response->assertRedirect();
+
+        $log = MedicalLog::where('pet_id', $pet->id)->where('category', 'deworming')->first();
+        $this->assertNotNull($log);
+        $this->assertEquals($expectedDueDate, $log->next_due_date->format('Y-m-d'));
+    }
+
+    public function test_automated_reminder_distinguishes_deworming_dose_from_vaccine_booster(): void
+    {
+        $pet = Pet::create([
+            'name' => 'Bella',
+            'type' => 'dog',
+            'status' => 'adopted',
+        ]);
+
+        // Deworming due in 3 days
+        MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->subMonths(3)->addDays(3)->toDateString(),
+            'category' => 'deworming',
+            'vaccine_name' => 'Canex Puppy/Dog',
+            'administered_by' => 'Dr. Santos',
+            'next_due_date' => now()->addDays(3)->toDateString(),
+            'created_by' => $this->staff->id,
+        ]);
+
+        \App\Models\AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Elena Gilbert',
+            'applicant_email' => 'elena@example.com',
+            'applicant_phone' => '09123456789',
+            'status' => 'approved',
+            'message' => 'Great home',
+        ]);
+
+        $this->artisan('reminders:send')
+            ->expectsOutputToContain('Dispatching Deworming notification to elena@example.com')
+            ->assertExitCode(0);
+    }
 }

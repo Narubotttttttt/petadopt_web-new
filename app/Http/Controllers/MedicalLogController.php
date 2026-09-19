@@ -81,7 +81,15 @@ class MedicalLogController extends Controller
 
     public function create(?Pet $pet = null): View
     {
-        $pets = Pet::orderBy('breed')->get();
+        if ($pet && $pet->exists) {
+            $pet->load(['medicalLogs' => function ($q) {
+                $q->latest('date');
+            }, 'medicalLogs.creator', 'addedBy']);
+        }
+
+        $pets = Pet::with(['medicalLogs' => function ($q) {
+            $q->latest('date')->take(5);
+        }])->orderBy('name')->orderBy('id')->get();
 
         return view('medical-logs.create', [
             'pet' => $pet,
@@ -94,9 +102,16 @@ class MedicalLogController extends Controller
         $data = $request->validate([
             'pet_id' => 'required|exists:pets,id',
             'date' => 'required|date',
-            'category' => ['required', Rule::in(['vaccination', 'deworming', 'treatment', 'checkup', 'surgery', 'injury_illness'])],
+            'category' => ['required', Rule::in(['vaccination', 'deworming'])],
+            'vaccine_name' => 'nullable|string|max:120',
+            'deworming_name' => 'nullable|string|max:120',
+            'administered_by' => 'nullable|string|max:255',
             'next_due_date' => 'nullable|date',
         ]);
+
+        $vaccineName = trim($request->input('vaccine_name', '')) ?: trim($request->input('deworming_name', ''));
+        $data['vaccine_name'] = !empty($vaccineName) ? $vaccineName : null;
+        unset($data['deworming_name']);
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
@@ -155,9 +170,17 @@ class MedicalLogController extends Controller
             'pet_id' => 'required|exists:pets,id',
             'date' => 'required|date',
             'category' => ['required', Rule::in(['vaccination', 'deworming', 'treatment', 'checkup', 'surgery', 'injury_illness'])],
+            'vaccine_name' => 'nullable|string|max:120',
+            'deworming_name' => 'nullable|string|max:120',
             'administered_by' => 'nullable|string|max:255',
             'next_due_date' => 'nullable|date',
         ]);
+
+        $vaccineName = trim($request->input('vaccine_name', '')) ?: trim($request->input('deworming_name', ''));
+        if ($request->has('vaccine_name') || $request->has('deworming_name')) {
+            $data['vaccine_name'] = !empty($vaccineName) ? $vaccineName : null;
+        }
+        unset($data['deworming_name']);
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
 
@@ -188,15 +211,21 @@ class MedicalLogController extends Controller
         $pet = $log->pet;
         $petName = ($pet && !empty($pet->name)) ? $pet->name : ('Pet no. ' . $log->pet_id);
         $categoryLabel = ucfirst(str_replace('_', ' ', $category));
+        $itemDetail = !empty($log->vaccine_name) ? " ({$log->vaccine_name})" : '';
+        $isDeworming = ($category === 'deworming');
 
-        $title = $category === 'vaccination'
-            ? "Vaccination Scheduled for {$petName}!"
-            : "{$categoryLabel} Logged for {$petName}";
+        $title = $isDeworming
+            ? "Deworming Scheduled for {$petName}!"
+            : "Vaccination Scheduled for {$petName}!";
 
         $dueDateStr = $log->next_due_date ? $log->next_due_date->format('M d, Y') : null;
-        $body = $dueDateStr
-            ? "{$petName}'s {$categoryLabel} record was updated. Next due date: {$dueDateStr}. Check CAWS app for details!"
-            : "A new {$categoryLabel} record has been added for {$petName}. Check the CAWS app for details.";
+        if ($dueDateStr) {
+            $body = $isDeworming
+                ? "{$petName}'s Deworming{$itemDetail} record was updated. Next deworming dose due: {$dueDateStr}. Check CAWS app for details!"
+                : "{$petName}'s Vaccination{$itemDetail} record was updated. Next booster due: {$dueDateStr}. Check CAWS app for details!";
+        } else {
+            $body = "A new {$categoryLabel}{$itemDetail} record has been added for {$petName}. Check the CAWS app for details.";
+        }
 
         // Find verified applicants or adopters for this pet
         $adopterEmails = \App\Models\AdoptionApplication::where('pet_id', $log->pet_id)
@@ -209,9 +238,11 @@ class MedicalLogController extends Controller
                 $title,
                 $body,
                 [
-                    'type' => 'vaccine_reminder',
-                    'pet_id' => $log->pet_id,
-                    'category' => $category,
+                    'type'         => 'vaccine_reminder',
+                    'pet_id'       => (string) $log->pet_id,
+                    'category'     => (string) $category,
+                    'vaccine_name' => (string) ($log->vaccine_name ?? ''),
+                    'due_date'     => $log->next_due_date ? $log->next_due_date->format('Y-m-d') : '',
                 ]
             );
         }
@@ -241,7 +272,10 @@ class MedicalLogController extends Controller
             return Carbon::parse($date)->addMonths(6)->format('Y-m-d');
         }
 
-        // Deworming is optional (only set if manualNextDueDate is explicitly provided)
+        if ($category === 'deworming') {
+            return Carbon::parse($date)->addMonths(3)->format('Y-m-d');
+        }
+
         return null;
     }
 }

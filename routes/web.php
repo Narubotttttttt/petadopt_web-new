@@ -90,6 +90,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::match(['put','patch'],'/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
 
     Route::get('/adoption-applications', [\App\Http\Controllers\AdoptionApplicationController::class, 'index'])->name('adoption-applications.index');
+    Route::post('/adoption-applications/mark-viewed', [\App\Http\Controllers\AdoptionApplicationController::class, 'markViewed'])->name('adoption-applications.mark-viewed');
     Route::get('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'show'])->name('adoption-applications.show');
     Route::patch('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'update'])->name('adoption-applications.update');
     Route::post('/adoption-applications/{application}/sign-as-staff', [\App\Http\Controllers\AdoptionApplicationController::class, 'signAsStaff'])->name('adoption-applications.sign-as-staff');

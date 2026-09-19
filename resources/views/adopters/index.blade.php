@@ -664,6 +664,8 @@
                             updateForCategory(cat) {
                                 if (cat === 'vaccination') {
                                     this.nextDueDate = this.calcDueDate(6);
+                                } else if (cat === 'deworming') {
+                                    this.nextDueDate = this.calcDueDate(3);
                                 } else {
                                     this.nextDueDate = '';
                                 }
@@ -676,6 +678,8 @@
                                 this.$watch('administeredDate', () => {
                                     if (selectedCategory === 'vaccination') {
                                         this.nextDueDate = this.calcDueDate(6);
+                                    } else if (selectedCategory === 'deworming') {
+                                        this.nextDueDate = this.calcDueDate(3);
                                     }
                                 });
                             }
@@ -688,15 +692,19 @@
                             <div>
                                 <div class="flex items-center justify-between mb-1">
                                     <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        <span x-show="selectedCategory === 'vaccination'">Next Due Date</span>
-                                        <span x-show="selectedCategory === 'deworming'">Next Due (Optional)</span>
+                                        <span>Next Due Date</span>
                                     </label>
-                                    <template x-if="selectedCategory === 'deworming' && !nextDueDate">
-                                        <button type="button" @click="nextDueDate = calcDueDate(3)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+3 Months</button>
-                                    </template>
-                                    <template x-if="selectedCategory === 'deworming' && nextDueDate">
-                                        <button type="button" @click="nextDueDate = ''" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
-                                    </template>
+                                    <div class="flex items-center gap-1.5">
+                                        <template x-if="selectedCategory === 'deworming'">
+                                            <button type="button" @click="nextDueDate = calcDueDate(3)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+3 Months</button>
+                                        </template>
+                                        <template x-if="selectedCategory === 'vaccination'">
+                                            <button type="button" @click="nextDueDate = calcDueDate(6)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+6 Months</button>
+                                        </template>
+                                        <template x-if="nextDueDate">
+                                            <button type="button" @click="nextDueDate = ''" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <div class="relative flex items-center">
                                     <input type="date" name="next_due_date" x-model="nextDueDate"
@@ -707,7 +715,7 @@
                                 </div>
                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                                     <span x-show="selectedCategory === 'vaccination'" class="font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-calculated: 6 months ahead</span>
-                                    <span x-show="selectedCategory === 'deworming'" class="font-normal text-slate-400">Optional for deworming routine</span>
+                                    <span x-show="selectedCategory === 'deworming'" class="font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-calculated: 3 months ahead</span>
                                 </p>
                             </div>
                         </div>

@@ -29,7 +29,22 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-[#F6FAFA] dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 selection:bg-[#199CA4] selection:text-white transition-colors duration-150">
+    <body 
+        x-data="{ 
+            mobileNavOpen: false,
+            init() {
+                this.$watch('mobileNavOpen', val => {
+                    if (val) {
+                        document.body.classList.add('overflow-hidden');
+                    } else {
+                        document.body.classList.remove('overflow-hidden');
+                    }
+                });
+            }
+        }" 
+        @keydown.escape.window="mobileNavOpen = false"
+        class="font-sans antialiased bg-[#F6FAFA] dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 selection:bg-[#199CA4] selection:text-white transition-colors duration-150"
+    >
         <div class="min-h-screen flex flex-col">
             <x-sidebar />
 

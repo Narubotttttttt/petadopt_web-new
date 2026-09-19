@@ -265,4 +265,38 @@ class AdminNotificationService
             Cache::put($cacheKey, $cached, now()->addDays(60));
         }
     }
+
+    public static function markAdoptionRequestsViewed(): void
+    {
+        $maxId = AdoptionApplication::max('id') ?? 0;
+        Session::put('admin_viewed_adoption_requests_max_id', $maxId);
+        Session::save();
+
+        if ($userId = auth()->id()) {
+            Cache::put('admin_viewed_adoption_requests_max_id_' . $userId, $maxId, now()->addDays(60));
+        }
+
+        // Also mark individual pending app notifications as read in notification bell
+        $pendingAppIds = AdoptionApplication::whereIn('status', ['pending', 'under_review'])->pluck('id');
+        foreach ($pendingAppIds as $pId) {
+            self::markAsRead('app_' . $pId);
+        }
+    }
+
+    public static function getUnviewedAdoptionRequestsCount(): int
+    {
+        $userId = auth()->id();
+        $maxId = Session::get('admin_viewed_adoption_requests_max_id');
+        if ($maxId === null && $userId) {
+            $maxId = Cache::get('admin_viewed_adoption_requests_max_id_' . $userId);
+        }
+
+        $query = AdoptionApplication::whereIn('status', ['pending', 'under_review']);
+
+        if ($maxId !== null) {
+            $query->where('id', '>', (int)$maxId);
+        }
+
+        return $query->count();
+    }
 }

@@ -73,9 +73,14 @@ class FirebaseNotificationService
             ],
         ];
 
-        if (!empty($data)) {
-            $messageObj['data'] = array_map('strval', $data);
+        $dataPayload = !empty($data) ? array_map('strval', $data) : [];
+        if (!isset($dataPayload['title'])) {
+            $dataPayload['title'] = $title;
         }
+        if (!isset($dataPayload['body'])) {
+            $dataPayload['body'] = $body;
+        }
+        $messageObj['data'] = $dataPayload;
 
         $payload = [
             'message' => $messageObj,

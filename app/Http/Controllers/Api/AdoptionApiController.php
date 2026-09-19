@@ -182,11 +182,17 @@ class AdoptionApiController extends Controller
                 $isAdoptedByOther = $isPetAdopted && ! $isApproved;
 
                 $proposedName = null;
-                if ($app->message && preg_match('/Proposed Pet Name:\s*(.+)/i', $app->message, $matches)) {
+                if ($app->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $app->message, $matches)) {
                     $proposedName = trim($matches[1]);
                 }
 
-                $displayName = ($pet && !empty($pet->name)) ? $pet->name : ($proposedName ?: ($pet ? ($pet->breed ?: 'Rescued Pet') : 'Pet'));
+                // If adopter proposed a custom name, that is the adopted pet's name.
+                // Otherwise use the pet's existing name if set and not empty.
+                // If neither, default to "Adopted Pet" (never fall back to pet->breed).
+                $adoptedPetName = $proposedName ?: (($pet && !empty($pet->name)) ? $pet->name : 'Adopted Pet');
+
+                $shelterPetId = $pet ? $pet->id : (int)$app->pet_id;
+                $shelterPetCode = 'Pet no. ' . $shelterPetId;
 
                 $sigUrl = $app->signature_path ? (str_starts_with($app->signature_path, 'http') ? $app->signature_path : $rootUrl . '/storage/' . ltrim($app->signature_path, '/')) : null;
                 $staffSigUrl = $app->staff_signature_url;
@@ -195,14 +201,22 @@ class AdoptionApiController extends Controller
                     'id'               => $app->id,
                     'pet_id'           => (int)$app->pet_id,
                     'petId'            => (int)$app->pet_id,
+                    'shelterPetId'     => $shelterPetId,
+                    'shelterPetCode'   => $shelterPetCode,
+                    'shelter_id'       => $shelterPetId,
+                    'shelter_code'     => $shelterPetCode,
                     'pet'              => $pet ? [
-                        'id'        => (int)$pet->id,
-                        'name'      => $displayName,
-                        'type'      => $pet->type,
-                        'breed'     => $pet->breed,
-                        'photo_url' => $photoUrl,
+                        'id'           => (int)$pet->id,
+                        'name'         => $adoptedPetName,
+                        'shelter_id'   => (int)$pet->id,
+                        'shelter_code' => $shelterPetCode,
+                        'type'         => $pet->type,
+                        'breed'        => $pet->breed,
+                        'photo_url'    => $photoUrl,
                     ] : null,
-                    'petName'          => $displayName,
+                    'petName'          => $adoptedPetName,
+                    'adoptedPetName'   => $adoptedPetName,
+                    'proposedName'     => $proposedName,
                     'petBreed'         => $pet ? ($pet->breed ?: 'Mixed') : 'N/A',
                     'petType'          => $pet ? ucfirst($pet->type ?: 'Dog') : 'N/A',
                     'petImage'         => $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
@@ -544,6 +558,22 @@ class AdoptionApiController extends Controller
             }
         }
 
+        $dewormDue = $latestDeworming?->next_due_date ? $latestDeworming->next_due_date->copy()->startOfDay() : null;
+        $isDewormOverdue = $dewormDue && $dewormDue->lt($today);
+        $isDewormDueSoon = $dewormDue && !$isDewormOverdue && $dewormDue->lte($thirtyDaysAhead);
+        $daysUntilDeworm = $dewormDue ? (int) $today->diffInDays($dewormDue, false) : null;
+
+        $dewormStatus = 'Not Dewormed';
+        if ($latestDeworming) {
+            if ($isDewormOverdue) {
+                $dewormStatus = 'Dose Overdue';
+            } elseif ($isDewormDueSoon) {
+                $dewormStatus = 'Dose Due Soon';
+            } else {
+                $dewormStatus = 'Up to Date';
+            }
+        }
+
         $formattedLogs = $logs->values()->map(function ($log) use ($today, $thirtyDaysAhead) {
             $nextDue = $log->next_due_date ? $log->next_due_date->copy()->startOfDay() : null;
             $isOverdue = $nextDue && $nextDue->lt($today);
@@ -553,6 +583,7 @@ class AdoptionApiController extends Controller
                 'id'                 => $log->id,
                 'category'           => $log->category,
                 'category_label'     => ucfirst(str_replace('_', ' ', $log->category)),
+                'vaccine_name'       => $log->vaccine_name,
                 'date'               => $log->date?->format('Y-m-d'),
                 'date_formatted'     => $log->date?->format('M d, Y'),
                 'next_due_date'      => $log->next_due_date?->format('Y-m-d'),
@@ -604,9 +635,17 @@ class AdoptionApiController extends Controller
                 'is_vaccine_due_soon'     => $isVacDueSoon,
                 'days_until_booster'      => $daysUntilBooster,
                 'latest_vaccine_date'     => $latestVaccine?->date?->format('M d, Y'),
+                'latest_vaccine_name'     => $latestVaccine?->vaccine_name,
                 'next_vaccine_due_date'   => $latestVaccine?->next_due_date?->format('M d, Y'),
+
+                'deworming_status'        => $dewormStatus,
+                'is_deworming_overdue'    => $isDewormOverdue,
+                'is_deworming_due_soon'   => $isDewormDueSoon,
+                'days_until_deworming'    => $daysUntilDeworm,
                 'latest_deworming_date'   => $latestDeworming?->date?->format('M d, Y'),
+                'latest_deworming_name'   => $latestDeworming?->vaccine_name,
                 'next_deworming_due_date' => $latestDeworming?->next_due_date?->format('M d, Y'),
+
                 'total_records_count'     => $logs->count(),
             ],
             'records' => $formattedLogs,
@@ -618,4 +657,54 @@ class AdoptionApiController extends Controller
             'pet_card' => $cardData,
         ]);
     }
+
+    public function updatePetName(Request $request, int|string $id): JsonResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'min:1', 'max:100'],
+        ]);
+
+        $user = $request->user();
+        $pet = Pet::findOrFail($id);
+
+        // Verify the user has an active application or adoption for this pet
+        $application = AdoptionApplication::where('applicant_email', $user->email)
+            ->where('pet_id', $pet->id)
+            ->whereIn('status', ['approved', 'adopted', 'pending', 'under_review'])
+            ->latest()
+            ->first();
+
+        if (!$application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. You do not have an active application or adoption for this pet.',
+            ], 403);
+        }
+
+        $newName = trim($request->name);
+
+        // 1. Update the Pet's official name in the pets table so all admin/staff web records display it immediately
+        $pet->update(['name' => $newName]);
+
+        // 2. Also update or append "Proposed Pet Name: ..." in the application message
+        if ($application->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $application->message)) {
+            $updatedMessage = preg_replace('/Proposed Pet Name:\s*([^\r\n]+)/i', 'Proposed Pet Name: ' . $newName, $application->message);
+        } else {
+            $updatedMessage = "Proposed Pet Name: " . $newName . ($application->message ? ("\n" . $application->message) : "");
+        }
+        $application->update(['message' => $updatedMessage]);
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Pet name updated successfully.',
+            'pet_name' => $newName,
+            'pet'      => [
+                'id'           => $pet->id,
+                'name'         => $pet->name,
+                'shelter_id'   => $pet->id,
+                'shelter_code' => 'Pet no. ' . $pet->id,
+            ],
+        ]);
+    }
 }
+

@@ -13,6 +13,7 @@ class MedicalLog extends Model
         'pet_id',
         'date',
         'category',
+        'vaccine_name',
         'administered_by',
         'next_due_date',
         'created_by',

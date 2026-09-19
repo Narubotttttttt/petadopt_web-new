@@ -28,5 +28,11 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('adminNotificationData', ['notifications' => [], 'unread_count' => 0, 'counts' => ['all' => 0, 'checkins' => 0, 'overdue' => 0, 'requests' => 0]]);
             }
         });
+
+        View::composer('components.sidebar', function ($view) {
+            $hasNew = !request()->routeIs('adoption-applications.*')
+                && AdminNotificationService::getUnviewedAdoptionRequestsCount() > 0;
+            $view->with('hasNewAdoptionRequests', $hasNew);
+        });
     }
 }
