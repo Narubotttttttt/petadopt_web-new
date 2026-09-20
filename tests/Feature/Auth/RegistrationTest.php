@@ -218,7 +218,7 @@ class RegistrationTest extends TestCase
         $this->assertNotNull($staff->email_verified_at);
         $this->assertTrue($staff->hasVerifiedEmail());
         $this->assertNotNull($staff->staffProfile);
-        $this->assertEquals('STF-0002', $staff->staffProfile->staff_code);
+        $this->assertEquals('STF-0001', $staff->staffProfile->staff_code);
 
         // Admin remains authenticated
         $this->assertAuthenticatedAs($admin);

@@ -24,8 +24,10 @@ class AdoptionApiController extends Controller
             'has_experience'     => ['nullable'],
             'proposed_pet_name'  => ['nullable', 'string', 'max:255'],
             'reason'             => ['nullable', 'string'],
-            'valid_id'           => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'valid_id'             => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
             'barangay_certificate' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'application_source'   => ['nullable', 'string', 'in:recommendation,manual_browsing'],
+            'compatibility_score'  => ['nullable', 'numeric', 'between:0,100'],
         ]);
 
         $user = $request->user();
@@ -133,6 +135,18 @@ class AdoptionApiController extends Controller
             );
         }
 
+        $source = $request->input('application_source');
+        if (!$source) {
+            if ($request->boolean('is_recommended') || $request->boolean('isRecommended') || $request->filled('compatibility_score')) {
+                $source = 'recommendation';
+            } else {
+                $source = 'manual_browsing';
+            }
+        }
+        $compatibilityScore = ($source === 'recommendation' && $request->filled('compatibility_score'))
+            ? (float) $request->input('compatibility_score')
+            : null;
+
         $application = AdoptionApplication::create([
             'pet_id'                    => $request->pet_id,
             'applicant_name'            => $request->full_name,
@@ -143,6 +157,8 @@ class AdoptionApiController extends Controller
             'valid_id_path'             => $validIdPath,
             'barangay_certificate_path' => $barangayCertPath,
             'status'                    => 'pending',
+            'application_source'        => $source,
+            'compatibility_score'       => $compatibilityScore,
         ]);
 
         return response()->json([
@@ -236,6 +252,10 @@ class AdoptionApiController extends Controller
                     'signed_at'        => $app->signed_at ? $app->signed_at->format('M d, Y h:i A') : null,
                     'is_signed'        => !empty($app->signature_path),
                     'signature_required' => $isApproved && empty($app->signature_path),
+                    'application_source'  => $app->application_source,
+                    'applicationSource'   => $app->application_source,
+                    'compatibility_score' => $app->compatibility_score,
+                    'compatibilityScore'  => $app->compatibility_score,
                     'updated_at'       => $app->updated_at ? $app->updated_at->toIso8601String() : null,
                     'created_at'       => $app->created_at ? $app->created_at->toIso8601String() : null,
                 ];

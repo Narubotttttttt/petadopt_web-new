@@ -25,9 +25,7 @@ class UserController extends Controller
 
         foreach ($users as $u) {
             if (!$u->staffProfile) {
-                $code = $u->role === 'admin'
-                    ? 'ADM-' . str_pad($u->id, 4, '0', STR_PAD_LEFT)
-                    : 'STF-' . str_pad($u->id, 4, '0', STR_PAD_LEFT);
+                $code = \App\Models\StaffProfile::generateStaffCode($u->role);
                 $title = $u->role === 'admin'
                     ? 'Shelter Director / Head Administrator'
                     : 'CAWS Adoption & Care Staff';
@@ -56,7 +54,6 @@ class UserController extends Controller
             'position_title' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'specialization' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', 'in:active,on_leave,inactive'],
         ]);
 
         $profile = $user->staffProfile ?: new \App\Models\StaffProfile(['user_id' => $user->id]);
@@ -64,13 +61,47 @@ class UserController extends Controller
         $profile->position_title = $validated['position_title'];
         $profile->phone = $validated['phone'] ?? null;
         $profile->specialization = $validated['specialization'] ?? null;
-        $profile->status = $validated['status'];
+        if (empty($profile->status)) {
+            $profile->status = 'active';
+        }
         if (empty($profile->staff_code)) {
-            $profile->staff_code = ($user->role === 'admin' ? 'ADM-' : 'STF-') . str_pad($user->id, 4, '0', STR_PAD_LEFT);
+            $profile->staff_code = \App\Models\StaffProfile::generateStaffCode($user->role);
         }
         $profile->save();
 
-        return back()->with('success', "Staff profile for {$user->name} updated successfully.");
+        return back()->with('success', "Staff details for {$user->name} updated successfully.");
+    }
+
+    public function toggleStaffStatus(Request $request, User $user): RedirectResponse
+    {
+        $admin = auth()->user();
+        if (!$admin || $admin->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($user->id === $admin->id) {
+            return back()->with('error', 'You cannot deactivate your own administrator account.');
+        }
+
+        if ($user->role === 'admin') {
+            return back()->with('error', 'Administrator accounts cannot be deactivated from this action.');
+        }
+
+        $profile = $user->staffProfile ?: new \App\Models\StaffProfile(['user_id' => $user->id]);
+        $currentStatus = $profile->status ?? 'active';
+        $newStatus = in_array($currentStatus, ['deactivated', 'inactive']) ? 'active' : 'deactivated';
+
+        $profile->status = $newStatus;
+        if (empty($profile->full_name)) {
+            $profile->full_name = $user->name;
+        }
+        if (empty($profile->staff_code)) {
+            $profile->staff_code = \App\Models\StaffProfile::generateStaffCode($user->role);
+        }
+        $profile->save();
+
+        $actionWord = $newStatus === 'active' ? 'reactivated' : 'deactivated';
+        return back()->with('success', "Staff account for {$user->name} has been {$actionWord} successfully.");
     }
 
     public function resendVerification(User $user): RedirectResponse

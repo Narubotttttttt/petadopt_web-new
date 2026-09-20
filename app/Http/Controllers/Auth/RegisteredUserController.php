@@ -255,7 +255,7 @@ class RegisteredUserController extends Controller
         Cache::forget('reg_otp_' . $email);
         Cache::forget('reg_verified_' . $email);
 
-        $code = ($role === 'admin' ? 'ADM-' : 'STF-') . str_pad((string) $user->id, 4, '0', STR_PAD_LEFT);
+        $code = \App\Models\StaffProfile::generateStaffCode($role);
         $title = $role === 'admin'
             ? 'Shelter Director / Head Administrator'
             : 'CAWS Adoption & Care Staff';
@@ -338,7 +338,7 @@ class RegisteredUserController extends Controller
         Cache::forget('reg_verified_' . $email);
         session()->forget('registration_data');
 
-        $code = ($role === 'admin' ? 'ADM-' : 'STF-') . str_pad((string) $user->id, 4, '0', STR_PAD_LEFT);
+        $code = \App\Models\StaffProfile::generateStaffCode($role);
         $title = $role === 'admin'
             ? 'Shelter Director / Head Administrator'
             : 'CAWS Adoption & Care Staff';

@@ -61,6 +61,14 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if ($user->role === 'staff' && $user->staffProfile && in_array($user->staffProfile->status, ['deactivated', 'inactive'], true)) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'This staff account has been deactivated by the shelter administration. You are no longer authorized to access the system.',
+            ]);
+        }
+
         Auth::login($user, $this->boolean('remember'));
 
         RateLimiter::clear($this->throttleKey());

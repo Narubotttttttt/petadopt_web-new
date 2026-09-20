@@ -206,7 +206,7 @@ class AdoptionApplicationController extends Controller
         $staffProfile = $user->staffProfile ?: \App\Models\StaffProfile::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'staff_code' => sprintf('STF-%04d', $user->id),
+                'staff_code' => \App\Models\StaffProfile::generateStaffCode($user->role ?? 'staff'),
                 'full_name'  => $user->name,
                 'status'     => 'active',
             ]

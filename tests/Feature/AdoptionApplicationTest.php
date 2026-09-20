@@ -535,6 +535,142 @@ class AdoptionApplicationTest extends TestCase
         ]);
         $unauthResponse->assertStatus(403);
     }
+
+    public function test_application_stores_recommendation_source_and_compatibility_score(): void
+    {
+        $adopter = User::factory()->create(['role' => 'adopter']);
+        $pet = Pet::create([
+            'name' => 'Charlie',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')->postJson('/api/adoption-applications', [
+            'pet_id'               => $pet->id,
+            'full_name'            => 'Jane Doe',
+            'phone'                => '09123456789',
+            'address'              => 'Cagayan de Oro City',
+            'application_source'   => 'recommendation',
+            'compatibility_score'  => 92.5,
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('adoption_applications', [
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'Jane Doe',
+            'application_source'  => 'recommendation',
+            'compatibility_score' => 92.5,
+        ]);
+    }
+
+    public function test_application_defaults_to_manual_browsing(): void
+    {
+        $adopter = User::factory()->create(['role' => 'adopter']);
+        $pet = Pet::create([
+            'name' => 'Bella',
+            'type' => 'cat',
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')->postJson('/api/adoption-applications', [
+            'pet_id'    => $pet->id,
+            'full_name' => 'John Smith',
+            'phone'     => '09987654321',
+            'address'   => 'Iligan City',
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('adoption_applications', [
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'John Smith',
+            'application_source'  => 'manual_browsing',
+            'compatibility_score' => null,
+        ]);
+    }
+
+    public function test_admin_and_staff_see_recommendation_match_on_show_page(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $pet = Pet::create([
+            'name' => 'Rocky',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'Elena Gilbert',
+            'applicant_email'     => 'elena@example.com',
+            'applicant_phone'     => '09112223334',
+            'status'              => 'pending',
+            'application_source'  => 'recommendation',
+            'compatibility_score' => 88.0,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('adoption-applications.show', $app));
+
+        $response->assertStatus(200);
+        $response->assertSee('Pet Recommendation Match');
+        $response->assertSee('AI / ML Origin');
+        $response->assertSee('88%');
+        $response->assertSee('High Compatibility');
+    }
+
+    public function test_admin_and_staff_see_manual_browsing_on_show_page(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create([
+            'name' => 'Luna',
+            'type' => 'cat',
+            'status' => 'available',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'Damon Salvatore',
+            'applicant_email'     => 'damon@example.com',
+            'applicant_phone'     => '09223334445',
+            'status'              => 'pending',
+            'application_source'  => 'manual_browsing',
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
+
+        $response->assertStatus(200);
+        $response->assertSee('Manual Catalog Browsing');
+        $response->assertSee('Manual Origin');
+    }
+
+    public function test_admin_and_staff_see_origin_badges_on_index_page(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet1 = Pet::create(['name' => 'Pet One', 'type' => 'dog', 'status' => 'available']);
+        $pet2 = Pet::create(['name' => 'Pet Two', 'type' => 'cat', 'status' => 'available']);
+
+        AdoptionApplication::create([
+            'pet_id'              => $pet1->id,
+            'applicant_name'      => 'Rec User',
+            'applicant_email'     => 'rec@example.com',
+            'status'              => 'pending',
+            'application_source'  => 'recommendation',
+            'compatibility_score' => 95.0,
+        ]);
+
+        AdoptionApplication::create([
+            'pet_id'              => $pet2->id,
+            'applicant_name'      => 'Manual User',
+            'applicant_email'     => 'manual@example.com',
+            'status'              => 'pending',
+            'application_source'  => 'manual_browsing',
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('adoption-applications.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('AI Match');
+        $response->assertSee('95%');
+        $response->assertSee('Manual Catalog');
+    }
 }
 
 

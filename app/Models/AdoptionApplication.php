@@ -25,6 +25,8 @@ class AdoptionApplication extends Model
         'staff_name',
         'staff_signed_at',
         'status',
+        'application_source',
+        'compatibility_score',
         'scheduled_at',
         'event_location',
         'event_notes',
@@ -37,10 +39,11 @@ class AdoptionApplication extends Model
     ];
 
     protected $casts = [
-        'scheduled_at'    => 'datetime',
-        'signed_at'       => 'datetime',
-        'staff_signed_at' => 'datetime',
-        'evaluated_at'    => 'datetime',
+        'scheduled_at'        => 'datetime',
+        'signed_at'           => 'datetime',
+        'staff_signed_at'     => 'datetime',
+        'evaluated_at'        => 'datetime',
+        'compatibility_score' => 'float',
     ];
 
     protected $appends = [

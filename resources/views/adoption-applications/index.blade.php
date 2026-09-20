@@ -70,6 +70,16 @@
                                 <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
                             </div>
                             <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400 dark:text-slate-500 font-medium">Origin</span>
+                                @if($application->application_source === 'recommendation')
+                                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                                        AI Recommendation {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
+                                    </span>
+                                @else
+                                    <span class="font-semibold text-slate-600 dark:text-slate-400">Manual Catalog</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
                                 <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
                                 <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
                             </div>
@@ -113,6 +123,7 @@
                         <tr>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Applicant</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Origin / Match</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Submitted Date</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
@@ -152,6 +163,25 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                     <div class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</div>
                                     <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">{{ $application->applicant_phone }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($application->application_source === 'recommendation')
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                AI Match
+                                            </span>
+                                            @if($application->compatibility_score !== null)
+                                                <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                                    {{ number_format($application->compatibility_score, 0) }}%
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08]">
+                                            Manual Catalog
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col gap-1">

@@ -66,6 +66,74 @@
                     </div>
                 </div>
 
+                {{-- Application Origin & Machine Learning Compatibility Card --}}
+                @if($application->application_source === 'recommendation')
+                    <div class="bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-[#0e1d20] rounded-2xl border border-emerald-200/90 dark:border-emerald-800/60 shadow-card p-6 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Pet Recommendation Match</h2>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                            AI / ML Origin
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Application initiated through the Machine Learning Recommendation Engine.</p>
+                                </div>
+                            </div>
+                            @if($application->compatibility_score !== null)
+                                <div class="text-left sm:text-right shrink-0">
+                                    <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{{ number_format($application->compatibility_score, 0) }}%</span>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Match Score</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($application->compatibility_score !== null)
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                    <span>Compatibility Index</span>
+                                    <span class="text-emerald-600 dark:text-emerald-400 font-bold">
+                                        {{ $application->compatibility_score >= 80 ? 'High Compatibility' : ($application->compatibility_score >= 60 ? 'Moderate Compatibility' : 'Standard Match') }}
+                                    </span>
+                                </div>
+                                <div class="w-full bg-slate-200/80 dark:bg-white/[0.08] h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-[#199CA4] to-emerald-500 h-full rounded-full transition-all duration-500" style="width: {{ min(100, max(5, $application->compatibility_score)) }}%"></div>
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="p-3.5 rounded-xl bg-white/80 dark:bg-[#12272b] border border-emerald-100 dark:border-emerald-900/40 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <span class="font-bold text-slate-800 dark:text-white">Recommendation Details:</span>
+                            The applicant answered the adopter compatibility questionnaire on mobile (housing type, activity level, pet experience, household dynamics, and preferences). The Scikit-Learn Random Forest recommendation model evaluated available shelter animals and suggested this pet as a suitable match.
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center font-bold shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Manual Catalog Browsing</h2>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]">
+                                        Manual Origin
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">The applicant discovered and applied for this pet directly from the public shelter listings without utilizing the recommendation engine.</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Pet Medical Clearance & Immunization Card --}}
                 @if($application->pet)
                     @php

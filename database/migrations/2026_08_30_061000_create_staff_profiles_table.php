@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('full_name');
             $table->string('position_title')->default('CAWS Staff Member');
             $table->string('phone')->nullable();
-            $table->enum('status', ['active', 'on_leave', 'inactive'])->default('active');
+            $table->enum('status', ['active', 'deactivated'])->default('active');
             $table->string('specialization')->nullable();
             $table->timestamps();
         });

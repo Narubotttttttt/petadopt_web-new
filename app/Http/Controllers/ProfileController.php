@@ -37,7 +37,7 @@ class ProfileController extends Controller
         $staffProfile = \App\Models\StaffProfile::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'staff_code' => sprintf('STF-%04d', $user->id),
+                'staff_code' => \App\Models\StaffProfile::generateStaffCode($user->role),
                 'full_name'  => $user->name,
                 'status'     => 'active',
             ]
@@ -94,7 +94,7 @@ class ProfileController extends Controller
         $staffProfile = \App\Models\StaffProfile::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'staff_code' => sprintf('STF-%04d', $user->id),
+                'staff_code' => \App\Models\StaffProfile::generateStaffCode($user->role),
                 'full_name'  => $user->name,
                 'status'     => 'active',
             ]

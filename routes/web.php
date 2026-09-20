@@ -129,6 +129,7 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     // Staff Management
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::patch('/users/{user}/staff-profile', [UserController::class, 'updateStaffProfile'])->name('users.update-staff-profile');
+    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStaffStatus'])->name('users.toggle-status');
     Route::post('/users/{user}/resend-verification', [UserController::class, 'resendVerification'])->name('users.resend-verification');
 });
 

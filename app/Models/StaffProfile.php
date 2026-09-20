@@ -55,4 +55,24 @@ class StaffProfile extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Generate the next sequential staff or admin code independently from users table.
+     */
+    public static function generateStaffCode(string $role = 'staff'): string
+    {
+        $prefix = ($role === 'admin') ? 'ADM-' : 'STF-';
+
+        $maxNum = self::where('staff_code', 'like', $prefix . '%')
+            ->pluck('staff_code')
+            ->map(function ($code) use ($prefix) {
+                $num = substr($code, strlen($prefix));
+                return is_numeric($num) ? (int) $num : 0;
+            })
+            ->max();
+
+        $next = ($maxNum ?? 0) + 1;
+
+        return sprintf('%s%04d', $prefix, $next);
+    }
 }
