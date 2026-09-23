@@ -66,6 +66,122 @@
                     </div>
                 </div>
 
+                {{-- Competing Applicants & Waitlist Queue Card (Option B) --}}
+                @if(isset($competingApplications) && $competingApplications->isNotEmpty())
+                    @php
+                        $otherScheduled = $competingApplications->firstWhere('status', 'approved');
+                        $isCurrentScheduled = $application->status === 'approved';
+                    @endphp
+                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white">Applicant Queue and Priority Ranking</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Multiple applicants have submitted requests for this pet.</p>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 self-start sm:self-center">
+                                {{ $competingApplications->count() + 1 }} Total Applicants
+                            </span>
+                        </div>
+
+                        {{-- Screening Status Advisory Banner --}}
+                        @if($isCurrentScheduled)
+                            <div class="flex items-start gap-2.5 p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300">
+                                <svg class="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div>
+                                    <span class="font-bold">Primary Candidate:</span> This applicant is currently scheduled for final screening. Competing applicants are placed on the priority waitlist and can be considered if this candidate is not finalized.
+                                </div>
+                            </div>
+                        @elseif($otherScheduled)
+                            <div class="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300">
+                                <svg class="w-4 h-4 shrink-0 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div>
+                                    <span class="font-bold">Waitlist Notice:</span> Another applicant (<a href="{{ route('adoption-applications.show', $otherScheduled) }}" class="underline font-bold hover:text-amber-950 dark:hover:text-amber-100">{{ $otherScheduled->applicant_name }}</a>) is currently scheduled for screening. This applicant is held on the waitlist.
+                                </div>
+                            </div>
+                        @else
+                            <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#12272b] border border-slate-200/80 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                                <svg class="w-4 h-4 shrink-0 text-[#199CA4] mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div>
+                                    <span class="font-bold">Comparative Evaluation:</span> Compare ML compatibility scores and questionnaire responses to select the best-matched candidate to invite for final screening.
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Competing Applicants List --}}
+                        <div class="divide-y divide-slate-100 dark:divide-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-slate-50/50 dark:bg-[#0a171a]/50">
+                            {{-- Active/Viewing Applicant Row --}}
+                            <div class="p-3.5 bg-[#199CA4]/5 dark:bg-[#199CA4]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-l-4 border-[#199CA4]">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-[#199CA4] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                        {{ strtoupper(substr($application->applicant_name, 0, 1)) }}
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-bold text-slate-800 dark:text-white">{{ $application->applicant_name }}</span>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20">Currently Viewing</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">Applied {{ $application->created_at ? $application->created_at->format('M d, Y') : 'N/A' }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 self-end sm:self-center">
+                                    @if($application->compatibility_score !== null)
+                                        <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                                            {{ number_format($application->compatibility_score, 0) }}% Match
+                                        </span>
+                                    @endif
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold
+                                        {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200' : '' }}
+                                        {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200' : '' }}
+                                        {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200' : '' }}
+                                        {{ $application->status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200' : '' }}">
+                                        {{ $application->status === 'approved' ? 'Scheduled' : ($application->status === 'under_review' ? 'Waitlisted' : ucfirst($application->status)) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- Other Applicants Rows --}}
+                            @foreach($competingApplications as $compApp)
+                                <div class="p-3.5 hover:bg-white dark:hover:bg-[#12272b] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
+                                            {{ strtoupper(substr($compApp->applicant_name, 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-slate-800 dark:text-white">{{ $compApp->applicant_name }}</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">Applied {{ $compApp->created_at ? $compApp->created_at->format('M d, Y') : 'N/A' }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 self-end sm:self-center">
+                                        @if($compApp->compatibility_score !== null)
+                                            <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                                                {{ number_format($compApp->compatibility_score, 0) }}% Match
+                                            </span>
+                                        @endif
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold
+                                            {{ $compApp->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200' : '' }}
+                                            {{ $compApp->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200' : '' }}
+                                            {{ $compApp->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200' : '' }}
+                                            {{ $compApp->status === 'rejected' ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200' : '' }}">
+                                            {{ $compApp->status === 'approved' ? 'Scheduled' : ($compApp->status === 'under_review' ? 'Waitlisted' : ucfirst($compApp->status)) }}
+                                        </span>
+                                        <a href="{{ route('adoption-applications.show', $compApp) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#199CA4] text-slate-700 hover:text-white dark:bg-white/[0.08] dark:hover:bg-[#199CA4] dark:text-slate-300 dark:hover:text-white text-[11px] font-bold transition">
+                                            <span>Switch</span>
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Application Origin & Machine Learning Compatibility Card --}}
                 @if($application->application_source === 'recommendation')
                     <div class="bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-[#0e1d20] rounded-2xl border border-emerald-200/90 dark:border-emerald-800/60 shadow-card p-6 space-y-4">
@@ -502,7 +618,7 @@
                  }">
                 
                 <div>
-                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adoption Decision</h2>
+                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adoption Decision & Final Screening</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review applicant screening details and record the adoption decision.</p>
                 </div>
 
@@ -514,13 +630,18 @@
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Decision</label>
                         <select name="status" x-model="currentStatus" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                             <option value="" disabled {{ !in_array($application->status, ['approved', 'rejected']) ? 'selected' : '' }}>Select Decision...</option>
-                            <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approve</option>
-                            <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject</option>
+                            <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approve and Schedule Final Screening</option>
+                            <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject Application</option>
                         </select>
                     </div>
 
                     {{-- Event Scheduling Details --}}
                     <div x-show="currentStatus === 'approved'" x-transition class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div class="p-3 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 border border-[#199CA4]/20 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-1">
+                            <p class="font-bold text-[#199CA4] dark:text-[#41C1CB]">In-Person Screening Notice:</p>
+                            <p class="text-[11px]">Approving this application schedules the applicant for final in-person screening. The applicant will be instructed to bring physical copies of their Valid ID and Barangay Certificate to the venue for identity verification.</p>
+                        </div>
+
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Schedule Sunday Event Date</label>
                             <input type="date" name="scheduled_at" value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
@@ -606,7 +727,7 @@
                                 :disabled="isSaveDisabled"
                                 :class="isSaveDisabled ? 'opacity-40 cursor-not-allowed bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shadow-none pointer-events-none' : 'bg-gradient-to-r from-[#199CA4] to-[#14838B] text-white hover:from-[#146970] hover:to-[#12585e] shadow-md shadow-[#199CA4]/25 cursor-pointer'"
                                 class="w-full inline-flex items-center justify-center rounded-xl px-4 py-3 text-xs sm:text-sm font-bold transition">
-                            Save Decision
+                            Save Decision & Screening Schedule
                         </button>
 
                         <p x-show="currentStatus === 'approved' && isSaveDisabled" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold text-center mt-2">

@@ -671,6 +671,90 @@ class AdoptionApplicationTest extends TestCase
         $response->assertSee('95%');
         $response->assertSee('Manual Catalog');
     }
+
+    public function test_competing_applications_are_placed_on_priority_waitlist_when_primary_is_approved(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name'   => 'Max',
+            'type'   => 'dog',
+            'status' => 'available',
+        ]);
+
+        $appPrimary = AdoptionApplication::create([
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'Alice Primary',
+            'applicant_email'     => 'alice@example.com',
+            'status'              => 'pending',
+            'compatibility_score' => 92.0,
+        ]);
+
+        $appSecondary = AdoptionApplication::create([
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'Bob Backup',
+            'applicant_email'     => 'bob@example.com',
+            'status'              => 'pending',
+            'compatibility_score' => 78.0,
+        ]);
+
+        $response = $this->actingAs($staff)->patch(route('adoption-applications.update', $appPrimary), [
+            'status'         => 'approved',
+            'scheduled_at'   => now()->addDays(5)->format('Y-m-d'),
+            'event_location' => 'Centrio Mall CDO',
+            'event_notes'    => 'Bring valid ID for screening.',
+        ]);
+
+        $response->assertRedirect();
+
+        // Primary is approved/scheduled
+        $this->assertEquals('approved', $appPrimary->fresh()->status);
+
+        // Secondary is placed on priority waitlist (under_review), NOT rejected
+        $this->assertEquals('under_review', $appSecondary->fresh()->status);
+    }
+
+    public function test_show_page_displays_applicant_queue_when_multiple_applicants_exist(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name'   => 'Bella',
+            'type'   => 'dog',
+            'status' => 'available',
+        ]);
+
+        $app1 = AdoptionApplication::create([
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'First Applicant',
+            'applicant_email'     => 'first@example.com',
+            'status'              => 'pending',
+            'compatibility_score' => 88.0,
+        ]);
+
+        $app2 = AdoptionApplication::create([
+            'pet_id'              => $pet->id,
+            'applicant_name'      => 'Second Applicant',
+            'applicant_email'     => 'second@example.com',
+            'status'              => 'pending',
+            'compatibility_score' => 75.0,
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app1));
+
+        $response->assertStatus(200);
+        $response->assertSee('Applicant Queue and Priority Ranking');
+        $response->assertSee('2 Total Applicants');
+        $response->assertSee('Second Applicant');
+        $response->assertSee('75% Match');
+        $response->assertSee('Approve and Schedule Final Screening');
+    }
 }
 
 

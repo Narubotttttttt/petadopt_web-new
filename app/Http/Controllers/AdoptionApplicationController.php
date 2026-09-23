@@ -28,7 +28,14 @@ class AdoptionApplicationController extends Controller
 
         $application->load(['pet.medicalLogs.creator', 'staff.staffProfile', 'evaluator']);
 
-        return view('adoption-applications.show', compact('application'));
+        $competingApplications = AdoptionApplication::where('pet_id', $application->pet_id)
+            ->where('id', '!=', $application->id)
+            ->orderByRaw("CASE WHEN status = 'approved' THEN 1 WHEN status IN ('pending', 'under_review') THEN 2 ELSE 3 END")
+            ->orderByDesc('compatibility_score')
+            ->latest('created_at')
+            ->get();
+
+        return view('adoption-applications.show', compact('application', 'competingApplications'));
     }
 
     public function markViewed(): JsonResponse
@@ -108,8 +115,8 @@ class AdoptionApplicationController extends Controller
             $petName = $application->pet?->name ?? 'your pet';
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
-                "Adoption Approved for {$petName}!",
-                "Great news! Your adoption request for {$petName} was approved by CAWS! Please open the app to review and digitally sign your adoption contract to finalize the pickup.",
+                "Adoption Application Accepted for {$petName}!",
+                "Great news! Your adoption application for {$petName} was accepted for final screening by CAWS! Please open the app to review your scheduled event details and bring your original physical ID and Barangay Certificate to finalize your adoption.",
                 ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id, 'requires_signature' => true]
             );
 
@@ -121,16 +128,16 @@ class AdoptionApplicationController extends Controller
             foreach ($otherApplicants as $otherApp) {
                 \App\Services\FirebaseNotificationService::sendToUser(
                     $otherApp->applicant_email,
-                    "{$petName} Has Found a Home!",
-                    "The pet you requested ({$petName}) has found a forever home with another verified applicant. Browse other lovely pets available!",
-                    ['type' => 'adoption_status', 'status' => 'adopted_by_other', 'pet_id' => $application->pet_id]
+                    "{$petName} Application Update - Priority Waitlist",
+                    "Another applicant has been scheduled for final screening for {$petName}. Your application has been placed on our priority waitlist. If the pet becomes available, we will contact you immediately, or you can browse other lovely pets available!",
+                    ['type' => 'adoption_status', 'status' => 'waitlisted', 'pet_id' => $application->pet_id]
                 );
             }
 
             AdoptionApplication::where('pet_id', $application->pet_id)
                 ->where('id', '!=', $application->id)
                 ->whereIn('status', ['pending', 'under_review'])
-                ->update(['status' => 'rejected']);
+                ->update(['status' => 'under_review']);
         } elseif ($willBeRejected && ! $wasRejected) {
             $petName = $application->pet?->name ?? 'your requested pet';
             $reason = !empty($application->rejection_reason)
