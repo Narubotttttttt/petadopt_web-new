@@ -91,6 +91,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::match(['put','patch'],'/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
 
     Route::get('/adoption-applications', [\App\Http\Controllers\AdoptionApplicationController::class, 'index'])->name('adoption-applications.index');
+    Route::get('/adoption-applications/realtime-check', [\App\Http\Controllers\AdoptionApplicationController::class, 'realtimeCheck'])->name('adoption-applications.realtime-check');
     Route::post('/adoption-applications/mark-viewed', [\App\Http\Controllers\AdoptionApplicationController::class, 'markViewed'])->name('adoption-applications.mark-viewed');
     Route::get('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'show'])->name('adoption-applications.show');
     Route::patch('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'update'])->name('adoption-applications.update');
@@ -98,6 +99,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/adoption-applications/{application}/sign-as-staff', [\App\Http\Controllers\AdoptionApplicationController::class, 'signAsStaff'])->name('adoption-applications.sign-as-staff');
     Route::post('/adoption-applications/{application}/reset-handover', [\App\Http\Controllers\AdoptionApplicationController::class, 'resetHandover'])->name('adoption-applications.reset-handover');
     Route::get('/adoption-applications/{application}/contract', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('adoption-applications.contract');
+    Route::delete('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'destroy'])->name('adoption-applications.destroy');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
     Route::get('/adopters/reports', [\App\Http\Controllers\AdopterProfileController::class, 'monthlyReports'])->name('adopters.reports');

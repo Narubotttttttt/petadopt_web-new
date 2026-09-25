@@ -1009,6 +1009,420 @@ class AdoptionApplicationTest extends TestCase
         $this->assertNull($profile->fresh()->digital_signature_path);
         \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('signatures/saved_sig.png');
     }
+
+    public function test_approving_application_fails_if_another_applicant_is_already_scheduled(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Cooper', 'type' => 'dog', 'status' => 'available']);
+
+        $app1 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'First Adopter',
+            'applicant_email' => 'first@example.com',
+            'status' => 'approved',
+        ]);
+
+        $app2 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Second Adopter',
+            'applicant_email' => 'second@example.com',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($staff)->patch(route('adoption-applications.update', $app2), [
+            'status' => 'approved',
+            'event_location' => 'Centrio Mall CDO',
+            'event_notes' => 'Bring documents',
+        ]);
+
+        $response->assertSessionHasErrors('status');
+        $this->assertEquals('pending', $app2->fresh()->status);
+    }
+
+    public function test_approving_application_fails_if_pet_is_already_adopted_or_finalized(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Cooper', 'type' => 'dog', 'status' => 'adopted']);
+
+        $appFinalized = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Final Adopter',
+            'applicant_email' => 'final@example.com',
+            'status' => 'approved',
+            'staff_signature_path' => 'signatures/staff.png',
+            'documents_verified_at' => now(),
+        ]);
+
+        $appCompeting = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Late Adopter',
+            'applicant_email' => 'late@example.com',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($staff)->patch(route('adoption-applications.update', $appCompeting), [
+            'status' => 'approved',
+            'event_location' => 'Centrio Mall CDO',
+            'event_notes' => 'Bring documents',
+        ]);
+
+        $response->assertSessionHasErrors('status');
+        $this->assertEquals('pending', $appCompeting->fresh()->status);
+    }
+
+    public function test_finalizing_handover_auto_rejects_competing_applications(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Bella', 'type' => 'dog', 'status' => 'available']);
+
+        $appPrimary = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Winner Adopter',
+            'applicant_email' => 'winner@example.com',
+            'status' => 'approved',
+            'signature_path' => 'signatures/winner.png',
+        ]);
+
+        $appWaitlisted1 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Waitlist User 1',
+            'applicant_email' => 'wait1@example.com',
+            'status' => 'under_review',
+        ]);
+
+        $appWaitlisted2 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Waitlist User 2',
+            'applicant_email' => 'wait2@example.com',
+            'status' => 'pending',
+        ]);
+
+        $fakeBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $response = $this->actingAs($staff)->post(route('adoption-applications.finalize-handover', $appPrimary), [
+            'id_document_verified' => '1',
+            'barangay_cert_verified' => '1',
+            'use_saved_signature' => '0',
+            'signature_data' => $fakeBase64,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertTrue($appPrimary->fresh()->is_finalized);
+        $this->assertEquals('adopted', $pet->fresh()->status);
+
+        // Verify competing applications were automatically marked as rejected
+        $this->assertEquals('rejected', $appWaitlisted1->fresh()->status);
+        $this->assertStringContainsString('adopted by another applicant', $appWaitlisted1->fresh()->rejection_reason);
+
+        $this->assertEquals('rejected', $appWaitlisted2->fresh()->status);
+        $this->assertStringContainsString('adopted by another applicant', $appWaitlisted2->fresh()->rejection_reason);
+    }
+
+    public function test_index_status_tab_filters_and_counts(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Bruno', 'type' => 'dog', 'status' => 'available']);
+
+        $pendingApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Pending Adopter',
+            'applicant_email' => 'pending@example.com',
+            'status' => 'pending',
+        ]);
+
+        $approvedApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Scheduled Adopter',
+            'applicant_email' => 'scheduled@example.com',
+            'status' => 'approved',
+        ]);
+
+        $rejectedApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Rejected Adopter',
+            'applicant_email' => 'rejected@example.com',
+            'status' => 'rejected',
+        ]);
+
+        // Default 'all' view shows all applications
+        $responseAll = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $responseAll->assertStatus(200);
+        $appsAll = $responseAll->viewData('applications');
+        $this->assertTrue($appsAll->contains('applicant_name', 'Pending Adopter'));
+        $this->assertTrue($appsAll->contains('applicant_name', 'Scheduled Adopter'));
+        $this->assertTrue($appsAll->contains('applicant_name', 'Rejected Adopter'));
+
+        // 'pending' filter
+        $responsePending = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'pending']));
+        $responsePending->assertStatus(200);
+        $appsPending = $responsePending->viewData('applications');
+        $this->assertTrue($appsPending->contains('applicant_name', 'Pending Adopter'));
+        $this->assertFalse($appsPending->contains('applicant_name', 'Scheduled Adopter'));
+        $this->assertFalse($appsPending->contains('applicant_name', 'Rejected Adopter'));
+
+        // 'scheduled' filter
+        $responseScheduled = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'scheduled']));
+        $responseScheduled->assertStatus(200);
+        $appsScheduled = $responseScheduled->viewData('applications');
+        $this->assertFalse($appsScheduled->contains('applicant_name', 'Pending Adopter'));
+        $this->assertTrue($appsScheduled->contains('applicant_name', 'Scheduled Adopter'));
+        $this->assertFalse($appsScheduled->contains('applicant_name', 'Rejected Adopter'));
+
+        // 'rejected' filter
+        $responseRejected = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'rejected']));
+        $responseRejected->assertStatus(200);
+        $appsRejected = $responseRejected->viewData('applications');
+        $this->assertFalse($appsRejected->contains('applicant_name', 'Pending Adopter'));
+        $this->assertFalse($appsRejected->contains('applicant_name', 'Scheduled Adopter'));
+        $this->assertTrue($appsRejected->contains('applicant_name', 'Rejected Adopter'));
+
+        // Tab counts check
+        $counts = $responseAll->viewData('counts');
+        $this->assertEquals(3, $counts['all']);
+        $this->assertEquals(1, $counts['pending']);
+        $this->assertEquals(1, $counts['scheduled']);
+        $this->assertEquals(1, $counts['rejected']);
+    }
+
+    public function test_staff_can_destroy_adoption_application(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Spike', 'type' => 'dog', 'status' => 'available']);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Spam Bot',
+            'applicant_email' => 'spam@example.com',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($staff)->delete(route('adoption-applications.destroy', $app));
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('adoption_applications', ['id' => $app->id]);
+    }
+
+    public function test_pending_tab_red_dot_and_new_badge_lifecycle(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Cooper', 'type' => 'dog', 'status' => 'available']);
+
+        $app1 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'First Adopter',
+            'applicant_email' => 'first@example.com',
+            'status' => 'pending',
+            'created_at' => now(),
+        ]);
+
+        // 1. Visiting default 'all' view shows unseen pending indicator (red dot & badge)
+        $response1 = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $response1->assertStatus(200);
+        $this->assertTrue($response1->viewData('hasUnseenPending'));
+        $this->assertEquals(1, $response1->viewData('newBadgeCount'));
+
+        // 2. Visiting the 'pending' tab dismisses the indicator
+        $response2 = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'pending']));
+        $response2->assertStatus(200);
+        $this->assertFalse($response2->viewData('hasUnseenPending'));
+
+        // 3. Returning to 'all' view keeps indicator removed because it was already viewed
+        $response3 = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $response3->assertStatus(200);
+        $this->assertFalse($response3->viewData('hasUnseenPending'));
+
+        // 4. When a new application arrives, indicator is triggered again
+        $app2 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Second Adopter',
+            'applicant_email' => 'second@example.com',
+            'status' => 'pending',
+            'created_at' => now(),
+        ]);
+
+        $response4 = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $response4->assertStatus(200);
+        $this->assertTrue($response4->viewData('hasUnseenPending'));
+        $this->assertEquals(2, $response4->viewData('newBadgeCount'));
+    }
+
+    public function test_application_displays_archived_when_pet_adopted_vs_rejected_for_disqualification(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Simba', 'type' => 'dog', 'status' => 'adopted']);
+
+        // Case 1: Application rejected because pet was adopted by another applicant -> Archived
+        $archivedApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Archived Candidate',
+            'applicant_email' => 'archived@example.com',
+            'status' => 'rejected',
+            'rejection_reason' => 'This pet has officially been adopted by another applicant.',
+        ]);
+
+        $this->assertTrue($archivedApp->is_archived_due_to_adoption);
+        $this->assertEquals('Archived', $archivedApp->display_status);
+
+        // Case 2: Application rejected due to document/applicant issues -> Rejected
+        $disqualifiedApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Disqualified Candidate',
+            'applicant_email' => 'disqualified@example.com',
+            'status' => 'rejected',
+            'rejection_reason' => 'Invalid ID and landlord does not allow pets.',
+        ]);
+
+        $this->assertFalse($disqualifiedApp->is_archived_due_to_adoption);
+        $this->assertEquals('Rejected', $disqualifiedApp->display_status);
+
+        // Verify index view displays Archived badge for Case 1 and Rejected badge for Case 2
+        $indexResponse = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'rejected']));
+        $indexResponse->assertStatus(200);
+        $indexResponse->assertSee('Archived');
+        $indexResponse->assertSee('Rejected');
+
+        // Verify show view for archived candidate
+        $showArchivedResponse = $this->actingAs($staff)->get(route('adoption-applications.show', $archivedApp));
+        $showArchivedResponse->assertStatus(200);
+        $showArchivedResponse->assertSee('Archived Notice');
+
+        // Verify show view for disqualified candidate
+        $showDisqualifiedResponse = $this->actingAs($staff)->get(route('adoption-applications.show', $disqualifiedApp));
+        $showDisqualifiedResponse->assertStatus(200);
+        $showDisqualifiedResponse->assertSee('Rejection Reason Given to Adopter');
+    }
+
+    public function test_competing_applications_queue_and_waitlist_indicators(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Rocky', 'type' => 'dog', 'status' => 'available']);
+
+        // Application 1: Higher score
+        $app1 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Candidate One',
+            'applicant_email' => 'one@example.com',
+            'status' => 'pending',
+            'compatibility_score' => 95.0,
+        ]);
+
+        // Application 2: Lower score
+        $app2 = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Candidate Two',
+            'applicant_email' => 'two@example.com',
+            'status' => 'pending',
+            'compatibility_score' => 80.0,
+        ]);
+
+        $pet->load('adoptionApplications');
+
+        // Before any approval: App 1 is lead, App 2 is queue #2
+        $this->assertEquals(2, $app1->competing_active_count);
+        $this->assertTrue($app1->is_lead_candidate);
+        $this->assertEquals(1, $app1->queue_position);
+
+        $this->assertEquals(2, $app2->competing_active_count);
+        $this->assertFalse($app2->is_lead_candidate);
+        $this->assertEquals(2, $app2->queue_position);
+        $this->assertFalse($app2->is_waitlisted_backup);
+
+        // Staff schedules Candidate 1
+        $app1->update(['status' => 'approved', 'scheduled_at' => now()->addDays(2)]);
+        $pet->refresh()->load('adoptionApplications');
+
+        // Now Candidate 2 is automatically waitlisted backup
+        $this->assertTrue($app2->fresh()->is_waitlisted_backup);
+        $this->assertEquals('Waitlisted', $app2->fresh()->display_status);
+
+        // Verify index view renders Primary Candidate for App 1 and Waitlisted (Backup) for App 2
+        $response = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Primary Candidate');
+        $response->assertSee('Waitlisted (Backup)');
+        $response->assertSee('Backup · Queue #2');
+    }
+
+    public function test_realtime_check_endpoint_detects_new_applications_and_returns_counts(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Milo', 'type' => 'cat', 'status' => 'available']);
+
+        // Initially create an existing application
+        $existingApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Initial Applicant',
+            'applicant_email' => 'initial@example.com',
+            'status' => 'pending',
+        ]);
+
+        // When client queries with latest_id = existingApp->id, has_new should be false
+        $response = $this->actingAs($staff)->getJson(route('adoption-applications.realtime-check', [
+            'latest_id' => $existingApp->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'latest_id' => $existingApp->id,
+            'has_new' => false,
+            'new_count' => 0,
+            'counts' => [
+                'all' => 1,
+                'pending' => 1,
+            ],
+        ]);
+
+        // Now simulate a new adoption application arriving from mobile or web
+        $newApp = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Jane Doe',
+            'applicant_email' => 'jane@example.com',
+            'status' => 'pending',
+        ]);
+
+        // Client heartbeat checks with the previous latest_id
+        $responseNew = $this->actingAs($staff)->getJson(route('adoption-applications.realtime-check', [
+            'latest_id' => $existingApp->id,
+        ]));
+
+        $responseNew->assertStatus(200);
+        $responseNew->assertJson([
+            'success' => true,
+            'latest_id' => $newApp->id,
+            'has_new' => true,
+            'new_count' => 1,
+            'has_unseen_pending' => true,
+            'counts' => [
+                'all' => 2,
+                'pending' => 2,
+            ],
+        ]);
+        $this->assertEquals('Jane Doe', $responseNew->json('new_applications.0.applicant_name'));
+        $this->assertEquals('Milo', $responseNew->json('new_applications.0.pet_name'));
+    }
+
+    public function test_mark_viewed_endpoint_persists_latest_pending_id(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Bella', 'type' => 'dog', 'status' => 'available']);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Applicant One',
+            'applicant_email' => 'one@example.com',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($staff)->postJson(route('adoption-applications.mark-viewed'));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'last_viewed_pending_id' => $app->id,
+        ]);
+        $this->assertEquals($app->id, session('last_viewed_pending_id'));
+    }
 }
 
 

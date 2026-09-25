@@ -60,7 +60,119 @@ class AdoptionApplication extends Model
         'barangay_certificate_url',
         'is_finalized',
         'contract_unlocked',
+        'is_archived_due_to_adoption',
+        'display_status',
+        'competing_active_count',
+        'is_waitlisted_backup',
+        'queue_position',
+        'is_lead_candidate',
     ];
+
+    public function getIsArchivedDueToAdoptionAttribute(): bool
+    {
+        if ($this->status !== 'rejected') {
+            return false;
+        }
+
+        if (empty($this->rejection_reason)) {
+            return (bool)($this->pet && $this->pet->status === 'adopted' && !$this->is_finalized);
+        }
+
+        $reason = strtolower($this->rejection_reason);
+
+        return str_contains($reason, 'adopted by another') 
+            || str_contains($reason, 'already adopted')
+            || str_contains($reason, 'adopted to another')
+            || str_contains($reason, 'found another home')
+            || str_contains($reason, 'pet is no longer available');
+    }
+
+    public function getDisplayStatusAttribute(): string
+    {
+        if ($this->status === 'rejected') {
+            return $this->is_archived_due_to_adoption ? 'Archived' : 'Rejected';
+        }
+
+        if ($this->status === 'approved') {
+            return $this->is_finalized ? 'Finalized' : 'Approved';
+        }
+
+        if ($this->is_waitlisted_backup) {
+            return 'Waitlisted';
+        }
+
+        if ($this->status === 'under_review') {
+            return 'Under Review';
+        }
+
+        return 'Pending';
+    }
+
+    public function getCompetingActiveCountAttribute(): int
+    {
+        if (!$this->pet) {
+            return 1;
+        }
+        if ($this->pet->relationLoaded('adoptionApplications')) {
+            return $this->pet->adoptionApplications
+                ->whereIn('status', ['pending', 'under_review', 'approved'])
+                ->count();
+        }
+        return AdoptionApplication::where('pet_id', $this->pet_id)
+            ->whereIn('status', ['pending', 'under_review', 'approved'])
+            ->count();
+    }
+
+    public function getScheduledCompetingApplicationAttribute(): ?AdoptionApplication
+    {
+        if (!$this->pet) {
+            return null;
+        }
+        if ($this->pet->relationLoaded('adoptionApplications')) {
+            return $this->pet->adoptionApplications
+                ->where('id', '!=', $this->id)
+                ->where('status', 'approved')
+                ->whereNull('documents_verified_at')
+                ->first();
+        }
+        return AdoptionApplication::where('pet_id', $this->pet_id)
+            ->where('id', '!=', $this->id)
+            ->where('status', 'approved')
+            ->whereNull('documents_verified_at')
+            ->first();
+    }
+
+    public function getIsWaitlistedBackupAttribute(): bool
+    {
+        return in_array($this->status, ['pending', 'under_review']) && $this->scheduled_competing_application !== null;
+    }
+
+    public function getQueuePositionAttribute(): int
+    {
+        if (!$this->pet) {
+            return 1;
+        }
+        $activeApps = $this->pet->relationLoaded('adoptionApplications')
+            ? $this->pet->adoptionApplications->whereIn('status', ['pending', 'under_review', 'approved'])
+            : AdoptionApplication::where('pet_id', $this->pet_id)->whereIn('status', ['pending', 'under_review', 'approved'])->get();
+
+        $sorted = $activeApps->sort(function ($a, $b) {
+            $scoreA = $a->compatibility_score ?? 0;
+            $scoreB = $b->compatibility_score ?? 0;
+            if ($scoreA != $scoreB) {
+                return $scoreB <=> $scoreA;
+            }
+            return $a->id <=> $b->id;
+        })->values();
+
+        $index = $sorted->search(fn ($app) => $app->id === $this->id);
+        return $index !== false ? $index + 1 : 1;
+    }
+
+    public function getIsLeadCandidateAttribute(): bool
+    {
+        return $this->queue_position === 1;
+    }
 
     public function getIsFinalizedAttribute(): bool
     {
