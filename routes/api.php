@@ -155,6 +155,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 'message' => 'The adoption contract must be digitally signed by the adopter before downloading.',
             ], 422);
         }
+        if (!$app->is_finalized) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Official adoption contract is locked until CAWS staff physically verifies your original documents and finalizes the handover at the meet-and-greet event.',
+            ], 403);
+        }
         \Illuminate\Support\Facades\URL::forceRootUrl($request->root());
         return response()->json([
             'url' => \Illuminate\Support\Facades\URL::temporarySignedRoute('contract.download', now()->addMinutes(60), ['id' => $id])

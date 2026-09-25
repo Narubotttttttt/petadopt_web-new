@@ -1,4 +1,25 @@
 <x-app-layout>
+    <script>
+        window.openHandoverModal = window.openHandoverModal || function() {
+            const modal = document.getElementById('handoverSigningModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'block';
+                document.body.classList.add('overflow-hidden');
+                if (typeof initHandoverCanvas === 'function') {
+                    setTimeout(initHandoverCanvas, 50);
+                }
+            }
+        };
+        window.closeHandoverModal = window.closeHandoverModal || function() {
+            const modal = document.getElementById('handoverSigningModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                document.body.classList.remove('overflow-hidden');
+            }
+        };
+    </script>
     <div class="w-full py-8 px-4 sm:px-6 lg:px-8 animate-fade-in">
         <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -9,20 +30,34 @@
             </div>
             <div class="space-x-2 flex items-center">
                 @if(in_array($application->status, ['approved', 'adopted']))
-                    @if($application->signature_path)
+                    @if($application->is_finalized)
                         <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white transition shadow-2xs">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
-                            <span>Print Contract</span>
+                            <span>Print Official Contract</span>
                         </a>
                     @else
-                        <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs sm:text-sm font-bold border border-amber-200 dark:border-amber-800/60 cursor-not-allowed opacity-90" title="The adopter must digitally sign the agreement via the mobile app before contract can be printed">
-                            <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span>Awaiting Adopter Signature</span>
-                        </span>
+                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="pointer-events-none">Verify & Finalize Handover</span>
+                        </button>
+                        @if($application->signature_path)
+                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition shadow-2xs" title="Pre-signed by adopter; pending physical verification">
+                                <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <span>Preview Draft Contract</span>
+                            </a>
+                        @else
+                            <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs sm:text-sm font-bold border border-amber-200 dark:border-amber-800/60 cursor-not-allowed opacity-90" title="The adopter can digitally pre-sign the agreement via the mobile app before contract can be printed">
+                                <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span>Awaiting Adopter Pre-Signature</span>
+                            </span>
+                        @endif
                     @endif
                 @endif
                 <a href="{{ route('adoption-applications.index') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
@@ -63,6 +98,155 @@
                                 </a>
                             @endif
                         </div>
+                    </div>
+                </div>
+
+                {{-- Adoption Contract & Document Verification Card --}}
+                <div id="in-person-handover-card" class="bg-white dark:bg-[#0e1d20] rounded-2xl border-2 border-emerald-500/40 dark:border-emerald-500/30 dark:border-slate-800 shadow-card p-6 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            <span>Adoption Contract & In-Person Verification</span>
+                        </h2>
+                        @if(in_array($application->status, ['approved', 'adopted']) && $application->signature_path)
+                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline flex items-center gap-1">
+                                <span>Preview Contract PDF</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            </a>
+                        @endif
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        {{-- 1. Adopter Signature Box --}}
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Adopter Agreement</span>
+                                @if($application->signature_path)
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Pre-Signed
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        Pending Pre-Sign
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($application->signature_path)
+                                <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center flex items-center justify-center min-h-[56px]">
+                                    <img src="{{ $application->signature_url }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer filter dark:invert dark:brightness-200 transition-all hover:scale-105" onclick="openDocModal('{{ $application->signature_url }}', 'Adopter Digital Signature')" alt="Adopter Signature" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    <p class="font-bold text-slate-800 dark:text-white">{{ $application->applicant_name }}</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Signed: {{ $application->signed_at ? $application->signed_at->format('M d, Y h:i A') : 'On file' }}</p>
+                                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">Pre-signed via mobile app in advance.</p>
+                                </div>
+                            @else
+                                <div class="py-3 px-2 text-center text-slate-400 dark:text-slate-500 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                                    <p class="text-xs font-bold text-amber-700 dark:text-amber-400">Pre-Signature Pending</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">The applicant can pre-sign the agreement on their mobile app in advance prior to the meet-and-greet event.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- 2. Physical Document Verification & Staff Endorsement Box --}}
+                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. Venue Verification & Endorsement</span>
+                                @if($application->is_finalized)
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Handover Finalized
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Pending Verification
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($application->is_finalized)
+                                @php
+                                    $staffSigSrc = $application->staff_signature_url;
+                                    $staffSigner = $application->staff ?: Auth::user();
+                                    $staffRepName = $application->staff_name ?: ($staffSigner?->name ?? 'CAWS Representative');
+                                    $signerRoleTitle = ($staffSigner && $staffSigner->role === 'admin') 
+                                        ? 'Shelter Administrator' 
+                                        : ($staffSigner?->staffProfile?->position_title ?? 'CAWS Authorized Representative');
+                                    $verifierName = $application->documentVerifier?->name ?? $staffRepName;
+                                @endphp
+                                <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center flex items-center justify-center min-h-[56px]">
+                                    <img src="{{ $staffSigSrc }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer filter dark:invert dark:brightness-200 transition-all hover:scale-105" onclick="openDocModal('{{ $staffSigSrc }}', 'Staff Digital Signature')" alt="Staff Signature" />
+                                </div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+                                    <p class="font-bold text-slate-800 dark:text-white">{{ $staffRepName }}</p>
+                                    <p class="text-[10px] text-[#199CA4] dark:text-[#41C1CB] font-semibold">{{ $signerRoleTitle }}</p>
+                                    <div class="pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] space-y-0.5">
+                                        <p class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            Original Valid ID Physically Verified
+                                        </p>
+                                        <p class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            Original Barangay Certificate Verified
+                                        </p>
+                                        <p class="text-slate-400 dark:text-slate-500 pt-0.5">
+                                            Verified by {{ $verifierName }} on {{ $application->documents_verified_at?->format('M d, Y h:i A') }}
+                                        </p>
+                                        <p class="text-emerald-700 dark:text-emerald-300 font-medium">Official Contract PDF unlocked for adopter.</p>
+                                    </div>
+                                    <div class="pt-2 flex items-center gap-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="flex-1 py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5 text-[#199CA4] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                            <span class="pointer-events-none">Update / Re-Sign</span>
+                                        </button>
+                                        <form action="{{ route('adoption-applications.reset-handover', $application) }}" method="POST" class="inline" onsubmit="return confirm('Reset handover verification? This will clear the staff endorsement signature, re-lock the contract, and allow you to re-verify or test again.');">
+                                            @csrf
+                                            <button type="submit" class="py-1.5 px-2.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100 text-amber-800 dark:text-amber-300 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer" title="Reset signature and verification to re-test">
+                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span class="pointer-events-none">Reset Handover</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @elseif(in_array($application->status, ['approved', 'adopted']))
+                                <div class="space-y-3">
+                                    <div class="space-y-2 bg-white dark:bg-[#0a171a] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Physical In-Person Inspection</p>
+                                            <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">Pending Inspection</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                            Original Valid ID and Barangay Certificate must be inspected and endorsed in person before releasing the pet.
+                                        </p>
+                                    </div>
+
+                                    <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span class="pointer-events-none">Verify Documents & Sign Handover</span>
+                                    </button>
+
+                                    @if(Auth::user()?->digital_signature_path)
+                                        <p class="text-[10px] text-center text-slate-400">
+                                            Saved signature ready ({{ Auth::user()->name }}). You can endorse with 1 click or draw a new signature on the spot.
+                                        </p>
+                                    @else
+                                        <p class="text-[10px] text-center text-emerald-600 dark:text-emerald-400 font-medium">
+                                            No profile signature required in advance. You can draw your official signature directly inside the signing modal.
+                                        </p>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="py-3 px-2 text-center text-slate-400 dark:text-slate-500 bg-slate-100/50 dark:bg-slate-800/30 rounded-xl">
+                                    <p class="text-xs font-medium">Physical verification and CAWS endorsement are completed at the meet-and-greet event after application acceptance.</p>
+                                </div>
+                            @endif
+                        </div>
+
                     </div>
                 </div>
 
@@ -489,111 +673,6 @@
                     </div>
                 </div>
 
-                {{-- Adoption Contract & Digital Signatures Card --}}
-                <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-6 space-y-5">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                            <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            <span>Adoption Contract Digital Signatures</span>
-                        </h2>
-                        @if(in_array($application->status, ['approved', 'adopted']))
-                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline flex items-center gap-1">
-                                <span>Preview Full PDF</span>
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                            </a>
-                        @endif
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        
-                        {{-- 1. Adopter Signature Box --}}
-                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Adopter Signature</span>
-                                @if($application->signature_path)
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        Signed
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        Required · Pending
-                                    </span>
-                                @endif
-                            </div>
-
-                            @if($application->signature_path)
-                                <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
-                                    <img src="{{ $application->signature_url }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer" onclick="openDocModal('{{ $application->signature_url }}', 'Adopter Digital Signature')" alt="Adopter Signature" />
-                                </div>
-                                <div class="text-[11px] text-slate-500 dark:text-slate-400">
-                                    <p class="font-bold text-slate-800 dark:text-white">{{ $application->applicant_name }}</p>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">Signed: {{ $application->signed_at ? $application->signed_at->format('M d, Y h:i A') : 'On file' }}</p>
-                                </div>
-                            @else
-                                <div class="py-3 px-2 text-center text-slate-400 dark:text-slate-500 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/40">
-                                    <p class="text-xs font-bold text-amber-700 dark:text-amber-400">Digital Signature Required</p>
-                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">The applicant must review and digitally sign the adoption agreement in the mobile app before contract release.</p>
-                                </div>
-                            @endif
-                        </div>
-
-                        {{-- 2. Staff Signature Box --}}
-                        <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. CAWS Staff Representative</span>
-                                @if($application->staff_signature_path || ($application->staff && $application->staff->digital_signature_path))
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        Endorsed
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                        Pending Staff Sign
-                                    </span>
-                                @endif
-                            </div>
-
-                            @if($application->staff_signature_path || ($application->staff && $application->staff->digital_signature_path))
-                                @php
-                                    $staffSigSrc = $application->staff_signature_url ?: ($application->staff ? $application->staff->digital_signature_url : null);
-                                    $staffSigner = $application->staff ?: Auth::user();
-                                    $staffRepName = $application->staff_name ?: ($staffSigner?->name ?? 'CAWS Representative');
-                                    $signerRoleTitle = ($staffSigner && $staffSigner->role === 'admin') 
-                                        ? 'Shelter Administrator' 
-                                        : ($staffSigner?->staffProfile?->position_title ?? 'CAWS Authorized Representative');
-                                @endphp
-                                <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
-                                    <img src="{{ $staffSigSrc }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer" onclick="openDocModal('{{ $staffSigSrc }}', 'Staff Digital Signature')" alt="Staff Signature" />
-                                </div>
-                                <div class="text-[11px] text-slate-500 dark:text-slate-400">
-                                    <p class="font-bold text-slate-800 dark:text-white">{{ $staffRepName }}</p>
-                                    <p class="text-[10px] text-[#199CA4] dark:text-[#41C1CB] font-semibold mt-0.5">{{ $signerRoleTitle }}</p>
-                                </div>
-                            @else
-                                <div class="py-2 text-center text-slate-400 dark:text-slate-500 space-y-2">
-                                    <p class="text-xs font-semibold">Staff signature not attached.</p>
-                                    @if(Auth::user()?->digital_signature_path)
-                                        <form action="{{ route('adoption-applications.sign-as-staff', $application) }}" method="POST">
-                                            @csrf
-                                            <input type="hidden" name="use_saved_signature" value="1">
-                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-bold shadow-2xs transition cursor-pointer">
-                                                Attach My Saved Signature
-                                            </button>
-                                        </form>
-                                    @else
-                                        <a href="{{ route('profile.edit') }}" class="inline-block text-[11px] text-[#199CA4] hover:underline font-bold">
-                                            Set up signature in Profile
-                                        </a>
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-
-                    </div>
-                </div>
             </div>
 
             {{-- Decision Sidebar --}}
@@ -621,6 +700,45 @@
                     <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adoption Decision & Final Screening</h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review applicant screening details and record the adoption decision.</p>
                 </div>
+
+                {{-- In-Person Handover Quick Action Widget --}}
+                @if(in_array($application->status, ['approved', 'adopted']))
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#133036] dark:to-[#17454d] border border-[#199CA4]/30 space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Meet-and-Greet Handover</span>
+                            @if($application->is_finalized)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                    Handover Finalized
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                    Pending Check
+                                </span>
+                            @endif
+                        </div>
+
+                        <div class="text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                            <p class="font-bold text-slate-900 dark:text-white">Applicant: {{ $application->applicant_name }}</p>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                                Agreement: {{ $application->signature_path ? 'Pre-signed via mobile' : 'Pre-signature pending' }}
+                            </p>
+                        </div>
+
+                        @if($application->is_finalized)
+                            <div class="pt-2 border-t border-[#199CA4]/20 flex items-center justify-between">
+                                <span class="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold">Contract Unlocked</span>
+                                <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition">
+                                    Print Contract
+                                </a>
+                            </div>
+                        @else
+                            <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer">
+                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="pointer-events-none">Verify & Finalize Handover</span>
+                            </button>
+                        @endif
+                    </div>
+                @endif
 
                 <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-4">
                     @csrf
@@ -748,18 +866,337 @@
         <div class="relative max-w-4xl w-full bg-white dark:bg-[#0e1d20] border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 px-2">
                 <h3 id="docModalTitle" class="text-sm font-extrabold text-slate-800 dark:text-white">Document Preview</h3>
-                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer"></button>
+                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer" aria-label="Close">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
             <div class="py-4 flex justify-center max-h-[75vh] overflow-auto">
-                <img id="docModalImage" src="" class="max-w-full max-h-[70vh] rounded-2xl object-contain shadow-md" />
+                <img id="docModalImage" src="" class="max-w-full max-h-[70vh] rounded-2xl object-contain shadow-md transition-all" />
             </div>
         </div>
     </div>
 
+    {{-- In-Person Handover & Staff Signing Modal --}}
+    @if(in_array($application->status, ['approved', 'adopted']))
+    <div id="handoverSigningModal" 
+         class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm overflow-y-auto p-4 sm:p-6" 
+         style="display: none;"
+         onclick="if (event.target === this) closeHandoverModal()">
+        
+        <div class="min-h-full flex items-center justify-center pointer-events-none py-6">
+            <div class="relative w-full max-w-xl bg-white dark:bg-[#0e1d20] border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl transition-all pointer-events-auto"
+                 onclick="event.stopPropagation()">
+                
+                {{-- Modal Header --}}
+                <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-800 dark:text-white">
+                            Adoption Handover & Staff Endorsement
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Pet: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $application->pet->name ?? 'Pet #' . $application->pet_id }}</span> • 
+                            Adopter: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $application->applicant_name }}</span>
+                        </p>
+                    </div>
+                    <button type="button" onclick="closeHandoverModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer" aria-label="Close">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                {{-- Modal Form --}}
+                <form id="handoverFinalizeForm" action="{{ route('adoption-applications.finalize-handover', $application) }}" method="POST" onsubmit="return handleHandoverSubmit(event)" class="p-6 space-y-5">
+                    @csrf
+                    <input type="hidden" name="use_saved_signature" id="useSavedSignatureInput" value="{{ Auth::user()?->digital_signature_path ? '1' : '0' }}">
+                    <input type="hidden" name="signature_data" id="modalSignatureDataInput">
+
+                    {{-- Step 1: Physical Document Inspection --}}
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Step 1: Physical Inspection Checklist</span>
+                            <span class="text-[10px] font-bold text-slate-400">Required</span>
+                        </div>
+                        <div class="space-y-2.5 bg-slate-50 dark:bg-[#12272b] p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <label class="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                                <input type="checkbox" name="id_document_verified" id="modalIdVerifiedCheck" value="1" {{ $application->id_document_verified ? 'checked' : '' }} required class="mt-0.5 rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
+                                <span>Original <strong>Valid Government ID</strong> physically inspected and verified against application details.</span>
+                            </label>
+                            <label class="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                                <input type="checkbox" name="barangay_cert_verified" id="modalCertVerifiedCheck" value="1" {{ $application->barangay_cert_verified ? 'checked' : '' }} required class="mt-0.5 rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
+                                <span>Original <strong>Barangay Certificate of Residency</strong> physically inspected and verified.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Step 2: Signature Endorsement --}}
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Step 2: Staff Endorsement Signature</span>
+                            
+                            {{-- Toggle between Saved and Draw if user has saved signature --}}
+                            @if(Auth::user()?->digital_signature_path)
+                                <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-[11px] font-bold">
+                                    <button type="button" 
+                                            id="tabSavedSigBtn"
+                                            onclick="switchHandoverSigMode('saved')"
+                                            class="px-2.5 py-1 rounded-lg transition cursor-pointer bg-white dark:bg-[#199CA4] text-slate-900 dark:text-white shadow-2xs">
+                                        Saved Signature
+                                    </button>
+                                    <button type="button" 
+                                            id="tabDrawSigBtn"
+                                            onclick="switchHandoverSigMode('draw')"
+                                            class="px-2.5 py-1 rounded-lg transition cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white">
+                                        Draw New
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Option A: Saved Signature View --}}
+                        @if(Auth::user()?->digital_signature_path)
+                            <div id="handoverSavedSigView" class="space-y-2">
+                                <div class="p-3.5 bg-slate-50 dark:bg-[#12272b] rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
+                                    <div class="w-32 h-16 bg-white dark:bg-[#0a171a] rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1.5 shrink-0">
+                                        @if(Auth::user()?->digital_signature_url)
+                                            <img src="{{ Auth::user()->digital_signature_url }}" alt="Saved Signature" class="max-h-full max-w-full object-contain filter dark:invert dark:brightness-200">
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 text-xs">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-bold text-slate-800 dark:text-white">{{ Auth::user()?->name }}</span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                Verified on File
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                            Authorized representative signature will be affixed to the legal adoption contract.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Option B: Drawing Canvas Pad --}}
+                        <div id="handoverDrawSigView" class="space-y-2 {{ Auth::user()?->digital_signature_path ? 'hidden' : '' }}">
+                            <div class="relative rounded-2xl border border-slate-300 dark:border-slate-600 bg-white p-1 overflow-hidden shadow-2xs">
+                                <canvas id="handoverSignatureCanvas" class="w-full h-36 cursor-crosshair touch-none block bg-white"></canvas>
+                                
+                                {{-- Watermark / Guide Line --}}
+                                <div class="absolute bottom-6 left-6 right-6 border-b border-dashed border-slate-300 pointer-events-none flex justify-between items-center text-[10px] text-slate-400">
+                                    <span>Sign on the line above</span>
+                                    <span>Authorized Staff Signature</span>
+                                </div>
+
+                                {{-- Floating Clear Pad Button --}}
+                                <button type="button" onclick="clearHandoverSignature()" class="absolute top-2 right-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shadow-2xs">
+                                    Clear Pad
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs pt-1">
+                                <label class="flex items-center gap-2 text-slate-600 dark:text-slate-300 cursor-pointer select-none text-[11px]">
+                                    <input type="checkbox" name="save_signature_to_profile" value="1" checked class="rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
+                                    <span>Save this signature to my staff profile for future handovers</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Modal Footer Actions --}}
+                    <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+                        <button type="button" onclick="closeHandoverModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
+                            Cancel
+                        </button>
+                        <button type="submit" id="handoverSubmitBtn" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span id="handoverSubmitText" class="pointer-events-none">Confirm & Finalize Handover</span>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    @endif
+
     <script>
+        let handoverSigMode = '{{ Auth::user()?->digital_signature_path ? 'saved' : 'draw' }}';
+        let handoverCanvas = null;
+        let handoverCtx = null;
+        let hasDrawnHandoverSig = false;
+
+        window.openHandoverModal = function() {
+            const modal = document.getElementById('handoverSigningModal');
+            if (!modal) {
+                console.warn('[HandoverModal] modal element #handoverSigningModal not found');
+                return;
+            }
+            modal.classList.remove('hidden');
+            modal.style.display = 'block';
+            document.body.classList.add('overflow-hidden');
+            if (handoverSigMode === 'draw') {
+                setTimeout(initHandoverCanvas, 50);
+            }
+        };
+
+        window.closeHandoverModal = function() {
+            const modal = document.getElementById('handoverSigningModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            document.body.classList.remove('overflow-hidden');
+        };
+
+        window.switchHandoverSigMode = function(mode) {
+            handoverSigMode = mode;
+            const savedInput = document.getElementById('useSavedSignatureInput');
+            const savedView = document.getElementById('handoverSavedSigView');
+            const drawView = document.getElementById('handoverDrawSigView');
+            const tabSaved = document.getElementById('tabSavedSigBtn');
+            const tabDraw = document.getElementById('tabDrawSigBtn');
+
+            if (mode === 'saved') {
+                if (savedInput) savedInput.value = '1';
+                if (savedView) savedView.classList.remove('hidden');
+                if (drawView) drawView.classList.add('hidden');
+                if (tabSaved) {
+                    tabSaved.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer bg-white dark:bg-[#199CA4] text-slate-900 dark:text-white shadow-2xs';
+                }
+                if (tabDraw) {
+                    tabDraw.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white';
+                }
+            } else {
+                if (savedInput) savedInput.value = '0';
+                if (savedView) savedView.classList.add('hidden');
+                if (drawView) drawView.classList.remove('hidden');
+                if (tabSaved) {
+                    tabSaved.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white';
+                }
+                if (tabDraw) {
+                    tabDraw.className = 'px-2.5 py-1 rounded-lg transition cursor-pointer bg-white dark:bg-[#199CA4] text-slate-900 dark:text-white shadow-2xs';
+                }
+                setTimeout(initHandoverCanvas, 50);
+            }
+        };
+
+        function initHandoverCanvas() {
+            const canvas = document.getElementById('handoverSignatureCanvas');
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0) {
+                setTimeout(initHandoverCanvas, 50);
+                return;
+            }
+
+            const ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(rect.width * ratio);
+            canvas.height = Math.round(rect.height * ratio);
+            const ctx = canvas.getContext('2d');
+            ctx.scale(ratio, ratio);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#0f172a';
+            handoverCtx = ctx;
+            handoverCanvas = canvas;
+
+            if (!canvas._listenersAttached) {
+                let isDrawing = false;
+                const getPos = (e) => {
+                    const r = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: clientX - r.left, y: clientY - r.top };
+                };
+                const start = (e) => {
+                    e.preventDefault();
+                    isDrawing = true;
+                    hasDrawnHandoverSig = true;
+                    const pos = getPos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                };
+                const draw = (e) => {
+                    if (!isDrawing) return;
+                    e.preventDefault();
+                    const pos = getPos(e);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                };
+                const stop = () => { isDrawing = false; };
+
+                canvas.addEventListener('mousedown', start);
+                canvas.addEventListener('mousemove', draw);
+                window.addEventListener('mouseup', stop);
+
+                canvas.addEventListener('touchstart', start, { passive: false });
+                canvas.addEventListener('touchmove', draw, { passive: false });
+                window.addEventListener('touchend', stop);
+                canvas._listenersAttached = true;
+            }
+        }
+
+        window.clearHandoverSignature = function() {
+            if (handoverCanvas && handoverCtx) {
+                handoverCtx.save();
+                handoverCtx.setTransform(1, 0, 0, 1, 0, 0);
+                handoverCtx.clearRect(0, 0, handoverCanvas.width, handoverCanvas.height);
+                handoverCtx.restore();
+                hasDrawnHandoverSig = false;
+            }
+        };
+
+        window.handleHandoverSubmit = function(e) {
+            const idCheck = document.getElementById('modalIdVerifiedCheck');
+            const certCheck = document.getElementById('modalCertVerifiedCheck');
+            if (!idCheck || !idCheck.checked || !certCheck || !certCheck.checked) {
+                e.preventDefault();
+                alert('Please physically inspect and verify both the original Valid ID and Barangay Certificate before finalizing.');
+                return false;
+            }
+
+            if (handoverSigMode === 'draw') {
+                if (!hasDrawnHandoverSig || !handoverCanvas) {
+                    e.preventDefault();
+                    alert('Please draw your official staff signature before submitting.');
+                    return false;
+                }
+                const sigInput = document.getElementById('modalSignatureDataInput');
+                if (sigInput) {
+                    sigInput.value = handoverCanvas.toDataURL('image/png');
+                }
+            }
+
+            const submitBtn = document.getElementById('handoverSubmitBtn');
+            const submitText = document.getElementById('handoverSubmitText');
+            if (submitBtn) submitBtn.disabled = true;
+            if (submitText) submitText.innerText = 'Finalizing Handover...';
+            return true;
+        };
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeHandoverModal();
+            }
+        });
+
+        // Event delegation fallback for buttons
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-trigger="open-handover"]');
+            if (btn) {
+                e.preventDefault();
+                window.openHandoverModal();
+            }
+        });
+
         function openDocModal(src, title) {
-            document.getElementById('docModalImage').src = src;
+            const img = document.getElementById('docModalImage');
+            img.src = src;
             document.getElementById('docModalTitle').innerText = title;
+            if (title && title.toLowerCase().includes('signature')) {
+                img.classList.add('filter', 'dark:invert', 'dark:brightness-200');
+            } else {
+                img.classList.remove('filter', 'dark:invert', 'dark:brightness-200');
+            }
             document.getElementById('docModal').classList.remove('hidden');
         }
         function closeDocModal() {

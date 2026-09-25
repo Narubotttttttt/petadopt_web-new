@@ -82,6 +82,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/signature', [ProfileController::class, 'updateSignature'])->name('profile.signature.update');
+    Route::delete('/profile/signature', [ProfileController::class, 'destroySignature'])->name('profile.signature.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/pets/create', [PetController::class, 'create'])->name('pets.create');
@@ -93,7 +94,9 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/adoption-applications/mark-viewed', [\App\Http\Controllers\AdoptionApplicationController::class, 'markViewed'])->name('adoption-applications.mark-viewed');
     Route::get('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'show'])->name('adoption-applications.show');
     Route::patch('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'update'])->name('adoption-applications.update');
+    Route::post('/adoption-applications/{application}/finalize-handover', [\App\Http\Controllers\AdoptionApplicationController::class, 'finalizeHandover'])->name('adoption-applications.finalize-handover');
     Route::post('/adoption-applications/{application}/sign-as-staff', [\App\Http\Controllers\AdoptionApplicationController::class, 'signAsStaff'])->name('adoption-applications.sign-as-staff');
+    Route::post('/adoption-applications/{application}/reset-handover', [\App\Http\Controllers\AdoptionApplicationController::class, 'resetHandover'])->name('adoption-applications.reset-handover');
     Route::get('/adoption-applications/{application}/contract', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('adoption-applications.contract');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');

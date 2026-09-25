@@ -36,14 +36,21 @@ class AdoptionApplication extends Model
         'evaluation_recommendation',
         'evaluation_notes',
         'evaluated_at',
+        'documents_verified_at',
+        'documents_verified_by',
+        'id_document_verified',
+        'barangay_cert_verified',
     ];
 
     protected $casts = [
-        'scheduled_at'        => 'datetime',
-        'signed_at'           => 'datetime',
-        'staff_signed_at'     => 'datetime',
-        'evaluated_at'        => 'datetime',
-        'compatibility_score' => 'float',
+        'scheduled_at'           => 'datetime',
+        'signed_at'              => 'datetime',
+        'staff_signed_at'        => 'datetime',
+        'evaluated_at'           => 'datetime',
+        'documents_verified_at'  => 'datetime',
+        'id_document_verified'   => 'boolean',
+        'barangay_cert_verified' => 'boolean',
+        'compatibility_score'    => 'float',
     ];
 
     protected $appends = [
@@ -51,7 +58,19 @@ class AdoptionApplication extends Model
         'staff_signature_url',
         'valid_id_url',
         'barangay_certificate_url',
+        'is_finalized',
+        'contract_unlocked',
     ];
+
+    public function getIsFinalizedAttribute(): bool
+    {
+        return !empty($this->staff_signature_path) && !empty($this->documents_verified_at);
+    }
+
+    public function getContractUnlockedAttribute(): bool
+    {
+        return $this->is_finalized;
+    }
 
     public function getSignatureUrlAttribute(): ?string
     {
@@ -67,20 +86,16 @@ class AdoptionApplication extends Model
 
     public function getStaffSignatureUrlAttribute(): ?string
     {
+        if (!$this->staff_signature_path) {
+            return null;
+        }
+        if (str_starts_with($this->staff_signature_path, 'http')) {
+            return $this->staff_signature_path;
+        }
         $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
-        if ($this->staff_signature_path) {
-            if (str_starts_with($this->staff_signature_path, 'http')) {
-                return $this->staff_signature_path;
-            }
-            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->staff_signature_path)) {
-                return $root . '/storage/' . ltrim($this->staff_signature_path, '/');
-            }
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->staff_signature_path)) {
+            return $root . '/storage/' . ltrim($this->staff_signature_path, '/');
         }
-
-        if ($this->staff && $this->staff->digital_signature_path) {
-            return $this->staff->digital_signature_url;
-        }
-
         return null;
     }
 
@@ -126,5 +141,10 @@ class AdoptionApplication extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'applicant_email', 'email');
+    }
+
+    public function documentVerifier()
+    {
+        return $this->belongsTo(User::class, 'documents_verified_by');
     }
 }

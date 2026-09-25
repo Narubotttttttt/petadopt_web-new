@@ -117,6 +117,32 @@ class ProfileController extends Controller
     }
 
     /**
+     * Remove the user's saved digital signature.
+     */
+    public function destroySignature(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->staffProfile && $user->staffProfile->digital_signature_path) {
+            if (Storage::disk('public')->exists($user->staffProfile->digital_signature_path)) {
+                Storage::disk('public')->delete($user->staffProfile->digital_signature_path);
+            }
+            $user->staffProfile->digital_signature_path = null;
+            $user->staffProfile->save();
+        }
+
+        if ($user->adoptersProfile && $user->adoptersProfile->digital_signature_path) {
+            if (Storage::disk('public')->exists($user->adoptersProfile->digital_signature_path)) {
+                Storage::disk('public')->delete($user->adoptersProfile->digital_signature_path);
+            }
+            $user->adoptersProfile->digital_signature_path = null;
+            $user->adoptersProfile->save();
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'signature-deleted');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

@@ -381,15 +381,95 @@ class AdoptionApplicationTest extends TestCase
         $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
 
         $response->assertStatus(200);
-        $response->assertSee('Awaiting Adopter Signature');
-        $response->assertDontSee('Print Contract');
+        $response->assertSee('Awaiting Adopter Pre-Signature');
+        $response->assertDontSee('Print Official Contract');
 
-        // Now attach signature
+        // Now attach adopter pre-signature
         $app->update(['signature_path' => 'signatures/dummy.png']);
 
         $responseWithSig = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
         $responseWithSig->assertStatus(200);
-        $responseWithSig->assertSee('Print Contract');
+        $responseWithSig->assertSee('Preview Draft Contract');
+
+        // Now finalize handover
+        $app->update([
+            'staff_signature_path' => 'signatures/staff_dummy.png',
+            'documents_verified_at' => now(),
+            'id_document_verified' => true,
+            'barangay_cert_verified' => true,
+        ]);
+
+        $responseWithFinalized = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
+        $responseWithFinalized->assertStatus(200);
+        $responseWithFinalized->assertSee('Print Official Contract');
+    }
+
+    public function test_contract_download_is_locked_for_adopter_until_physical_verification_finalized(): void
+    {
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'email' => 'adopter_pre_sign@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Bantay',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Adopter Pre Sign',
+            'applicant_email' => $adopterUser->email,
+            'status' => 'approved',
+            'signature_path' => 'signatures/adopter_sig.png',
+            'signed_at' => now(),
+        ]);
+
+        // 1. Unfinalized (pre-signed only): API contract endpoint returns 403
+        $apiResponse = $this->actingAs($adopterUser, 'sanctum')
+            ->getJson("/api/adoption-applications/{$app->id}/contract");
+
+        $apiResponse->assertStatus(403);
+        $apiResponse->assertJsonFragment([
+            'success' => false,
+        ]);
+
+        // 2. Direct contract download route returns 403 for adopter
+        $downloadResponse = $this->actingAs($adopterUser)->get(route('contract.download', [
+            'id' => $app->id,
+        ]));
+        $downloadResponse->assertStatus(403);
+
+        // 3. Staff verifies documents and finalizes handover
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+        \App\Models\StaffProfile::create([
+            'user_id' => $staff->id,
+            'staff_code' => 'STF-0099',
+            'full_name' => $staff->name,
+            'status' => 'active',
+            'digital_signature_path' => 'signatures/staff_saved.png',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('public')->put('signatures/staff_saved.png', 'fake_staff_sig');
+
+        $finalizeResponse = $this->actingAs($staff)->post(route('adoption-applications.finalize-handover', $app), [
+            'id_document_verified' => '1',
+            'barangay_cert_verified' => '1',
+            'use_saved_signature' => '1',
+        ]);
+
+        $finalizeResponse->assertRedirect();
+        $this->assertTrue($app->fresh()->is_finalized);
+
+        // 4. Now API contract endpoint unlocks for adopter
+        $apiUnlocked = $this->actingAs($adopterUser, 'sanctum')
+            ->getJson("/api/adoption-applications/{$app->id}/contract");
+        $apiUnlocked->assertStatus(200);
+        $apiUnlocked->assertJsonStructure(['url']);
     }
 
     public function test_sidebar_displays_red_circle_when_new_request_exists(): void
@@ -754,6 +834,180 @@ class AdoptionApplicationTest extends TestCase
         $response->assertSee('Second Applicant');
         $response->assertSee('75% Match');
         $response->assertSee('Approve and Schedule Final Screening');
+    }
+
+    public function test_adopter_and_staff_signatures_render_with_dark_mode_visibility_classes_on_show_page(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name'   => 'Bella',
+            'type'   => 'dog',
+            'status' => 'available',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id'                 => $pet->id,
+            'applicant_name'         => 'Test Adopter',
+            'applicant_email'        => 'adopter@example.com',
+            'status'                 => 'approved',
+            'signature_path'         => 'signatures/adopter_sig.png',
+            'staff_signature_path'   => 'signatures/staff_sig.png',
+            'id_document_verified'   => true,
+            'barangay_cert_verified' => true,
+            'documents_verified_at'  => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
+
+        $response->assertStatus(200);
+        $response->assertSee('filter dark:invert dark:brightness-200');
+        $response->assertSee('Adopter Digital Signature');
+        $response->assertSee('Staff Digital Signature');
+    }
+
+    public function test_staff_can_finalize_handover_by_drawing_new_signature_and_saving_to_profile(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Milo',
+            'type' => 'cat',
+            'status' => 'available',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Sarah Connor',
+            'applicant_email' => 'sarah@example.com',
+            'status' => 'approved',
+            'signature_path' => 'signatures/adopter_sig.png',
+        ]);
+
+        // 1x1 transparent PNG base64
+        $fakeBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $response = $this->actingAs($staff)->post(route('adoption-applications.finalize-handover', $app), [
+            'id_document_verified' => '1',
+            'barangay_cert_verified' => '1',
+            'use_saved_signature' => '0',
+            'signature_data' => $fakeBase64,
+            'save_signature_to_profile' => '1',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertTrue($app->fresh()->is_finalized);
+        $this->assertEquals('adopted', $pet->fresh()->status);
+        $this->assertNotNull($app->fresh()->staff_signature_path);
+
+        // Verify it synced to staff profile
+        $staffProfile = $staff->fresh()->staffProfile;
+        $this->assertNotNull($staffProfile);
+        $this->assertEquals($app->fresh()->staff_signature_path, $staffProfile->digital_signature_path);
+    }
+
+    public function test_show_page_displays_handover_signing_modal_for_approved_application(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Charlie',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'John Wick',
+            'applicant_email' => 'wick@example.com',
+            'status' => 'approved',
+            'signature_path' => 'signatures/wick_sig.png',
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
+
+        $response->assertStatus(200);
+        $response->assertSee('Adoption Handover');
+        $response->assertSee('handoverSignatureCanvas');
+        $response->assertSee('Valid Government ID');
+        $response->assertSee('Barangay Certificate of Residency');
+        $response->assertSee('Sign Handover');
+    }
+
+    public function test_staff_can_reset_finalized_handover_to_retest(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Ghost',
+            'type' => 'dog',
+            'status' => 'adopted',
+        ]);
+
+        $app = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Jon Snow',
+            'applicant_email' => 'jon@example.com',
+            'status' => 'approved',
+            'signature_path' => 'signatures/adopter_sig.png',
+            'staff_signature_path' => 'signatures/staff_sig.png',
+            'staff_id' => $staff->id,
+            'staff_name' => $staff->name,
+            'staff_signed_at' => now(),
+            'documents_verified_at' => now(),
+            'id_document_verified' => true,
+            'barangay_cert_verified' => true,
+        ]);
+
+        $this->assertTrue($app->is_finalized);
+
+        $response = $this->actingAs($staff)->post(route('adoption-applications.reset-handover', $app));
+
+        $response->assertRedirect();
+        $this->assertFalse($app->fresh()->is_finalized);
+        $this->assertNull($app->fresh()->staff_signature_path);
+        $this->assertNull($app->fresh()->documents_verified_at);
+        $this->assertEquals('available', $pet->fresh()->status);
+    }
+
+    public function test_user_can_remove_saved_signature_from_profile(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $profile = \App\Models\StaffProfile::create([
+            'user_id' => $staff->id,
+            'staff_code' => 'STF-TEST',
+            'full_name' => $staff->name,
+            'status' => 'active',
+            'digital_signature_path' => 'signatures/saved_sig.png',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('public')->put('signatures/saved_sig.png', 'fake_sig_content');
+
+        $response = $this->actingAs($staff)->delete(route('profile.signature.destroy'));
+
+        $response->assertRedirect(route('profile.edit'));
+        $response->assertSessionHas('status', 'signature-deleted');
+        $this->assertNull($profile->fresh()->digital_signature_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('signatures/saved_sig.png');
     }
 }
 

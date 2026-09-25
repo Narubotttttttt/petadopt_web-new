@@ -74,13 +74,6 @@ class AdoptionApplicationController extends Controller
 
         if ($willBeApproved && ! $wasApproved) {
             $data['approved_at'] = now();
-
-            if (!empty($currentUser->digital_signature_path) && empty($application->staff_signature_path)) {
-                $data['staff_signature_path'] = $currentUser->digital_signature_path;
-                $data['staff_id']             = $currentUser->id;
-                $data['staff_name']           = $currentUser->name;
-                $data['staff_signed_at']      = now();
-            }
         }
 
         $application->update($data);
@@ -165,65 +158,116 @@ class AdoptionApplicationController extends Controller
     }
 
     /**
-     * Staff signature endorsement for an adoption contract.
+     * Physically verify adopter documents and finalize adoption handover with staff signature endorsement.
      */
-    public function signAsStaff(Request $request, AdoptionApplication $application): RedirectResponse
+    public function finalizeHandover(Request $request, AdoptionApplication $application): RedirectResponse
     {
         $user = Auth::user();
 
+        $request->validate([
+            'id_document_verified'   => ['accepted'],
+            'barangay_cert_verified' => ['accepted'],
+        ], [
+            'id_document_verified.accepted'   => 'You must physically inspect and verify the applicant\'s original Valid ID.',
+            'barangay_cert_verified.accepted' => 'You must physically inspect and verify the applicant\'s original Barangay Certificate of Residency.',
+        ]);
+
+        $signaturePath = null;
         if ($request->boolean('use_saved_signature')) {
             if (empty($user->digital_signature_path) || !\Illuminate\Support\Facades\Storage::disk('public')->exists($user->digital_signature_path)) {
                 return back()->withErrors(['staff_signature' => 'No saved staff signature found on your profile. Please set your signature in Account Settings.']);
             }
-
-            $application->update([
-                'staff_signature_path' => $user->digital_signature_path,
-                'staff_id'             => $user->id,
-                'staff_name'           => $user->name,
-                'staff_signed_at'      => now(),
+            $signaturePath = $user->digital_signature_path;
+        } else {
+            $request->validate([
+                'signature_data' => ['required', 'string'],
+            ], [
+                'signature_data.required' => 'Please provide an official staff signature to finalize the adoption handover.',
             ]);
 
-            return back()->with('success', 'Official CAWS staff signature attached successfully.');
-        }
+            $sigData = $request->signature_data;
+            if (preg_match('/^data:image\/(\w+);base64,/', $sigData, $type)) {
+                $sigData = substr($sigData, strpos($sigData, ',') + 1);
+            }
+            $decoded = base64_decode($sigData);
+            if (!$decoded) {
+                return back()->withErrors(['staff_signature' => 'Invalid signature image data.']);
+            }
 
-        $request->validate([
-            'signature_data' => ['required', 'string'],
-        ]);
+            $fileName = 'signatures/staff_app_' . $application->id . '_' . time() . '.png';
+            \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decoded);
+            $signaturePath = $fileName;
 
-        $sigData = $request->signature_data;
-        if (preg_match('/^data:image\/(\w+);base64,/', $sigData, $type)) {
-            $sigData = substr($sigData, strpos($sigData, ',') + 1);
+            // Auto-sync to staff profile if they don't have one or requested to save
+            $staffProfile = $user->staffProfile ?: \App\Models\StaffProfile::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'staff_code' => \App\Models\StaffProfile::generateStaffCode($user->role ?? 'staff'),
+                    'full_name'  => $user->name,
+                    'status'     => 'active',
+                ]
+            );
+            if (empty($staffProfile->digital_signature_path) || $request->boolean('save_signature_to_profile')) {
+                $staffProfile->digital_signature_path = $fileName;
+                $staffProfile->save();
+            }
         }
-        $decoded = base64_decode($sigData);
-        if (!$decoded) {
-            return back()->withErrors(['staff_signature' => 'Invalid signature image data.']);
-        }
-
-        $fileName = 'signatures/staff_app_' . $application->id . '_' . time() . '.png';
-        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $decoded);
 
         $application->update([
-            'staff_signature_path' => $fileName,
-            'staff_id'             => $user->id,
-            'staff_name'           => $user->name,
-            'staff_signed_at'      => now(),
+            'staff_signature_path'   => $signaturePath,
+            'staff_id'               => $user->id,
+            'staff_name'             => $user->name,
+            'staff_signed_at'        => now(),
+            'documents_verified_at'  => now(),
+            'documents_verified_by'  => $user->id,
+            'id_document_verified'   => true,
+            'barangay_cert_verified' => true,
+            'status'                 => 'approved',
         ]);
 
-        // Auto-sync to staff profile if they don't have one
-        $staffProfile = $user->staffProfile ?: \App\Models\StaffProfile::firstOrCreate(
-            ['user_id' => $user->id],
-            [
-                'staff_code' => \App\Models\StaffProfile::generateStaffCode($user->role ?? 'staff'),
-                'full_name'  => $user->name,
-                'status'     => 'active',
-            ]
+        $application->pet?->update(['status' => 'adopted']);
+
+        $petName = $application->pet?->name ?? 'your pet';
+        \App\Services\FirebaseNotificationService::sendToUser(
+            $application->applicant_email,
+            "Adoption Finalized for {$petName}!",
+            "Congratulations! Your physical documents have been verified and adoption of {$petName} is finalized. Your official Adoption Contract PDF is now unlocked and available in your app.",
+            ['type' => 'adoption_finalized', 'status' => 'adopted', 'pet_id' => $application->pet_id, 'contract_unlocked' => true]
         );
-        if (empty($staffProfile->digital_signature_path)) {
-            $staffProfile->digital_signature_path = $fileName;
-            $staffProfile->save();
+
+        return back()->with('success', 'Physical documents verified and adoption handover finalized. Official contract unlocked.');
+    }
+
+    /**
+     * Staff signature endorsement for an adoption contract.
+     */
+    public function signAsStaff(Request $request, AdoptionApplication $application): RedirectResponse
+    {
+        return $this->finalizeHandover($request, $application);
+    }
+
+    /**
+     * Reset handover verification and staff signature endorsement (allows re-verifying or undoing).
+     */
+    public function resetHandover(AdoptionApplication $application): RedirectResponse
+    {
+        $application->update([
+            'staff_signature_path'   => null,
+            'staff_id'               => null,
+            'staff_name'             => null,
+            'staff_signed_at'        => null,
+            'documents_verified_at'  => null,
+            'documents_verified_by'  => null,
+            'id_document_verified'   => false,
+            'barangay_cert_verified' => false,
+            'status'                 => 'approved',
+        ]);
+
+        if ($application->pet && $application->pet->status === 'adopted') {
+            $application->pet->update(['status' => 'available']);
         }
 
-        return back()->with('success', 'Official CAWS staff signature attached successfully.');
+        return back()->with('success', 'Handover verification and signature have been reset. You can now re-verify documents or sign again.');
     }
 
     public function downloadContract($id)
@@ -240,6 +284,15 @@ class AdoptionApplicationController extends Controller
             return response()->json([
                 'error' => 'The adoption contract must be digitally signed by the adopter before downloading or printing.'
             ], 422);
+        }
+
+        $currentUser = Auth::user();
+        $isStaffOrAdmin = $currentUser && in_array($currentUser->role, ['admin', 'staff']);
+
+        if (!$isStaffOrAdmin && !$application->is_finalized) {
+            return response()->json([
+                'error' => 'Official adoption contract is locked until CAWS staff physically inspects and verifies your original documents at the adoption meet-and-greet event.'
+            ], 403);
         }
 
         $pet = $application->pet;
@@ -287,11 +340,6 @@ class AdoptionApplicationController extends Controller
         // 2. Prepare Staff Digital Signature & Name
         $staffSignatureBase64 = null;
         $staffPath = $application->staff_signature_path;
-
-        // Fall back to staff profile signature if application path is not explicitly set
-        if (empty($staffPath) && $application->staff && !empty($application->staff->digital_signature_path)) {
-            $staffPath = $application->staff->digital_signature_path;
-        }
 
         if (!empty($staffPath)) {
             $staffFullPath = storage_path('app/public/' . ltrim($staffPath, '/'));

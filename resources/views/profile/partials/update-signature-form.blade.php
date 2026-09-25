@@ -41,6 +41,16 @@
         </div>
     @endif
 
+    @if (session('status') === 'signature-deleted')
+        <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 4000)"
+            class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Digital signature removed from profile.</span>
+        </div>
+    @endif
+
     {{-- Grid: Current Signature Display (Left) & Drawing Pad (Right) --}}
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
@@ -52,10 +62,18 @@
 
             <div class="h-44 rounded-2xl border-2 border-dashed border-gray-200 dark:border-white/[0.1] bg-gray-50/70 dark:bg-[#0C0D13] p-4 flex flex-col items-center justify-center text-center relative overflow-hidden group">
                 @if($user->digital_signature_url)
-                    <img src="{{ $user->digital_signature_url }}" alt="Staff Signature" class="max-h-28 max-w-full object-contain filter dark:invert dark:brightness-200">
-                    <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-2 font-medium">
+                    <img src="{{ $user->digital_signature_url }}" alt="Staff Signature" class="max-h-24 max-w-full object-contain filter dark:invert dark:brightness-200">
+                    <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-1.5 font-medium">
                         Active on all CAWS adoption contracts
                     </p>
+                    <form method="POST" action="{{ route('profile.signature.destroy') }}" class="mt-2" onsubmit="return confirm('Are you sure you want to remove your saved signature?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 transition cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <span>Remove Signature</span>
+                        </button>
+                    </form>
                 @else
                     <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/[0.04] text-gray-400 dark:text-slate-500 mb-2">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
