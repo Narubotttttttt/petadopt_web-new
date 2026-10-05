@@ -1,0 +1,10 @@
+python-interpreter-path = "c:/Users/emili/petadopt_web-new/.venv/Scripts/python.exe"
+search-path = [
+  "c:/Users/emili/petadopt_web-new/ml",
+  "c:/Users/emili/petadopt_web-new/.venv/Lib/site-packages",
+  "c:/Users/emili/AppData/Local/Programs/Python/Python312/Lib/site-packages"
+]
+site-package-path = [
+  "c:/Users/emili/petadopt_web-new/.venv/Lib/site-packages",
+  "c:/Users/emili/AppData/Local/Programs/Python/Python312/Lib/site-packages"
+]

@@ -10,11 +10,15 @@ import json
 import importlib.util
 import pathlib
 
-# 1. Add user site-packages to path FIRST so joblib, sklearn, pandas are found.
-_user_site = os.path.join(os.path.expanduser('~'),
-                          'AppData', 'Roaming', 'Python', 'Python314', 'site-packages')
-if _user_site not in sys.path:
-    sys.path.insert(0, _user_site)
+# 1. Add user site-packages and standard site-packages to path so joblib, sklearn, pandas are found.
+import site
+for _p in [
+    getattr(site, 'getusersitepackages', lambda: '')(),
+    *(getattr(site, 'getsitepackages', lambda: [])()),
+    os.path.join(sys.prefix, 'Lib', 'site-packages'),
+]:
+    if _p and os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
 
 # 2. Read stdin RAW BYTES first before any TextIOWrapper reassignment.
 #    PHP pipes the JSON payload through stdin. Reading the raw buffer here
@@ -28,7 +32,12 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='repla
 # 4. Load pet_recommender.py as a module
 _script = pathlib.Path(__file__).parent / 'pet_recommender.py'
 spec = importlib.util.spec_from_file_location('pet_recommender', _script)
-mod  = importlib.util.module_from_spec(spec)
+if spec is None or spec.loader is None:
+    sys.stdout.write(json.dumps({'error': 'Failed to load pet_recommender module'}))
+    sys.stdout.flush()
+    sys.exit(1)
+
+mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 # 5. Parse the stdin JSON payload

@@ -18,10 +18,14 @@ import os
 import sys
 
 # Ensure ML packages are always found
-_user_site = os.path.join(os.path.expanduser('~'),
-                          'AppData', 'Roaming', 'Python', 'Python314', 'site-packages')
-if _user_site not in sys.path:
-    sys.path.insert(0, _user_site)
+import site
+for _p in [
+    getattr(site, 'getusersitepackages', lambda: '')(),
+    *(getattr(site, 'getsitepackages', lambda: [])()),
+    os.path.join(sys.prefix, 'Lib', 'site-packages'),
+]:
+    if _p and os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import json
 import joblib

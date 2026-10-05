@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 CAWS Pet Adoption System - Supervised Machine Learning Model Training
 Dataset  : Austin Animal Center (AAC) Real Shelter Adoption Dataset (78,000+ records)
@@ -16,7 +16,19 @@ Weighting Distribution:
 
 import os
 import sys
+import site
 import json
+
+# Ensure virtualenv and Python site-packages are loaded
+for _p in [
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), '.venv', 'Lib', 'site-packages'),
+    getattr(site, 'getusersitepackages', lambda: '')(),
+    *(getattr(site, 'getsitepackages', lambda: [])()),
+    os.path.join(sys.prefix, 'Lib', 'site-packages'),
+]:
+    if _p and os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -28,7 +40,8 @@ from sklearn.metrics import (
 )
 
 # Force UTF-8 output so Windows terminal does not crash on special characters
-sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stdout, 'reconfigure'):
+    getattr(sys.stdout, 'reconfigure')(encoding='utf-8', errors='replace')
 
 TEMPERAMENT_TAGS = [
     'Friendly',
