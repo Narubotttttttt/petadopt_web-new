@@ -77,8 +77,14 @@ class ReportController extends Controller
      */
     private function generateReportData(Request $request, bool $isExport = false): array
     {
-        $reportType = $request->query('type', 'overview'); // overview, adoptions, intakes, medical, compliance
-        $preset     = $request->query('preset', 'this_year'); // this_month, last_month, last_3_months, this_year, last_year, all_time, custom
+        $reportType = $request->query('type', 'overview'); // overview, adoptions, intakes, compliance
+        if (!in_array($reportType, ['overview', 'adoptions', 'intakes', 'compliance'])) {
+            $reportType = 'overview';
+        }
+        $preset     = $request->query('preset', 'this_year'); // this_month, this_year
+        if (!in_array($preset, ['this_month', 'this_year'])) {
+            $preset = 'this_year';
+        }
         $startDateParam = $request->query('start_date');
         $endDateParam   = $request->query('end_date');
         $species    = $request->query('species', 'all'); // all, dog, cat
@@ -92,36 +98,6 @@ class ReportController extends Controller
                 $startDate = $now->copy()->startOfMonth();
                 $endDate   = $now->copy()->endOfMonth();
                 $dateRangeLabel = 'This Month (' . $startDate->format('M Y') . ')';
-                break;
-
-            case 'last_month':
-                $startDate = $now->copy()->subMonth()->startOfMonth();
-                $endDate   = $now->copy()->subMonth()->endOfMonth();
-                $dateRangeLabel = 'Last Month (' . $startDate->format('M Y') . ')';
-                break;
-
-            case 'last_3_months':
-                $startDate = $now->copy()->subMonths(2)->startOfMonth();
-                $endDate   = $now->copy()->endOfMonth();
-                $dateRangeLabel = 'Last 3 Months (' . $startDate->format('M Y') . ' - ' . $endDate->format('M Y') . ')';
-                break;
-
-            case 'last_year':
-                $startDate = $now->copy()->subYear()->startOfYear();
-                $endDate   = $now->copy()->subYear()->endOfYear();
-                $dateRangeLabel = 'Last Year (' . $startDate->format('Y') . ')';
-                break;
-
-            case 'all_time':
-                $startDate = Carbon::create(2020, 1, 1, 0, 0, 0);
-                $endDate   = $now->copy()->endOfDay();
-                $dateRangeLabel = 'All Time Records';
-                break;
-
-            case 'custom':
-                $startDate = !empty($startDateParam) ? Carbon::parse($startDateParam)->startOfDay() : $now->copy()->startOfYear();
-                $endDate   = !empty($endDateParam) ? Carbon::parse($endDateParam)->endOfDay() : $now->copy()->endOfDay();
-                $dateRangeLabel = 'Custom Range (' . $startDate->format('M d, Y') . ' - ' . $endDate->format('M d, Y') . ')';
                 break;
 
             case 'this_year':
@@ -222,48 +198,6 @@ class ReportController extends Controller
 
 
                 $records = $isExport ? $query->latest('created_at')->get() : $query->latest('created_at')->paginate(20)->withQueryString();
-                break;
-
-            case 'medical':
-                $query = MedicalLog::with(['pet', 'creator'])
-                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-
-                if ($species !== 'all') {
-                    $query->whereHas('pet', fn($q) => $q->where('type', $species));
-                }
-
-                if ($status !== 'all') {
-                    $query->where('category', $status);
-                }
-
-                if (!empty($search)) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('administered_by', 'like', "%{$search}%")
-                          ->orWhere('category', 'like', "%{$search}%")
-                          ->orWhereHas('pet', fn($p) => $p->where('name', 'like', "%{$search}%"));
-                    });
-                }
-
-                $totalMedicals = (clone $query)->count();
-                $vaccinationCount = (clone $query)->where('category', 'like', '%vaccin%')->count();
-                $surgeryCount     = (clone $query)->where('category', 'like', '%surg%')->count();
-                $dewormingCount   = (clone $query)->where('category', 'like', '%deworm%')->count();
-                $checkupCount     = (clone $query)->where(function ($q) {
-                    $q->where('category', 'like', '%check%')
-                      ->orWhere('category', 'like', '%routine%');
-                })->count();
-
-                $stats = [
-                    'totalMedicals'    => $totalMedicals,
-                    'vaccinationCount' => $vaccinationCount,
-                    'surgeryCount'     => $surgeryCount,
-                    'dewormingCount'   => $dewormingCount,
-                    'checkupCount'     => $checkupCount,
-                ];
-
-
-
-                $records = $isExport ? $query->latest('date')->get() : $query->latest('date')->paginate(20)->withQueryString();
                 break;
 
             case 'compliance':
@@ -397,23 +331,6 @@ class ReportController extends Controller
                     ->whereBetween('created_at', [$startDate, $endDate])
                     ->count();
 
-                $totalMedicals    = MedicalLog::whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])->count();
-                $vaccinationCount = MedicalLog::where('category', 'like', '%vaccin%')
-                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->count();
-                $surgeryCount     = MedicalLog::where('category', 'like', '%surg%')
-                    ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->count();
-                $checkupCount     = MedicalLog::where(function ($q) {
-                    $q->where('category', 'like', '%check%')
-                      ->orWhere('category', 'like', '%routine%')
-                      ->orWhere('category', 'like', '%deworm%');
-                })->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])->count();
-
-                $activeShelter = Pet::whereIn('status', ['available', 'pending'])->count();
-                $totalDogs     = Pet::where('type', 'dog')->whereIn('status', ['available', 'pending'])->count();
-                $totalCats     = Pet::where('type', 'cat')->whereIn('status', ['available', 'pending'])->count();
-
                 $conversionRate = $totalApplications > 0 ? round(($totalAdoptions / $totalApplications) * 100, 1) : 0;
 
                 $stats = [
@@ -426,13 +343,6 @@ class ReportController extends Controller
                     'pendingAdoptions'     => $pendingAdoptions,
                     'rejectedAdoptions'    => $rejectedAdoptions,
                     'conversionRate'       => $conversionRate,
-                    'totalMedicals'        => $totalMedicals,
-                    'vaccinationCount'     => $vaccinationCount,
-                    'surgeryCount'         => $surgeryCount,
-                    'checkupCount'         => $checkupCount,
-                    'activeShelter'        => $activeShelter,
-                    'totalDogs'            => $totalDogs,
-                    'totalCats'            => $totalCats,
                 ];
 
                 // Key milestone records for the overview table

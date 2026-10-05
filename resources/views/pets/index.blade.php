@@ -43,6 +43,53 @@
             </div>
         @endif
 
+        {{-- Flash Feedback Notification --}}
+        @if(session('success'))
+            <div x-data="{ show: true }" 
+                 x-show="show" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200" 
+                 x-transition:leave-start="opacity-100 translate-y-0" 
+                 x-transition:leave-end="opacity-0 -translate-y-2" 
+                 class="p-4 sm:p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 text-emerald-900 dark:text-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-600/30">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-extrabold text-emerald-950 dark:text-emerald-100">
+                                Pet Added Successfully
+                            </h3>
+                            @if(session('new_pet_id'))
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-600 text-white">
+                                    Confirmed
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 font-medium mt-0.5">
+                            {{ session('success') }}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    @if(session('new_pet_id'))
+                        <a href="{{ route('pets.show', session('new_pet_id')) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer">
+                            <span>View Profile</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </a>
+                    @endif
+                    <button type="button" @click="show = false" class="p-2 rounded-xl text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer" title="Dismiss">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+        @endif
+
         {{-- Main Container Card --}}
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden relative">
             
@@ -78,8 +125,9 @@
                     @php
                         $style = $statusStyles[$pet->status] ?? 'bg-slate-50 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]';
                         $dot = $dotColors[$pet->status] ?? 'bg-slate-400';
+                        $isNewlyAdded = session('new_pet_id') && session('new_pet_id') == $pet->id;
                     @endphp
-                    <div class="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-[#161822] transition-colors">
+                    <div class="p-4 space-y-3 transition-colors {{ $isNewlyAdded ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-50/50 dark:hover:bg-[#161822]' }}">
                         
                         {{-- Top Header Row: Thumbnail, Name & Status --}}
                         <div class="flex items-start gap-3">
@@ -98,9 +146,16 @@
 
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between gap-2">
-                                    <h3 class="font-extrabold text-sm text-slate-900 dark:text-white truncate">
-                                        {{ $pet->name ?: ('Pet no. ' . $pet->id) }}
-                                    </h3>
+                                    <div class="flex items-center gap-1.5 truncate">
+                                        <h3 class="font-extrabold text-sm text-slate-900 dark:text-white truncate">
+                                            {{ $pet->name ?: ('Pet no. ' . $pet->id) }}
+                                        </h3>
+                                        @if($isNewlyAdded)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4] text-white shrink-0 tracking-wide uppercase shadow-2xs">
+                                                Just Added
+                                            </span>
+                                        @endif
+                                    </div>
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border shrink-0 {{ $style }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $dot }} animate-pulse"></span>
                                         {{ ucfirst($pet->status ?? 'Unknown') }}
@@ -174,8 +229,9 @@
                             @php
                                 $style = $statusStyles[$pet->status] ?? 'bg-slate-50 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]';
                                 $dot = $dotColors[$pet->status] ?? 'bg-slate-400';
+                                $isNewlyAdded = session('new_pet_id') && session('new_pet_id') == $pet->id;
                             @endphp
-                            <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
+                            <tr class="text-xs sm:text-sm transition-colors {{ $isNewlyAdded ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-50/70 dark:hover:bg-[#181A24]' }}">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3.5">
                                         <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-[#171923] overflow-hidden flex items-center justify-center border border-slate-200 dark:border-white/[0.08] shadow-2xs shrink-0 group relative">
@@ -191,7 +247,14 @@
                                             @endif
                                         </div>
                                         <div>
-                                            <p class="font-extrabold text-slate-900 dark:text-white">{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</p>
+                                            <div class="flex items-center gap-2">
+                                                <p class="font-extrabold text-slate-900 dark:text-white">{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</p>
+                                                @if($isNewlyAdded)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4] text-white shrink-0 tracking-wide uppercase shadow-2xs">
+                                                        Just Added
+                                                    </span>
+                                                @endif
+                                            </div>
                                             <p class="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">{{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}</p>
                                         </div>
                                     </div>

@@ -44,6 +44,35 @@
             </div>
         </div>
 
+        {{-- Flash Feedback Notification --}}
+        @if(session('success'))
+            <div x-data="{ show: true }" 
+                 x-show="show" 
+                 x-transition:leave="transition ease-in duration-200" 
+                 x-transition:leave-start="opacity-100" 
+                 x-transition:leave-end="opacity-0" 
+                 class="p-4 sm:p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 text-emerald-900 dark:text-emerald-200 flex items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-600/30">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-emerald-950 dark:text-emerald-100">
+                            Pet Saved
+                        </h3>
+                        <p class="text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 font-medium mt-0.5">
+                            {{ session('success') }}
+                        </p>
+                    </div>
+                </div>
+                <button type="button" @click="show = false" class="p-2 rounded-xl text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer" title="Dismiss">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        @endif
+
         {{-- Hero Pet Profile Card --}}
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden">
             <div class="grid grid-cols-1 md:grid-cols-12">

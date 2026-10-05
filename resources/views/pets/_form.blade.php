@@ -454,8 +454,32 @@
     },
     validateStep2() {
         this.errorMessage = '';
-        if (this.hasDisability && this.disabilityType === 'Other' && (!this.disabilityOther || !this.disabilityOther.trim())) {
-            this.errorMessage = 'Please specify the disability details.';
+        if (this.isVaccinated && (!this.vaccineDate || !this.vaccineDate.trim())) {
+            this.errorMessage = 'Please provide the date when the vaccine was administered.';
+            return false;
+        }
+        if (this.isDewormed) {
+            if (!this.dewormerDate || !this.dewormerDate.trim()) {
+                this.errorMessage = 'Please provide the date when the dewormer was administered.';
+                return false;
+            }
+            if (this.dewormerSelect === 'Other' && (!this.dewormerOther || !this.dewormerOther.trim())) {
+                this.errorMessage = 'Please specify the custom dewormer name.';
+                return false;
+            }
+        }
+        if (this.hasDisability) {
+            if (!this.disabilityType || !this.disabilityType.trim()) {
+                this.errorMessage = 'Please select the disability or special need type.';
+                return false;
+            }
+            if (this.disabilityType === 'Other' && (!this.disabilityOther || !this.disabilityOther.trim())) {
+                this.errorMessage = 'Please specify the disability details.';
+                return false;
+            }
+        }
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            this.errorMessage = 'Please select at least one temperament trait.';
             return false;
         }
         return true;
@@ -483,11 +507,15 @@
                 this.step = 2;
                 this.errorMessage = '';
                 this.scrollToTop();
+            } else {
+                this.scrollToTop();
             }
         } else if (current === 2) {
             if (this.validateStep2()) {
                 this.step = 3;
                 this.errorMessage = '';
+                this.scrollToTop();
+            } else {
                 this.scrollToTop();
             }
         }
@@ -506,17 +534,28 @@
             this.errorMessage = '';
             this.scrollToTop();
         } else if (target === 2) {
-            if (this.validateStep1()) {
-                this.step = 2;
-                this.errorMessage = '';
+            if (!this.validateStep1()) {
+                this.step = 1;
                 this.scrollToTop();
+                return;
             }
+            this.step = 2;
+            this.errorMessage = '';
+            this.scrollToTop();
         } else if (target === 3) {
-            if (this.validateStep1() && this.validateStep2()) {
-                this.step = 3;
-                this.errorMessage = '';
+            if (!this.validateStep1()) {
+                this.step = 1;
                 this.scrollToTop();
+                return;
             }
+            if (!this.validateStep2()) {
+                this.step = 2;
+                this.scrollToTop();
+                return;
+            }
+            this.step = 3;
+            this.errorMessage = '';
+            this.scrollToTop();
         }
     },
     scrollToTop() {
@@ -1059,8 +1098,8 @@
 
         <div class="mb-8">
             <div class="flex items-center justify-between mb-2">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Temperament</label>
-                <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Select all that apply</span>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Temperament <span class="text-rose-500">*</span></label>
+                <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Select at least 1</span>
             </div>
             <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">Choose the behavioral traits that describe this pet.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02]">

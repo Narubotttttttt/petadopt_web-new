@@ -39,4 +39,33 @@ class PetManagementTest extends TestCase
         $this->assertSame('Vaccinated, Spayed/Neutered', $pet->medical_history);
         $this->assertSame('A joyful companion who loves walks and cuddles.', $pet->description);
     }
+
+    public function test_created_pet_shows_success_indicator_and_highlight(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post('/pets', [
+            'breed' => 'Shih Tzu',
+            'color' => 'White',
+            'gender' => 'female',
+            'type' => 'dog',
+            'age' => '1 year',
+            'photo' => UploadedFile::fake()->create('puppy.jpg', 100, 'image/jpeg'),
+        ]);
+
+        $pet = Pet::latest()->first();
+        $this->assertNotNull($pet);
+
+        $response->assertRedirect('/pets');
+        $response->assertSessionHas('success');
+        $response->assertSessionHas('new_pet_id', $pet->id);
+
+        $indexResponse = $this->actingAs($user)->get('/pets');
+        $indexResponse->assertOk();
+        $indexResponse->assertSee('Pet Added Successfully');
+        $indexResponse->assertSee('Just Added');
+    }
 }

@@ -206,7 +206,9 @@ class PetController extends Controller
                 return $pet;
             });
 
-            session()->flash('success', 'Pet added successfully.');
+            $petIdentifier = $pet->name ?: ('Pet no. ' . $pet->id);
+            session()->flash('success', 'Pet "' . $petIdentifier . '" was added successfully.');
+            session()->flash('new_pet_id', $pet->id);
 
             return redirect()->route('pets.index');
         } finally {
@@ -355,7 +357,9 @@ class PetController extends Controller
             }
         });
 
-        session()->flash('success', 'Pet updated successfully.');
+        $petIdentifier = $pet->name ?: ('Pet no. ' . $pet->id);
+        session()->flash('success', 'Pet "' . $petIdentifier . '" was updated successfully.');
+        session()->flash('new_pet_id', $pet->id);
 
         return redirect()->route('pets.index');
     }
@@ -370,9 +374,10 @@ class PetController extends Controller
             Storage::disk('public')->delete($pet->photo_path);
         }
 
+        $petIdentifier = $pet->name ?: ('Pet no. ' . $pet->id);
         $pet->delete();
 
-        session()->flash('success', 'Pet removed.');
+        session()->flash('success', 'Pet "' . $petIdentifier . '" was removed.');
 
         return redirect()->route('pets.index');
     }

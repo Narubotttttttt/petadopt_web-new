@@ -225,7 +225,7 @@
 
     {{-- Report Title & Meta --}}
     <div class="report-title-bar">
-        <div class="report-title">{{ ucfirst($reportType) }} Report & Analytics Summary</div>
+        <div class="report-title">{{ $reportType === 'intakes' ? 'Rescued Pets' : ucfirst($reportType) }} Report & Analytics Summary</div>
     </div>
 
     <table class="meta-table">
@@ -272,43 +272,22 @@
                 <td>
                     <div class="stat-label">Total Rescues</div>
                     <div class="stat-value">{{ $stats['totalIntakes'] ?? 0 }}</div>
-                    <div class="stat-sub">Intake Registrations</div>
+                    <div class="stat-sub">Rescued Pets</div>
                 </td>
                 <td>
                     <div class="stat-label">Dogs Registered</div>
                     <div class="stat-value">{{ $stats['dogCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Canine Intakes</div>
+                    <div class="stat-sub">Canine Rescues</div>
                 </td>
                 <td>
                     <div class="stat-label">Cats Registered</div>
                     <div class="stat-value">{{ $stats['catCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Feline Intakes</div>
+                    <div class="stat-sub">Feline Rescues</div>
                 </td>
                 <td>
                     <div class="stat-label">Available / Adopted</div>
                     <div class="stat-value">{{ $stats['availableCount'] ?? 0 }} / {{ $stats['adoptedCount'] ?? 0 }}</div>
                     <div class="stat-sub">Inventory Status</div>
-                </td>
-            @elseif($reportType === 'medical')
-                <td>
-                    <div class="stat-label">Total Procedures</div>
-                    <div class="stat-value">{{ $stats['totalMedicals'] ?? 0 }}</div>
-                    <div class="stat-sub">Clinical Logs</div>
-                </td>
-                <td>
-                    <div class="stat-label">Vaccinations</div>
-                    <div class="stat-value">{{ $stats['vaccinationCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Core & Rabies</div>
-                </td>
-                <td>
-                    <div class="stat-label">Surgeries</div>
-                    <div class="stat-value">{{ $stats['surgeryCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Spay / Neuter</div>
-                </td>
-                <td>
-                    <div class="stat-label">Deworm / Checkups</div>
-                    <div class="stat-value">{{ ($stats['dewormingCount'] ?? 0) + ($stats['checkupCount'] ?? 0) }}</div>
-                    <div class="stat-sub">Wellness Checks</div>
                 </td>
             @elseif($reportType === 'compliance')
                 <td>
@@ -332,20 +311,15 @@
                     <div class="stat-sub">Action Required</div>
                 </td>
             @else
-                <td style="width: 33.33%;">
+                <td style="width: 50%;">
                     <div class="stat-label">Total Rescues</div>
                     <div class="stat-value">{{ $stats['totalIntakes'] ?? 0 }}</div>
-                    <div class="stat-sub">Intakes</div>
+                    <div class="stat-sub">Rescued Pets</div>
                 </td>
-                <td style="width: 33.33%;">
+                <td style="width: 50%;">
                     <div class="stat-label">Adoptions</div>
                     <div class="stat-value">{{ $stats['approvedAdoptions'] ?? 0 }}</div>
                     <div class="stat-sub">{{ $stats['conversionRate'] ?? 0 }}% Rate</div>
-                </td>
-                <td style="width: 33.34%;">
-                    <div class="stat-label">Medical Logs</div>
-                    <div class="stat-value">{{ $stats['totalMedicals'] ?? 0 }}</div>
-                    <div class="stat-sub">Procedures</div>
                 </td>
             @endif
         </tr>
@@ -395,7 +369,7 @@
                     <th style="width: 10%;">Species</th>
                     <th style="width: 22%;">Breed & Color</th>
                     <th style="width: 14%;">Status</th>
-                    <th style="width: 20%;">Intake Date</th>
+                    <th style="width: 20%;">Rescue Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -413,31 +387,7 @@
                         <td>{{ $pet->created_at ? $pet->created_at->format('M d, Y') : 'N/A' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No records found.</td></tr>
-                @endforelse
-            </tbody>
-
-        @elseif($reportType === 'medical')
-            <thead>
-                <tr>
-                    <th style="width: 14%;">Date</th>
-                    <th style="width: 22%;">Pet</th>
-                    <th style="width: 24%;">Procedure</th>
-                    <th style="width: 24%;">Administered By</th>
-                    <th style="width: 16%;">Next Due</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($records as $log)
-                    <tr>
-                        <td>{{ $log->date ? $log->date->format('M d, Y') : 'N/A' }}</td>
-                        <td><strong>{{ $log->pet ? $log->pet->name : 'Pet no. ' . $log->pet_id }}</strong></td>
-                        <td>{{ $log->category ?? 'General Checkup' }}</td>
-                        <td>{{ $log->administered_by ?? 'CAWS Clinic Staff' }}</td>
-                        <td>{{ $log->next_due_date ? $log->next_due_date->format('M d, Y') : 'None' }}</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 12px;">No records found.</td></tr>
+                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No rescued pets found.</td></tr>
                 @endforelse
             </tbody>
 
@@ -475,17 +425,17 @@
         @else
             <thead>
                 <tr>
-                    <th style="width: 16%;">Milestone</th>
-                    <th style="width: 28%;">Adopter</th>
+                    <th style="width: 12%; text-align: center;">Adoption</th>
+                    <th style="width: 30%;">Adopter</th>
                     <th style="width: 24%;">Pet Adopted</th>
-                    <th style="width: 16%;">Finalized Date</th>
-                    <th style="width: 16%;">Authorized Staff</th>
+                    <th style="width: 17%;">Finalized Date</th>
+                    <th style="width: 17%;">Authorized Staff</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($records as $app)
                     <tr>
-                        <td><span class="badge badge-approved">Adoption</span></td>
+                        <td style="text-align: center; font-weight: bold; color: #0f172a;">{{ $loop->iteration }}.</td>
                         <td>
                             <strong>{{ $app->applicant_name }}</strong><br>
                             <span style="color: #64748b;">{{ $app->applicant_email }}</span>

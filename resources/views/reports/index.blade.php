@@ -28,11 +28,7 @@
                     <select name="preset" onchange="this.form.submit()"
                         class="bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] text-xs font-bold text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] focus:outline-none transition cursor-pointer shadow-2xs">
                         <option value="this_month" {{ $preset === 'this_month' ? 'selected' : '' }}>This Month</option>
-                        <option value="last_month" {{ $preset === 'last_month' ? 'selected' : '' }}>Last Month</option>
-                        <option value="last_3_months" {{ $preset === 'last_3_months' ? 'selected' : '' }}>Last 3 Months</option>
                         <option value="this_year" {{ $preset === 'this_year' ? 'selected' : '' }}>This Year</option>
-                        <option value="last_year" {{ $preset === 'last_year' ? 'selected' : '' }}>Last Year</option>
-                        <option value="all_time" {{ $preset === 'all_time' ? 'selected' : '' }}>All Time</option>
                     </select>
                 </form>
 
@@ -52,7 +48,7 @@
         {{-- Print-Only Header --}}
         <div class="hidden print:block border-b-2 border-slate-800 pb-3 mb-4">
             <h1 class="text-xl font-bold uppercase text-slate-900">CDO Animal Welfare Society Inc.</h1>
-            <h2 class="text-sm font-semibold uppercase text-slate-700 mt-0.5">{{ ucfirst($reportType) }} Report</h2>
+            <h2 class="text-sm font-semibold uppercase text-slate-700 mt-0.5">{{ $reportType === 'intakes' ? 'Rescued Pets' : ucfirst($reportType) }} Report</h2>
             <p class="text-xs text-slate-500 mt-1">Period: {{ $dateRangeLabel }} | Generated: {{ now()->format('F d, Y h:i A') }}</p>
         </div>
 
@@ -64,8 +60,7 @@
                     $simpleTabs = [
                         'overview'   => 'Overview',
                         'adoptions'  => 'Adoptions',
-                        'intakes'    => 'Pet Intakes',
-                        'medical'    => 'Medical Logs',
+                        'intakes'    => 'Rescued Pets',
                         'compliance' => 'Compliance',
                     ];
                 @endphp
@@ -104,12 +99,12 @@
             </form>
         </div>
 
-        {{-- Simple 4 Summary Metric Cards (Clean & Straightforward) --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {{-- Simple Summary Metric Cards --}}
+        <div class="grid grid-cols-1 {{ $reportType === 'overview' ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-4' }} gap-4">
             @if($reportType === 'overview')
-                {{-- Rescues & Intakes --}}
+                {{-- Rescued Pets --}}
                 <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Rescues & Intakes</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Rescued Pets</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalIntakes'] ?? 0 }}</div>
                     <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {{ $stats['dogIntakes'] ?? 0 }} Dogs, {{ $stats['catIntakes'] ?? 0 }} Cats
@@ -121,25 +116,7 @@
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Adoption</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ $stats['approvedAdoptions'] ?? 0 }}</div>
                     <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        Finalized adoptions
-                    </p>
-                </div>
-
-                {{-- Medical Logs --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Medical Procedures</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalMedicals'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        {{ $stats['vaccinationCount'] ?? 0 }} Vaccines, {{ $stats['surgeryCount'] ?? 0 }} Surgeries
-                    </p>
-                </div>
-
-                {{-- Shelter Residents --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">In Shelter</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['activeShelter'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        {{ $stats['totalDogs'] ?? 0 }} Dogs, {{ $stats['totalCats'] ?? 0 }} Cats
+                        Finalized adoptions ({{ $stats['conversionRate'] ?? 0 }}% rate)
                     </p>
                 </div>
 
@@ -177,11 +154,11 @@
                 </div>
 
             @elseif($reportType === 'intakes')
-                {{-- Total Intakes --}}
+                {{-- Total Rescued --}}
                 <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Admissions</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Rescued</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalIntakes'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Shelter intakes</p>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Shelter rescues</p>
                 </div>
 
                 {{-- Available --}}
@@ -203,35 +180,6 @@
                     <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Species Ratio</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['dogCount'] ?? 0 }} / {{ $stats['catCount'] ?? 0 }}</div>
                     <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Dogs vs Cats</p>
-                </div>
-
-            @elseif($reportType === 'medical')
-                {{-- Total Procedures --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Procedures</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalMedicals'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Clinical logs</p>
-                </div>
-
-                {{-- Vaccinations --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vaccinations</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ $stats['vaccinationCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Core vaccines administered</p>
-                </div>
-
-                {{-- Surgeries --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Surgeries</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{{ $stats['surgeryCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Spay, neuter & medical ops</p>
-                </div>
-
-                {{-- Deworming & Checkups --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Routine Care</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ ($stats['dewormingCount'] ?? 0) + ($stats['checkupCount'] ?? 0) }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Deworming & wellness checkups</p>
                 </div>
 
             @elseif($reportType === 'compliance')
@@ -279,9 +227,7 @@
                         @elseif($reportType === 'adoptions')
                             Adoption Applications
                         @elseif($reportType === 'intakes')
-                            Pet Admissions
-                        @elseif($reportType === 'medical')
-                            Medical Logs
+                            Rescued Pets
                         @elseif($reportType === 'compliance')
                             Adopter Compliance Records
                         @endif
@@ -374,7 +320,7 @@
                                 <th class="py-3 px-4 sm:px-5">Pet Name</th>
                                 <th class="py-3 px-4 sm:px-5">Species & Breed</th>
                                 <th class="py-3 px-4 sm:px-5">Status</th>
-                                <th class="py-3 px-4 sm:px-5">Intake Date</th>
+                                <th class="py-3 px-4 sm:px-5">Rescue Date</th>
                                 <th class="py-3 px-4 sm:px-5 text-right print:hidden">Action</th>
                             </tr>
                         </thead>
@@ -419,55 +365,7 @@
                             @empty
                                 <tr>
                                     <td colspan="6" class="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
-                                        No pet admissions found.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-
-                    @elseif($reportType === 'medical')
-                        <thead class="bg-slate-50/80 dark:bg-[#171923] text-[11px] uppercase font-bold text-slate-400 dark:text-slate-400 border-b border-slate-100 dark:border-white/[0.06]">
-                            <tr>
-                                <th class="py-3 px-4 sm:px-5">Date</th>
-                                <th class="py-3 px-4 sm:px-5">Pet</th>
-                                <th class="py-3 px-4 sm:px-5">Procedure</th>
-                                <th class="py-3 px-4 sm:px-5">Administered By</th>
-                                <th class="py-3 px-4 sm:px-5">Next Due</th>
-                                <th class="py-3 px-4 sm:px-5 text-right print:hidden">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06]">
-                            @forelse($records as $log)
-                                <tr class="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors">
-                                    <td class="py-3 px-4 sm:px-5 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                                        {{ $log->date ? $log->date->format('M d, Y') : 'N/A' }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5">
-                                        <div class="font-bold text-slate-900 dark:text-white">{{ $log->pet ? $log->pet->name : 'Pet no. ' . $log->pet_id }}</div>
-                                        <div class="text-[11px] text-slate-400 capitalize">{{ $log->pet ? ($log->pet->type ?? '') : '' }}</div>
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-100/80 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300">
-                                            {{ $log->category ?? 'General' }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 text-slate-700 dark:text-slate-300">
-                                        {{ $log->administered_by ?? 'Clinic Staff' }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 text-slate-500 whitespace-nowrap">
-                                        {{ $log->next_due_date ? $log->next_due_date->format('M d, Y') : 'None' }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 text-right print:hidden">
-                                        <a href="{{ route('medical-logs.index') }}"
-                                            class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold text-[#199CA4] hover:text-white dark:text-[#41C1CB] hover:bg-[#199CA4] transition-colors">
-                                            Logs
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
-                                        No clinical procedures recorded.
+                                        No rescued pets found.
                                     </td>
                                 </tr>
                             @endforelse
