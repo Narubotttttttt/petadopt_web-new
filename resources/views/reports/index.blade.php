@@ -328,8 +328,8 @@
                                     </td>
                                     <td class="py-3 px-4 sm:px-5">
                                         @if($app->status === 'approved')
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                                                Approved
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold {{ $app->is_finalized ? 'bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-purple-100/80 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300' }}">
+                                                {{ $app->display_status }}
                                             </span>
                                         @elseif($app->status === 'under_review')
                                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">

@@ -26,7 +26,7 @@
             {{-- Right Header Actions --}}
             <div class="flex items-center gap-2 sm:gap-3 ms-auto shrink-0">
                 
-                {{-- Light & Dark Theme Segmented Pill Switch (Hidden on mobile header, available in mobile drawer) --}}
+                {{-- Light & Dark Theme Segmented Pill Switch --}}
                 <div x-data="{
                     darkMode: document.documentElement.classList.contains('dark'),
                     init() {
@@ -46,7 +46,7 @@
                         }
                         window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: this.darkMode } }));
                     }
-                }" class="hidden sm:flex items-center">
+                }" class="flex items-center">
                     <div class="inline-flex items-center p-0.5 rounded-full bg-[#EEF2F6] dark:bg-[#12141D] border border-slate-200/90 dark:border-white/[0.08] shadow-inner select-none gap-0.5 transition-colors duration-200">
                         {{-- Light Option (Sun) --}}
                         <button 

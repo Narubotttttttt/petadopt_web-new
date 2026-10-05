@@ -94,7 +94,7 @@ class AdoptionApplication extends Model
         }
 
         if ($this->status === 'approved') {
-            return $this->is_finalized ? 'Finalized' : 'Approved';
+            return $this->is_finalized ? 'Finalized' : 'Scheduled';
         }
 
         if ($this->is_waitlisted_backup) {

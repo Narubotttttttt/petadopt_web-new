@@ -376,7 +376,7 @@
                         <td style="text-transform: capitalize;">{{ $app->pet ? ($app->pet->type ?? 'N/A') : 'N/A' }}</td>
                         <td>
                             <span class="badge {{ $app->status === 'approved' ? 'badge-approved' : ($app->status === 'rejected' ? 'badge-rejected' : 'badge-pending') }}">
-                                {{ ucfirst(str_replace('_', ' ', $app->status ?? 'pending')) }}
+                                {{ $app->display_status }}
                             </span>
                         </td>
                         <td>{{ $app->created_at ? $app->created_at->format('M d, Y h:i A') : 'N/A' }}</td>

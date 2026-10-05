@@ -172,11 +172,11 @@
 
                             <div class="flex items-center gap-2 shrink-0">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide border
-                                    {{ $application->status === 'approved' ? 'bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/30' : '' }}
+                                    {{ $application->status === 'approved' ? ($application->is_finalized ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800') : '' }}
                                     {{ $application->status === 'rejected' ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/[0.08]' : '' }}
                                     {{ $application->status === 'pending' ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/[0.12]' : '' }}
                                     {{ !in_array($application->status, ['approved', 'rejected', 'pending']) ? 'bg-slate-50 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '' }}">
-                                    {{ ucfirst($application->status ?? 'pending') }}
+                                    {{ $application->display_status }}
                                 </span>
                                 <a href="{{ route('adoption-applications.show', $application) }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] dark:hover:underline transition-colors">
                                     View

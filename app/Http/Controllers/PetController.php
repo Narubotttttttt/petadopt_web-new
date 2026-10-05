@@ -11,8 +11,28 @@ use Illuminate\Support\Facades\Auth;
 
 class PetController extends Controller
 {
+    protected function ensureDefaultTemperamentTags(): void
+    {
+        if (TemperamentTag::count() === 0) {
+            $defaultTags = [
+                'Affectionate',
+                'Calm',
+                'Energetic',
+                'Friendly',
+                'Independent',
+                'Playful',
+                'Protective',
+                'Shy',
+            ];
+            foreach ($defaultTags as $name) {
+                TemperamentTag::firstOrCreate(['name' => $name]);
+            }
+        }
+    }
+
     public function create()
     {
+        $this->ensureDefaultTemperamentTags();
         $temperamentTags = TemperamentTag::orderBy('name')->get();
 
         return view('pets.create', [
@@ -81,6 +101,8 @@ class PetController extends Controller
             'type' => 'required|in:dog,cat',
             'age' => 'nullable|string|max:50',
             'medical_history' => 'nullable',
+            'temperament' => 'nullable|string|max:255',
+            'custom_temperament' => 'nullable|string|max:255',
             'temperament_tags' => 'nullable|array',
             'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
@@ -124,7 +146,23 @@ class PetController extends Controller
                 'added_by_name' => $user?->name,
             ]);
 
-            $pet->temperamentTags()->sync($data['temperament_tags'] ?? []);
+            $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
+            $rawCustom = $request->input('custom_temperament') ?: $request->input('temperament');
+            if (!empty($rawCustom)) {
+                $names = is_array($rawCustom)
+                    ? $rawCustom
+                    : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
+
+                foreach ($names as $name) {
+                    $name = trim($name);
+                    if ($name !== '') {
+                        $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
+                        $tagIds[] = $created->id;
+                    }
+                }
+            }
+
+            $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
 
             session()->flash('success', 'Pet added successfully.');
 
@@ -145,6 +183,7 @@ class PetController extends Controller
 
     public function edit(Pet $pet)
     {
+        $this->ensureDefaultTemperamentTags();
         $temperamentTags = TemperamentTag::orderBy('name')->get();
         $selectedTagIds = $pet->temperamentTags()->pluck('temperament_tags.id')->toArray();
 
@@ -164,6 +203,8 @@ class PetController extends Controller
             'type' => 'required|in:dog,cat',
             'age' => 'nullable|string|max:50',
             'medical_history' => 'nullable',
+            'temperament' => 'nullable|string|max:255',
+            'custom_temperament' => 'nullable|string|max:255',
             'temperament_tags' => 'nullable|array',
             'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
@@ -200,7 +241,23 @@ class PetController extends Controller
             'photo_path' => $data['photo_path'] ?? $pet->photo_path,
         ]);
 
-        $pet->temperamentTags()->sync($data['temperament_tags'] ?? []);
+        $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
+        $rawCustom = $request->input('custom_temperament') ?: $request->input('temperament');
+        if (!empty($rawCustom)) {
+            $names = is_array($rawCustom)
+                ? $rawCustom
+                : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
+
+            foreach ($names as $name) {
+                $name = trim($name);
+                if ($name !== '') {
+                    $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
+                    $tagIds[] = $created->id;
+                }
+            }
+        }
+
+        $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
 
         session()->flash('success', 'Pet updated successfully.');
 

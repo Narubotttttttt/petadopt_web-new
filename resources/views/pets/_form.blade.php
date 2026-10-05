@@ -1,11 +1,91 @@
 @php
     $pet = $pet ?? null;
     $isWizard = $isWizard ?? (!isset($pet));
-    $dogBreeds = ['Aspin (Mixed Breed)', 'Shih Tzu / Aspin Mix', 'Labrador/ Mix', 'Other'];
-    $catBreeds = ['Puspin (Mixed Breed)', 'Other'];
+    $dogBreeds = ['Aspin (Mixed Breed)'];
+    $catBreeds = ['Puspin (Mixed Breed)'];
+
+    if (!empty($currentBreed) && !in_array($currentBreed, ['Aspin (Mixed Breed)', 'Puspin (Mixed Breed)', 'Other'], true)) {
+        if ($currentType === 'dog') {
+            $dogBreeds[] = $currentBreed;
+        } elseif ($currentType === 'cat') {
+            $catBreeds[] = $currentBreed;
+        }
+    }
     $currentType = old('type', optional($pet)->type ?? '');
     $currentBreed = old('breed', optional($pet)->breed ?? '');
     $currentColor = old('color', optional($pet)->color ?? '');
+
+    $dogColors = [
+        'Black',
+        'Brown',
+        'White',
+        'Golden',
+        'Tan',
+        'Cream',
+        'Grey',
+        'Brindle',
+        'Tricolor',
+        'Bicolor',
+        'Sable',
+        'Red / Rust',
+    ];
+
+    $catColors = [
+        'Black',
+        'White',
+        'Orange',
+        'Grey',
+        'Brown',
+        'Cream',
+        'Calico',
+        'Tortoiseshell',
+        'Orange Tabby',
+        'Grey Tabby',
+        'Brown Tabby',
+        'Tuxedo',
+        'Bicolor',
+    ];
+
+    $allColorOptions = array_values(array_unique(array_merge($dogColors, $catColors)));
+    $relevantColors = ($currentType === 'dog')
+        ? $dogColors
+        : (($currentType === 'cat') ? $catColors : $allColorOptions);
+
+    $initialColorSelect = '';
+    $initialColorOther = '';
+
+    if (!empty($currentColor)) {
+        $matchedColor = null;
+        foreach ($relevantColors as $opt) {
+            if (strcasecmp($opt, $currentColor) === 0) {
+                $matchedColor = $opt;
+                break;
+            }
+        }
+
+        // Support 'Tortoise' matching 'Tortoiseshell'
+        if ($matchedColor === null && strcasecmp($currentColor, 'Tortoise') === 0 && in_array('Tortoiseshell', $relevantColors, true)) {
+            $matchedColor = 'Tortoiseshell';
+        }
+
+        if ($matchedColor !== null) {
+            $initialColorSelect = $matchedColor;
+        } else {
+            // Check across all standard colors before falling back to Other Specified
+            foreach ($allColorOptions as $opt) {
+                if (strcasecmp($opt, $currentColor) === 0) {
+                    $matchedColor = $opt;
+                    break;
+                }
+            }
+            if ($matchedColor !== null) {
+                $initialColorSelect = $matchedColor;
+            } else {
+                $initialColorSelect = 'Other Specified';
+                $initialColorOther = $currentColor;
+            }
+        }
+    }
     $currentGender = old('gender', optional($pet)->gender ?? '');
     $currentAge = old('age', optional($pet)->age ?? '');
     $currentDescription = old('description', optional($pet)->description ?? '');
@@ -49,10 +129,28 @@
 
     $selectedTagIds = old('temperament_tags', $selectedTagIds ?? []);
 
+    $temperamentTags = $temperamentTags ?? \App\Models\TemperamentTag::orderBy('name')->get();
+    if ($temperamentTags->isEmpty()) {
+        $defaultTags = [
+            'Affectionate',
+            'Calm',
+            'Energetic',
+            'Friendly',
+            'Independent',
+            'Playful',
+            'Protective',
+            'Shy',
+        ];
+        foreach ($defaultTags as $name) {
+            \App\Models\TemperamentTag::firstOrCreate(['name' => $name]);
+        }
+        $temperamentTags = \App\Models\TemperamentTag::orderBy('name')->get();
+    }
+
     $initialStep = 1;
     if ($errors->has('photo') || $errors->has('description')) {
         $initialStep = 3;
-    } elseif ($errors->has('medical_history') || $errors->has('temperament_tags')) {
+    } elseif ($errors->has('medical_history') || $errors->has('temperament_tags') || $errors->has('custom_temperament')) {
         $initialStep = 2;
     }
 @endphp
@@ -67,10 +165,12 @@
     // Step 1 fields
     type: '{{ addslashes($currentType) }}',
     breed: '{{ addslashes($currentBreed) }}',
-    color: '{{ addslashes($currentColor) }}',
+    colorSelect: '{{ addslashes($initialColorSelect) }}',
+    colorOther: '{{ addslashes($initialColorOther) }}',
+    dogColors: {{ json_encode($dogColors) }},
+    catColors: {{ json_encode($catColors) }},
     gender: '{{ addslashes($currentGender) }}',
     age: '{{ addslashes($currentAge) }}',
-    breedMode: 'select',
     dogBreeds: {{ json_encode($dogBreeds) }},
     catBreeds: {{ json_encode($catBreeds) }},
     dogAges: ['Puppy', 'Adult'],
@@ -90,6 +190,15 @@
     fileSize: '',
     isNew: false,
 
+    get color() {
+        if (this.colorSelect === 'Other Specified') {
+            return this.colorOther ? this.colorOther.trim() : '';
+        }
+        return this.colorSelect || '';
+    },
+    get colorOptions() {
+        return this.type === 'dog' ? this.dogColors : (this.type === 'cat' ? this.catColors : []);
+    },
     get breedOptions() {
         return this.type === 'dog' ? this.dogBreeds : (this.type === 'cat' ? this.catBreeds : []);
     },
@@ -108,21 +217,13 @@
     },
 
     init() {
-        if (this.breed && !this.breedOptions.includes(this.breed)) {
-            this.breedMode = 'other';
+        if (this.type && this.colorSelect && this.colorSelect !== 'Other Specified') {
+            const validColors = this.type === 'dog' ? this.dogColors : (this.type === 'cat' ? this.catColors : []);
+            if (validColors.length > 0 && !validColors.includes(this.colorSelect)) {
+                this.colorOther = this.colorSelect;
+                this.colorSelect = 'Other Specified';
+            }
         }
-    },
-    selectBreed(value) {
-        if (value === 'Other') {
-            this.breed = '';
-            this.breedMode = 'other';
-        } else {
-            this.breed = value;
-        }
-    },
-    backToList() {
-        this.breed = '';
-        this.breedMode = 'select';
     },
     handleFileChange(e) {
         const file = e.target.files[0];
@@ -207,11 +308,17 @@
             return false;
         }
         if (!this.breed || !this.breed.trim()) {
-            this.errorMessage = 'Please select or enter the pet breed.';
+            this.errorMessage = 'Please select the pet breed.';
             return false;
         }
-        if (!this.color || !this.color.trim()) {
-            this.errorMessage = 'Please enter the pet color.';
+        if (!this.colorSelect) {
+            this.errorMessage = this.type === 'dog' 
+                ? 'Please select a dog color.' 
+                : (this.type === 'cat' ? 'Please select a cat color.' : 'Please select a pet color.');
+            return false;
+        }
+        if (this.colorSelect === 'Other Specified' && (!this.colorOther || !this.colorOther.trim())) {
+            this.errorMessage = 'Please specify the pet color.';
             return false;
         }
         if (!this.gender) {
@@ -450,11 +557,11 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Type</label>
-                <select name="type" x-model="type" @change="breed = ''; age = ''; breedMode = 'select'; errorMessage = ''"
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Species / Pet Type</label>
+                <select name="type" x-model="type" @change="breed = (type === 'dog' ? 'Aspin (Mixed Breed)' : (type === 'cat' ? 'Puspin (Mixed Breed)' : '')); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="">Select pet type</option>
+                    <option value="">Select species</option>
                     <option value="dog">Dog</option>
                     <option value="cat">Cat</option>
                 </select>
@@ -462,41 +569,77 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Breed</label>
-                <input type="hidden" name="breed" x-model="breed">
+                <input type="hidden" name="breed" :value="breed" value="{{ $currentBreed }}">
 
-                <template x-if="!type">
-                    <select disabled class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-sm">
-                        <option>Select pet type first</option>
-                    </select>
-                </template>
+                <select x-show="!type || (type !== 'dog' && type !== 'cat')" disabled
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-sm text-sm">
+                    <option>Select species first</option>
+                </select>
 
-                <template x-if="type && breedMode === 'select'">
-                    <select @change="selectBreed($event.target.value); errorMessage = ''"
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                        <option value="">Select breed</option>
-                        <template x-for="option in breedOptions" :key="option">
-                            <option :value="option" :selected="option === breed" x-text="option"></option>
-                        </template>
-                    </select>
-                </template>
+                <select x-show="type === 'dog'" x-model="breed" @change="errorMessage = ''"
+                    :required="!isWizard && type === 'dog'"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white text-sm">
+                    <option value="">Select breed</option>
+                    @foreach($dogBreeds as $b)
+                        <option value="{{ $b }}" {{ $currentBreed === $b ? 'selected' : '' }}>{{ $b }}</option>
+                    @endforeach
+                </select>
 
-                <template x-if="type && breedMode === 'other'">
-                    <div>
-                        <input type="text" x-model="breed" placeholder="Enter breed"
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                        <button type="button" @click="backToList()" class="mt-2 text-xs font-semibold text-[#199CA4] hover:text-[#13787F]">Choose from list instead</button>
-                    </div>
-                </template>
+                <select x-show="type === 'cat'" x-model="breed" @change="errorMessage = ''"
+                    :required="!isWizard && type === 'cat'"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white text-sm">
+                    <option value="">Select breed</option>
+                    @foreach($catBreeds as $b)
+                        <option value="{{ $b }}" {{ $currentBreed === $b ? 'selected' : '' }}>{{ $b }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Color</label>
-                <input type="text" name="color" x-model="color" value="{{ $currentColor }}"
-                    :required="!isWizard"
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white"
-                    placeholder="e.g., Brown, White/Brown">
+                <input type="hidden" name="color" :value="color" value="{{ $currentColor }}">
+
+                {{-- Disabled state when species is not yet selected --}}
+                <select x-show="!type || (type !== 'dog' && type !== 'cat')" disabled
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-xs text-sm">
+                    <option>Select species first</option>
+                </select>
+
+                {{-- Dog Colors Dropdown --}}
+                <select x-show="type === 'dog'" x-model="colorSelect"
+                    @change="errorMessage = ''; if (colorSelect === 'Other Specified') $nextTick(() => $refs.colorOtherInput?.focus())"
+                    :required="!isWizard && type === 'dog'"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
+                    <option value="">Select dog color</option>
+                    @foreach($dogColors as $option)
+                        <option value="{{ $option }}" {{ $initialColorSelect === $option ? 'selected' : '' }}>{{ $option }}</option>
+                    @endforeach
+                    <option value="Other Specified" {{ $initialColorSelect === 'Other Specified' ? 'selected' : '' }}>Other Specified</option>
+                </select>
+
+                {{-- Cat Colors Dropdown --}}
+                <select x-show="type === 'cat'" x-model="colorSelect"
+                    @change="errorMessage = ''; if (colorSelect === 'Other Specified') $nextTick(() => $refs.colorOtherInput?.focus())"
+                    :required="!isWizard && type === 'cat'"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
+                    <option value="">Select cat color</option>
+                    @foreach($catColors as $option)
+                        <option value="{{ $option }}" {{ $initialColorSelect === $option ? 'selected' : '' }}>{{ $option }}</option>
+                    @endforeach
+                    <option value="Other Specified" {{ $initialColorSelect === 'Other Specified' ? 'selected' : '' }}>Other Specified</option>
+                </select>
+
+                <div x-show="colorSelect === 'Other Specified'"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="mt-2.5">
+                    <input type="text" x-ref="colorOtherInput" x-model="colorOther" @input="errorMessage = ''"
+                        placeholder="Please specify color..."
+                        class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
+                </div>
             </div>
 
             <div>
@@ -624,18 +767,33 @@
         </div>
 
         <div class="mb-8">
-            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Temperament</label>
-            <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">Choose all traits that describe this pet.</p>
+            <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Temperament</label>
+                <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Select all that apply</span>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">Choose the behavioral traits that describe this pet.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02]">
                 @foreach($temperamentTags as $tag)
-                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] px-3 py-2 text-sm text-gray-700 dark:text-slate-200 cursor-pointer hover:border-[#199CA4]/40 transition">
+                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] px-3.5 py-2.5 text-sm text-gray-700 dark:text-slate-200 cursor-pointer hover:border-[#199CA4]/40 transition"
+                           :class="{ 'border-[#199CA4] bg-[#199CA4]/5 dark:bg-[#199CA4]/10 ring-1 ring-[#199CA4]/30': selectedTags.includes('{{ $tag->id }}') }">
                         <input type="checkbox" name="temperament_tags[]" value="{{ $tag->id }}"
                                x-model="selectedTags"
                                class="rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]"
                                {{ in_array($tag->id, $selectedTagIds) ? 'checked' : '' }}>
-                        <span>{{ $tag->name }}</span>
+                        <span class="font-medium">{{ $tag->name }}</span>
                     </label>
                 @endforeach
+            </div>
+
+            {{-- Custom Temperament Trait Input --}}
+            <div class="mt-3.5 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
+                <label class="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1.5">
+                    Other Traits (Optional)
+                </label>
+                <input type="text" name="custom_temperament" value="{{ old('custom_temperament') }}"
+                    placeholder="e.g. Gentle, Good with kids, House-trained (comma-separated)"
+                    class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1">Separate multiple traits with commas. They will be saved as traits for this pet automatically.</p>
             </div>
         </div>
 

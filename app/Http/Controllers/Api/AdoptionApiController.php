@@ -238,6 +238,8 @@ class AdoptionApiController extends Controller
                     'petImage'         => $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
                     'dateApplied'      => $app->created_at ? $app->created_at->format('M d, Y') : '',
                     'status'           => $app->status,
+                    'display_status'   => $app->display_status,
+                    'displayStatus'    => $app->display_status,
                     'isAdoptedByOther' => $isAdoptedByOther,
                     'scheduledAt'      => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('l, M d, Y') : null,
                     'scheduledRaw'     => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('Y-m-d H:i:s') : null,

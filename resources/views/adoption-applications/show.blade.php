@@ -146,13 +146,23 @@
                                 Rejected
                             </span>
                         @endif
+                    @elseif($application->status === 'approved')
+                        @if($application->is_finalized || !empty($application->documents_verified_at))
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Finalized
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" title="Scheduled for on-site screening and document verification">
+                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                Scheduled
+                            </span>
+                        @endif
                     @else
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
-                            {{ in_array($application->status, ['approved', 'adopted']) ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : '' }}
                             {{ $application->status === 'under_review' ? 'bg-[#199CA4]/10 dark:bg-[#199CA4]/25 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/20 dark:border-[#41C1CB]/30' : '' }}
                             {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' : '' }}">
                             <span class="w-1.5 h-1.5 rounded-full
-                                {{ in_array($application->status, ['approved', 'adopted']) ? 'bg-emerald-500' : '' }}
                                 {{ $application->status === 'under_review' ? 'bg-[#199CA4]' : '' }}
                                 {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
                             {{ ucfirst(str_replace('_', ' ', $application->status)) }}
@@ -547,10 +557,10 @@
                                         <div class="flex items-center gap-2">
                                             <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Pet Recommendation Match</h2>
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                                AI / ML Origin
+                                                Quiz Match
                                             </span>
                                         </div>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Application initiated through the Machine Learning Recommendation Engine.</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Application initiated through the adopter compatibility questionnaire.</p>
                                     </div>
                                 </div>
                                 @if($application->compatibility_score !== null)
@@ -577,7 +587,7 @@
 
                             <div class="p-3.5 rounded-xl bg-white/80 dark:bg-[#12272b] border border-emerald-100 dark:border-emerald-900/40 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                                 <span class="font-bold text-slate-800 dark:text-white">Recommendation Details:</span>
-                                The applicant answered the adopter compatibility questionnaire on mobile. The Scikit-Learn Random Forest recommendation model evaluated available shelter animals and suggested this pet as a suitable match.
+                                The applicant answered the adopter compatibility questionnaire on mobile. The recommendation model evaluated available shelter animals and suggested this pet as a suitable match.
                             </div>
                         </div>
                     @else
@@ -595,7 +605,7 @@
                                             Manual Origin
                                         </span>
                                     </div>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">The applicant discovered and applied for this pet directly from the public shelter listings without utilizing the recommendation engine.</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">The applicant discovered and applied for this pet directly from the public shelter listings without taking the compatibility quiz.</p>
                                 </div>
                             </div>
                         </div>
@@ -677,7 +687,7 @@
                                             </span>
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold
-                                                {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200' : '' }}
+                                                {{ $application->status === 'approved' ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200' : '' }}
                                                 {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200' : '' }}
                                                 {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200' : '' }}">
                                                 {{ $application->status === 'approved' ? 'Scheduled' : ($application->status === 'under_review' ? 'Waitlisted' : ucfirst($application->status)) }}
@@ -710,7 +720,7 @@
                                                 </span>
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold
-                                                    {{ $compApp->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200' : '' }}
+                                                    {{ $compApp->status === 'approved' ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200' : '' }}
                                                     {{ $compApp->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200' : '' }}
                                                     {{ $compApp->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200' : '' }}">
                                                     {{ $compApp->status === 'approved' ? 'Scheduled' : ($compApp->status === 'under_review' ? 'Waitlisted' : ucfirst($compApp->status)) }}
@@ -868,12 +878,84 @@
             </div>
 
             {{-- Right 1 Column: Sticky Decision Sidebar --}}
+            @php
+                $defaultVenue = 'G/F West Concourse, Event Center, Limketkai Center (In front of Handyman and Sanyang Home Furniture)';
+                $dbVenues = \App\Models\AdoptionApplication::whereNotNull('event_location')
+                    ->where('event_location', '!=', '')
+                    ->where('event_location', '!=', $defaultVenue)
+                    ->whereNotIn('event_location', [
+                        'Centrio Mall CDO', 
+                        'SM City CDO Uptown', 
+                        'SM CDO Downtown Premier', 
+                        'Limketkai Center CDO', 
+                        'CAWS Shelter & Adoption Center'
+                    ])
+                    ->distinct()
+                    ->pluck('event_location')
+                    ->values()
+                    ->toArray();
+                $defaultEventNotes = "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original Valid ID and Barangay Certificate to the event for face-to-face verification before the pet is released.";
+                $initialEventNotes = old('event_notes', !empty($application->event_notes) ? $application->event_notes : $defaultEventNotes);
+                $initialLocation = old('event_location', $application->event_location ?? $defaultVenue);
+            @endphp
             <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-5 lg:sticky lg:top-6 h-fit" 
                  x-data="{ 
                      currentStatus: '{{ old('status', in_array($application->status, ['approved', 'rejected']) ? $application->status : '') }}',
-                     presetLocation: ['Centrio Mall CDO', 'SM City CDO Uptown', 'SM CDO Downtown Premier', 'Limketkai Center CDO', 'CAWS Shelter & Adoption Center'].includes('{{ addslashes(old('event_location', $application->event_location ?? '')) }}') ? '{{ addslashes(old('event_location', $application->event_location ?? '')) }}' : '',
-                     eventLocation: '{{ addslashes(old('event_location', $application->event_location ?? '')) }}',
-                     eventNotes: '{{ addslashes(old('event_notes', $application->event_notes ?? '')) }}',
+                     defaultVenue: {{ json_encode($defaultVenue) }},
+                     customVenues: [],
+                     presetLocation: '',
+                     eventLocation: {{ json_encode($initialLocation) }},
+                     venueSaveFeedback: false,
+                     init() {
+                         const dbVenues = {{ json_encode($dbVenues) }};
+                         let storedVenues = [];
+                         try {
+                             const stored = localStorage.getItem('caws_custom_venues');
+                             if (stored) {
+                                 const parsed = JSON.parse(stored);
+                                 if (Array.isArray(parsed)) {
+                                     storedVenues = parsed;
+                                 }
+                             }
+                         } catch (e) {
+                             storedVenues = [];
+                         }
+                         const combined = Array.from(new Set([...dbVenues, ...storedVenues]))
+                             .filter(v => typeof v === 'string' && v.trim().length > 0 && v !== this.defaultVenue && !['Centrio Mall CDO', 'SM City CDO Uptown', 'SM CDO Downtown Premier', 'Limketkai Center CDO', 'CAWS Shelter & Adoption Center'].includes(v));
+                         this.customVenues = combined;
+
+                         if (!this.eventLocation || this.eventLocation === this.defaultVenue) {
+                             this.eventLocation = this.defaultVenue;
+                             this.presetLocation = this.defaultVenue;
+                         } else if (this.customVenues.includes(this.eventLocation)) {
+                             this.presetLocation = this.eventLocation;
+                         } else {
+                             this.presetLocation = 'custom';
+                         }
+                     },
+                     saveCustomVenue() {
+                         const val = (this.eventLocation || '').trim();
+                         if (!val || val === this.defaultVenue || this.customVenues.includes(val)) return;
+                         this.customVenues.push(val);
+                         try {
+                             localStorage.setItem('caws_custom_venues', JSON.stringify(this.customVenues));
+                         } catch (e) {}
+                         this.presetLocation = val;
+                         this.venueSaveFeedback = true;
+                         setTimeout(() => { this.venueSaveFeedback = false; }, 3000);
+                     },
+                     removeCustomVenue(venueToRemove) {
+                         this.customVenues = this.customVenues.filter(v => v !== venueToRemove);
+                         try {
+                             localStorage.setItem('caws_custom_venues', JSON.stringify(this.customVenues));
+                         } catch (e) {}
+                         if (this.presetLocation === venueToRemove) {
+                             this.presetLocation = this.defaultVenue;
+                             this.eventLocation = this.defaultVenue;
+                         }
+                     },
+                     defaultEventNotes: {{ json_encode($defaultEventNotes) }},
+                     eventNotes: {{ json_encode($initialEventNotes) }},
                      presetReason: '',
                      rejectionReason: '{{ addslashes(old('rejection_reason', $application->rejection_reason ?? $application->evaluation_notes ?? '')) }}',
                      get isSaveDisabled() {
@@ -950,7 +1032,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-4">
+                <form action="{{ route('adoption-applications.update', $application) }}" method="POST" @submit="saveCustomVenue()" class="space-y-4">
                     @csrf
                     @method('PATCH')
 
@@ -959,11 +1041,11 @@
                         <select name="status" x-model="currentStatus" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                             <option value="" disabled {{ !in_array($application->status, ['approved', 'rejected']) ? 'selected' : '' }}>Select Decision...</option>
                             @if($isPetAlreadyAdopted && $application->status !== 'approved')
-                                <option value="approved" disabled>Approve (Disabled - Pet Already Adopted)</option>
+                                <option value="approved" disabled>Schedule Final Screening (Disabled - Pet Already Adopted)</option>
                             @elseif($otherScheduled && $application->status !== 'approved')
-                                <option value="approved" disabled>Approve (Disabled - Another Candidate Scheduled)</option>
+                                <option value="approved" disabled>Schedule Final Screening (Disabled - Another Candidate Scheduled)</option>
                             @else
-                                <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Approve and Schedule Final Screening</option>
+                                <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Schedule Final Screening</option>
                             @endif
                             <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject Application</option>
                         </select>
@@ -990,14 +1072,13 @@
                             </label>
 
                             <select x-model="presetLocation" 
-                                    @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (['Centrio Mall CDO', 'SM City CDO Uptown', 'SM CDO Downtown Premier', 'Limketkai Center CDO', 'CAWS Shelter & Adoption Center'].includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
+                                    @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="">Select standard venue (or type custom)...</option>
-                                <option value="Centrio Mall CDO">Centrio Mall CDO</option>
-                                <option value="SM City CDO Uptown">SM City CDO Uptown</option>
-                                <option value="SM CDO Downtown Premier">SM CDO Downtown Premier</option>
-                                <option value="Limketkai Center CDO">Limketkai Center CDO</option>
-                                <option value="CAWS Shelter & Adoption Center">CAWS Shelter & Adoption Center</option>
+                                <option value="">Select venue (or type custom)...</option>
+                                <option :value="defaultVenue" x-text="defaultVenue"></option>
+                                <template x-for="venue in customVenues" :key="venue">
+                                    <option :value="venue" x-text="venue"></option>
+                                </template>
                                 <option value="custom">Other / Custom Location...</option>
                             </select>
 
@@ -1005,19 +1086,54 @@
                                    name="event_location" 
                                    x-ref="customLocationInput"
                                    x-model="eventLocation"
-                                   placeholder="e.g. Centrio Mall CDO, Activity Center Booth #2" 
+                                   placeholder="e.g. G/F West Concourse, Event Center, Limketkai Center..." 
                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+
+                            {{-- Action to save new location preset or remove selected custom preset --}}
+                            <div class="flex items-center justify-between gap-2 pt-0.5">
+                                <div>
+                                    <template x-if="eventLocation && eventLocation.trim() && eventLocation.trim() !== defaultVenue && !customVenues.includes(eventLocation.trim())">
+                                        <button type="button" 
+                                                @click="saveCustomVenue()" 
+                                                class="inline-flex items-center gap-1 text-[11px] font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                            <span>Save location to preset list</span>
+                                        </button>
+                                    </template>
+                                    <template x-if="venueSaveFeedback">
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            <span>Location saved to presets</span>
+                                        </span>
+                                    </template>
+                                </div>
+
+                                <template x-if="customVenues.includes(presetLocation)">
+                                    <button type="button" 
+                                            @click="removeCustomVenue(presetLocation)" 
+                                            class="text-[11px] font-medium text-rose-500 hover:text-rose-700 dark:text-rose-400 hover:underline cursor-pointer">
+                                        Delete selected preset
+                                    </button>
+                                </template>
+                            </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                                Event Instructions & Reminders <span class="text-rose-500 font-bold">*</span>
-                            </label>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Event Instructions & Reminders <span class="text-rose-500 font-bold">*</span>
+                                </label>
+                                <button type="button" 
+                                        @click="eventNotes = defaultEventNotes" 
+                                        class="text-[11px] font-semibold text-[#199CA4] hover:underline cursor-pointer">
+                                    Reset to template
+                                </button>
+                            </div>
                             <textarea name="event_notes" 
                                       x-model="eventNotes"
-                                      rows="3" 
-                                      placeholder="e.g. Pet release, free anti-rabies vaccination, and spaying/neutering drive." 
-                                      class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ old('event_notes', $application->event_notes) }}</textarea>
+                                      rows="4" 
+                                      placeholder="e.g. On-Site Document Verification Required..." 
+                                      class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ $initialEventNotes }}</textarea>
                         </div>
                     </div>
 

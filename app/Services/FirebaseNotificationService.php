@@ -30,11 +30,17 @@ class FirebaseNotificationService
      */
     public static function sendRawNotification(string $fcmToken, string $title, string $body, array $data = []): bool
     {
-        $credentialsPath = storage_path('app/firebase/firebase-credentials.json');
+        $credentialsPath = env('FIREBASE_CREDENTIALS_PATH', storage_path('app/firebase/firebase-credentials.json'));
 
         if (!file_exists($credentialsPath)) {
-            Log::warning("FCM: Credentials file not found at: {$credentialsPath}");
-            return false;
+            if (file_exists(base_path('firebase-credentials.json'))) {
+                $credentialsPath = base_path('firebase-credentials.json');
+            } elseif (file_exists(base_path('service-account.json'))) {
+                $credentialsPath = base_path('service-account.json');
+            } else {
+                Log::warning("FCM: Credentials file not found at: {$credentialsPath}");
+                return false;
+            }
         }
 
         $credentials = json_decode(file_get_contents($credentialsPath), true);

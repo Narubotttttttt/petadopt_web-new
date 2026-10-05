@@ -460,13 +460,23 @@
                                     <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                                     Waitlisted (Backup)
                                 </span>
+                            @elseif($application->status === 'approved')
+                                @if($application->is_finalized || !empty($application->documents_verified_at))
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Finalized
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                        Scheduled
+                                    </span>
+                                @endif
                             @else
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0
-                                    {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
                                     {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
                                     {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
                                     <span class="w-1.5 h-1.5 rounded-full
-                                        {{ $application->status === 'approved' ? 'bg-emerald-500' : '' }}
                                         {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
                                         {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
                                     {{ ucfirst(str_replace('_', ' ', $application->status)) }}
@@ -481,13 +491,13 @@
                                 <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
                             </div>
                             <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-400 dark:text-slate-500 font-medium">Origin</span>
+                                <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
                                 @if($application->application_source === 'recommendation')
                                     <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                                        AI Match {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
+                                        Quiz Match {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
                                     </span>
                                 @else
-                                    <span class="font-semibold text-slate-600 dark:text-slate-400">Manual Catalog</span>
+                                    <span class="font-semibold text-slate-600 dark:text-slate-400">Direct Browse</span>
                                 @endif
                             </div>
                             <div class="flex items-center justify-between text-xs">
@@ -541,7 +551,7 @@
                         <tr>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Applicant</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Origin / Match</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Application Source</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Submitted Date</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
@@ -604,7 +614,7 @@
                                         <div class="flex items-center gap-1.5">
                                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                AI Match
+                                                Quiz Match
                                             </span>
                                             @if($application->compatibility_score !== null)
                                                 <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
@@ -614,7 +624,7 @@
                                         </div>
                                     @else
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08]">
-                                            Manual Catalog
+                                            Direct Browse
                                         </span>
                                     @endif
                                 </td>
@@ -638,13 +648,28 @@
                                                 Waitlisted (Backup)
                                             </span>
                                             <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">On standby for {{ $application->scheduled_competing_application->applicant_name ?? 'primary applicant' }}</span>
+                                        @elseif($application->status === 'approved')
+                                            @if($application->is_finalized || !empty($application->documents_verified_at))
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    Finalized
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border w-fit bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                                    Scheduled
+                                                </span>
+                                                @if($application->scheduled_at)
+                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                        {{ $application->scheduled_at->format('M d, Y') }}
+                                                    </span>
+                                                @endif
+                                            @endif
                                         @else
                                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border w-fit
-                                                {{ $application->status === 'approved' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
                                                 {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
                                                 {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
                                                 <span class="w-1.5 h-1.5 rounded-full
-                                                    {{ $application->status === 'approved' ? 'bg-emerald-500' : '' }}
                                                     {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
                                                     {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
                                                 {{ ucfirst(str_replace('_', ' ', $application->status)) }}

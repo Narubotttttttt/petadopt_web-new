@@ -37,7 +37,7 @@ class AdoptionApplicationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Adoption Decision');
-        $response->assertSee('Approve');
+        $response->assertSee('Schedule Final Screening');
         $response->assertSee('Reject');
     }
 
@@ -691,7 +691,7 @@ class AdoptionApplicationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Pet Recommendation Match');
-        $response->assertSee('AI / ML Origin');
+        $response->assertSee('Quiz Match');
         $response->assertSee('88%');
         $response->assertSee('High Compatibility');
     }
@@ -747,9 +747,9 @@ class AdoptionApplicationTest extends TestCase
         $response = $this->actingAs($staff)->get(route('adoption-applications.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('AI Match');
+        $response->assertSee('Quiz Match');
         $response->assertSee('95%');
-        $response->assertSee('Manual Catalog');
+        $response->assertSee('Direct Browse');
     }
 
     public function test_competing_applications_are_placed_on_priority_waitlist_when_primary_is_approved(): void
@@ -833,7 +833,7 @@ class AdoptionApplicationTest extends TestCase
         $response->assertSee('2 Total Applicants');
         $response->assertSee('Second Applicant');
         $response->assertSee('75% Match');
-        $response->assertSee('Approve and Schedule Final Screening');
+        $response->assertSee('Schedule Final Screening');
     }
 
     public function test_adopter_and_staff_signatures_render_with_dark_mode_visibility_classes_on_show_page(): void
@@ -1424,5 +1424,4 @@ class AdoptionApplicationTest extends TestCase
         $this->assertEquals($app->id, session('last_viewed_pending_id'));
     }
 }
-
 
