@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Pet;
 use App\Models\AdoptionApplication;
+use App\Models\MedicalLog;
+use App\Models\Pet;
 use App\Models\TemperamentTag;
-use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PetController extends Controller
 {
@@ -122,7 +125,8 @@ class PetController extends Controller
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
         }
 
-        $lockKey = 'pet_store_lock_' . ($request->session()->getId() ?: (Auth::id() ?? $request->ip()));
+        $sessionId = $request->hasSession() ? $request->session()->getId() : null;
+        $lockKey = 'pet_store_lock_' . ($sessionId ?: (Auth::id() ?? $request->ip()));
         $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 3);
 
         if (! $lock->get()) {
@@ -132,37 +136,75 @@ class PetController extends Controller
         try {
             $user = Auth::user();
 
-            $pet = Pet::create([
-                'breed' => $data['breed'],
-                'color' => $data['color'],
-                'gender' => $data['gender'],
-                'type' => $data['type'],
-                'age' => $data['age'] ?? null,
-                'medical_history' => $data['medical_history'] ?? null,
-                'description' => $data['description'] ?? null,
-                'photo_path' => $data['photo_path'] ?? null,
-                'status' => 'available',
-                'added_by_user_id' => $user?->id,
-                'added_by_name' => $user?->name,
-            ]);
+            $pet = DB::transaction(function () use ($data, $user, $request) {
+                $pet = Pet::create([
+                    'breed' => $data['breed'],
+                    'color' => $data['color'],
+                    'gender' => $data['gender'],
+                    'type' => $data['type'],
+                    'age' => $data['age'] ?? null,
+                    'medical_history' => $data['medical_history'] ?? null,
+                    'description' => $data['description'] ?? null,
+                    'photo_path' => $data['photo_path'] ?? null,
+                    'status' => 'available',
+                    'added_by_user_id' => $user?->id,
+                    'added_by_name' => $user?->name,
+                ]);
 
-            $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
-            $rawCustom = $request->input('custom_temperament') ?: $request->input('temperament');
-            if (!empty($rawCustom)) {
-                $names = is_array($rawCustom)
-                    ? $rawCustom
-                    : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
+                $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
+                $rawCustom = $request->input('custom_temperament') ?: $request->input('temperament');
+                if (!empty($rawCustom)) {
+                    $names = is_array($rawCustom)
+                        ? $rawCustom
+                        : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
 
-                foreach ($names as $name) {
-                    $name = trim($name);
-                    if ($name !== '') {
-                        $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
-                        $tagIds[] = $created->id;
+                    foreach ($names as $name) {
+                        $name = trim($name);
+                        if ($name !== '') {
+                            $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
+                            $tagIds[] = $created->id;
+                        }
                     }
                 }
-            }
 
-            $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
+                $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
+
+                // 1. Auto-create clinical MedicalLog for Vaccination if checked
+                if ($request->boolean('is_vaccinated')) {
+                    $vaccineName = trim((string) $request->input('vaccine_name')) ?: '5-in-1';
+                    $vaccineDate = $request->input('vaccine_date') ?: now()->toDateString();
+                    $vaccineNextDue = $request->input('vaccine_next_due') ?: Carbon::parse($vaccineDate)->addMonths(6)->toDateString();
+
+                    MedicalLog::create([
+                        'pet_id'          => $pet->id,
+                        'category'        => 'vaccination',
+                        'vaccine_name'    => $vaccineName,
+                        'date'            => $vaccineDate,
+                        'next_due_date'   => $vaccineNextDue,
+                        'administered_by' => $user?->name ?? 'Shelter Clinician',
+                        'created_by'      => $user?->id,
+                    ]);
+                }
+
+                // 2. Auto-create clinical MedicalLog for Deworming if checked
+                if ($request->boolean('is_dewormed')) {
+                    $dewormerName = trim((string) $request->input('dewormer_name')) ?: 'Heartgard Plus';
+                    $dewormerDate = $request->input('dewormer_date') ?: now()->toDateString();
+                    $dewormerNextDue = $request->input('dewormer_next_due') ?: Carbon::parse($dewormerDate)->addMonths(3)->toDateString();
+
+                    MedicalLog::create([
+                        'pet_id'          => $pet->id,
+                        'category'        => 'deworming',
+                        'vaccine_name'    => $dewormerName,
+                        'date'            => $dewormerDate,
+                        'next_due_date'   => $dewormerNextDue,
+                        'administered_by' => $user?->name ?? 'Shelter Clinician',
+                        'created_by'      => $user?->id,
+                    ]);
+                }
+
+                return $pet;
+            });
 
             session()->flash('success', 'Pet added successfully.');
 
@@ -229,35 +271,89 @@ class PetController extends Controller
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
         }
 
-        $pet->update([
-            'breed' => $data['breed'],
-            'color' => $data['color'],
-            'gender' => $data['gender'],
-            'type' => $data['type'],
-            'age' => $data['age'] ?? null,
-            'medical_history' => $data['medical_history'] ?? null,
-            'description' => $data['description'] ?? null,
-            'status' => $data['status'],
-            'photo_path' => $data['photo_path'] ?? $pet->photo_path,
-        ]);
+        DB::transaction(function () use ($pet, $data, $request) {
+            $pet->update([
+                'breed' => $data['breed'],
+                'color' => $data['color'],
+                'gender' => $data['gender'],
+                'type' => $data['type'],
+                'age' => $data['age'] ?? null,
+                'medical_history' => $data['medical_history'] ?? null,
+                'description' => $data['description'] ?? null,
+                'status' => $data['status'],
+                'photo_path' => $data['photo_path'] ?? $pet->photo_path,
+            ]);
 
-        $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
-        $rawCustom = $request->input('custom_temperament') ?: $request->input('temperament');
-        if (!empty($rawCustom)) {
-            $names = is_array($rawCustom)
-                ? $rawCustom
-                : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
+            $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
+            $rawCustom = $request->input('custom_temperament') ?: $request->input('temperament');
+            if (!empty($rawCustom)) {
+                $names = is_array($rawCustom)
+                    ? $rawCustom
+                    : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
 
-            foreach ($names as $name) {
-                $name = trim($name);
-                if ($name !== '') {
-                    $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
-                    $tagIds[] = $created->id;
+                foreach ($names as $name) {
+                    $name = trim($name);
+                    if ($name !== '') {
+                        $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
+                        $tagIds[] = $created->id;
+                    }
                 }
             }
-        }
 
-        $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
+            $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
+
+            // 1. Update or create clinical MedicalLog for Vaccination if checked
+            if ($request->boolean('is_vaccinated')) {
+                $vaccineName = trim((string) $request->input('vaccine_name')) ?: '5-in-1';
+                $vaccineDate = $request->input('vaccine_date') ?: now()->toDateString();
+                $vaccineNextDue = $request->input('vaccine_next_due') ?: Carbon::parse($vaccineDate)->addMonths(6)->toDateString();
+
+                $vLog = MedicalLog::where('pet_id', $pet->id)->where('category', 'vaccination')->latest('date')->first();
+                if ($vLog) {
+                    $vLog->update([
+                        'vaccine_name'  => $vaccineName,
+                        'date'          => $vaccineDate,
+                        'next_due_date' => $vaccineNextDue,
+                    ]);
+                } else {
+                    MedicalLog::create([
+                        'pet_id'          => $pet->id,
+                        'category'        => 'vaccination',
+                        'vaccine_name'    => $vaccineName,
+                        'date'            => $vaccineDate,
+                        'next_due_date'   => $vaccineNextDue,
+                        'administered_by' => Auth::user()?->name ?? 'Shelter Clinician',
+                        'created_by'      => Auth::id(),
+                    ]);
+                }
+            }
+
+            // 2. Update or create clinical MedicalLog for Deworming if checked
+            if ($request->boolean('is_dewormed')) {
+                $dewormerName = trim((string) $request->input('dewormer_name')) ?: 'Heartgard Plus';
+                $dewormerDate = $request->input('dewormer_date') ?: now()->toDateString();
+                $dewormerNextDue = $request->input('dewormer_next_due') ?: Carbon::parse($dewormerDate)->addMonths(3)->toDateString();
+
+                $dLog = MedicalLog::where('pet_id', $pet->id)->where('category', 'deworming')->latest('date')->first();
+                if ($dLog) {
+                    $dLog->update([
+                        'vaccine_name'  => $dewormerName,
+                        'date'          => $dewormerDate,
+                        'next_due_date' => $dewormerNextDue,
+                    ]);
+                } else {
+                    MedicalLog::create([
+                        'pet_id'          => $pet->id,
+                        'category'        => 'deworming',
+                        'vaccine_name'    => $dewormerName,
+                        'date'            => $dewormerDate,
+                        'next_due_date'   => $dewormerNextDue,
+                        'administered_by' => Auth::user()?->name ?? 'Shelter Clinician',
+                        'created_by'      => Auth::id(),
+                    ]);
+                }
+            }
+        });
 
         session()->flash('success', 'Pet updated successfully.');
 

@@ -1018,8 +1018,10 @@
                     $otherFinalized = isset($competingApplications) ? $competingApplications->first(function($app) {
                         return $app->is_finalized || !empty($app->staff_signature_path) || !empty($app->documents_verified_at);
                     }) : null;
-                    $otherScheduled = isset($competingApplications) ? $competingApplications->firstWhere('status', 'approved') : null;
-                    $isPetAlreadyAdopted = ($otherFinalized !== null) || ($application->pet && $application->pet->status === 'adopted' && !$application->is_finalized);
+                    $otherScheduled = isset($competingApplications) ? $competingApplications->first(function($app) {
+                        return $app->status === 'approved' && empty($app->documents_verified_at) && empty($app->staff_signature_path);
+                    }) : null;
+                    $isPetAlreadyAdopted = ($otherFinalized !== null) || ($application->pet && $application->pet->status === 'adopted' && $application->is_finalized);
                 @endphp
 
                 @if($isPetAlreadyAdopted && $application->status !== 'approved')

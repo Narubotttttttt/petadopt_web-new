@@ -285,7 +285,7 @@ class AdoptionApplicationController extends Controller
         }
 
         if ($willBeApproved && ! $wasApproved) {
-            $petUpdate = ['status' => 'adopted'];
+            $petUpdate = ['status' => 'pending'];
             if (empty($application->pet->name) && $application->message && preg_match('/Proposed Pet Name:\s*(.+)/i', $application->message, $matches)) {
                 $petUpdate['name'] = trim($matches[1]);
             }
@@ -494,7 +494,7 @@ class AdoptionApplicationController extends Controller
         ]);
 
         if ($application->pet && $application->pet->status === 'adopted') {
-            $application->pet->update(['status' => 'available']);
+            $application->pet->update(['status' => 'pending']);
         }
 
         return back()->with('success', 'Handover verification and signature have been reset. You can now re-verify documents or sign again.');
@@ -614,7 +614,7 @@ class AdoptionApplicationController extends Controller
         }
 
         // If deleting an approved application for an unfinalized pet, restore pet status to available
-        if ($application->status === 'approved' && $application->pet && $application->pet->status === 'adopted' && !$application->is_finalized) {
+        if ($application->status === 'approved' && $application->pet && in_array($application->pet->status, ['pending', 'adopted']) && !$application->is_finalized) {
             $application->pet->update(['status' => 'available']);
         }
 

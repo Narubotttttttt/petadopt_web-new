@@ -22,7 +22,7 @@
         'Golden',
         'Tan',
         'Cream',
-        'Grey',
+        'Gray',
         'Brindle',
         'Tricolor',
         'Bicolor',
@@ -34,13 +34,13 @@
         'Black',
         'White',
         'Orange',
-        'Grey',
+        'Gray',
         'Brown',
         'Cream',
         'Calico',
         'Tortoiseshell',
         'Orange Tabby',
-        'Grey Tabby',
+        'Gray Tabby',
         'Brown Tabby',
         'Tuxedo',
         'Bicolor',
@@ -97,6 +97,78 @@
         $selectedMedicalHistory = [];
     }
 
+    // Load existing clinical records if editing
+    $latestVaccineLog = optional($pet)->medicalLogs ? optional($pet)->medicalLogs->where('category', 'vaccination')->first() : null;
+    $latestDewormLog = optional($pet)->medicalLogs ? optional($pet)->medicalLogs->where('category', 'deworming')->first() : null;
+
+    $hasVaccinatedInitial = false;
+    $initialVaccineName = ($currentType === 'cat') ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
+    $initialVaccineDate = $latestVaccineLog?->date ? $latestVaccineLog->date->format('Y-m-d') : date('Y-m-d');
+    $initialVaccineNextDue = $latestVaccineLog?->next_due_date ? $latestVaccineLog->next_due_date->format('Y-m-d') : '';
+
+    $hasDewormedInitial = false;
+    $initialDewormerName = 'Heartgard Plus';
+    $initialDewormerDate = $latestDewormLog?->date ? $latestDewormLog->date->format('Y-m-d') : date('Y-m-d');
+    $initialDewormerNextDue = $latestDewormLog?->next_due_date ? $latestDewormLog->next_due_date->format('Y-m-d') : '';
+
+    $hasSpayedNeuteredInitial = false;
+
+    foreach ($selectedMedicalHistory as $item) {
+        if (stripos($item, 'Vaccinated') !== false) {
+            $hasVaccinatedInitial = true;
+            if (preg_match('/Vaccinated\s*\(([^\)]+)\)/i', $item, $vMatches)) {
+                $initialVaccineName = trim($vMatches[1]);
+            }
+        }
+        if (stripos($item, 'Dewormed') !== false) {
+            $hasDewormedInitial = true;
+            if (preg_match('/Dewormed\s*\(([^\)]+)\)/i', $item, $dMatches)) {
+                $initialDewormerName = trim($dMatches[1]);
+            }
+        }
+        if (stripos($item, 'Spayed') !== false || stripos($item, 'Neutered') !== false) {
+            $hasSpayedNeuteredInitial = true;
+        }
+    }
+    if ($latestVaccineLog) {
+        $hasVaccinatedInitial = true;
+        if (!empty($latestVaccineLog->vaccine_name)) {
+            $initialVaccineName = $latestVaccineLog->vaccine_name;
+        }
+    }
+    if ($latestDewormLog) {
+        $hasDewormedInitial = true;
+        if (!empty($latestDewormLog->vaccine_name)) {
+            $initialDewormerName = $latestDewormLog->vaccine_name;
+        }
+    }
+
+    if (old('is_vaccinated') !== null) {
+        $hasVaccinatedInitial = old('is_vaccinated') == '1';
+    }
+    if (old('vaccine_name')) {
+        $initialVaccineName = old('vaccine_name');
+    }
+    if (old('vaccine_date')) {
+        $initialVaccineDate = old('vaccine_date');
+    }
+    if (old('vaccine_next_due')) {
+        $initialVaccineNextDue = old('vaccine_next_due');
+    }
+
+    if (old('is_dewormed') !== null) {
+        $hasDewormedInitial = old('is_dewormed') == '1';
+    }
+    if (old('dewormer_name')) {
+        $initialDewormerName = old('dewormer_name');
+    }
+    if (old('dewormer_date')) {
+        $initialDewormerDate = old('dewormer_date');
+    }
+    if (old('dewormer_next_due')) {
+        $initialDewormerNextDue = old('dewormer_next_due');
+    }
+
     $standardDisabilityOptions = [
         'Blind / Visually Impaired',
         'Deaf / Hearing Impaired',
@@ -150,7 +222,7 @@
     $initialStep = 1;
     if ($errors->has('photo') || $errors->has('description')) {
         $initialStep = 3;
-    } elseif ($errors->has('medical_history') || $errors->has('temperament_tags') || $errors->has('custom_temperament')) {
+    } elseif ($errors->has('medical_history') || $errors->has('temperament_tags')) {
         $initialStep = 2;
     }
 @endphp
@@ -180,7 +252,20 @@
     hasDisability: {{ $hasDisabilityInitial ? 'true' : 'false' }},
     disabilityType: '{{ addslashes($initialDisabilityType) }}',
     disabilityOther: '{{ addslashes($initialDisabilityOther) }}',
-    selectedMedical: {{ json_encode(array_values(array_intersect($selectedMedicalHistory, ['Vaccinated', 'Spayed/Neutered', 'Dewormed']))) }},
+
+    isVaccinated: {{ $hasVaccinatedInitial ? 'true' : 'false' }},
+    vaccineSelect: '{{ addslashes(str_contains(strtolower($initialVaccineName), "rabies") ? "Anti-Rabies" : (str_contains(strtolower($initialVaccineName), "parvo") ? "Anti-Parvo" : "5-in-1")) }}',
+    vaccineDate: '{{ addslashes($initialVaccineDate) }}',
+    vaccineNextDue: '{{ addslashes($initialVaccineNextDue) }}',
+
+    isDewormed: {{ $hasDewormedInitial ? 'true' : 'false' }},
+    dewormerSelect: '{{ addslashes(in_array($initialDewormerName, ['Heartgard Plus', 'Pyrantel Embonate', 'Drontal Plus', 'NexGard Spectra', 'Broadline (Feline)', 'Revolution Plus']) ? $initialDewormerName : (empty($initialDewormerName) ? 'Heartgard Plus' : 'Other')) }}',
+    dewormerOther: '{{ addslashes(!in_array($initialDewormerName, ['Heartgard Plus', 'Pyrantel Embonate', 'Drontal Plus', 'NexGard Spectra', 'Broadline (Feline)', 'Revolution Plus']) ? $initialDewormerName : '') }}',
+    dewormerDate: '{{ addslashes($initialDewormerDate) }}',
+    dewormerNextDue: '{{ addslashes($initialDewormerNextDue) }}',
+
+    isSpayedNeutered: {{ $hasSpayedNeuteredInitial ? 'true' : 'false' }},
+
     selectedTags: {{ json_encode(array_map('strval', $selectedTagIds)) }},
 
     // Step 3 fields
@@ -214,6 +299,42 @@
             return `With Disability (${this.disabilityType})`;
         }
         return 'With Disability';
+    },
+    get finalVaccineName() {
+        if (!this.isVaccinated) return '';
+        return this.vaccineSelect || '5-in-1';
+    },
+    get finalDewormerName() {
+        if (!this.isDewormed) return '';
+        if (this.dewormerSelect === 'Other') {
+            return this.dewormerOther ? this.dewormerOther.trim() : 'Dewormed';
+        }
+        return this.dewormerSelect || 'Heartgard Plus';
+    },
+    get vaccinatedValue() {
+        if (!this.isVaccinated) return '';
+        const name = this.finalVaccineName;
+        return name ? `Vaccinated (${name})` : 'Vaccinated';
+    },
+    get dewormedValue() {
+        if (!this.isDewormed) return '';
+        const name = this.finalDewormerName;
+        return name ? `Dewormed (${name})` : 'Dewormed';
+    },
+    calcDateOffset(baseDate, months) {
+        let d;
+        if (!baseDate) {
+            d = new Date();
+        } else {
+            const parts = baseDate.split('-');
+            if (parts.length !== 3) d = new Date();
+            else d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+        d.setMonth(d.getMonth() + months);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
     },
 
     init() {
@@ -705,31 +826,201 @@
          x-cloak>
         
         <div class="mb-8">
-            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Medical Background</label>
-            <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">Choose the options that best describe the pet's health history.</p>
+            <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Medical Background & Clinical Intake</label>
+                <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-logged to Medical History</span>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-slate-400 mb-3.5">Select treatments administered to this pet. Selecting Vaccinated or Dewormed automatically creates clinical ledger records with booster dates.</p>
+            
             <div class="rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02] space-y-4">
+                
+                {{-- 4 Primary Option Cards --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @php $medicalStandardOptions = ['Vaccinated', 'Spayed/Neutered', 'Dewormed']; @endphp
-                    @foreach($medicalStandardOptions as $option)
-                        <label class="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] px-3 py-2 text-sm text-gray-700 dark:text-slate-200 cursor-pointer hover:border-[#199CA4]/40 transition">
-                            <input type="checkbox" name="medical_history[]" value="{{ $option }}"
-                                   x-model="selectedMedical"
-                                   class="rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]"
-                                   {{ in_array($option, $selectedMedicalHistory, true) ? 'checked' : '' }}>
-                            <span>{{ $option }}</span>
-                        </label>
-                    @endforeach
-
-                    {{-- With Disability Checkbox --}}
-                    <label class="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] px-3 py-2 text-sm text-gray-700 dark:text-slate-200 cursor-pointer hover:border-[#199CA4]/40 transition"
-                        :class="{ 'border-[#199CA4] ring-1 ring-[#199CA4]/30': hasDisability }">
-                        <input type="checkbox" x-model="hasDisability" class="rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]">
-                        <span>With Disability</span>
+                    
+                    {{-- 1. Vaccinated Card --}}
+                    <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] p-3 text-sm cursor-pointer hover:border-[#199CA4]/50 transition shadow-2xs"
+                           :class="{ 'border-[#199CA4] ring-2 ring-[#199CA4]/20 bg-[#199CA4]/5 dark:bg-[#199CA4]/10': isVaccinated }">
+                        <input type="checkbox" x-model="isVaccinated" class="mt-0.5 rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-gray-900 dark:text-white text-sm">Vaccinated</span>
+                                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">Auto-records</span>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Specify vaccine name & date administered.</p>
+                        </div>
                     </label>
-                    <input type="hidden" name="medical_history[]" :value="disabilityValue" :disabled="!hasDisability">
+
+                    {{-- 2. Dewormed Card --}}
+                    <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] p-3 text-sm cursor-pointer hover:border-emerald-500/50 transition shadow-2xs"
+                           :class="{ 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20': isDewormed }">
+                        <input type="checkbox" x-model="isDewormed" class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-gray-900 dark:text-white text-sm">Dewormed</span>
+                                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">Auto-records</span>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Specify dewormer brand & date administered.</p>
+                        </div>
+                    </label>
+
+                    {{-- 3. Spayed/Neutered Card --}}
+                    <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] p-3 text-sm cursor-pointer hover:border-[#199CA4]/50 transition shadow-2xs"
+                           :class="{ 'border-[#199CA4] ring-2 ring-[#199CA4]/20 bg-[#199CA4]/5 dark:bg-[#199CA4]/10': isSpayedNeutered }">
+                        <input type="checkbox" x-model="isSpayedNeutered" class="mt-0.5 rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]">
+                        <div class="flex-1 min-w-0">
+                            <span class="font-bold text-gray-900 dark:text-white text-sm block">Spayed / Neutered</span>
+                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Surgically sterilized.</p>
+                        </div>
+                    </label>
+
+                    {{-- 4. With Disability Card --}}
+                    <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] p-3 text-sm cursor-pointer hover:border-amber-500/50 transition shadow-2xs"
+                           :class="{ 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20': hasDisability }">
+                        <input type="checkbox" x-model="hasDisability" class="mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                        <div class="flex-1 min-w-0">
+                            <span class="font-bold text-gray-900 dark:text-white text-sm block">With Disability / Special Needs</span>
+                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Requires specialized shelter or adopter care.</p>
+                        </div>
+                    </label>
                 </div>
 
-                {{-- Disability Dropdown Panel (Shown when With Disability is checked) --}}
+                {{-- Hidden Form Inputs Submitted to Backend --}}
+                <input type="hidden" name="is_vaccinated" :value="isVaccinated ? '1' : '0'">
+                <input type="hidden" name="vaccine_name" :value="finalVaccineName" :disabled="!isVaccinated">
+                <input type="hidden" name="vaccine_date" :value="vaccineDate" :disabled="!isVaccinated">
+                <input type="hidden" name="vaccine_next_due" :value="vaccineNextDue" :disabled="!isVaccinated">
+
+                <input type="hidden" name="is_dewormed" :value="isDewormed ? '1' : '0'">
+                <input type="hidden" name="dewormer_name" :value="finalDewormerName" :disabled="!isDewormed">
+                <input type="hidden" name="dewormer_date" :value="dewormerDate" :disabled="!isDewormed">
+                <input type="hidden" name="dewormer_next_due" :value="dewormerNextDue" :disabled="!isDewormed">
+
+                <input type="hidden" name="medical_history[]" :value="vaccinatedValue" :disabled="!isVaccinated">
+                <input type="hidden" name="medical_history[]" :value="dewormedValue" :disabled="!isDewormed">
+                <input type="hidden" name="medical_history[]" value="Spayed/Neutered" :disabled="!isSpayedNeutered">
+                <input type="hidden" name="medical_history[]" :value="disabilityValue" :disabled="!hasDisability">
+
+                {{-- Expandable Panel 1: Vaccination Details --}}
+                <div x-show="isVaccinated"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     class="pt-3.5 pb-2 border-t border-blue-200/60 dark:border-blue-800/40 bg-blue-50/30 dark:bg-blue-950/10 p-4 rounded-xl space-y-3.5">
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-200">Vaccination Clinical Details</span>
+                        </div>
+                        <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300">Will auto-record in Medical Logs</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-1">
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaccine Name *</label>
+                            <select x-model="vaccineSelect"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
+                                <option value="Anti-Rabies">Anti-Rabies</option>
+                                <option value="5-in-1">5-in-1</option>
+                                <option value="Anti-Parvo">Anti-Parvo (Parvovirus)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Date Given *</label>
+                                <button type="button" @click="vaccineDate = '{{ date('Y-m-d') }}'" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">Today</button>
+                            </div>
+                            <input type="date" x-model="vaccineDate"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Next Booster Due</label>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" @click="vaccineNextDue = calcDateOffset(vaccineDate, 6)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+6M</button>
+                                    <button type="button" @click="vaccineNextDue = calcDateOffset(vaccineDate, 12)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+1Y</button>
+                                    <button type="button" @click="vaccineNextDue = ''" x-show="vaccineNextDue" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                                </div>
+                            </div>
+                            <input type="date" x-model="vaccineNextDue"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Expandable Panel 2: Deworming Details --}}
+                <div x-show="isDewormed"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     class="pt-3.5 pb-2 border-t border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-950/10 p-4 rounded-xl space-y-3.5">
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200">Deworming Clinical Details</span>
+                        </div>
+                        <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">Will auto-record in Medical Logs</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-1">
+                            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Dewormer Product *</label>
+                            <select x-model="dewormerSelect"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
+                                <option value="Heartgard Plus">Heartgard Plus</option>
+                                <option value="Pyrantel Embonate">Pyrantel Embonate</option>
+                                <option value="Drontal Plus">Drontal Plus</option>
+                                <option value="NexGard Spectra">NexGard Spectra</option>
+                                <option value="Broadline (Feline)">Broadline (Feline)</option>
+                                <option value="Revolution Plus">Revolution Plus</option>
+                                <option value="Other">Other (Specify below)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Date Given *</label>
+                                <button type="button" @click="dewormerDate = '{{ date('Y-m-d') }}'" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">Today</button>
+                            </div>
+                            <input type="date" x-model="dewormerDate"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Next Due Date</label>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" @click="dewormerNextDue = calcDateOffset(dewormerDate, 1)" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">+1M</button>
+                                    <button type="button" @click="dewormerNextDue = calcDateOffset(dewormerDate, 3)" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">+3M</button>
+                                    <button type="button" @click="dewormerNextDue = ''" x-show="dewormerNextDue" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                                </div>
+                            </div>
+                            <input type="date" x-model="dewormerNextDue"
+                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
+                        </div>
+                    </div>
+
+                    <div x-show="dewormerSelect === 'Other'" x-transition class="pt-1">
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Custom Dewormer Name</label>
+                        <input type="text" x-model="dewormerOther" placeholder="e.g., Fenbendazole, Praziquantel..."
+                            class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs">
+                    </div>
+                </div>
+
+                {{-- Expandable Panel 3: Disability Details (Shown when With Disability is checked) --}}
                 <div x-show="hasDisability" 
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 -translate-y-1"
@@ -737,13 +1028,13 @@
                      x-transition:leave="transition ease-in duration-150"
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 -translate-y-1"
-                     class="pt-3 border-t border-gray-200 dark:border-white/[0.06] space-y-3">
+                     class="pt-3 border-t border-amber-200/60 dark:border-amber-800/40 bg-amber-50/30 dark:bg-amber-950/10 p-4 rounded-xl space-y-3">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-[#199CA4] dark:text-teal-400 mb-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1.5">
                             Disability Type
                         </label>
                         <select x-model="disabilityType" 
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
                             <option value="">Select disability type (optional)</option>
                             <option value="Blind / Visually Impaired">Blind / Visually Impaired</option>
                             <option value="Deaf / Hearing Impaired">Deaf / Hearing Impaired</option>
@@ -760,7 +1051,7 @@
                          x-transition:enter-end="opacity-100">
                         <label class="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1.5">Please specify the disability</label>
                         <input type="text" x-model="disabilityOther" placeholder="e.g., Partial vision loss, limb deformity..."
-                            class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
+                            class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
                     </div>
                 </div>
             </div>
@@ -783,17 +1074,6 @@
                         <span class="font-medium">{{ $tag->name }}</span>
                     </label>
                 @endforeach
-            </div>
-
-            {{-- Custom Temperament Trait Input --}}
-            <div class="mt-3.5 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1.5">
-                    Other Traits (Optional)
-                </label>
-                <input type="text" name="custom_temperament" value="{{ old('custom_temperament') }}"
-                    placeholder="e.g. Gentle, Good with kids, House-trained (comma-separated)"
-                    class="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1">Separate multiple traits with commas. They will be saved as traits for this pet automatically.</p>
             </div>
         </div>
 

@@ -195,7 +195,7 @@ class AdoptionApiController extends Controller
 
                 $isApproved = $app->status === 'approved';
                 $isPetAdopted = $pet && $pet->status === 'adopted';
-                $isAdoptedByOther = $isPetAdopted && ! $isApproved;
+                $isAdoptedByOther = $isPetAdopted && ! $app->is_finalized;
 
                 $proposedName = null;
                 if ($app->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $app->message, $matches)) {

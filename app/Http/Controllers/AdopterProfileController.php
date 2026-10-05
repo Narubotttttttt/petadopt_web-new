@@ -28,7 +28,8 @@ class AdopterProfileController extends Controller
                     $q->latest('check_in_date');
                 }
             ])
-            ->where('status', 'approved');
+            ->where('status', 'approved')
+            ->whereNotNull('documents_verified_at');
 
         if (!empty($search)) {
             $matchedUserEmails = [];

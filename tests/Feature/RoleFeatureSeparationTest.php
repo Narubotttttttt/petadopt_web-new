@@ -194,7 +194,7 @@ class RoleFeatureSeparationTest extends TestCase
         $staffApproveResponse->assertRedirect();
         $this->assertSame('approved', $app1->fresh()->status);
 
-        // Pet is now marked adopted
-        $this->assertSame('adopted', $pet->fresh()->status);
+        // Pet is now marked pending screening
+        $this->assertSame('pending', $pet->fresh()->status);
     }
 }

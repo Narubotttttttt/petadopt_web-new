@@ -256,7 +256,7 @@ class ReportController extends Controller
                 break;
 
             case 'compliance':
-                $adoptersQuery = AdoptersProfile::with(['user', 'adoptionApplications' => fn($q) => $q->where('status', 'approved')->with('pet')]);
+                $adoptersQuery = AdoptersProfile::with(['user', 'adoptionApplications' => fn($q) => $q->where('status', 'approved')->whereNotNull('documents_verified_at')->with('pet')]);
 
                 if (!empty($search)) {
                     $adoptersQuery->where(function ($q) use ($search) {

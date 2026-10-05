@@ -78,7 +78,7 @@ class AdoptionApplicationTest extends TestCase
         ]);
 
         $pet->refresh();
-        $this->assertEquals('adopted', $pet->status);
+        $this->assertEquals('pending', $pet->status);
     }
 
     public function test_staff_can_reject_adoption_application(): void
@@ -981,7 +981,7 @@ class AdoptionApplicationTest extends TestCase
         $this->assertFalse($app->fresh()->is_finalized);
         $this->assertNull($app->fresh()->staff_signature_path);
         $this->assertNull($app->fresh()->documents_verified_at);
-        $this->assertEquals('available', $pet->fresh()->status);
+        $this->assertEquals('pending', $pet->fresh()->status);
     }
 
     public function test_user_can_remove_saved_signature_from_profile(): void
