@@ -566,7 +566,7 @@
                                         <div class="text-[11px] text-slate-400 capitalize">{{ $app->pet ? ($app->pet->type ?? '') : '' }}</div>
                                     </td>
                                     <td class="py-3 px-4 sm:px-5 text-slate-500 whitespace-nowrap">
-                                        {{ $app->approved_at ? \Carbon\Carbon::parse($app->approved_at)->format('M d, Y') : 'N/A' }}
+                                        {{ ($app->approved_at ?? $app->documents_verified_at ?? $app->updated_at) ? \Carbon\Carbon::parse($app->approved_at ?? $app->documents_verified_at ?? $app->updated_at)->format('M d, Y') : 'N/A' }}
                                     </td>
                                     <td class="py-3 px-4 sm:px-5 text-slate-600 dark:text-slate-400">
                                         {{ $app->staff_name ?? ($app->staff ? $app->staff->name : 'CAWS Staff') }}

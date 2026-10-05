@@ -15,25 +15,30 @@
         }
 
         /* Header */
-        .header-table {
+        .header-wrap {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 12px;
+            text-align: center;
             border-bottom: 2px solid #199CA4;
             padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .header-table {
+            border-collapse: collapse;
+            margin: 0 auto;
         }
         .logo-cell {
-            width: 60px;
+            width: 58px;
             vertical-align: middle;
+            padding-right: 12px;
+            text-align: right;
         }
         .logo-cell img {
-            width: 54px;
-            height: 54px;
+            width: 52px;
+            height: 52px;
         }
         .org-cell {
             vertical-align: middle;
-            text-align: left;
-            padding-left: 10px;
+            text-align: center;
         }
         .org-name {
             font-size: 14px;
@@ -97,9 +102,9 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 12px;
+            table-layout: fixed;
         }
         .stats-table td {
-            width: 25%;
             padding: 8px;
             background-color: #f1f5f9;
             border: 1px solid #cbd5e1;
@@ -171,7 +176,6 @@
             border-collapse: collapse;
         }
         .signoff-wrap td {
-            width: 50%;
             vertical-align: top;
             padding: 6px 12px;
         }
@@ -201,21 +205,23 @@
 </head>
 <body>
 
-    {{-- Official Header --}}
-    <table class="header-table">
-        <tr>
-            <td class="logo-cell">
-                @if($logoBase64)
-                    <img src="{{ $logoBase64 }}" alt="CAWS Logo">
-                @endif
-            </td>
-            <td class="org-cell">
-                <div class="org-name">CDO Animal Welfare Society Inc.</div>
-                <div class="org-sub">Non-Profit Pet Rescue, Rehabilitation & Adoption Shelter | Cagayan de Oro City, Philippines</div>
-                <div class="org-sub">Official Administrative & Compliance Report</div>
-            </td>
-        </tr>
-    </table>
+    {{-- Official Header (Centered) --}}
+    <div class="header-wrap">
+        <table align="center" class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    @if($logoBase64)
+                        <img src="{{ $logoBase64 }}" alt="CAWS Logo">
+                    @endif
+                </td>
+                <td class="org-cell">
+                    <div class="org-name">CDO Animal Welfare Society Inc.</div>
+                    <div class="org-sub">Non-Profit Pet Rescue, Rehabilitation & Adoption Shelter | Cagayan de Oro City, Philippines</div>
+                    <div class="org-sub">Official Administrative & Compliance Report</div>
+                </td>
+            </tr>
+        </table>
+    </div>
 
     {{-- Report Title & Meta --}}
     <div class="report-title-bar">
@@ -326,25 +332,20 @@
                     <div class="stat-sub">Action Required</div>
                 </td>
             @else
-                <td>
+                <td style="width: 33.33%;">
                     <div class="stat-label">Total Rescues</div>
                     <div class="stat-value">{{ $stats['totalIntakes'] ?? 0 }}</div>
                     <div class="stat-sub">Intakes</div>
                 </td>
-                <td>
+                <td style="width: 33.33%;">
                     <div class="stat-label">Adoptions</div>
                     <div class="stat-value">{{ $stats['approvedAdoptions'] ?? 0 }}</div>
                     <div class="stat-sub">{{ $stats['conversionRate'] ?? 0 }}% Rate</div>
                 </td>
-                <td>
+                <td style="width: 33.34%;">
                     <div class="stat-label">Medical Logs</div>
                     <div class="stat-value">{{ $stats['totalMedicals'] ?? 0 }}</div>
                     <div class="stat-sub">Procedures</div>
-                </td>
-                <td>
-                    <div class="stat-label">Active Shelter</div>
-                    <div class="stat-value">{{ $stats['activeShelter'] ?? 0 }}</div>
-                    <div class="stat-sub">Current Residents</div>
                 </td>
             @endif
         </tr>
@@ -490,7 +491,7 @@
                             <span style="color: #64748b;">{{ $app->applicant_email }}</span>
                         </td>
                         <td><strong>{{ $app->pet ? $app->pet->name : 'Pet no. ' . $app->pet_id }}</strong></td>
-                        <td>{{ $app->approved_at ? \Carbon\Carbon::parse($app->approved_at)->format('M d, Y') : 'N/A' }}</td>
+                        <td>{{ ($app->approved_at ?? $app->documents_verified_at ?? $app->updated_at) ? \Carbon\Carbon::parse($app->approved_at ?? $app->documents_verified_at ?? $app->updated_at)->format('M d, Y') : 'N/A' }}</td>
                         <td>{{ $app->staff_name ?? ($app->staff ? $app->staff->name : 'CAWS Representative') }}</td>
                     </tr>
                 @empty
@@ -503,13 +504,16 @@
     {{-- Official Sign-Off Section --}}
     <table class="signoff-wrap">
         <tr>
-            <td>
+            <td style="width: 55%;"></td>
+            <td style="width: 45%;">
+                @if(!empty($signatureBase64))
+                    <div style="text-align: center; margin-bottom: -15px;">
+                        <img src="{{ $signatureBase64 }}" style="max-height: 40px; display: inline-block;">
+                    </div>
+                @endif
                 <div class="sign-line">{{ $generatedByName }}</div>
-                <div class="sign-title">Prepared by: {{ $generatedByRole }}, CDO Animal Welfare Society Inc.</div>
-            </td>
-            <td>
-                <div class="sign-line">Authorized Signatory</div>
-                <div class="sign-title">Shelter Administrator / Director</div>
+                <div class="sign-title">Authorized Signatory / Shelter Administrator</div>
+                <div class="sign-title" style="margin-top: 1px;">CDO Animal Welfare Society Inc.</div>
             </td>
         </tr>
     </table>

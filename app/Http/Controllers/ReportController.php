@@ -49,11 +49,22 @@ class ReportController extends Controller
             $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
         }
 
+        // Load digital signature base64 if available
+        $signatureBase64 = null;
+        if ($currentUser && $currentUser->digital_signature_path) {
+            $sigPath = storage_path('app/public/' . ltrim($currentUser->digital_signature_path, '/'));
+            if (file_exists($sigPath)) {
+                $sigData = file_get_contents($sigPath);
+                $signatureBase64 = 'data:image/png;base64,' . base64_encode($sigData);
+            }
+        }
+
         $pdf = Pdf::loadView('pdf.report', array_merge($reportData, [
             'generatedByName' => $generatedByName,
             'generatedByRole' => $generatedByRole,
             'generatedAt'     => now()->format('F d, Y h:i A'),
             'logoBase64'      => $logoBase64,
+            'signatureBase64' => $signatureBase64,
         ]))->setPaper('a4', 'portrait');
 
         $filename = 'CAWS_' . ucfirst($reportData['reportType']) . '_Report_' . now()->format('Ymd_His') . '.pdf';
@@ -367,7 +378,13 @@ class ReportController extends Controller
                 $catIntakes   = Pet::where('type', 'cat')->whereBetween('created_at', [$startDate, $endDate])->count();
 
                 $totalAdoptions       = AdoptionApplication::where('status', 'approved')
-                    ->whereBetween('approved_at', [$startDate, $endDate])
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('approved_at', [$startDate, $endDate])
+                          ->orWhere(function ($sub) use ($startDate, $endDate) {
+                              $sub->whereNull('approved_at')
+                                  ->whereBetween(DB::raw('COALESCE(documents_verified_at, staff_signed_at, updated_at)'), [$startDate, $endDate]);
+                          });
+                    })
                     ->count();
                 $totalApplications    = AdoptionApplication::whereBetween('created_at', [$startDate, $endDate])->count();
                 $underReviewAdoptions = AdoptionApplication::where('status', 'under_review')
@@ -421,8 +438,14 @@ class ReportController extends Controller
                 // Key milestone records for the overview table
                 $recordsQuery = AdoptionApplication::with(['pet', 'staff'])
                     ->where('status', 'approved')
-                    ->whereBetween('approved_at', [$startDate, $endDate])
-                    ->latest('approved_at');
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween('approved_at', [$startDate, $endDate])
+                          ->orWhere(function ($sub) use ($startDate, $endDate) {
+                              $sub->whereNull('approved_at')
+                                  ->whereBetween(DB::raw('COALESCE(documents_verified_at, staff_signed_at, updated_at)'), [$startDate, $endDate]);
+                          });
+                    })
+                    ->orderByRaw('COALESCE(approved_at, documents_verified_at, staff_signed_at, updated_at) DESC');
 
                 $records = $isExport ? $recordsQuery->get() : $recordsQuery->paginate(20)->withQueryString();
                 break;

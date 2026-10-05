@@ -425,6 +425,7 @@ class AdoptionApplicationController extends Controller
             'id_document_verified'   => true,
             'barangay_cert_verified' => true,
             'status'                 => 'approved',
+            'approved_at'            => $application->approved_at ?: now(),
         ]);
 
         $application->pet?->update(['status' => 'adopted']);

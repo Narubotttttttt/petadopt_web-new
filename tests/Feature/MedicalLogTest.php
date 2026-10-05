@@ -428,4 +428,81 @@ class MedicalLogTest extends TestCase
             ->expectsOutputToContain('Dispatching Deworming notification to elena@example.com')
             ->assertExitCode(0);
     }
+
+    public function test_medical_logs_index_renders_with_interactive_filter_cards(): void
+    {
+        $pet = Pet::create([
+            'name' => 'Cooper',
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'available',
+        ]);
+
+        MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->toDateString(),
+            'category' => 'vaccination',
+            'vaccine_name' => 'Anti-Rabies',
+            'administered_by' => 'Dr. Santos',
+            'created_by' => $this->staff->id,
+        ]);
+
+        MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->toDateString(),
+            'category' => 'deworming',
+            'vaccine_name' => 'Canex Puppy/Dog',
+            'administered_by' => 'Dr. Santos',
+            'created_by' => $this->staff->id,
+        ]);
+
+        $response = $this->actingAs($this->staff)->get(route('medical-logs.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Total Logs');
+        $response->assertSee('Vaccinations');
+        $response->assertSee('Dewormings');
+        $response->assertSee('Anti-Rabies');
+        $response->assertSee('Canex Puppy/Dog');
+    }
+
+    public function test_medical_logs_index_filters_by_category(): void
+    {
+        $pet = Pet::create([
+            'name' => 'Cooper',
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'available',
+        ]);
+
+        MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->toDateString(),
+            'category' => 'vaccination',
+            'vaccine_name' => 'Anti-Rabies',
+            'administered_by' => 'Dr. Santos',
+            'created_by' => $this->staff->id,
+        ]);
+
+        MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->toDateString(),
+            'category' => 'deworming',
+            'vaccine_name' => 'Canex Dewormer',
+            'administered_by' => 'Dr. Santos',
+            'created_by' => $this->staff->id,
+        ]);
+
+        // Filter vaccination
+        $vaccineResponse = $this->actingAs($this->staff)->get(route('medical-logs.index', ['filter' => 'vaccination']));
+        $vaccineResponse->assertStatus(200);
+        $vaccineResponse->assertSee('Anti-Rabies');
+        $vaccineResponse->assertDontSee('Canex Dewormer');
+
+        // Filter deworming
+        $dewormResponse = $this->actingAs($this->staff)->get(route('medical-logs.index', ['filter' => 'deworming']));
+        $dewormResponse->assertStatus(200);
+        $dewormResponse->assertSee('Canex Dewormer');
+        $dewormResponse->assertDontSee('Anti-Rabies');
+    }
 }
+
