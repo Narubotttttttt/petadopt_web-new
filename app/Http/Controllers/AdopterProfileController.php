@@ -154,9 +154,9 @@ class AdopterProfileController extends Controller
             // Determine Adopter Status Code, Label, and Badge Theme
             $manualStatus = $profile?->status;
             if (in_array($manualStatus, ['restricted', 'blacklisted'])) {
-                $statusCode = $manualStatus;
-                $statusLabel = ucfirst($manualStatus);
-                $badgeTheme = ($manualStatus === 'blacklisted' ? 'rose' : 'amber');
+                $statusCode = 'blacklisted';
+                $statusLabel = 'Blacklisted';
+                $badgeTheme = 'rose';
             } elseif ($hasOverdueReport) {
                 $statusCode = 'inactive';
                 $statusLabel = "Inactive (Overdue {$maxOverdueDays}d)";
@@ -200,7 +200,8 @@ class AdopterProfileController extends Controller
         $totalApprovedAdopters = $allGroupedAdopters->count();
         $activeCount = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['active', 'active_new']))->count();
         $inactiveCount = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'inactive')->count();
-        $restrictedCount = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['restricted', 'blacklisted']))->count();
+        $blacklistedCount = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'blacklisted')->count();
+        $restrictedCount = $blacklistedCount;
         $totalApprovedApplications = AdoptionApplication::where('status', 'approved')->count();
 
         $totalMonthlyReports = PetHealthUpdate::count();
@@ -211,8 +212,8 @@ class AdopterProfileController extends Controller
             $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['active', 'active_new']));
         } elseif ($filter === 'inactive') {
             $filteredAdopters = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'inactive');
-        } elseif ($filter === 'restricted') {
-            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['restricted', 'blacklisted']));
+        } elseif ($filter === 'blacklisted' || $filter === 'restricted') {
+            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'blacklisted');
         }
 
         $page = (int) $request->query('page', 1);
@@ -233,6 +234,7 @@ class AdopterProfileController extends Controller
             'totalApprovedApplications',
             'activeCount',
             'inactiveCount',
+            'blacklistedCount',
             'restrictedCount',
             'totalMonthlyReports'
         ));
@@ -245,7 +247,7 @@ class AdopterProfileController extends Controller
         }
 
         $request->validate([
-            'status'      => 'required|in:active,good_standing,restricted,blacklisted',
+            'status'      => 'required|in:active,blacklisted,good_standing,restricted',
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -256,9 +258,7 @@ class AdopterProfileController extends Controller
         ]);
 
         $statusDisplayName = match($request->status) {
-            'blacklisted' => 'Banned / Blacklisted',
-            'restricted' => 'Restricted',
-            'good_standing' => 'Good Standing',
+            'blacklisted' => 'Blacklisted',
             default => 'Active'
         };
 

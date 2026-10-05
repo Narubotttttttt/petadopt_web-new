@@ -33,20 +33,37 @@ class RecommendationApiController extends Controller
      */
     public function getRecommendations(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user('sanctum') ?: $request->user();
 
-        // 1. Resolve Adopter Profile (from request payload or saved database profile)
-        $profile = $request->all();
+        // 1. Determine if quiz answers are provided in the current request payload
+        $hasQuizInPayload = ! empty($request->input('living_environment'))
+            || ! empty($request->input('activity_level'))
+            || ! empty($request->input('pet_experience'));
 
-        if (empty($profile) && $user) {
+        // 2. Check if the authenticated adopter has saved preferences in database
+        $saved = null;
+        if ($user) {
             $saved = AdopterPreference::where('user_id', $user->id)->first();
-            if ($saved) {
-                $profile = $saved->toArray();
-            }
         }
 
+        // 3. If the adopter has not answered the quiz yet (neither in request nor in database),
+        // return an empty recommendation list so "Recommended for you" remains blank.
+        if (! $hasQuizInPayload && ! $saved) {
+            return response()->json([
+                'success'         => true,
+                'has_quiz'        => false,
+                'algorithm'       => 'Python Scikit-Learn Random Forest Engine',
+                'count'           => 0,
+                'recommendations' => [],
+                'message'         => 'No quiz answers found. Complete the quiz to see personalized recommendations.',
+            ]);
+        }
+
+        // 4. Resolve Adopter Profile (from request payload if submitted or saved database profile)
+        $profile = $hasQuizInPayload ? $request->all() : ($saved ? $saved->toArray() : []);
+
         // Save / update preferences if user is authenticated and sent answers
-        if ($user && ! empty($request->input('living_environment'))) {
+        if ($user && $hasQuizInPayload) {
             AdopterPreference::updateOrCreate(
                 ['user_id' => $user->id],
                 [
@@ -129,14 +146,16 @@ class RecommendationApiController extends Controller
         $sitePkgs = env('PYTHON_SITE_PACKAGES', '');
         $pythonPath = $sitePkgs ?: '';
 
-        $cmdLine = sprintf(
-            'SET PYTHONPATH=%s && SET PYTHONIOENCODING=utf-8 && SET PYTHONASYNCIODEBUG=0 && "%s" -W ignore "%s"',
-            $pythonPath,
-            $pythonBin,
-            $pythonScript
-        );
+        $processEnv = array_merge($_SERVER, [
+            'SystemRoot'         => getenv('SystemRoot') ?: 'C:\\Windows',
+            'windir'             => getenv('windir') ?: 'C:\\Windows',
+            'PATH'               => getenv('PATH') ?: (isset($_SERVER['PATH']) ? $_SERVER['PATH'] : ''),
+            'PYTHONPATH'         => $pythonPath,
+            'PYTHONIOENCODING'   => 'utf-8',
+            'PYTHONASYNCIODEBUG' => '0',
+        ]);
 
-        $process = Process::fromShellCommandline($cmdLine);
+        $process = new Process([$pythonBin, '-W', 'ignore', $pythonScript], base_path(), $processEnv);
         $process->setInput(json_encode($payload));
         $process->setTimeout(15);
 

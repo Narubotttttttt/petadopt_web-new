@@ -17,6 +17,13 @@ Weighting Distribution:
 import os
 import sys
 
+# Ensure Windows system environment variables are present for Winsock and C-extensions
+if sys.platform == 'win32':
+    if 'SystemRoot' not in os.environ:
+        os.environ['SystemRoot'] = os.environ.get('SYSTEMROOT', r'C:\Windows')
+    if 'windir' not in os.environ:
+        os.environ['windir'] = os.environ.get('WINDIR', r'C:\Windows')
+
 # Ensure ML packages are always found
 import site
 for _p in [
