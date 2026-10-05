@@ -144,8 +144,8 @@
         .sig-section td {
             text-align: center;
             vertical-align: bottom;
-            padding: 0 8px;
-            width: 33.3%;
+            padding: 0 16px;
+            width: 50%;
         }
         .sig-box {
             height: 64px;
@@ -351,7 +351,7 @@
 <div class="sig-section">
     <table>
         <tr>
-            <td style="width: 33.3%; vertical-align: bottom;">
+            <td style="width: 50%; vertical-align: bottom;">
                 <div class="sig-box">
                     @if(!empty($signatureBase64))
                         <img src="{{ $signatureBase64 }}" alt="Adopter Signature" />
@@ -362,7 +362,7 @@
                     Printed Name over Signature of Adopter
                 </div>
             </td>
-            <td style="width: 33.3%; vertical-align: bottom;">
+            <td style="width: 50%; vertical-align: bottom;">
                 <div class="sig-box">
                     @if(!empty($staffSignatureBase64))
                         <img src="{{ $staffSignatureBase64 }}" alt="Staff Signature" />
@@ -372,10 +372,6 @@
                     <strong>{{ $staffName ?? 'CDO Animal Welfare Society Inc.' }}</strong><br>
                     {{ $staffTitle ?? 'CAWS Authorized Representative' }}
                 </div>
-            </td>
-            <td style="width: 33.3%; vertical-align: bottom;">
-                <div class="sig-box"></div>
-                <div class="sig-label">Printed Name over<br>Witness</div>
             </td>
         </tr>
     </table>
