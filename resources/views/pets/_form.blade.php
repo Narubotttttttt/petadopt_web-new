@@ -1,18 +1,14 @@
 @php
     $pet = $pet ?? null;
     $isWizard = $isWizard ?? (!isset($pet));
+    $currentType = old('type', optional($pet)->type ?? '');
+    $defaultBreed = $currentType === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)';
+    $currentBreed = old('breed', optional($pet)->breed ?? $defaultBreed);
+    if (empty($currentBreed)) {
+        $currentBreed = $defaultBreed;
+    }
     $dogBreeds = ['Aspin (Mixed Breed)'];
     $catBreeds = ['Puspin (Mixed Breed)'];
-
-    if (!empty($currentBreed) && !in_array($currentBreed, ['Aspin (Mixed Breed)', 'Puspin (Mixed Breed)', 'Other'], true)) {
-        if ($currentType === 'dog') {
-            $dogBreeds[] = $currentBreed;
-        } elseif ($currentType === 'cat') {
-            $catBreeds[] = $currentBreed;
-        }
-    }
-    $currentType = old('type', optional($pet)->type ?? '');
-    $currentBreed = old('breed', optional($pet)->breed ?? '');
     $currentColor = old('color', optional($pet)->color ?? '');
 
     $dogColors = [
@@ -236,7 +232,7 @@
 
     // Step 1 fields
     type: '{{ addslashes($currentType) }}',
-    breed: '{{ addslashes($currentBreed) }}',
+    breed: '{{ addslashes($currentBreed) }}' || 'Aspin (Mixed Breed)',
     colorSelect: '{{ addslashes($initialColorSelect) }}',
     colorOther: '{{ addslashes($initialColorOther) }}',
     dogColors: {{ json_encode($dogColors) }},
@@ -338,6 +334,9 @@
     },
 
     init() {
+        if (!this.breed || this.breed === '') {
+            this.breed = this.type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)';
+        }
         if (this.type && this.colorSelect && this.colorSelect !== 'Other Specified') {
             const validColors = this.type === 'dog' ? this.dogColors : (this.type === 'cat' ? this.catColors : []);
             if (validColors.length > 0 && !validColors.includes(this.colorSelect)) {
@@ -429,8 +428,7 @@
             return false;
         }
         if (!this.breed || !this.breed.trim()) {
-            this.errorMessage = 'Please select the pet breed.';
-            return false;
+            this.breed = this.type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)';
         }
         if (!this.colorSelect) {
             this.errorMessage = this.type === 'dog' 
@@ -718,7 +716,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Species / Pet Type</label>
-                <select name="type" x-model="type" @change="breed = (type === 'dog' ? 'Aspin (Mixed Breed)' : (type === 'cat' ? 'Puspin (Mixed Breed)' : '')); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
+                <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)'); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
                     <option value="">Select species</option>
@@ -729,30 +727,23 @@
 
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Breed</label>
-                <input type="hidden" name="breed" :value="breed" value="{{ $currentBreed }}">
+                {{-- Hidden input submitted with form --}}
+                <input type="hidden" name="breed" :value="breed || (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)')" value="{{ $currentBreed }}">
 
-                <select x-show="!type || (type !== 'dog' && type !== 'cat')" disabled
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-sm text-sm">
-                    <option>Select species first</option>
-                </select>
-
-                <select x-show="type === 'dog'" x-model="breed" @change="errorMessage = ''"
-                    :required="!isWizard && type === 'dog'"
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white text-sm">
-                    <option value="">Select breed</option>
-                    @foreach($dogBreeds as $b)
-                        <option value="{{ $b }}" {{ $currentBreed === $b ? 'selected' : '' }}>{{ $b }}</option>
-                    @endforeach
-                </select>
-
-                <select x-show="type === 'cat'" x-model="breed" @change="errorMessage = ''"
-                    :required="!isWizard && type === 'cat'"
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white text-sm">
-                    <option value="">Select breed</option>
-                    @foreach($catBreeds as $b)
-                        <option value="{{ $b }}" {{ $currentBreed === $b ? 'selected' : '' }}>{{ $b }}</option>
-                    @endforeach
-                </select>
+                {{-- Clean fixed display without dropdown --}}
+                <div class="relative">
+                    <input type="text"
+                        readonly
+                        :value="!type ? 'Select species first' : (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)')"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] text-gray-700 dark:text-slate-200 shadow-sm text-sm cursor-not-allowed font-semibold select-none focus:outline-none">
+                    <span x-show="type" class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20">
+                        Mixed Breed
+                    </span>
+                </div>
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Automatically set to native mixed breed (Aspin / Puspin) to prevent breed bias.
+                </p>
             </div>
         </div>
 

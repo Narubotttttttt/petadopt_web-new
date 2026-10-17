@@ -97,6 +97,12 @@ class PetController extends Controller
 
     public function store(Request $request)
     {
+        if (empty($request->breed)) {
+            $request->merge([
+                'breed' => $request->type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)'
+            ]);
+        }
+
         $data = $request->validate([
             'breed' => 'required|string|max:255',
             'color' => 'required|string|max:255',
@@ -240,6 +246,12 @@ class PetController extends Controller
 
     public function update(Request $request, Pet $pet)
     {
+        if (empty($request->breed)) {
+            $request->merge([
+                'breed' => $request->type === 'cat' ? 'Puspin (Mixed Breed)' : ($pet->breed ?: 'Aspin (Mixed Breed)')
+            ]);
+        }
+
         $data = $request->validate([
             'breed' => 'required|string|max:255',
             'color' => 'required|string|max:255',

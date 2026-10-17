@@ -997,9 +997,10 @@
                                                 :class="{
                                                     'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60': item.health_status === 'healthy',
                                                     'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60': item.health_status === 'minor_issue',
-                                                    'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60': item.health_status === 'under_treatment'
+                                                    'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60': item.health_status === 'under_treatment',
+                                                    'bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border border-slate-700': item.health_status === 'deceased'
                                                 }"
-                                                x-text="item.health_status === 'healthy' ? 'Healthy & Active' : (item.health_status === 'minor_issue' ? 'Minor Issue' : 'Under Treatment')">
+                                                x-text="item.health_status === 'healthy' ? 'Healthy & Active' : (item.health_status === 'minor_issue' ? 'Minor Issue' : (item.health_status === 'deceased' ? '🕊️ Passed Away / Deceased' : 'Under Treatment'))">
                                             </span>
                                         </div>
                                         <template x-if="item.weight">
@@ -1008,9 +1009,12 @@
                                             </p>
                                         </template>
                                         <template x-if="item.notes">
-                                            <div class="text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-[#0C0D13] p-2.5 rounded-xl border border-slate-200/80 dark:border-white/[0.06] space-y-0.5">
-                                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Adopter Remarks:</span>
-                                                <p class="font-medium" x-text="item.notes"></p>
+                                            <div class="text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-[#0C0D13] p-2.5 rounded-xl border border-slate-200/80 dark:border-white/[0.06] space-y-0.5"
+                                                 :class="item.health_status === 'deceased' ? 'border-rose-300/80 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20' : ''">
+                                                <span class="text-[10px] font-bold uppercase tracking-wider block"
+                                                      :class="item.health_status === 'deceased' ? 'text-rose-700 dark:text-rose-400 font-extrabold' : 'text-slate-400 dark:text-slate-500'"
+                                                      x-text="item.health_status === 'deceased' ? 'Reason of Passing & Circumstances:' : 'Adopter Remarks:'"></span>
+                                                <p class="font-medium whitespace-pre-line" x-text="item.notes"></p>
                                             </div>
                                         </template>
                                         <div class="pt-0.5">

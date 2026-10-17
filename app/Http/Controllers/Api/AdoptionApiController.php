@@ -241,6 +241,8 @@ class AdoptionApiController extends Controller
                     'display_status'   => $app->display_status,
                     'displayStatus'    => $app->display_status,
                     'isAdoptedByOther' => $isAdoptedByOther,
+                    'pet_status'       => $pet?->status,
+                    'is_deceased'      => ($pet?->status === 'deceased'),
                     'scheduledAt'      => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('l, M d, Y') : null,
                     'scheduledRaw'     => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('Y-m-d H:i:s') : null,
                     'eventLocation'    => $isApproved ? $app->event_location : null,
@@ -454,13 +456,22 @@ class AdoptionApiController extends Controller
     }
     public function storeHealthUpdate(Request $request): JsonResponse
     {
-        $request->validate([
+        $isDeceased = $request->health_status === 'deceased';
+
+        $rules = [
             'application_id' => ['required', 'exists:adoption_applications,id'],
-            'photo'          => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
-            'health_status'  => ['required', 'in:healthy,minor_issue,under_treatment'],
+            'photo'          => [$isDeceased ? 'nullable' : 'required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+            'health_status'  => ['required', 'in:healthy,minor_issue,under_treatment,deceased'],
             'weight'         => ['nullable', 'numeric', 'min:0', 'max:200'],
-            'notes'          => ['nullable', 'string', 'max:1000'],
-        ]);
+            'notes'          => [$isDeceased ? 'required' : 'nullable', 'string', $isDeceased ? 'min:10' : 'nullable', 'max:2000'],
+        ];
+
+        $messages = [
+            'notes.required' => 'Please provide an explanation of what happened to the pet.',
+            'notes.min'      => 'Please provide a detailed explanation of what happened (at least 10 characters).',
+        ];
+
+        $request->validate($rules, $messages);
 
         $user = $request->user();
         $application = AdoptionApplication::findOrFail($request->application_id);
@@ -472,26 +483,37 @@ class AdoptionApiController extends Controller
             ], 403);
         }
 
-        $photoPath = $request->file('photo')->store('health_updates', 'public');
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('health_updates', 'public');
+        } elseif ($isDeceased) {
+            $photoPath = $application->pet?->photo_path ?: '';
+        }
 
         $healthUpdate = \App\Models\PetHealthUpdate::create([
             'adoption_application_id' => $application->id,
             'pet_id'                  => $application->pet_id,
             'user_id'                 => $user->id,
-            'photo_path'              => $photoPath,
+            'photo_path'              => $photoPath ?: '',
             'health_status'           => $request->health_status,
-            'weight'                  => $request->weight,
+            'weight'                  => $isDeceased ? null : $request->weight,
             'notes'                   => $request->notes,
             'check_in_date'           => now()->toDateString(),
-            'status'                  => 'submitted',
+            'status'                  => $isDeceased ? 'memorial_recorded' : 'submitted',
         ]);
+
+        if ($isDeceased) {
+            $application->pet?->update(['status' => 'deceased']);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Health check-in submitted successfully.',
+            'message' => $isDeceased
+                ? 'Life event notification received. CAWS records have been respectfully updated.'
+                : 'Health check-in submitted successfully.',
             'data'    => [
                 'id'            => $healthUpdate->id,
-                'photo_url'     => asset('storage/' . $photoPath),
+                'photo_url'     => $photoPath ? asset('storage/' . $photoPath) : null,
                 'health_status' => $healthUpdate->health_status,
                 'weight'        => $healthUpdate->weight,
                 'notes'         => $healthUpdate->notes,

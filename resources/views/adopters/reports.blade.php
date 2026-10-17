@@ -164,6 +164,7 @@
                             <option value="healthy" {{ ($status ?? '') === 'healthy' ? 'selected' : '' }}>Healthy & Active</option>
                             <option value="minor_issue" {{ ($status ?? '') === 'minor_issue' ? 'selected' : '' }}>Minor Issue</option>
                             <option value="under_treatment" {{ ($status ?? '') === 'under_treatment' ? 'selected' : '' }}>Under Treatment</option>
+                            <option value="deceased" {{ ($status ?? '') === 'deceased' ? 'selected' : '' }}>🕊️ Passed Away / Deceased</option>
                         </select>
                     </div>
 
@@ -274,8 +275,8 @@
                                 {{ $report->health_status === 'healthy' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
                                 {{ $report->health_status === 'minor_issue' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}
                                 {{ $report->health_status === 'under_treatment' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : '' }}
-                                {{ !in_array($report->health_status, ['healthy', 'minor_issue', 'under_treatment']) ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '' }}">
-                                {{ $report->health_status === 'healthy' ? 'Healthy & Active' : ($report->health_status === 'minor_issue' ? 'Minor Issue' : ($report->health_status === 'under_treatment' ? 'Under Treatment' : ucfirst($report->health_status ?? 'Submitted'))) }}
+                                {{ $report->health_status === 'deceased' ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-slate-700' : (!in_array($report->health_status, ['healthy', 'minor_issue', 'under_treatment', 'deceased']) ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '') }}">
+                                {{ $report->health_status === 'healthy' ? 'Healthy & Active' : ($report->health_status === 'minor_issue' ? 'Minor Issue' : ($report->health_status === 'under_treatment' ? 'Under Treatment' : ($report->health_status === 'deceased' ? '🕊️ Passed Away / Deceased' : ucfirst($report->health_status ?? 'Submitted')))) }}
                             </span>
                         </div>
 
@@ -347,7 +348,7 @@
 
                             {{-- Adopter Remarks / Notes --}}
                             @if(!empty($report->notes))
-                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                                <div class="p-3 rounded-xl {{ $report->health_status === 'deceased' ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/80 dark:border-rose-900/60' : 'bg-slate-50 dark:bg-[#171923] border-slate-100 dark:border-white/[0.06]' }} border text-xs text-slate-700 dark:text-slate-300 space-y-1">
                                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Adopter Observations:</span>
                                     <p class="font-medium leading-relaxed italic">"{{ $report->notes }}"</p>
                                 </div>
@@ -361,7 +362,7 @@
                             @if(!empty($report->staff_remarks))
                                 <div class="p-2.5 rounded-xl bg-teal-50/70 dark:bg-[#199CA4]/10 border border-teal-200/70 dark:border-[#199CA4]/30 text-xs text-teal-900 dark:text-teal-200 space-y-0.5">
                                     <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-300 block">Staff Assessment:</span>
-                                    <p class="font-medium">{{ $report->staff_remarks }}</p>
+                                    <p class="font-medium whitespace-pre-line">{{ $report->staff_remarks }}</p>
                                 </div>
                             @endif
 
