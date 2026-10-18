@@ -696,7 +696,7 @@ class AdoptionApplicationTest extends TestCase
         $response->assertSee('High Compatibility');
     }
 
-    public function test_admin_and_staff_see_manual_browsing_on_show_page(): void
+    public function test_admin_and_staff_do_not_see_manual_browsing_indicator_on_show_page(): void
     {
         $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
         $pet = Pet::create([
@@ -717,8 +717,9 @@ class AdoptionApplicationTest extends TestCase
         $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
 
         $response->assertStatus(200);
-        $response->assertSee('Manual Catalog Browsing');
-        $response->assertSee('Manual Origin');
+        $response->assertDontSee('Manual Catalog Browsing');
+        $response->assertDontSee('Manual Origin');
+        $response->assertDontSee('Catalog Search');
     }
 
     public function test_admin_and_staff_see_origin_badges_on_index_page(): void
@@ -749,7 +750,7 @@ class AdoptionApplicationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Quiz Match');
         $response->assertSee('95%');
-        $response->assertSee('Direct Browse');
+        $response->assertDontSee('Direct Browse');
     }
 
     public function test_competing_applications_are_placed_on_priority_waitlist_when_primary_is_approved(): void

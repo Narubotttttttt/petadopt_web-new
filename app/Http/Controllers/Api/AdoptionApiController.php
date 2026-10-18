@@ -483,6 +483,13 @@ class AdoptionApiController extends Controller
             ], 403);
         }
 
+        if ($application->pet?->status === 'deceased' || $application->pet?->healthUpdates()->where('health_status', 'deceased')->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This pet is already officially recorded as deceased.',
+            ], 422);
+        }
+
         $photoPath = null;
         if ($request->hasFile('photo')) {
             $photoPath = $request->file('photo')->store('health_updates', 'public');
@@ -505,6 +512,8 @@ class AdoptionApiController extends Controller
         if ($isDeceased) {
             $application->pet?->update(['status' => 'deceased']);
         }
+
+        \App\Services\AdminNotificationService::clearCache();
 
         return response()->json([
             'success' => true,

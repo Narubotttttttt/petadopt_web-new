@@ -535,7 +535,12 @@
                                                     <span>Reports ({{ $healthUpdates->count() }})</span>
                                                 </button>
 
-                                                @if(!empty($app->is_report_overdue))
+                                                @if(!empty($app->is_pet_deceased))
+                                                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold text-white bg-slate-900 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700 shadow-2xs">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                        Passed Away (Memorial)
+                                                    </span>
+                                                @elseif(!empty($app->is_report_overdue))
                                                     <span class="inline-flex items-center gap-1 text-[10px] font-extrabold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-800/40">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                                         Overdue ({{ $app->report_overdue_days }}d)
@@ -1000,7 +1005,7 @@
                                                     'bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60': item.health_status === 'under_treatment',
                                                     'bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border border-slate-700': item.health_status === 'deceased'
                                                 }"
-                                                x-text="item.health_status === 'healthy' ? 'Healthy & Active' : (item.health_status === 'minor_issue' ? 'Minor Issue' : (item.health_status === 'deceased' ? '🕊️ Passed Away / Deceased' : 'Under Treatment'))">
+                                                x-text="item.health_status === 'healthy' ? 'Healthy & Active' : (item.health_status === 'minor_issue' ? 'Minor Issue' : (item.health_status === 'deceased' ? 'Passed Away / Deceased' : 'Under Treatment'))">
                                             </span>
                                         </div>
                                         <template x-if="item.weight">

@@ -10,3 +10,6 @@
 
 ## 2. No Emojis
 - Do not use emojis in code, comments, logs, or UI elements.
+
+## 3. Strict Grounding (No Hallucinations)
+- Never fabricate, guess, or assume file paths, code, API signatures, database schemas, table columns, relationships, or dependencies. Always inspect and verify against the actual codebase before proposing or making changes. When uncertain or when context is missing, explicitly check the files or ask for clarification rather than inventing facts.

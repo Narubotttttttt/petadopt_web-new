@@ -169,15 +169,11 @@
                         </span>
                     @endif
 
-                    {{-- Match / Origin Pill --}}
-                    @if($application->application_source === 'recommendation' && $application->compatibility_score !== null)
+                    {{-- Machine Learning Match Pill --}}
+                    @if($application->application_source === 'recommendation')
                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>{{ number_format($application->compatibility_score, 0) }}% Match</span>
-                        </span>
-                    @elseif($application->application_source === 'manual_browsing')
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                            <span>Catalog Search</span>
+                            <span>{{ $application->compatibility_score !== null ? number_format($application->compatibility_score, 0) . '% Match' : 'ML Match' }}</span>
                         </span>
                     @endif
 
@@ -588,25 +584,6 @@
                             <div class="p-3.5 rounded-xl bg-white/80 dark:bg-[#12272b] border border-emerald-100 dark:border-emerald-900/40 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                                 <span class="font-bold text-slate-800 dark:text-white">Recommendation Details:</span>
                                 The applicant answered the adopter compatibility questionnaire on mobile. The recommendation model evaluated available shelter animals and suggested this pet as a suitable match.
-                            </div>
-                        </div>
-                    @else
-                        <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center font-bold shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">Manual Catalog Browsing</h2>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]">
-                                            Manual Origin
-                                        </span>
-                                    </div>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">The applicant discovered and applied for this pet directly from the public shelter listings without taking the compatibility quiz.</p>
-                                </div>
                             </div>
                         </div>
                     @endif

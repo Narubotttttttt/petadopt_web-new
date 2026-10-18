@@ -71,6 +71,7 @@ class AdminNotificationService
             $petDetails = [];
             $hasRecentCheckin = false;
             $hasOverdue = false;
+            $hasDeceased = false;
             $latestTimestamp = 0;
             
             foreach ($apps as $app) {
@@ -79,6 +80,7 @@ class AdminNotificationService
                 
                 $petName = $pet->name ?: 'Pet no. ' . $pet->id;
                 $latestUpdate = $pet->healthUpdates->first();
+                $isPetDeceased = ($pet->status === 'deceased') || ($latestUpdate && $latestUpdate->health_status === 'deceased');
                 
                 if ($latestUpdate) {
                     $updateTime = $latestUpdate->created_at ? $latestUpdate->created_at->timestamp : 0;
@@ -86,6 +88,18 @@ class AdminNotificationService
                         $latestTimestamp = $updateTime;
                     }
                     
+                    if ($isPetDeceased) {
+                        $hasDeceased = true;
+                        $petDetails[] = [
+                            'pet_name' => $petName,
+                            'status_type' => 'deceased',
+                            'status_label' => 'Passed Away / Deceased',
+                            'is_alert' => true,
+                            'time' => $latestUpdate->created_at ? $latestUpdate->created_at->diffForHumans() : '',
+                        ];
+                        continue;
+                    }
+
                     $healthLabel = match($latestUpdate->health_status) {
                         'healthy' => 'Healthy & Active',
                         'minor_issue' => 'Minor Issue',
@@ -119,6 +133,9 @@ class AdminNotificationService
                         ];
                     }
                 } else {
+                    if ($isPetDeceased) {
+                        continue;
+                    }
                     // No health updates yet
                     $approvedDate = $app->approved_at ?? $app->updated_at;
                     if ($approvedDate) {
@@ -147,16 +164,22 @@ class AdminNotificationService
                 }
             }
             
-            if (!empty($petDetails) && ($hasRecentCheckin || $hasOverdue)) {
+            if (!empty($petDetails) && ($hasRecentCheckin || $hasOverdue || $hasDeceased)) {
                 $id = 'adopter_' . md5($emailKey . '_' . $latestTimestamp);
                 $category = $hasOverdue ? 'overdue' : 'checkin';
-                $severity = $hasOverdue ? 'danger' : 'success';
-                $title = $hasOverdue ? '30-Day Check-in Overdue' : 'Monthly Health Check-in';
+                $severity = $hasDeceased ? 'danger' : ($hasOverdue ? 'danger' : 'success');
+                $title = $hasDeceased 
+                    ? 'Pet Life Event: Deceased Notification' 
+                    : ($hasOverdue ? '30-Day Check-in Overdue' : 'Monthly Health Check-in');
                 
                 $adopterNameParts = preg_split('/\s+/', trim($adopterName));
                 $adopterInitials = count($adopterNameParts) >= 2 
                     ? strtoupper(mb_substr($adopterNameParts[0], 0, 1) . mb_substr(end($adopterNameParts), 0, 1))
                     : strtoupper(mb_substr($adopterName, 0, 1));
+
+                $targetUrl = $hasDeceased 
+                    ? url('/adopters/reports') . '?status=deceased&search=' . urlencode($adopterName)
+                    : url('/adopters') . '?search=' . urlencode($adopterName);
 
                 $notifications[] = [
                     'id' => $id,
@@ -172,9 +195,9 @@ class AdminNotificationService
                     'pet_details' => $petDetails,
                     'time' => $latestTimestamp ? Carbon::createFromTimestamp($latestTimestamp)->diffForHumans() : 'Recently',
                     'is_read' => false,
-                    'url' => url('/adopters') . '?search=' . urlencode($adopterName),
-                    'action_url' => url('/adopters') . '?search=' . urlencode($adopterName),
-                    'action_hint' => 'View adopter profile & check-in history',
+                    'url' => $targetUrl,
+                    'action_url' => $targetUrl,
+                    'action_hint' => $hasDeceased ? 'View memorial report & circumstances' : 'View adopter profile & check-in history',
                     'created_at' => $latestTimestamp ?: now()->timestamp,
                 ];
             }

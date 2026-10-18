@@ -108,6 +108,13 @@ class AdopterProfileController extends Controller
                 $pet = $app->pet;
                 $adoptedDate = $app->approved_at ?? $app->signed_at ?? $app->updated_at ?? $app->created_at;
                 $latestUpdate = $pet?->healthUpdates?->first();
+                $isPetDeceased = ($pet?->status === 'deceased') || ($latestUpdate?->health_status === 'deceased');
+                $app->is_pet_deceased = $isPetDeceased;
+
+                if ($isPetDeceased) {
+                    $app->is_report_overdue = false;
+                    continue;
+                }
 
                 if ($latestUpdate) {
                     $lastReportDate = $latestUpdate->check_in_date ?? $latestUpdate->created_at;
@@ -324,6 +331,7 @@ class AdopterProfileController extends Controller
         $thisMonthReports = PetHealthUpdate::whereBetween('check_in_date', [now()->startOfMonth(), now()->endOfMonth()])->count();
         $healthyReports   = PetHealthUpdate::where('health_status', 'healthy')->count();
         $attentionReports = PetHealthUpdate::whereIn('health_status', ['minor_issue', 'under_treatment'])->count();
+        $deceasedReports  = PetHealthUpdate::where('health_status', 'deceased')->count();
 
         $totalApprovedAdopters = AdoptionApplication::where('status', 'approved')->distinct('applicant_email')->count();
 
@@ -337,6 +345,7 @@ class AdopterProfileController extends Controller
             'thisMonthReports',
             'healthyReports',
             'attentionReports',
+            'deceasedReports',
             'totalApprovedAdopters'
         ));
     }

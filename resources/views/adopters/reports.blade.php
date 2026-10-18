@@ -88,7 +88,7 @@
         </div>
 
         {{-- Metric Overview Cards --}}
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             {{-- 1. Total Reports --}}
             <a href="{{ route('adopters.reports', ['status' => 'all', 'period' => 'all']) }}"
                class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($status ?? 'all') === 'all' && ($period ?? 'all') === 'all' ? 'bg-[#199CA4]/10 border-[#199CA4] dark:bg-[#199CA4]/15 dark:border-[#41C1CB] ring-2 ring-[#199CA4]/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
@@ -148,6 +148,21 @@
                     <span class="text-[11px] font-semibold text-amber-600/70 dark:text-amber-500/70">minor / treatment</span>
                 </div>
             </a>
+
+            {{-- 5. Deceased / Memorial --}}
+            <a href="{{ route('adopters.reports', ['status' => 'deceased']) }}"
+               class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($status ?? '') === 'deceased' ? 'bg-slate-900 text-white border-slate-700 dark:bg-slate-800 dark:border-slate-600 ring-2 ring-slate-500/30' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider {{ ($status ?? '') === 'deceased' ? 'text-slate-200' : 'text-slate-600 dark:text-slate-400' }}">Passed Away</span>
+                    <div class="w-7 h-7 rounded-xl {{ ($status ?? '') === 'deceased' ? 'bg-white/10 text-white' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300' }} flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-2xl font-black {{ ($status ?? '') === 'deceased' ? 'text-white' : 'text-slate-900 dark:text-white' }}">{{ $deceasedReports ?? 0 }}</span>
+                    <span class="text-[11px] font-semibold {{ ($status ?? '') === 'deceased' ? 'text-slate-300' : 'text-slate-400 dark:text-slate-500' }}">memorial</span>
+                </div>
+            </a>
         </div>
 
         {{-- Search & Filter Toolbar --}}
@@ -164,7 +179,7 @@
                             <option value="healthy" {{ ($status ?? '') === 'healthy' ? 'selected' : '' }}>Healthy & Active</option>
                             <option value="minor_issue" {{ ($status ?? '') === 'minor_issue' ? 'selected' : '' }}>Minor Issue</option>
                             <option value="under_treatment" {{ ($status ?? '') === 'under_treatment' ? 'selected' : '' }}>Under Treatment</option>
-                            <option value="deceased" {{ ($status ?? '') === 'deceased' ? 'selected' : '' }}>🕊️ Passed Away / Deceased</option>
+                            <option value="deceased" {{ ($status ?? '') === 'deceased' ? 'selected' : '' }}>Passed Away / Deceased</option>
                         </select>
                     </div>
 
@@ -275,10 +290,21 @@
                                 {{ $report->health_status === 'healthy' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60' : '' }}
                                 {{ $report->health_status === 'minor_issue' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}
                                 {{ $report->health_status === 'under_treatment' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : '' }}
-                                {{ $report->health_status === 'deceased' ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border-slate-700' : (!in_array($report->health_status, ['healthy', 'minor_issue', 'under_treatment', 'deceased']) ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '') }}">
-                                {{ $report->health_status === 'healthy' ? 'Healthy & Active' : ($report->health_status === 'minor_issue' ? 'Minor Issue' : ($report->health_status === 'under_treatment' ? 'Under Treatment' : ($report->health_status === 'deceased' ? '🕊️ Passed Away / Deceased' : ucfirst($report->health_status ?? 'Submitted')))) }}
+                                {{ $report->health_status === 'deceased' ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-100 border-slate-700 font-extrabold shadow-2xs' : (!in_array($report->health_status, ['healthy', 'minor_issue', 'under_treatment', 'deceased']) ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '') }}">
+                                {{ $report->health_status === 'healthy' ? 'Healthy & Active' : ($report->health_status === 'minor_issue' ? 'Minor Issue' : ($report->health_status === 'under_treatment' ? 'Under Treatment' : ($report->health_status === 'deceased' ? 'Passed Away / Deceased' : ucfirst($report->health_status ?? 'Submitted')))) }}
                             </span>
                         </div>
+
+                        {{-- Life Event Banner for Deceased Reports --}}
+                        @if($report->health_status === 'deceased')
+                            <div class="px-4 sm:px-5 py-2.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold border-b border-slate-800">
+                                <div class="flex items-center gap-2 text-rose-300">
+                                    <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>Life Event Notice: Pet Passed Away</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold bg-white/10 text-slate-200 border border-white/20">Memorial Record</span>
+                            </div>
+                        @endif
 
                         {{-- Adopted Pet Subheader Bar --}}
                         <div class="px-4 sm:px-5 py-2.5 bg-slate-100/70 dark:bg-[#0E1017] border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
@@ -348,10 +374,20 @@
 
                             {{-- Adopter Remarks / Notes --}}
                             @if(!empty($report->notes))
-                                <div class="p-3 rounded-xl {{ $report->health_status === 'deceased' ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/80 dark:border-rose-900/60' : 'bg-slate-50 dark:bg-[#171923] border-slate-100 dark:border-white/[0.06]' }} border text-xs text-slate-700 dark:text-slate-300 space-y-1">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Adopter Observations:</span>
-                                    <p class="font-medium leading-relaxed italic">"{{ $report->notes }}"</p>
-                                </div>
+                                @if($report->health_status === 'deceased')
+                                    <div class="p-3.5 rounded-xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/60 text-xs text-slate-800 dark:text-slate-200 space-y-1.5">
+                                        <div class="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span>Reported Passing & Circumstances:</span>
+                                        </div>
+                                        <p class="font-medium leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">{{ $report->notes }}</p>
+                                    </div>
+                                @else
+                                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Adopter Observations:</span>
+                                        <p class="font-medium leading-relaxed italic">"{{ $report->notes }}"</p>
+                                    </div>
+                                @endif
                             @else
                                 <div class="p-3 rounded-xl bg-slate-50/50 dark:bg-[#171923]/50 border border-slate-100 dark:border-white/[0.04] text-xs text-slate-400 dark:text-slate-500 italic">
                                     No written remarks provided for this update.

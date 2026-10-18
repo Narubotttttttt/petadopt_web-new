@@ -14,3 +14,4 @@
 
 ## Coding Standards
 - **Zero Emojis:** Do not include emojis in code, documentation, logs, or UI text.
+- **Strict Grounding (No Hallucinations):** Never fabricate, guess, or assume file paths, code, API signatures, database schemas, table columns, relationships, or dependencies. Always inspect and verify against the actual codebase before proposing or making changes. When uncertain or when context is missing, explicitly check the files or ask for clarification rather than inventing facts.

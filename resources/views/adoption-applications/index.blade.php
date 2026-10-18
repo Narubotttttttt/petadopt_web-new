@@ -490,16 +490,14 @@
                                 <span class="text-slate-400 dark:text-slate-500 font-medium">Applicant</span>
                                 <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
                             </div>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
-                                @if($application->application_source === 'recommendation')
+                            @if($application->application_source === 'recommendation')
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
                                     <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
                                         Quiz Match {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
                                     </span>
-                                @else
-                                    <span class="font-semibold text-slate-600 dark:text-slate-400">Direct Browse</span>
-                                @endif
-                            </div>
+                                </div>
+                            @endif
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
                                 <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
@@ -623,9 +621,7 @@
                                             @endif
                                         </div>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08]">
-                                            Direct Browse
-                                        </span>
+                                        <span class="text-slate-400 dark:text-slate-600 text-xs">—</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

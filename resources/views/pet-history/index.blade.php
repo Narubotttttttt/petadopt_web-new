@@ -478,7 +478,8 @@
                                                          'bg-[#199CA4]': milestone.event_type === 'intake',
                                                          'bg-indigo-500': milestone.event_type === 'medical',
                                                          'bg-emerald-500': milestone.event_type === 'adoption',
-                                                         'bg-teal-500': milestone.event_type === 'health_update'
+                                                         'bg-teal-500': milestone.event_type === 'health_update',
+                                                         'bg-slate-800': milestone.event_type === 'deceased'
                                                      }">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
                                                 </div>

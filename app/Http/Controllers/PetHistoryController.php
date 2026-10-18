@@ -202,16 +202,21 @@ class PetHistoryController extends Controller
 
             // 4. Post-Adoption Health Updates
             foreach ($p->healthUpdates as $hu) {
+                $isHuDeceased = $hu->health_status === 'deceased';
                 $timeline->push([
                     'id'          => 'hu-' . $hu->id,
-                    'event_type'  => 'health_update',
-                    'badge_label' => 'Health Update',
-                    'badge_class' => 'bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60',
-                    'title'       => 'Post-Adoption Wellness Update: ' . ucfirst($hu->health_status ?: 'Good Condition'),
+                    'event_type'  => $isHuDeceased ? 'deceased' : 'health_update',
+                    'badge_label' => $isHuDeceased ? 'Passed Away / Deceased' : 'Health Update',
+                    'badge_class' => $isHuDeceased 
+                        ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-slate-200 border border-slate-700' 
+                        : 'bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60',
+                    'title'       => $isHuDeceased 
+                        ? 'Pet Life Event: Deceased Notification Recorded' 
+                        : 'Post-Adoption Wellness Update: ' . ucfirst(str_replace('_', ' ', $hu->health_status ?: 'Good Condition')),
                     'date'        => $hu->created_at ? $hu->created_at->format('M d, Y') : 'Unknown',
                     'timestamp'   => $hu->created_at ?? now(),
                     'meta'        => 'Submitted by ' . ($hu->user?->name ?: 'Adopter'),
-                    'description' => $hu->notes ?: 'Adopter submitted post-adoption pet condition update.',
+                    'description' => $hu->notes ?: ($isHuDeceased ? 'Deceased life event reported by adopter.' : 'Adopter submitted post-adoption pet condition update.'),
                     'details'     => [
                         'health_status' => $hu->health_status ?: 'Good Condition',
                         'notes'         => $hu->notes ?: 'No remarks.',
