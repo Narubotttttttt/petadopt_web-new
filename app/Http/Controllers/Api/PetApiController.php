@@ -115,6 +115,8 @@ class PetApiController extends Controller
             'breed'              => $pet->breed ?: null,
             'color'              => $pet->color ?: null,
             'gender'             => $pet->gender ? ucfirst($pet->gender) : null,
+            'size'               => $pet->size ? ucfirst($pet->size) : 'Medium',
+            'size_raw'           => strtolower($pet->size ?? 'medium'),
             'age'                => $pet->age ?: null,
             'description'        => $pet->description ?: null,
             'image'              => $photoUrl,

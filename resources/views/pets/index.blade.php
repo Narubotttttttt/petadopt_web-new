@@ -165,7 +165,7 @@
                                     {{ $pet->breed ?? 'Mixed Breed' }} &bull; {{ ucfirst($pet->color ?? '—') }}
                                 </p>
                                 <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                    {{ ucfirst($pet->type ?? 'Pet') }} &bull; {{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}
+                                    {{ ucfirst($pet->type ?? 'Pet') }} &bull; {{ ucfirst($pet->size ?? 'Medium') }} &bull; {{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}
                                 </p>
                             </div>
                         </div>
@@ -255,7 +255,7 @@
                                                     </span>
                                                 @endif
                                             </div>
-                                            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">{{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}</p>
+                                            <p class="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">{{ ucfirst($pet->size ?? 'Medium') }} &bull; {{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}</p>
                                         </div>
                                     </div>
                                 </td>

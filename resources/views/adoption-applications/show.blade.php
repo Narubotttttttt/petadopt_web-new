@@ -1018,7 +1018,7 @@
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Decision</label>
                         <select name="status" x-model="currentStatus" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                            <option value="" disabled {{ !in_array($application->status, ['approved', 'rejected']) ? 'selected' : '' }}>Select Decision...</option>
+                            <option value="" disabled selected hidden style="display: none;">Select Decision...</option>
                             @if($isPetAlreadyAdopted && $application->status !== 'approved')
                                 <option value="approved" disabled>Schedule Final Screening (Disabled - Pet Already Adopted)</option>
                             @elseif($otherScheduled && $application->status !== 'approved')
@@ -1053,7 +1053,7 @@
                             <select x-model="presetLocation" 
                                     @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
                                     class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="">Select venue (or type custom)...</option>
+                                <option value="" disabled selected hidden style="display: none;">Select venue (or type custom)...</option>
                                 <option :value="defaultVenue" x-text="defaultVenue"></option>
                                 <template x-for="venue in customVenues" :key="venue">
                                     <option :value="venue" x-text="venue"></option>
@@ -1128,7 +1128,7 @@
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Preset Reason Template</label>
                             <select x-model="presetReason" @change="if (presetReason) { rejectionReason = presetReason; }" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="">Select a common reason or type custom...</option>
+                                <option value="" disabled selected hidden style="display: none;">Select a common reason or type custom...</option>
                                 <option value="Incomplete or unverifiable identity and proof of residence documents.">Incomplete or Unverifiable Documents</option>
                                 <option value="Rental property lease or landlord rules do not permit keeping pets.">Landlord or Rental Pet Restrictions</option>
                                 <option value="Living space or fencing security does not meet requirements for this pet.">Inadequate Fencing or Living Environment</option>

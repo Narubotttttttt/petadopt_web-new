@@ -83,6 +83,7 @@
         }
     }
     $currentGender = old('gender', optional($pet)->gender ?? '');
+    $currentSize = old('size', optional($pet)->size ?? '');
     $currentAge = old('age', optional($pet)->age ?? '');
     $currentDescription = old('description', optional($pet)->description ?? '');
 
@@ -444,6 +445,10 @@
             this.errorMessage = 'Please select a gender (Male or Female).';
             return false;
         }
+        if (!this.size) {
+            this.errorMessage = 'Please select a size classification.';
+            return false;
+        }
         if (!this.age) {
             this.errorMessage = 'Please select the pet age classification.';
             return false;
@@ -716,12 +721,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Species / Pet Type</label>
-                <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)'); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
+                <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : (type === 'dog' ? 'Aspin (Mixed Breed)' : '')); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="">Select species</option>
-                    <option value="dog">Dog</option>
-                    <option value="cat">Cat</option>
+                    <option value="" disabled selected hidden style="display: none;">Select a pet</option>
+                    <option value="dog" {{ $currentType == 'dog' ? 'selected' : '' }}>Dog</option>
+                    <option value="cat" {{ $currentType == 'cat' ? 'selected' : '' }}>Cat</option>
                 </select>
             </div>
 
@@ -734,7 +739,7 @@
                 <div class="relative">
                     <input type="text"
                         readonly
-                        :value="!type ? 'Select species first' : (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)')"
+                        :value="!type ? 'Select a pet first' : (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)')"
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] text-gray-700 dark:text-slate-200 shadow-sm text-sm cursor-not-allowed font-semibold select-none focus:outline-none">
                     <span x-show="type" class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20">
                         Mixed Breed
@@ -755,7 +760,7 @@
                 {{-- Disabled state when species is not yet selected --}}
                 <select x-show="!type || (type !== 'dog' && type !== 'cat')" disabled
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-xs text-sm">
-                    <option>Select species first</option>
+                    <option value="" disabled selected hidden style="display: none;">Select a pet first</option>
                 </select>
 
                 {{-- Dog Colors Dropdown --}}
@@ -763,7 +768,7 @@
                     @change="errorMessage = ''; if (colorSelect === 'Other Specified') $nextTick(() => $refs.colorOtherInput?.focus())"
                     :required="!isWizard && type === 'dog'"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                    <option value="">Select dog color</option>
+                    <option value="" disabled selected hidden style="display: none;">Select dog color</option>
                     @foreach($dogColors as $option)
                         <option value="{{ $option }}" {{ $initialColorSelect === $option ? 'selected' : '' }}>{{ $option }}</option>
                     @endforeach
@@ -775,7 +780,7 @@
                     @change="errorMessage = ''; if (colorSelect === 'Other Specified') $nextTick(() => $refs.colorOtherInput?.focus())"
                     :required="!isWizard && type === 'cat'"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                    <option value="">Select cat color</option>
+                    <option value="" disabled selected hidden style="display: none;">Select cat color</option>
                     @foreach($catColors as $option)
                         <option value="{{ $option }}" {{ $initialColorSelect === $option ? 'selected' : '' }}>{{ $option }}</option>
                     @endforeach
@@ -798,9 +803,21 @@
                 <select name="gender" x-model="gender"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="">Select gender</option>
+                    <option value="" disabled selected hidden style="display: none;">Select gender</option>
                     <option value="male" {{ $currentGender == 'male' ? 'selected' : '' }}>Male</option>
                     <option value="female" {{ $currentGender == 'female' ? 'selected' : '' }}>Female</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Size Category</label>
+                <select name="size" x-model="size"
+                    :required="!isWizard"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
+                    <option value="" disabled selected hidden style="display: none;">Select size</option>
+                    <option value="small" {{ $currentSize == 'small' ? 'selected' : '' }}>Small (under 10 kg / Toy, Puppy, Cat)</option>
+                    <option value="medium" {{ $currentSize == 'medium' ? 'selected' : '' }}>Medium (10 - 20 kg / Standard Native)</option>
+                    <option value="large" {{ $currentSize == 'large' ? 'selected' : '' }}>Large (21+ kg / Large Native)</option>
                 </select>
             </div>
 
@@ -809,13 +826,13 @@
                 <select name="age" x-model="age" x-show="type"
                     :required="!isWizard && type !== ''"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="">Select age</option>
+                    <option value="" disabled selected hidden style="display: none;">Select age</option>
                     <template x-for="option in ageOptions" :key="option">
                         <option :value="option" :selected="option === age" x-text="option"></option>
                     </template>
                 </select>
                 <select x-show="!type" disabled class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-sm">
-                    <option>Select pet type first</option>
+                    <option value="" disabled selected hidden style="display: none;">Select a pet first</option>
                 </select>
             </div>
         </div>
@@ -1065,7 +1082,7 @@
                         </label>
                         <select x-model="disabilityType" 
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                            <option value="">Select disability type (optional)</option>
+                            <option value="" disabled selected hidden style="display: none;">Select disability type (optional)</option>
                             <option value="Blind / Visually Impaired">Blind / Visually Impaired</option>
                             <option value="Deaf / Hearing Impaired">Deaf / Hearing Impaired</option>
                             <option value="Amputee / Missing Limb (Tripod)">Amputee / Missing Limb (Tripod)</option>
@@ -1211,7 +1228,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-gray-400 dark:text-slate-500 min-w-16">Traits:</span>
-                        <span class="font-semibold text-gray-700 dark:text-slate-300 capitalize" x-text="(gender || 'Gender') + ' • ' + (age || 'Age') + ' • ' + (color || 'Color')"></span>
+                        <span class="font-semibold text-gray-700 dark:text-slate-300 capitalize" x-text="(gender || 'Gender') + ' • ' + (size ? size.charAt(0).toUpperCase() + size.slice(1) : 'Size') + ' • ' + (age || 'Age') + ' • ' + (color || 'Color')"></span>
                     </div>
                 </div>
 

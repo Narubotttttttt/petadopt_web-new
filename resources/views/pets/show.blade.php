@@ -111,10 +111,14 @@
                         </p>
 
                         {{-- Minimal 4-Metric Grid --}}
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
                             <div class="bg-slate-50/80 dark:bg-[#171923] p-2.5 rounded-xl border border-slate-100 dark:border-white/[0.04]">
                                 <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Species</span>
                                 <span class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-0.5 block">{{ ucfirst($pet->type ?? '—') }}</span>
+                            </div>
+                            <div class="bg-slate-50/80 dark:bg-[#171923] p-2.5 rounded-xl border border-slate-100 dark:border-white/[0.04]">
+                                <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Size</span>
+                                <span class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-0.5 block capitalize">{{ $pet->size ?? 'Medium' }}</span>
                             </div>
                             <div class="bg-slate-50/80 dark:bg-[#171923] p-2.5 rounded-xl border border-slate-100 dark:border-white/[0.04]">
                                 <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Gender</span>

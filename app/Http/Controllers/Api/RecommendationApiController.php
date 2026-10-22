@@ -101,6 +101,7 @@ class RecommendationApiController extends Controller
                     'breed'           => $p->breed,
                     'age'             => $p->age,
                     'gender'          => $p->gender,
+                    'size'            => strtolower($p->size ?? 'medium'),
                     'color'           => $p->color,
                     'photo_path'      => $p->photo_path,
                     'medical_history' => $p->medical_history,
