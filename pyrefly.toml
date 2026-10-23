@@ -10,3 +10,21 @@ site-package-path = [
   "C:/Python314/Lib/site-packages"
 ]
 
+ignore-missing-imports = [
+  "joblib",
+  "joblib.*",
+  "numpy",
+  "numpy.*",
+  "pandas",
+  "pandas.*",
+  "sklearn",
+  "sklearn.*",
+  "scipy",
+  "scipy.*",
+  "PIL",
+  "PIL.*",
+  "cv2",
+  "cv2.*"
+]
+
+

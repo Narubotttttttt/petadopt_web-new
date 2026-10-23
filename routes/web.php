@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/pets', [PetController::class, 'store'])->name('pets.store');
     Route::get('/pets/{pet}/edit', [PetController::class, 'edit'])->name('pets.edit');
     Route::match(['put','patch'],'/pets/{pet}', [PetController::class, 'update'])->name('pets.update');
+    Route::post('/pets/{pet}/mark-available', [PetController::class, 'markAvailable'])->name('pets.mark-available');
 
     Route::get('/adoption-applications', [\App\Http\Controllers\AdoptionApplicationController::class, 'index'])->name('adoption-applications.index');
     Route::get('/adoption-applications/realtime-check', [\App\Http\Controllers\AdoptionApplicationController::class, 'realtimeCheck'])->name('adoption-applications.realtime-check');

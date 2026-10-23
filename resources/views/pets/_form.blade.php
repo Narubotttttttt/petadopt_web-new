@@ -85,7 +85,55 @@
     $currentGender = old('gender', optional($pet)->gender ?? '');
     $currentSize = old('size', optional($pet)->size ?? '');
     $currentAge = old('age', optional($pet)->age ?? '');
+    $currentStatus = old('status', optional($pet)->status ?? '');
     $currentDescription = old('description', optional($pet)->description ?? '');
+
+    // Cagayan de Oro City Barangays list
+    $cdoBarangays = [
+        'Agusan', 'Baikingon', 'Balubal', 'Balulang', 'Bayabas', 'Bayanga', 'Besigan', 'Bonbon', 'Bugo', 'Bulua',
+        'Camaman-an', 'Canitoan', 'Carmen', 'Consolacion', 'Cugman', 'Dansolihon', 'F.S. Catanico', 'Gusa',
+        'Indahag', 'Iponan', 'Kauswagan', 'Lapasan', 'Lumbia', 'Macabalan', 'Macasandig', 'Mambuaya', 'Nazareth',
+        'Pagalungan', 'Pagatpat', 'Patag', 'Pigcarangan', 'Puerto', 'Puntod', 'San Simon', 'Tablon', 'Taglimao',
+        'Tagpangi', 'Tignapoloan', 'Tuburan', 'Tumpagon',
+        'Barangay 1 (Poblacion)', 'Barangay 2 (Poblacion)', 'Barangay 3 (Poblacion)', 'Barangay 4 (Poblacion)',
+        'Barangay 5 (Poblacion)', 'Barangay 6 (Poblacion)', 'Barangay 7 (Poblacion)', 'Barangay 8 (Poblacion)',
+        'Barangay 9 (Poblacion)', 'Barangay 10 (Poblacion)', 'Barangay 11 (Poblacion)', 'Barangay 12 (Poblacion)',
+        'Barangay 13 (Poblacion)', 'Barangay 14 (Poblacion)', 'Barangay 15 (Poblacion)', 'Barangay 16 (Poblacion)',
+        'Barangay 17 (Poblacion)', 'Barangay 18 (Poblacion)', 'Barangay 19 (Poblacion)', 'Barangay 20 (Poblacion)',
+        'Barangay 21 (Poblacion)', 'Barangay 22 (Poblacion)', 'Barangay 23 (Poblacion)', 'Barangay 24 (Poblacion)',
+        'Barangay 25 (Poblacion)', 'Barangay 26 (Poblacion)', 'Barangay 27 (Poblacion)', 'Barangay 28 (Poblacion)',
+        'Barangay 29 (Poblacion)', 'Barangay 30 (Poblacion)', 'Barangay 31 (Poblacion)', 'Barangay 32 (Poblacion)',
+        'Barangay 33 (Poblacion)', 'Barangay 34 (Poblacion)', 'Barangay 35 (Poblacion)', 'Barangay 36 (Poblacion)',
+        'Barangay 37 (Poblacion)', 'Barangay 38 (Poblacion)', 'Barangay 39 (Poblacion)', 'Barangay 40 (Poblacion)',
+    ];
+    sort($cdoBarangays, SORT_NATURAL | SORT_FLAG_CASE);
+
+    $currentRescueLocation = old('rescue_location', optional($pet)->rescue_location ?? '');
+    $initialRescueBarangay = '';
+    $initialRescueLandmark = '';
+
+    if (!empty($currentRescueLocation)) {
+        if ($currentRescueLocation === 'City Pound (CDO City Vet)' || $currentRescueLocation === 'City Pound') {
+            $initialRescueBarangay = 'City Pound (CDO City Vet)';
+        } elseif (preg_match('/^Outside CDO\s*[-—–]\s*(.+)$/i', $currentRescueLocation, $m)) {
+            $initialRescueBarangay = 'Outside CDO / Other Area';
+            $initialRescueLandmark = trim($m[1]);
+        } elseif (preg_match('/^(.+?)\s*\((.+?)\)$/', $currentRescueLocation, $m)) {
+            $bCand = trim($m[1]);
+            if (in_array($bCand, $cdoBarangays, true)) {
+                $initialRescueBarangay = $bCand;
+                $initialRescueLandmark = trim($m[2]);
+            } else {
+                $initialRescueBarangay = 'Outside CDO / Other Area';
+                $initialRescueLandmark = $currentRescueLocation;
+            }
+        } elseif (in_array($currentRescueLocation, $cdoBarangays, true)) {
+            $initialRescueBarangay = $currentRescueLocation;
+        } else {
+            $initialRescueBarangay = 'Outside CDO / Other Area';
+            $initialRescueLandmark = $currentRescueLocation;
+        }
+    }
 
     $selectedMedicalHistory = old('medical_history', optional($pet)->medical_history);
     if (is_string($selectedMedicalHistory)) {
@@ -239,7 +287,11 @@
     dogColors: {{ json_encode($dogColors) }},
     catColors: {{ json_encode($catColors) }},
     gender: '{{ addslashes($currentGender) }}',
+    size: '{{ addslashes($currentSize) }}',
     age: '{{ addslashes($currentAge) }}',
+    status: '{{ addslashes($currentStatus) }}',
+    rescueBarangay: '{{ addslashes($initialRescueBarangay) }}',
+    rescueLandmark: '{{ addslashes($initialRescueLandmark) }}',
     dogBreeds: {{ json_encode($dogBreeds) }},
     catBreeds: {{ json_encode($catBreeds) }},
     dogAges: ['Puppy', 'Adult'],
@@ -277,6 +329,21 @@
             return this.colorOther ? this.colorOther.trim() : '';
         }
         return this.colorSelect || '';
+    },
+    get computedRescueLocation() {
+        const bgy = this.rescueBarangay ? this.rescueBarangay.trim() : '';
+        const landmark = this.rescueLandmark ? this.rescueLandmark.trim() : '';
+
+        if (!bgy) {
+            return landmark;
+        }
+        if (bgy === 'City Pound (CDO City Vet)') {
+            return 'City Pound (CDO City Vet)';
+        }
+        if (bgy === 'Outside CDO / Other Area') {
+            return landmark ? ('Outside CDO - ' + landmark) : 'Outside CDO';
+        }
+        return landmark ? (bgy + ' (' + landmark + ')') : bgy;
     },
     get colorOptions() {
         return this.type === 'dog' ? this.dogColors : (this.type === 'cat' ? this.catColors : []);
@@ -451,6 +518,10 @@
         }
         if (!this.age) {
             this.errorMessage = 'Please select the pet age classification.';
+            return false;
+        }
+        if (!this.status) {
+            this.errorMessage = 'Please select a pet status / intake stage.';
             return false;
         }
         return true;
@@ -724,7 +795,7 @@
                 <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : (type === 'dog' ? 'Aspin (Mixed Breed)' : '')); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="" disabled selected hidden style="display: none;">Select a pet</option>
+                    <option value="" disabled {{ empty($currentType) ? 'selected' : '' }} hidden style="display: none;">Select a pet</option>
                     <option value="dog" {{ $currentType == 'dog' ? 'selected' : '' }}>Dog</option>
                     <option value="cat" {{ $currentType == 'cat' ? 'selected' : '' }}>Cat</option>
                 </select>
@@ -768,7 +839,7 @@
                     @change="errorMessage = ''; if (colorSelect === 'Other Specified') $nextTick(() => $refs.colorOtherInput?.focus())"
                     :required="!isWizard && type === 'dog'"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                    <option value="" disabled selected hidden style="display: none;">Select dog color</option>
+                    <option value="" disabled {{ empty($initialColorSelect) ? 'selected' : '' }} hidden style="display: none;">Select dog color</option>
                     @foreach($dogColors as $option)
                         <option value="{{ $option }}" {{ $initialColorSelect === $option ? 'selected' : '' }}>{{ $option }}</option>
                     @endforeach
@@ -780,7 +851,7 @@
                     @change="errorMessage = ''; if (colorSelect === 'Other Specified') $nextTick(() => $refs.colorOtherInput?.focus())"
                     :required="!isWizard && type === 'cat'"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                    <option value="" disabled selected hidden style="display: none;">Select cat color</option>
+                    <option value="" disabled {{ empty($initialColorSelect) ? 'selected' : '' }} hidden style="display: none;">Select cat color</option>
                     @foreach($catColors as $option)
                         <option value="{{ $option }}" {{ $initialColorSelect === $option ? 'selected' : '' }}>{{ $option }}</option>
                     @endforeach
@@ -803,7 +874,7 @@
                 <select name="gender" x-model="gender"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="" disabled selected hidden style="display: none;">Select gender</option>
+                    <option value="" disabled {{ empty($currentGender) ? 'selected' : '' }} hidden style="display: none;">Select gender</option>
                     <option value="male" {{ $currentGender == 'male' ? 'selected' : '' }}>Male</option>
                     <option value="female" {{ $currentGender == 'female' ? 'selected' : '' }}>Female</option>
                 </select>
@@ -814,7 +885,7 @@
                 <select name="size" x-model="size"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="" disabled selected hidden style="display: none;">Select size</option>
+                    <option value="" disabled {{ empty($currentSize) ? 'selected' : '' }} hidden style="display: none;">Select size category</option>
                     <option value="small" {{ $currentSize == 'small' ? 'selected' : '' }}>Small (under 10 kg / Toy, Puppy, Cat)</option>
                     <option value="medium" {{ $currentSize == 'medium' ? 'selected' : '' }}>Medium (10 - 20 kg / Standard Native)</option>
                     <option value="large" {{ $currentSize == 'large' ? 'selected' : '' }}>Large (21+ kg / Large Native)</option>
@@ -826,7 +897,7 @@
                 <select name="age" x-model="age" x-show="type"
                     :required="!isWizard && type !== ''"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="" disabled selected hidden style="display: none;">Select age</option>
+                    <option value="" disabled {{ empty($currentAge) ? 'selected' : '' }} hidden style="display: none;">Select age</option>
                     <template x-for="option in ageOptions" :key="option">
                         <option :value="option" :selected="option === age" x-text="option"></option>
                     </template>
@@ -837,19 +908,100 @@
             </div>
         </div>
 
-        @if(optional($pet)->id)
-            <div class="mb-8">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Status</label>
+        {{-- Status & Rescue Intake Information --}}
+        <div class="mb-8 space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">
+                    Pet Status / Intake Stage <span class="text-rose-500">*</span>
+                </label>
                 <select name="status"
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white" required>
-                    <option value="available" {{ old('status', optional($pet)->status ?? 'available') == 'available' ? 'selected' : '' }}>Available</option>
-                    <option value="pending" {{ old('status', optional($pet)->status) == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="adopted" {{ old('status', optional($pet)->status) == 'adopted' ? 'selected' : '' }}>Adopted</option>
+                    x-model="status"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white font-semibold text-xs sm:text-sm">
+                    <option value="" disabled {{ empty($currentStatus) ? 'selected' : '' }} hidden style="display: none;">Select pet status / intake stage</option>
+                    <option value="in_shelter" {{ $currentStatus == 'in_shelter' ? 'selected' : '' }}>
+                        In Shelter (Newly Rescued / Under Care & Treatment)
+                    </option>
+                    <option value="available" {{ $currentStatus == 'available' ? 'selected' : '' }}>
+                        Ready for Adoption (Available)
+                    </option>
+                    @if(optional($pet)->id)
+                        <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Pending Adoption</option>
+                        <option value="adopted" {{ $currentStatus == 'adopted' ? 'selected' : '' }}>Adopted</option>
+                        <option value="deceased" {{ $currentStatus == 'deceased' ? 'selected' : '' }}>Deceased</option>
+                    @endif
                 </select>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5" x-show="status">
+                    <span x-show="status === 'in_shelter'">This pet will be registered for internal shelter monitoring and veterinary care, and will not appear in public adopter recommendations until marked ready.</span>
+                    <span x-show="status === 'available'">This pet is healthy, cleared, and immediately available for public adoption and AI matching.</span>
+                </p>
             </div>
-        @else
-            <input type="hidden" name="status" value="available">
-        @endif
+
+            {{-- Rescue & Intake Details Card (Only shown when In Shelter is selected) --}}
+            <div x-show="status === 'in_shelter'" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 -translate-y-2"
+                 class="p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-3.5">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-sky-900 dark:text-sky-200">Rescue & Intake Details</h3>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Rescue / Intake Date</label>
+                        <input type="date" name="rescue_date" 
+                               value="{{ old('rescue_date', optional($pet)->rescue_date ? optional($pet)->rescue_date->format('Y-m-d') : now()->format('Y-m-d')) }}" 
+                               class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                            Rescue Barangay / Origin
+                        </label>
+                        {{-- Hidden input submitted with form carrying the combined standardized value --}}
+                        <input type="hidden" name="rescue_location" :value="computedRescueLocation">
+
+                        <select x-model="rescueBarangay"
+                                class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
+                            <option value="" disabled {{ empty($initialRescueBarangay) ? 'selected' : '' }} hidden style="display: none;">Select rescue barangay / origin</option>
+                            <option value="City Pound (CDO City Vet)" {{ $initialRescueBarangay === 'City Pound (CDO City Vet)' ? 'selected' : '' }}>
+                                City Pound (CDO City Vet)
+                            </option>
+                            <option value="Outside CDO / Other Area" {{ $initialRescueBarangay === 'Outside CDO / Other Area' ? 'selected' : '' }}>
+                                Outside CDO / Other Municipality
+                            </option>
+                            <option disabled class="text-slate-400 font-bold bg-slate-50 dark:bg-slate-900">── Cagayan de Oro Barangays (80) ──</option>
+                            @foreach($cdoBarangays as $bgy)
+                                <option value="{{ $bgy }}" {{ $initialRescueBarangay === $bgy ? 'selected' : '' }}>{{ $bgy }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Optional Specific Street / Landmark (Shown when a barangay or outside CDO is selected) --}}
+                <div x-show="rescueBarangay && rescueBarangay !== 'City Pound (CDO City Vet)'" 
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="space-y-1">
+                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <span x-show="rescueBarangay !== 'Outside CDO / Other Area'">Specific Street / Landmark (Optional)</span>
+                        <span x-show="rescueBarangay === 'Outside CDO / Other Area'">Specify Municipality / Area Location</span>
+                    </label>
+                    <input type="text" x-model="rescueLandmark" 
+                           :placeholder="rescueBarangay === 'Outside CDO / Other Area' ? 'e.g. Tagoloan, Opol, El Salvador...' : 'e.g. Near Public Market, Purok 3, Riverbank...'" 
+                           class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500" x-show="computedRescueLocation">
+                        Recorded location: <span class="font-semibold text-[#199CA4]" x-text="computedRescueLocation"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
 
         {{-- Step 1 Navigation Buttons (Wizard Mode Only) --}}
         <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
@@ -877,7 +1029,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Medical Background & Clinical Intake</label>
                 <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-logged to Medical History</span>
             </div>
-            <p class="text-sm text-gray-500 dark:text-slate-400 mb-3.5">Select treatments administered to this pet. Selecting Vaccinated or Dewormed automatically creates clinical ledger records with booster dates.</p>
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-3.5">Select treatments administered to this pet. Optional: leave unchecked if newly rescued and awaiting veterinary examination (treatments can be recorded anytime later in Medical Logs).</p>
             
             <div class="rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02] space-y-4">
                 
@@ -972,6 +1124,7 @@
                             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaccine Name *</label>
                             <select x-model="vaccineSelect"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
+                                <option value="" disabled {{ empty($initialVaccineName) ? 'selected' : '' }} hidden style="display: none;">Select vaccine</option>
                                 <option value="Anti-Rabies">Anti-Rabies</option>
                                 <option value="5-in-1">5-in-1</option>
                                 <option value="Anti-Parvo">Anti-Parvo (Parvovirus)</option>
@@ -1027,6 +1180,7 @@
                             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Dewormer Product *</label>
                             <select x-model="dewormerSelect"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
+                                <option value="" disabled {{ empty($initialDewormerName) ? 'selected' : '' }} hidden style="display: none;">Select dewormer product</option>
                                 <option value="Heartgard Plus">Heartgard Plus</option>
                                 <option value="Pyrantel Embonate">Pyrantel Embonate</option>
                                 <option value="Drontal Plus">Drontal Plus</option>
@@ -1082,7 +1236,7 @@
                         </label>
                         <select x-model="disabilityType" 
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition outline-none shadow-xs text-gray-800 dark:text-white text-sm">
-                            <option value="" disabled selected hidden style="display: none;">Select disability type (optional)</option>
+                            <option value="" disabled {{ empty($initialDisabilityType) ? 'selected' : '' }} hidden style="display: none;">Select disability type (optional)</option>
                             <option value="Blind / Visually Impaired">Blind / Visually Impaired</option>
                             <option value="Deaf / Hearing Impaired">Deaf / Hearing Impaired</option>
                             <option value="Amputee / Missing Limb (Tripod)">Amputee / Missing Limb (Tripod)</option>

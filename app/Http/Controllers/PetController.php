@@ -47,8 +47,14 @@ class PetController extends Controller
     public function index()
     {
         $q = trim((string) request()->input('q', ''));
+        $activeTab = request()->input('status', 'all');
 
-        $query = Pet::where('status', '!=', 'adopted');
+        $baseQuery = Pet::query();
+
+        // If not staff/admin (e.g. adopter browsing), only show available pets
+        if (!in_array(Auth::user()?->role, ['admin', 'staff'])) {
+            $baseQuery->where('status', 'available');
+        }
 
         if ($q !== '') {
             // Extract possible pet ID from expressions like:
@@ -62,7 +68,7 @@ class PetController extends Controller
                 $extractedId = (int) $matches[1];
             }
 
-            $query->where(function ($sub) use ($q, $extractedId) {
+            $baseQuery->where(function ($sub) use ($q, $extractedId) {
                 if ($extractedId !== null) {
                     $sub->where('id', $extractedId);
                 }
@@ -87,11 +93,45 @@ class PetController extends Controller
             });
         }
 
+        // Live counts for status tabs (respecting search query)
+        $countQuery = clone $baseQuery;
+        $counts = [
+            'all'        => (clone $countQuery)->where('status', '!=', 'deceased')->count(),
+            'in_shelter' => (clone $countQuery)->where('status', 'in_shelter')->count(),
+            'available'  => (clone $countQuery)->where('status', 'available')->count(),
+            'pending'    => (clone $countQuery)->where('status', 'pending')->count(),
+            'adopted'    => (clone $countQuery)->where('status', 'adopted')->count(),
+        ];
+
+        // Apply status filter based on active tab
+        $query = clone $baseQuery;
+        switch ($activeTab) {
+            case 'in_shelter':
+                $query->where('status', 'in_shelter');
+                break;
+            case 'available':
+                $query->where('status', 'available');
+                break;
+            case 'pending':
+                $query->where('status', 'pending');
+                break;
+            case 'adopted':
+                $query->where('status', 'adopted');
+                break;
+            case 'all':
+            default:
+                $activeTab = 'all';
+                $query->where('status', '!=', 'deceased');
+                break;
+        }
+
         $pets = $query->latest('created_at')->paginate(10)->withQueryString();
 
         return view('pets.index', [
-            'pets' => $pets,
-            'q' => $q,
+            'pets'      => $pets,
+            'q'         => $q,
+            'activeTab' => $activeTab,
+            'counts'    => $counts,
         ]);
     }
 
@@ -104,10 +144,11 @@ class PetController extends Controller
         }
 
         $data = $request->validate([
+            'name' => 'nullable|string|max:255',
             'breed' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
-            'size' => 'required|in:small,medium,large',
+            'size' => 'nullable|in:small,medium,large',
             'type' => 'required|in:dog,cat',
             'age' => 'nullable|string|max:50',
             'medical_history' => 'nullable',
@@ -116,6 +157,10 @@ class PetController extends Controller
             'temperament_tags' => 'nullable|array',
             'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
+            'status' => 'nullable|string|in:in_shelter,available,pending,adopted,deceased',
+            'rescue_date' => 'nullable|date',
+            'rescue_location' => 'nullable|string|max:255',
+            'intake_condition' => 'nullable|string|max:1000',
             'photo' => 'required|image|max:2048',
         ]);
 
@@ -144,7 +189,9 @@ class PetController extends Controller
             $user = Auth::user();
 
             $pet = DB::transaction(function () use ($data, $user, $request) {
+                $status = $data['status'] ?? 'in_shelter';
                 $pet = Pet::create([
+                    'name' => $data['name'] ?? null,
                     'breed' => $data['breed'],
                     'color' => $data['color'],
                     'gender' => $data['gender'],
@@ -154,7 +201,10 @@ class PetController extends Controller
                     'medical_history' => $data['medical_history'] ?? null,
                     'description' => $data['description'] ?? null,
                     'photo_path' => $data['photo_path'] ?? null,
-                    'status' => 'available',
+                    'status' => $status,
+                    'rescue_date' => $data['rescue_date'] ?? ($status === 'in_shelter' ? now()->toDateString() : null),
+                    'rescue_location' => $data['rescue_location'] ?? null,
+                    'intake_condition' => $data['intake_condition'] ?? null,
                     'added_by_user_id' => $user?->id,
                     'added_by_name' => $user?->name,
                 ]);
@@ -255,10 +305,11 @@ class PetController extends Controller
         }
 
         $data = $request->validate([
+            'name' => 'nullable|string|max:255',
             'breed' => 'required|string|max:255',
             'color' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
-            'size' => 'required|in:small,medium,large',
+            'size' => 'nullable|in:small,medium,large',
             'type' => 'required|in:dog,cat',
             'age' => 'nullable|string|max:50',
             'medical_history' => 'nullable',
@@ -267,7 +318,10 @@ class PetController extends Controller
             'temperament_tags' => 'nullable|array',
             'temperament_tags.*' => 'exists:temperament_tags,id',
             'description' => 'nullable|string',
-            'status' => ['required', 'in:available,pending,adopted'],
+            'status' => ['required', 'in:in_shelter,available,pending,adopted,deceased'],
+            'rescue_date' => 'nullable|date',
+            'rescue_location' => 'nullable|string|max:255',
+            'intake_condition' => 'nullable|string|max:1000',
             'photo' => 'nullable|image|max:2048',
         ]);
 
@@ -290,6 +344,7 @@ class PetController extends Controller
 
         DB::transaction(function () use ($pet, $data, $request) {
             $pet->update([
+                'name' => $data['name'] ?? $pet->name,
                 'breed' => $data['breed'],
                 'color' => $data['color'],
                 'gender' => $data['gender'],
@@ -299,6 +354,9 @@ class PetController extends Controller
                 'medical_history' => $data['medical_history'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'],
+                'rescue_date' => $data['rescue_date'] ?? $pet->rescue_date,
+                'rescue_location' => $data['rescue_location'] ?? $pet->rescue_location,
+                'intake_condition' => $data['intake_condition'] ?? $pet->intake_condition,
                 'photo_path' => $data['photo_path'] ?? $pet->photo_path,
             ]);
 
@@ -378,6 +436,19 @@ class PetController extends Controller
         session()->flash('new_pet_id', $pet->id);
 
         return redirect()->route('pets.index');
+    }
+
+    public function markAvailable(Pet $pet)
+    {
+        if (!in_array(Auth::user()?->role, ['admin', 'staff'])) {
+            abort(403, 'Unauthorized.');
+        }
+
+        $pet->update([
+            'status' => 'available',
+        ]);
+
+        return redirect()->back()->with('success', ($pet->name ?: ('Pet no. ' . $pet->id)) . ' is now marked as Ready for Adoption.');
     }
 
     public function destroy(Pet $pet)

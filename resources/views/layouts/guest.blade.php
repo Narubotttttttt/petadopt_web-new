@@ -14,9 +14,27 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-        <!-- Prevent Alpine.js Flash of Unstyled Content (FOUC) & Theme Init -->
+        <!-- Prevent Alpine.js Flash of Unstyled Content (FOUC), Theme Init & Hide Native Password Reveal Buttons -->
         <style>
             [x-cloak] { display: none !important; }
+            input[type="password"]::-ms-reveal,
+            input[type="password"]::-ms-clear,
+            .no-native-toggle::-ms-reveal,
+            .no-native-toggle::-ms-clear {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+            }
+            input[type="password"]::-webkit-credentials-auto-fill-button,
+            input[type="password"]::-webkit-strong-password-auto-fill-button,
+            .no-native-toggle::-webkit-credentials-auto-fill-button,
+            .no-native-toggle::-webkit-strong-password-auto-fill-button {
+                display: none !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                right: 0 !important;
+            }
         </style>
         <script>
             if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {

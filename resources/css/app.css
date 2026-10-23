@@ -6,6 +6,27 @@
     display: none !important;
 }
 
+/* ─── Hide Edge & WebKit Native Password Reveal Controls (Avoid double eye icons) ─── */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+.no-native-toggle::-ms-reveal,
+.no-native-toggle::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-strong-password-auto-fill-button,
+.no-native-toggle::-webkit-credentials-auto-fill-button,
+.no-native-toggle::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    right: 0 !important;
+}
+
 /* ─── Premium Scrollbar ─── */
 ::-webkit-scrollbar {
     width: 6px;

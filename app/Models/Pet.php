@@ -22,8 +22,15 @@ class Pet extends Model
         'description',
         'photo_path',
         'status',
+        'rescue_date',
+        'rescue_location',
+        'intake_condition',
         'added_by_user_id',
         'added_by_name',
+    ];
+
+    protected $casts = [
+        'rescue_date' => 'date',
     ];
 
     protected $appends = [

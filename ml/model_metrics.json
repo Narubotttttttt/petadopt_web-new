@@ -2,18 +2,18 @@
   "model_name": "Random Forest Compatibility Classifier (Lifestyle & Temperament Focused)",
   "framework": "Scikit-Learn",
   "dataset_source": "Austin Animal Center Real Shelter Outcomes (Kaggle)",
-  "accuracy": 94.0,
-  "precision": 91.84,
-  "recall": 91.09,
-  "f1_score": 0.9146,
+  "accuracy": 95.71,
+  "precision": 94.31,
+  "recall": 93.55,
+  "f1_score": 0.9393,
   "confusion_matrix": [
     [
-      433,
-      20
+      438,
+      14
     ],
     [
-      22,
-      225
+      16,
+      232
     ]
   ],
   "total_samples": 3500,
