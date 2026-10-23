@@ -33,13 +33,19 @@ class PetController extends Controller
         }
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $this->ensureDefaultTemperamentTags();
         $temperamentTags = TemperamentTag::orderBy('name')->get();
 
+        $pet = new Pet();
+        $status = $request->query('status');
+        if (in_array($status, ['in_shelter', 'available'])) {
+            $pet->status = $status;
+        }
+
         return view('pets.create', [
-            'pet' => new Pet(),
+            'pet' => $pet,
             'temperamentTags' => $temperamentTags,
         ]);
     }

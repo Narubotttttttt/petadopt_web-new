@@ -18,6 +18,7 @@ class TemperamentTagSeeder extends Seeder
             'Independent',
             'Affectionate',
             'Protective',
+            'Under Behavioral Observation',
         ];
 
         foreach ($tags as $tag) {

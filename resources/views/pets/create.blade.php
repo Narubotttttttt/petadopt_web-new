@@ -2,9 +2,31 @@
     <div class="max-w-4xl mx-auto py-10 px-4 animate-fade-in">
         <div class="bg-white dark:bg-[#12141C] p-8 rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-gray-100 dark:border-white/[0.07]">
             
-            <div class="flex items-center gap-3 mb-8 border-b-2 border-[#199CA4] pb-4">
-                
-                <h1 class="text-xl font-bold text-gray-900 dark:text-white">Add New Pet</h1>
+            <div class="flex items-center justify-between mb-8 border-b-2 border-[#199CA4] pb-4">
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+                        @if(($pet->status ?? '') === 'in_shelter')
+                            Shelter Pet Intake Registration
+                        @elseif(($pet->status ?? '') === 'available')
+                            Ready for Adoption Registration
+                        @else
+                            Add New Pet
+                        @endif
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        @if(($pet->status ?? '') === 'in_shelter')
+                            Streamlined 2-step intake triage for newly rescued stray animals.
+                        @elseif(($pet->status ?? '') === 'available')
+                            Full 3-step listing profile with temperament tagging and adoption matching.
+                        @else
+                            Register a new animal in the CAWS shelter database.
+                        @endif
+                    </p>
+                </div>
+                <a href="{{ route('pets.index') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Back to Directory
+                </a>
             </div>
 
             @if(session('success'))

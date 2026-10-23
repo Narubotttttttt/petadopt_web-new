@@ -1,5 +1,17 @@
 <x-app-layout>
-    <div class="w-full py-6 sm:py-8 px-4 sm:px-6 lg:px-8 animate-fade-in space-y-5 sm:space-y-6" x-data>
+    <div class="w-full py-6 sm:py-8 px-4 sm:px-6 lg:px-8 animate-fade-in space-y-5 sm:space-y-6" 
+         x-data="{ 
+             registrationModal: false,
+             init() {
+                 this.$watch('registrationModal', val => {
+                     if (val) {
+                         document.body.classList.add('overflow-hidden');
+                     } else {
+                         document.body.classList.remove('overflow-hidden');
+                     }
+                 });
+             }
+         }">
         
         {{-- Header & Search Actions --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -29,9 +41,11 @@
                     </button>
                 </form>
                 @if(in_array(Auth::user()?->role, ['admin', 'staff']))
-                    <a href="{{ route('pets.create') }}" class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold shadow-xs transition-all duration-200 shrink-0">
+                    <button type="button" 
+                            @click="registrationModal = true" 
+                            class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold shadow-xs transition-all duration-200 shrink-0 cursor-pointer">
                         <span class="text-base leading-none">+</span> Add New Pet
-                    </a>
+                    </button>
                 @endif
             </div>
         </div>
@@ -418,5 +432,157 @@
                 </div>
             </div>
         </div>
+
+        {{-- Registration Mode Selector Modal --}}
+        <template x-teleport="body">
+            <div x-show="registrationModal"
+                 x-cloak
+                 class="fixed inset-0 z-[70] overflow-y-auto"
+                 aria-labelledby="modal-title" 
+                 role="dialog" 
+                 aria-modal="true"
+                 @keydown.escape.window="registrationModal = false">
+            
+            {{-- Backdrop --}}
+            <div x-show="registrationModal"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="registrationModal = false"
+                 class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs transition-opacity"></div>
+
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div x-show="registrationModal"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     @click.away="registrationModal = false"
+                     class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#12141C] p-6 sm:p-8 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-slate-200/80 dark:border-white/[0.08]">
+                     
+                     {{-- Modal Header --}}
+                     <div class="flex items-start justify-between mb-6">
+                         <div>
+                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] mb-2">
+                                 Pet Intake Registry
+                             </span>
+                             <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight" id="modal-title">
+                                 Select Registration Type
+                             </h3>
+                             <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                 Choose the intake workflow according to the pet's current medical and shelter status.
+                             </p>
+                         </div>
+                         <button type="button" 
+                                 @click="registrationModal = false"
+                                 class="rounded-xl p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors focus:outline-none cursor-pointer shrink-0 ml-3">
+                             <span class="sr-only">Close</span>
+                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                             </svg>
+                         </button>
+                     </div>
+
+                     {{-- Options Grid --}}
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         {{-- Card 1: Newly Rescued Pet --}}
+                         <a href="{{ route('pets.create', ['status' => 'in_shelter']) }}"
+                            class="group relative flex flex-col justify-between p-5 rounded-2xl border-2 border-slate-200/80 dark:border-white/[0.08] hover:border-[#199CA4] dark:hover:border-[#199CA4] bg-slate-50/60 dark:bg-[#151722] hover:bg-teal-50/40 dark:hover:bg-[#199CA4]/5 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer text-left">
+                             
+                             <div>
+                                 <div class="flex items-center justify-between mb-4">
+                                     <div class="w-12 h-12 rounded-xl bg-teal-100/70 dark:bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                         </svg>
+                                     </div>
+                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                         Fast 2-Step
+                                     </span>
+                                 </div>
+
+                                 <h4 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition-colors">
+                                     Newly Rescued Pet
+                                 </h4>
+                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 leading-relaxed">
+                                     For stray animals rescued from CDO streets or the City Pound undergoing intake, isolation, or treatment.
+                                 </p>
+
+                                 <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-2 mb-5">
+                                     <li class="flex items-start gap-2">
+                                         <svg class="w-4 h-4 text-[#199CA4] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                         <span>Rescue origin (Barangay & landmark)</span>
+                                     </li>
+                                     <li class="flex items-start gap-2">
+                                         <svg class="w-4 h-4 text-[#199CA4] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                         <span>Intake triage (Disabilities & treatments)</span>
+                                     </li>
+                                     <li class="flex items-start gap-2">
+                                         <svg class="w-4 h-4 text-[#199CA4] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                         <span>Auto-assigned observation status</span>
+                                     </li>
+                                 </ul>
+                             </div>
+
+                             <div class="pt-3 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between text-xs font-extrabold text-[#199CA4] dark:text-[#41C1CB]">
+                                 <span>Start Shelter Intake</span>
+                                 <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                             </div>
+                         </a>
+
+                         {{-- Card 2: Ready for Adoption --}}
+                         <a href="{{ route('pets.create', ['status' => 'available']) }}"
+                            class="group relative flex flex-col justify-between p-5 rounded-2xl border-2 border-slate-200/80 dark:border-white/[0.08] hover:border-emerald-500 dark:hover:border-emerald-500 bg-slate-50/60 dark:bg-[#151722] hover:bg-emerald-50/40 dark:hover:bg-emerald-500/5 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer text-left">
+                             
+                             <div>
+                                 <div class="flex items-center justify-between mb-4">
+                                     <div class="w-12 h-12 rounded-xl bg-emerald-100/70 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                         </svg>
+                                     </div>
+                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                         Full 3-Step
+                                     </span>
+                                 </div>
+
+                                 <h4 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                     Ready for Adoption
+                                 </h4>
+                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 leading-relaxed">
+                                     For evaluated, healthy pets with known temperaments ready to be listed publicly for adopter applications.
+                                 </p>
+
+                                 <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-2 mb-5">
+                                     <li class="flex items-start gap-2">
+                                         <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                         <span>Full temperament & personality tags</span>
+                                     </li>
+                                     <li class="flex items-start gap-2">
+                                         <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                         <span>Public adoption story & profile photo</span>
+                                     </li>
+                                     <li class="flex items-start gap-2">
+                                         <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                         <span>Instant AI recommender matching</span>
+                                     </li>
+                                 </ul>
+                             </div>
+
+                             <div class="pt-3 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                                 <span>Create Adoption Listing</span>
+                                 <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                             </div>
+                         </a>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </template>
     </div>
 </x-app-layout>

@@ -29,6 +29,7 @@ class PetIntakeAndShelterStatusTest extends TestCase
             'status' => 'in_shelter',
             'rescue_date' => '2026-10-23',
             'rescue_location' => 'Poblacion Market',
+            'temperament_tags' => [\App\Models\TemperamentTag::firstOrCreate(['name' => 'Under Behavioral Observation'])->id],
             'description' => 'Gentle rescue dog undergoing shelter recovery.',
             'photo' => UploadedFile::fake()->create('rescue.jpg', 100, 'image/jpeg'),
         ]);
@@ -40,6 +41,7 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $this->assertSame('in_shelter', $pet->status);
         $this->assertSame('2026-10-23', $pet->rescue_date->format('Y-m-d'));
         $this->assertSame('Poblacion Market', $pet->rescue_location);
+        $this->assertTrue($pet->temperamentTags->contains('name', 'Under Behavioral Observation'));
     }
 
     public function test_pets_index_filters_by_status_tabs_and_computes_counts(): void
@@ -140,5 +142,49 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $response->assertOk();
         $response->assertSee('Public Available Dog');
         $response->assertDontSee('Secret Rescued Dog');
+    }
+
+    public function test_pets_index_renders_registration_modal_options_for_staff(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('pets.index'));
+        $response->assertOk();
+        $response->assertSee('Select Registration Type');
+        $response->assertSee('Newly Rescued Pet');
+        $response->assertSee('Ready for Adoption');
+        $response->assertSee(route('pets.create', ['status' => 'in_shelter']));
+        $response->assertSee(route('pets.create', ['status' => 'available']));
+    }
+
+    public function test_create_pet_screen_preselects_in_shelter_mode(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('pets.create', ['status' => 'in_shelter']));
+        $response->assertOk();
+        $response->assertSee('Shelter Pet Intake Registration');
+        $response->assertSee('Streamlined 2-step intake triage');
+        $response->assertSee("status: 'in_shelter'", false);
+    }
+
+    public function test_create_pet_screen_preselects_available_mode(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('pets.create', ['status' => 'available']));
+        $response->assertOk();
+        $response->assertSee('Ready for Adoption Registration');
+        $response->assertSee('Full 3-step listing profile');
+        $response->assertSee("status: 'available'", false);
     }
 }

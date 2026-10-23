@@ -257,6 +257,7 @@
             'Playful',
             'Protective',
             'Shy',
+            'Under Behavioral Observation',
         ];
         foreach ($defaultTags as $name) {
             \App\Models\TemperamentTag::firstOrCreate(['name' => $name]);
@@ -264,9 +265,17 @@
         $temperamentTags = \App\Models\TemperamentTag::orderBy('name')->get();
     }
 
+    $observationTag = \App\Models\TemperamentTag::firstOrCreate(['name' => 'Under Behavioral Observation']);
+    $observationTagId = (string) $observationTag->id;
+    $displayTemperamentTags = $temperamentTags->reject(fn($t) => $t->name === 'Under Behavioral Observation');
+
+    if (empty($selectedTagIds) && ($currentStatus === 'in_shelter' || empty($currentStatus))) {
+        $selectedTagIds = [$observationTagId];
+    }
+
     $initialStep = 1;
     if ($errors->has('photo') || $errors->has('description')) {
-        $initialStep = 3;
+        $initialStep = ($currentStatus === 'in_shelter') ? 2 : 3;
     } elseif ($errors->has('medical_history') || $errors->has('temperament_tags')) {
         $initialStep = 2;
     }
@@ -275,7 +284,10 @@
 <div x-data="{
     isWizard: {{ $isWizard ? 'true' : 'false' }},
     step: {{ $initialStep }},
-    maxStep: 3,
+    observationTagId: '{{ $observationTagId }}',
+    get totalSteps() {
+        return this.status === 'in_shelter' ? 2 : 3;
+    },
     submitting: false,
     errorMessage: '',
 
@@ -484,8 +496,10 @@
         this.fileName = '';
         this.fileSize = '';
         this.isNew = false;
-        const input = document.getElementById('pet_photo_input');
-        if (input) input.value = '';
+        const input2 = document.getElementById('pet_photo_input_step2');
+        if (input2) input2.value = '';
+        const input3 = document.getElementById('pet_photo_input_step3');
+        if (input3) input3.value = '';
     },
 
     // Step Validations
@@ -552,7 +566,29 @@
                 return false;
             }
         }
-        if (!this.selectedTags || this.selectedTags.length === 0) {
+        if (this.status === 'in_shelter') {
+            @if(!$pet)
+                const input = document.getElementById('pet_photo_input_step2');
+                if (!this.previewUrl && (!input || !input.files || !input.files.length)) {
+                    this.errorMessage = 'Please upload an intake photo for the pet.';
+                    return false;
+                }
+            @endif
+            const input2 = document.getElementById('pet_photo_input_step2');
+            if (input2 && input2.files && input2.files[0]) {
+                if (input2.files[0].size > 2048 * 1024) {
+                    this.errorMessage = 'Photo must be 2MB or smaller. Selected file is ' + (input2.files[0].size / 1024 / 1024).toFixed(2) + ' MB.';
+                    return false;
+                }
+            }
+            if (!this.selectedTags.includes(this.observationTagId)) {
+                this.selectedTags = [this.observationTagId];
+            }
+            return true;
+        }
+
+        const validTags = this.selectedTags.filter(t => t !== this.observationTagId);
+        if (!validTags || validTags.length === 0) {
             this.errorMessage = 'Please select at least one temperament trait.';
             return false;
         }
@@ -560,7 +596,10 @@
     },
     validateStep3() {
         this.errorMessage = '';
-        const input = document.getElementById('pet_photo_input');
+        if (this.status === 'in_shelter') {
+            return true;
+        }
+        const input = document.getElementById('pet_photo_input_step3');
         @if(!$pet)
             if (!this.previewUrl && (!input || !input.files || !input.files.length)) {
                 this.errorMessage = 'Please upload a photo for the pet.';
@@ -578,6 +617,9 @@
     nextStep(current) {
         if (current === 1) {
             if (this.validateStep1()) {
+                if (this.status === 'in_shelter' && !this.selectedTags.includes(this.observationTagId)) {
+                    this.selectedTags = [this.observationTagId];
+                }
                 this.step = 2;
                 this.errorMessage = '';
                 this.scrollToTop();
@@ -585,6 +627,10 @@
                 this.scrollToTop();
             }
         } else if (current === 2) {
+            if (this.status === 'in_shelter') {
+                this.submitWizard();
+                return;
+            }
             if (this.validateStep2()) {
                 this.step = 3;
                 this.errorMessage = '';
@@ -613,10 +659,14 @@
                 this.scrollToTop();
                 return;
             }
+            if (this.status === 'in_shelter' && !this.selectedTags.includes(this.observationTagId)) {
+                this.selectedTags = [this.observationTagId];
+            }
             this.step = 2;
             this.errorMessage = '';
             this.scrollToTop();
         } else if (target === 3) {
+            if (this.status === 'in_shelter') return;
             if (!this.validateStep1()) {
                 this.step = 1;
                 this.scrollToTop();
@@ -650,10 +700,12 @@
             this.scrollToTop();
             return false;
         }
-        if (!this.validateStep3()) {
-            this.step = 3;
-            this.scrollToTop();
-            return false;
+        if (this.status !== 'in_shelter') {
+            if (!this.validateStep3()) {
+                this.step = 3;
+                this.scrollToTop();
+                return false;
+            }
         }
 
         this.submitting = true;
@@ -667,7 +719,7 @@
         this.submitWizard();
     }
 }"
-@keydown.enter="if (isWizard && step < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); nextStep(step); } else if (isWizard && step === 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); submitFromKey(); }">
+@keydown.enter="if (isWizard && step < totalSteps && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); nextStep(step); } else if (isWizard && step === totalSteps && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); submitFromKey(); }">
 
     {{-- Stepper Progress Header (Only visible in Wizard Mode) --}}
     <div class="mb-8" x-show="isWizard" x-cloak>
@@ -675,7 +727,7 @@
         <div class="hidden sm:flex items-center justify-between relative px-2">
             <div class="absolute left-10 right-10 top-5 h-1 bg-gray-200 dark:bg-white/[0.08] z-0"></div>
             <div class="absolute left-10 top-5 h-1 bg-[#199CA4] transition-all duration-300 z-0"
-                 :style="'width: ' + (step === 1 ? '0%' : (step === 2 ? '50%' : 'calc(100% - 5rem)'))"></div>
+                 :style="'width: ' + (status === 'in_shelter' ? (step === 1 ? '0%' : 'calc(100% - 5rem)') : (step === 1 ? '0%' : (step === 2 ? '50%' : 'calc(100% - 5rem)')))"></div>
 
             {{-- Step 1 Button --}}
             <button type="button" @click="goToStep(1)" class="relative z-10 flex flex-col items-center group cursor-pointer">
@@ -697,7 +749,7 @@
                           :class="step === 1 ? 'text-[#199CA4]' : (step > 1 ? 'text-gray-700 dark:text-slate-300' : 'text-gray-400 dark:text-slate-500')">
                         General Details
                     </span>
-                    <span class="block text-[11px] text-gray-400 dark:text-slate-500">Identity & Breed</span>
+                    <span class="block text-[11px] text-gray-400 dark:text-slate-500">Identity & Origin</span>
                 </div>
             </button>
 
@@ -718,49 +770,55 @@
                 </div>
                 <div class="mt-2 text-center">
                     <span class="block text-xs font-bold transition"
-                          :class="step === 2 ? 'text-[#199CA4]' : (step > 2 ? 'text-gray-700 dark:text-slate-300' : 'text-gray-400 dark:text-slate-500')">
+                          :class="step === 2 ? 'text-[#199CA4]' : (step > 2 ? 'text-gray-700 dark:text-slate-300' : 'text-gray-400 dark:text-slate-500')"
+                          x-text="status === 'in_shelter' ? 'Intake Health & Photo' : 'Health & Traits'">
                         Health & Traits
                     </span>
-                    <span class="block text-[11px] text-gray-400 dark:text-slate-500">Medical & Personality</span>
+                    <span class="block text-[11px] text-gray-400 dark:text-slate-500"
+                          x-text="status === 'in_shelter' ? 'Triage & Snapshot' : 'Medical & Personality'">
+                        Medical & Personality
+                    </span>
                 </div>
             </button>
 
-            {{-- Step 3 Button --}}
-            <button type="button" @click="goToStep(3)" class="relative z-10 flex flex-col items-center group cursor-pointer">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-200"
-                     :class="step === 3 
-                        ? 'bg-[#199CA4] text-white ring-4 ring-[#199CA4]/20 shadow-md' 
-                        : 'bg-white dark:bg-[#12141C] border-2 border-gray-300 dark:border-white/[0.15] text-gray-400 dark:text-slate-500'">
-                    <span>3</span>
-                </div>
-                <div class="mt-2 text-center">
-                    <span class="block text-xs font-bold transition"
-                          :class="step === 3 ? 'text-[#199CA4]' : 'text-gray-400 dark:text-slate-500'">
-                        Photo & Story
-                    </span>
-                    <span class="block text-[11px] text-gray-400 dark:text-slate-500">Upload & Bio</span>
-                </div>
-            </button>
+            {{-- Step 3 Button (Only shown when not In Shelter) --}}
+            <div x-show="status !== 'in_shelter'" class="contents">
+                <button type="button" @click="goToStep(3)" class="relative z-10 flex flex-col items-center group cursor-pointer">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-200"
+                         :class="step === 3 
+                            ? 'bg-[#199CA4] text-white ring-4 ring-[#199CA4]/20 shadow-md' 
+                            : 'bg-white dark:bg-[#12141C] border-2 border-gray-300 dark:border-white/[0.15] text-gray-400 dark:text-slate-500'">
+                        <span>3</span>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <span class="block text-xs font-bold transition"
+                              :class="step === 3 ? 'text-[#199CA4]' : 'text-gray-400 dark:text-slate-500'">
+                            Photo & Story
+                        </span>
+                        <span class="block text-[11px] text-gray-400 dark:text-slate-500">Upload & Bio</span>
+                    </div>
+                </button>
+            </div>
         </div>
 
         {{-- Mobile Stepper Header --}}
         <div class="sm:hidden space-y-2.5">
             <div class="flex items-center justify-between text-xs">
                 <span class="font-bold text-[#199CA4] uppercase tracking-wider"
-                      x-text="step === 1 ? 'Step 1 of 3: General Details' : (step === 2 ? 'Step 2 of 3: Health & Traits' : 'Step 3 of 3: Photo & Story')">
+                      x-text="status === 'in_shelter' ? (step === 1 ? 'Step 1 of 2: General Details' : 'Step 2 of 2: Intake Health & Photo') : (step === 1 ? 'Step 1 of 3: General Details' : (step === 2 ? 'Step 2 of 3: Health & Traits' : 'Step 3 of 3: Photo & Story'))">
                 </span>
                 <span class="font-semibold text-gray-400 dark:text-slate-500"
-                      x-text="step === 1 ? '33%' : (step === 2 ? '66%' : '100%')">
+                      x-text="status === 'in_shelter' ? (step === 1 ? '50%' : '100%') : (step === 1 ? '33%' : (step === 2 ? '66%' : '100%'))">
                 </span>
             </div>
             <div class="w-full bg-gray-100 dark:bg-white/[0.08] h-2 rounded-full overflow-hidden">
                 <div class="h-full bg-[#199CA4] transition-all duration-300 rounded-full"
-                     :style="'width: ' + (step === 1 ? '33.3%' : (step === 2 ? '66.6%' : '100%'))"></div>
+                     :style="'width: ' + (status === 'in_shelter' ? (step === 1 ? '50%' : '100%') : (step === 1 ? '33.3%' : (step === 2 ? '66.6%' : '100%')))"></div>
             </div>
             <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-slate-400 pt-0.5">
                 <button type="button" @click="goToStep(1)" class="font-medium hover:text-[#199CA4]" :class="{ 'text-[#199CA4] font-bold': step === 1 }">1. General</button>
-                <button type="button" @click="goToStep(2)" class="font-medium hover:text-[#199CA4]" :class="{ 'text-[#199CA4] font-bold': step === 2 }">2. Health</button>
-                <button type="button" @click="goToStep(3)" class="font-medium hover:text-[#199CA4]" :class="{ 'text-[#199CA4] font-bold': step === 3 }">3. Photo</button>
+                <button type="button" @click="goToStep(2)" class="font-medium hover:text-[#199CA4]" :class="{ 'text-[#199CA4] font-bold': step === 2 }" x-text="status === 'in_shelter' ? '2. Intake' : '2. Health'">2. Health</button>
+                <button type="button" x-show="status !== 'in_shelter'" @click="goToStep(3)" class="font-medium hover:text-[#199CA4]" :class="{ 'text-[#199CA4] font-bold': step === 3 }">3. Photo</button>
             </div>
         </div>
     </div>
@@ -1011,7 +1069,7 @@
             </a>
             <button type="button" @click="nextStep(1)"
                 class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#199CA4] text-white text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
-                <span>Next: Health & Traits</span>
+                <span x-text="status === 'in_shelter' ? 'Next: Intake Health & Photo' : 'Next: Health & Traits'">Next: Health & Traits</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </button>
         </div>
@@ -1026,10 +1084,14 @@
         
         <div class="mb-8">
             <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Medical Background & Clinical Intake</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400"
+                       x-text="status === 'in_shelter' ? 'Shelter Intake Health Assessment' : 'Medical Background & Clinical Intake'">
+                    Medical Background & Clinical Intake
+                </label>
                 <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-logged to Medical History</span>
             </div>
-            <p class="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-3.5">Select treatments administered to this pet. Optional: leave unchecked if newly rescued and awaiting veterinary examination (treatments can be recorded anytime later in Medical Logs).</p>
+            <p x-show="status === 'in_shelter'" class="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-3.5">Record immediate physical needs and upload an intake photo. Clinical treatments are optional (leave unchecked if awaiting veterinary examination).</p>
+            <p x-show="status !== 'in_shelter'" class="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-3.5">Select treatments administered to this pet. Selecting Vaccinated or Dewormed automatically creates clinical ledger records with booster dates.</p>
             
             <div class="rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02] space-y-4">
                 
@@ -1258,14 +1320,28 @@
             </div>
         </div>
 
-        <div class="mb-8">
+        {{-- Behavioral Status (Choice B for In-Shelter: Under Behavioral Observation badge; Normal tags for Available) --}}
+        <div x-show="status === 'in_shelter'" class="mb-8 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60">
+                    Under Behavioral Observation
+                </span>
+                <span class="text-xs font-bold text-amber-900 dark:text-amber-200">Automatic Intake Status</span>
+            </div>
+            <p class="text-xs text-amber-800/90 dark:text-amber-300/80 leading-relaxed">
+                Because this pet is newly rescued, temperament traits cannot be assessed on day 1. The pet is placed under shelter observation and will be monitored during quarantine before adoption release.
+            </p>
+            <input type="hidden" name="temperament_tags[]" :value="observationTagId">
+        </div>
+
+        <div x-show="status !== 'in_shelter'" class="mb-8">
             <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Temperament <span class="text-rose-500">*</span></label>
                 <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Select at least 1</span>
             </div>
             <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">Choose the behavioral traits that describe this pet.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02]">
-                @foreach($temperamentTags as $tag)
+                @foreach($displayTemperamentTags as $tag)
                     <label class="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] px-3.5 py-2.5 text-sm text-gray-700 dark:text-slate-200 cursor-pointer hover:border-[#199CA4]/40 transition"
                            :class="{ 'border-[#199CA4] bg-[#199CA4]/5 dark:bg-[#199CA4]/10 ring-1 ring-[#199CA4]/30': selectedTags.includes('{{ $tag->id }}') }">
                         <input type="checkbox" name="temperament_tags[]" value="{{ $tag->id }}"
@@ -1278,6 +1354,60 @@
             </div>
         </div>
 
+        {{-- Pet Intake Photo (Rendered in Step 2 for In Shelter Fast Intake) --}}
+        <div x-show="status === 'in_shelter'" class="mb-8">
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-1.5">
+                Pet Intake Photo <span class="text-rose-500">*</span>
+            </label>
+            <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">Upload an initial snapshot photo for shelter identification and kennel records.</p>
+            
+            <div class="border-2 border-dashed border-gray-200 dark:border-white/[0.1] hover:border-[#199CA4] rounded-2xl p-5 transition bg-gray-50/50 dark:bg-white/[0.02]">
+                <div x-show="previewUrl" class="flex flex-col sm:flex-row items-center gap-5">
+                    <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800">
+                        <img :src="previewUrl" alt="Pet preview" class="w-full h-full object-cover">
+                        <span x-show="isNew" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#199CA4] text-white text-[10px] font-extrabold shadow-sm">
+                            New Photo
+                        </span>
+                        <span x-show="!isNew" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-800/80 text-white text-[10px] font-bold shadow-sm backdrop-blur-xs">
+                            Current Photo
+                        </span>
+                    </div>
+
+                    <div class="flex-1 text-center sm:text-left space-y-2 w-full">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800 dark:text-white truncate max-w-md" x-text="isNew ? (fileName || 'New photo chosen') : 'Current Pet Photo'"></p>
+                            <p class="text-xs text-gray-500 dark:text-slate-400" x-text="isNew ? (fileSize ? 'File size: ' + fileSize : 'Ready to upload') : 'Stored in database'"></p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                            <label for="pet_photo_input_step2" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#171923] border border-gray-200 dark:border-white/[0.12] text-xs font-bold text-gray-700 dark:text-slate-200 hover:border-[#199CA4] hover:text-[#199CA4] shadow-2xs transition cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                Choose Different Photo
+                            </label>
+                            <button type="button" x-show="isNew" @click="clearSelection()" class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-500/20 transition cursor-pointer">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="!previewUrl" class="text-center py-4 space-y-2">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm text-gray-600 dark:text-slate-300 block font-medium">Choose a pet intake snapshot</span>
+                    <p class="text-xs text-gray-400 dark:text-slate-500">PNG, JPG, JPEG up to 2MB</p>
+                </div>
+
+                <input type="file" id="pet_photo_input_step2" name="photo" accept="image/*" @change="handleFileChange($event)"
+                    :disabled="status !== 'in_shelter'"
+                    class="block w-full text-sm text-gray-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#199CA4]/10 file:text-[#199CA4] hover:file:bg-[#199CA4]/20 file:transition cursor-pointer"
+                    :class="{ 'mt-3': !previewUrl, 'sr-only': previewUrl }">
+            </div>
+        </div>
+
         {{-- Step 2 Navigation Buttons (Wizard Mode Only) --}}
         <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
             <button type="button" @click="prevStep(2)"
@@ -1286,15 +1416,25 @@
                 <span>Back to General Details</span>
             </button>
             <button type="button" @click="nextStep(2)"
+                :disabled="submitting"
+                :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
                 class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#199CA4] text-white text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
-                <span>Next: Photo & Bio</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span x-text="status === 'in_shelter' ? (submitting ? 'Saving to Shelter...' : 'Save to Shelter Intake') : 'Next: Photo & Bio'">Next: Photo & Bio</span>
+                <svg x-show="!submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <template x-if="status === 'in_shelter'">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </template>
+                    <template x-if="status !== 'in_shelter'">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </template>
+                </svg>
             </button>
         </div>
     </div>
 
-    {{-- ==================== STEP 3: PHOTO & STORY ==================== --}}
-    <div x-show="!isWizard || step === 3"
+    {{-- ==================== STEP 3: PHOTO & STORY (Only shown for Available pets) ==================== --}}
+    <div x-show="(!isWizard || step === 3) && status !== 'in_shelter'"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -1347,7 +1487,8 @@
                     <p class="text-xs text-gray-400 dark:text-slate-500">PNG, JPG, JPEG up to 2MB</p>
                 </div>
 
-                <input type="file" id="pet_photo_input" name="photo" accept="image/*" @change="handleFileChange($event)"
+                <input type="file" id="pet_photo_input_step3" name="photo" accept="image/*" @change="handleFileChange($event)"
+                    :disabled="status === 'in_shelter'"
                     class="block w-full text-sm text-gray-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#199CA4]/10 file:text-[#199CA4] hover:file:bg-[#199CA4]/20 file:transition cursor-pointer"
                     :class="{ 'mt-3': !previewUrl, 'sr-only': previewUrl }"
                     :required="!isWizard && !{{ optional($pet)->id ? 'true' : 'false' }}">
