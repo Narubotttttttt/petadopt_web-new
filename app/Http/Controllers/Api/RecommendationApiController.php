@@ -132,6 +132,8 @@ class RecommendationApiController extends Controller
         if (! $pythonBin || ! file_exists($pythonBin)) {
             $candidates = [
                 base_path('.venv\\Scripts\\python.exe'),
+                'C:\\Python314\\python.exe',
+                'C:\\Program Files\\Python314\\python.exe',
                 'C:\\Users\\emili\\AppData\\Local\\Programs\\Python\\Python312\\python.exe',
                 'C:\\Program Files\\Python312\\python.exe',
                 'python',
@@ -166,6 +168,10 @@ class RecommendationApiController extends Controller
             if ($process->isSuccessful()) {
                 $output = json_decode($process->getOutput(), true);
                 if (isset($output['recommendations'])) {
+                    // Enforce Top 3 recommendations limit based on client interview policy
+                    $output['recommendations'] = array_slice($output['recommendations'], 0, 3);
+                    $output['count'] = count($output['recommendations']);
+
                     // Enrich recommendations with full pet details (photo URLs, etc.)
                     $petMap = Pet::whereIn('id', collect($output['recommendations'])->pluck('pet_id'))
                         ->with('temperamentTags')

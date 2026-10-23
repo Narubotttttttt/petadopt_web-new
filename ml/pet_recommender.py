@@ -395,7 +395,7 @@ def _generate_reasons(adopter_profile, pet, pet_tags_list, tag_sim,
 # ---------------------------------------------------------
 # Main Recommendation Function
 # ---------------------------------------------------------
-def recommend_pets(pets_data, adopter_profile, top_k=20):
+def recommend_pets(pets_data, adopter_profile, top_k=3):
     """
     Returns ranked pet recommendations using the trained Random Forest model.
     Enforces strict weighting hierarchy:
