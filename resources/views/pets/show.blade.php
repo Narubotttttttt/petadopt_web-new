@@ -105,15 +105,19 @@
                         </p>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('pets.mark-available', $pet) }}" class="shrink-0 self-end sm:self-center">
-                    @csrf
-                    <button type="submit" 
-                            onclick="return confirm('Are you sure {{ addslashes($pet->name ?: ('Pet no. ' . $pet->id)) }} is healthy and ready for public adoption?')"
-                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                        <span>Mark Ready for Adoption</span>
-                    </button>
-                </form>
+                <button type="button" 
+                        data-title='Promote "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>" to Ready for Adoption?'
+                        data-message="This pet will become visible to the public in the adoption directory."
+                        data-action="{{ route('pets.mark-available', $pet) }}"
+                        data-confirm-text="Mark Ready for Adoption"
+                        data-loading-text="Promoting..."
+                        data-type="success"
+                        data-method="POST"
+                        onclick="openConfirmModal(this.dataset)"
+                        class="shrink-0 self-end sm:self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    <span>Mark Ready for Adoption</span>
+                </button>
             </div>
         @endif
 

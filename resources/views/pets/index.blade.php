@@ -257,14 +257,18 @@
                         {{-- Minimal Actions Row --}}
                         <div class="flex items-center gap-2 pt-0.5">
                             @if(in_array(Auth::user()?->role, ['admin', 'staff']) && $pet->status === 'in_shelter')
-                                <form method="POST" action="{{ route('pets.mark-available', $pet) }}" class="flex-1">
-                                    @csrf
-                                    <button type="submit" 
-                                            onclick="return confirm('Promote {{ addslashes($pet->name ?: ('Pet no. ' . $pet->id)) }} to Ready for Adoption?')"
-                                            class="w-full py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition shadow-2xs">
-                                        Mark Ready
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        data-title='Promote "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>" to Ready for Adoption?'
+                                        data-message="This pet will become visible to the public in the adoption directory."
+                                        data-action="{{ route('pets.mark-available', $pet) }}"
+                                        data-confirm-text="Mark Ready"
+                                        data-loading-text="Promoting..."
+                                        data-type="success"
+                                        data-method="POST"
+                                        onclick="openConfirmModal(this.dataset)"
+                                        class="flex-1 py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition shadow-2xs cursor-pointer">
+                                    Mark Ready
+                                </button>
                             @endif
                             <a href="{{ route('pets.show', $pet) }}" class="flex-1 py-2 text-center rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold text-xs transition shadow-2xs">
                                 View Details
@@ -377,15 +381,19 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="inline-flex items-center gap-1.5">
                                         @if(in_array(Auth::user()?->role, ['admin', 'staff']) && $pet->status === 'in_shelter')
-                                            <form method="POST" action="{{ route('pets.mark-available', $pet) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" 
-                                                        onclick="return confirm('Promote {{ addslashes($pet->name ?: ('Pet no. ' . $pet->id)) }} to Ready for Adoption?')"
-                                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all duration-200 shadow-2xs text-xs whitespace-nowrap"
-                                                        title="Promote to Ready for Adoption">
-                                                    Mark Ready
-                                                </button>
-                                            </form>
+                                            <button type="button" 
+                                                    data-title='Promote "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>" to Ready for Adoption?'
+                                                    data-message="This pet will become visible to the public in the adoption directory."
+                                                    data-action="{{ route('pets.mark-available', $pet) }}"
+                                                    data-confirm-text="Mark Ready"
+                                                    data-loading-text="Promoting..."
+                                                    data-type="success"
+                                                    data-method="POST"
+                                                    onclick="openConfirmModal(this.dataset)"
+                                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all duration-200 shadow-2xs text-xs whitespace-nowrap cursor-pointer"
+                                                    title="Promote to Ready for Adoption">
+                                                Mark Ready
+                                            </button>
                                         @endif
                                         <a href="{{ route('pets.show', $pet) }}" class="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white/[0.08] text-white dark:text-slate-200 hover:bg-slate-800 dark:hover:bg-white/[0.12] border border-slate-800 dark:border-white/[0.08] font-extrabold transition-all duration-200 shadow-2xs text-xs">View</a>
                                         @if(in_array(Auth::user()?->role, ['admin', 'staff']))
