@@ -25,6 +25,7 @@ if sys.platform == 'win32':
 
 import site
 import json
+import re
 
 # Ensure virtualenv and Python site-packages are loaded
 for _p in [
@@ -122,6 +123,47 @@ def _parse_gender(sex_str):
     elif 'male' in s or 'neutered' in s:
         return 'Male'
     return 'Unknown'
+
+
+def _clean_breed(breed_str):
+    """
+    Cleans raw shelter breed descriptions:
+    - Extracts primary breed from cross-breed slashes ('German Shepherd/Labrador' -> 'German Shepherd')
+    - Strips 'Mix' / 'mix' suffixes ('Labrador Retriever Mix' -> 'Labrador Retriever')
+    - Standardizes shelter abbreviations and truncated breed names (e.g., 'Doberman Pinsch' -> 'Doberman Pinscher')
+    - Eliminates redundant punctuation, numbers, and multiple spaces
+    """
+    if not isinstance(breed_str, str) or not breed_str.strip():
+        return 'Mixed Breed'
+
+    # 1. Take primary dominant breed before crossbreed separator
+    primary = breed_str.split('/')[0].strip()
+
+    # 2. Remove 'Mix' suffix or standalone word
+    cleaned = re.sub(r'\bmix\b', '', primary, flags=re.IGNORECASE).strip()
+
+    # 3. Standardize known abbreviations and truncated shelter labels
+    standard_names = {
+        'Doberman Pinsch': 'Doberman Pinscher',
+        'Anatol Shepherd': 'Anatolian Shepherd',
+        'Chinese Sharpei': 'Chinese Shar-Pei',
+        'Staffordshire': 'Staffordshire Terrier',
+        'Catahoula': 'Catahoula Leopard Dog',
+        'German Shorthair Pointer': 'German Shorthaired Pointer',
+        'Flat Coat Retriever': 'Flat-Coated Retriever',
+        'Wire Hair Fox Terrier': 'Wire Fox Terrier',
+        'Queensland Heeler': 'Australian Cattle Dog',
+        'Chihuahua Shorthair': 'Chihuahua',
+        'Chihuahua Longhair': 'Chihuahua',
+        'Domestic Shorthair': 'Domestic Shorthair',
+        'Domestic Medium Hair': 'Domestic Medium Hair',
+        'Domestic Longhair': 'Domestic Longhair',
+    }
+    cleaned = standard_names.get(cleaned, cleaned)
+
+    # 4. Clean residual formatting
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip(' -/,')
+    return cleaned if cleaned else 'Mixed Breed'
 
 
 def _match_color(pref_col, pet_color):
@@ -257,7 +299,7 @@ def _infer_pet_temperaments(species, age_cat, name=None):
     return vec, tags_list
 
 
-def build_real_shelter_dataset(raw_csv_path, num_samples=3500):
+def build_real_shelter_dataset(raw_csv_path, num_samples=None):
     """
     Loads real Austin Animal Center shelter intake/outcome records,
     cleans attributes, pairs with adopter personas, and creates
@@ -269,15 +311,20 @@ def build_real_shelter_dataset(raw_csv_path, num_samples=3500):
     df_raw = pd.read_csv(raw_csv_path)
     df_shelter = df_raw[df_raw['animal_type'].isin(['Dog', 'Cat'])].copy()
 
-    # Prioritize successful adoptions first, then transfers
-    if 'outcome_type' in df_shelter.columns:
-        df_adopted = df_shelter[df_shelter['outcome_type'] == 'Adoption']
-        if len(df_adopted) >= num_samples:
-            df_sample = df_adopted.sample(n=num_samples, random_state=42).reset_index(drop=True)
+    if num_samples is not None and num_samples > 0:
+        if 'outcome_type' in df_shelter.columns:
+            df_adopted = df_shelter[df_shelter['outcome_type'] == 'Adoption']
+            if len(df_adopted) >= num_samples:
+                df_sample = df_adopted.sample(n=num_samples, random_state=42).reset_index(drop=True)
+            else:
+                df_sample = df_shelter.sample(n=min(num_samples, len(df_shelter)), random_state=42).reset_index(drop=True)
         else:
             df_sample = df_shelter.sample(n=min(num_samples, len(df_shelter)), random_state=42).reset_index(drop=True)
+        print(f"  [+] Using sampled subset: {len(df_sample)} records")
     else:
-        df_sample = df_shelter.sample(n=min(num_samples, len(df_shelter)), random_state=42).reset_index(drop=True)
+        # Use full real shelter dataset (no sampling cap)
+        df_sample = df_shelter.reset_index(drop=True)
+        print(f"  [+] Using ALL available real shelter records: {len(df_sample)} records (Dogs & Cats)")
 
     living_environments  = ['apartment', 'house_with_yard', 'house_no_yard']
     activity_levels      = ['relaxed', 'moderate', 'high']
@@ -289,7 +336,8 @@ def build_real_shelter_dataset(raw_csv_path, num_samples=3500):
 
     dataset = []
 
-    for _, pet_row in df_sample.iterrows():
+    pet_records = df_sample.to_dict('records')
+    for pet_row in pet_records:
         # --- 1. Real Shelter Pet Attributes ---
         species     = str(pet_row.get('animal_type', 'Dog')).lower()
         pet_name    = str(pet_row.get('name', 'Pet'))
@@ -299,7 +347,8 @@ def build_real_shelter_dataset(raw_csv_path, num_samples=3500):
         color       = _parse_color(raw_color)
         raw_sex     = str(pet_row.get('sex_upon_outcome', 'Neutered Male'))
         pet_gender  = _parse_gender(raw_sex)
-        breed       = str(pet_row.get('breed', 'Rescue Pet'))
+        raw_breed   = str(pet_row.get('breed', 'Mixed Breed'))
+        breed       = _clean_breed(raw_breed)
         outcome_sub = str(pet_row.get('outcome_subtype', '')).lower()
         pet_special = int(any(k in outcome_sub for k in ['special', 'medical', 'suffering', 'injured', 'behavior']))
 
@@ -332,7 +381,7 @@ def build_real_shelter_dataset(raw_csv_path, num_samples=3500):
 
         # Living space & perimeter fencing safety check (evaluated by physical size category, never breed)
         # In shelter populations, ~25% of canines fall into the large size category
-        is_large = int(species == 'dog' and (hash(str(pet_name or '')) % 4 == 0))
+        is_large = int(species == 'dog' and (hash(pet_name) % 4 == 0))
         if living == 'apartment' or living == 'house_no_yard':
             if species == 'dog' and (is_large == 1 or pet_tags_vec[2] == 1):        # Large or energetic dog in unfenced home
                 lifestyle_points -= 0.30
@@ -484,7 +533,7 @@ def train_and_save_model():
     # 1. Build dataset from Austin Animal Center CSV
     if os.path.exists(raw_csv_path):
         print(f"[1/4] Processing real shelter animals from: {raw_csv_path}")
-        df = build_real_shelter_dataset(raw_csv_path, num_samples=3500)
+        df = build_real_shelter_dataset(raw_csv_path, num_samples=None)
     else:
         print(f"[1/4] {raw_csv_path} not found, generating benchmark dataset...")
         raise FileNotFoundError(f"Missing dataset at {raw_csv_path}")
@@ -517,16 +566,16 @@ def train_and_save_model():
         max_depth=15,
         min_samples_split=4,
         random_state=42,
-        n_jobs=1
+        n_jobs=-1
     )
     model.fit(X_train, y_train)
 
     # --- Evaluation ---
     y_pred = model.predict(X_test)
-    acc    = accuracy_score(y_test, y_pred)
-    prec   = precision_score(y_test, y_pred)
-    rec    = recall_score(y_test, y_pred)
-    f1     = f1_score(y_test, y_pred)
+    acc    = float(accuracy_score(y_test, y_pred))
+    prec   = float(precision_score(y_test, y_pred))
+    rec    = float(recall_score(y_test, y_pred))
+    f1     = float(f1_score(y_test, y_pred))
     cm     = confusion_matrix(y_test, y_pred).tolist()
 
     print("")
@@ -546,8 +595,8 @@ def train_and_save_model():
     print("")
 
     # --- Save artifacts ---
-    joblib.dump(model, model_path)
-    print(f"  [+] Saved trained model    : {model_path}")
+    joblib.dump(model, model_path, compress=3)
+    print(f"  [+] Saved trained model (compressed): {model_path}")
 
     with open(features_path, 'w') as f:
         json.dump(feature_cols, f, indent=2)

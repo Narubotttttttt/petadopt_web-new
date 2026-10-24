@@ -36,7 +36,34 @@ class Pet extends Model
     protected $appends = [
         'photo_url',
         'primary_image_url',
+        'days_in_shelter',
+        'days_in_shelter_formatted',
     ];
+
+    public function getDaysInShelterAttribute(): int
+    {
+        $startDate = $this->rescue_date ?? $this->created_at;
+        if (! $startDate) {
+            return 0;
+        }
+
+        return max(0, (int) $startDate->startOfDay()->diffInDays(now()->startOfDay()));
+    }
+
+    public function getDaysInShelterFormattedAttribute(): string
+    {
+        if ($this->status === 'adopted') {
+            return 'Adopted';
+        }
+
+        $days = $this->days_in_shelter;
+
+        if ($days === 0) {
+            return 'Registered today';
+        }
+
+        return $days . ' ' . ($days === 1 ? 'day' : 'days') . ' in shelter';
+    }
 
     public function getPhotoUrlAttribute(): ?string
     {

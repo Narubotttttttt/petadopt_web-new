@@ -142,6 +142,9 @@
                             <span class="text-xs font-mono font-bold text-[#199CA4] dark:text-[#41C1CB] bg-[#199CA4]/10 dark:bg-[#199CA4]/20 px-2 py-0.5 rounded-md">
                                 Pet no. {{ $pet->id }}
                             </span>
+                            <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 rounded-md">
+                                {{ $pet->days_in_shelter_formatted }}
+                            </span>
                             <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">
                                 Added {{ $pet->created_at ? $pet->created_at->diffForHumans() : 'recently' }}
                             </span>
@@ -154,8 +157,8 @@
                             {{ $pet->breed ?? 'Mixed Breed' }} &bull; {{ ucfirst($pet->color ?? 'Unknown color') }}
                         </p>
 
-                        {{-- Minimal 4-Metric Grid --}}
-                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+                        {{-- Metric Grid --}}
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4">
                             <div class="bg-slate-50/80 dark:bg-[#171923] p-2.5 rounded-xl border border-slate-100 dark:border-white/[0.04]">
                                 <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Species</span>
                                 <span class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-0.5 block">{{ ucfirst($pet->type ?? '—') }}</span>
@@ -175,6 +178,10 @@
                             <div class="bg-slate-50/80 dark:bg-[#171923] p-2.5 rounded-xl border border-slate-100 dark:border-white/[0.04]">
                                 <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Color</span>
                                 <span class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-0.5 block truncate">{{ $pet->color ?? '—' }}</span>
+                            </div>
+                            <div class="bg-slate-50/80 dark:bg-[#171923] p-2.5 rounded-xl border border-slate-100 dark:border-white/[0.04]">
+                                <span class="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Shelter Stay</span>
+                                <span class="text-xs sm:text-sm font-extrabold text-[#199CA4] dark:text-[#41C1CB] mt-0.5 block truncate">{{ $pet->days_in_shelter_formatted }}</span>
                             </div>
                         </div>
 
@@ -235,7 +242,7 @@
                         Rescue & Intake Details
                     </h2>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     @if($pet->rescue_date)
                         <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.04]">
                             <span class="text-[10px] uppercase font-extrabold text-slate-400 block">Rescue Date</span>
@@ -248,6 +255,10 @@
                             <span class="font-bold text-slate-800 dark:text-slate-200 mt-0.5 block">{{ $pet->rescue_location }}</span>
                         </div>
                     @endif
+                    <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.04]">
+                        <span class="text-[10px] uppercase font-extrabold text-slate-400 block">Shelter Stay</span>
+                        <span class="font-bold text-[#199CA4] dark:text-[#41C1CB] mt-0.5 block">{{ $pet->days_in_shelter_formatted }}</span>
+                    </div>
                 </div>
                 @if($pet->intake_condition)
                     <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.04] text-xs">

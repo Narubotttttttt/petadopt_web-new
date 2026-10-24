@@ -21,7 +21,7 @@
             </div>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                 <form method="GET" action="{{ route('pets.index') }}" class="flex items-center gap-2 w-full sm:w-auto">
-                    <input type="hidden" name="status" value="{{ $activeTab ?? 'all' }}">
+                    <input type="hidden" name="status" value="{{ $activeTab ?? 'in_shelter' }}">
                     <div class="relative flex-1 sm:w-72 md:w-80">
                         <input 
                             name="q" 
@@ -31,7 +31,7 @@
                         />
                         <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         @if(request('q'))
-                            <a href="{{ route('pets.index', ['status' => $activeTab ?? 'all']) }}" title="Clear search" class="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <a href="{{ route('pets.index', ['status' => $activeTab ?? 'in_shelter']) }}" title="Clear search" class="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </a>
                         @endif
@@ -54,7 +54,7 @@
         @if(request('q'))
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.04] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.06] w-fit">
                 <span>Filtering by: "<strong>{{ request('q') }}</strong>"</span>
-                <a href="{{ route('pets.index', ['status' => $activeTab ?? 'all']) }}" class="text-[#199CA4] dark:text-[#41C1CB] hover:underline font-extrabold ms-1">Clear filter</a>
+                <a href="{{ route('pets.index', ['status' => $activeTab ?? 'in_shelter']) }}" class="text-[#199CA4] dark:text-[#41C1CB] hover:underline font-extrabold ms-1">Clear filter</a>
             </div>
         @endif
 
@@ -108,62 +108,50 @@
         {{-- Status Filter Tabs Bar (matching Adoption Requests layout) --}}
         @if(in_array(Auth::user()?->role, ['admin', 'staff']))
             <div class="flex items-center gap-2 overflow-x-auto pt-1 pb-1 scrollbar-none">
-                {{-- Tab 1: All Pets --}}
-                <a href="{{ route('pets.index', ['status' => 'all', 'q' => $q]) }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
-                   {{ ($activeTab ?? 'all') === 'all' 
-                       ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' 
-                       : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#181A24] border-slate-200/80 dark:border-white/[0.07]' }}">
-                    <span>All Pets</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'all') === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
-                        {{ $counts['all'] ?? $pets->total() }}
-                    </span>
-                </a>
-
-                {{-- Tab 2: In Shelter (Newly rescued, under care/treatment) --}}
+                {{-- Tab 1: In Shelter (Newly rescued, under care/treatment) --}}
                 <a href="{{ route('pets.index', ['status' => 'in_shelter', 'q' => $q]) }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
-                   {{ ($activeTab ?? 'all') === 'in_shelter' 
+                   {{ ($activeTab ?? 'in_shelter') === 'in_shelter' 
                        ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' 
                        : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#181A24] border-slate-200/80 dark:border-white/[0.07]' }}">
                     <span>In Shelter</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'all') === 'in_shelter' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'in_shelter') === 'in_shelter' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
                         {{ $counts['in_shelter'] ?? 0 }}
                     </span>
                 </a>
 
-                {{-- Tab 3: Ready for Adoption (Available) --}}
+                {{-- Tab 2: Ready for Adoption (Available) --}}
                 <a href="{{ route('pets.index', ['status' => 'available', 'q' => $q]) }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
-                   {{ ($activeTab ?? 'all') === 'available' 
+                   {{ ($activeTab ?? 'in_shelter') === 'available' 
                        ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' 
                        : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#181A24] border-slate-200/80 dark:border-white/[0.07]' }}">
                     <span>Ready for Adoption</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'all') === 'available' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'in_shelter') === 'available' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
                         {{ $counts['available'] ?? 0 }}
                     </span>
                 </a>
 
-                {{-- Tab 4: Pending --}}
+                {{-- Tab 3: Pending --}}
                 <a href="{{ route('pets.index', ['status' => 'pending', 'q' => $q]) }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
-                   {{ ($activeTab ?? 'all') === 'pending' 
+                   {{ ($activeTab ?? 'in_shelter') === 'pending' 
                        ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' 
                        : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#181A24] border-slate-200/80 dark:border-white/[0.07]' }}">
                     <span>Pending</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'all') === 'pending' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'in_shelter') === 'pending' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
                         {{ $counts['pending'] ?? 0 }}
                     </span>
                 </a>
 
-                {{-- Tab 5: Adopted --}}
+                {{-- Tab 4: Adopted --}}
                 <a href="{{ route('pets.index', ['status' => 'adopted', 'q' => $q]) }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
-                   {{ ($activeTab ?? 'all') === 'adopted' 
+                   {{ ($activeTab ?? 'in_shelter') === 'adopted' 
                        ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' 
                        : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#181A24] border-slate-200/80 dark:border-white/[0.07]' }}">
                     <span>Adopted</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'all') === 'adopted' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ ($activeTab ?? 'in_shelter') === 'adopted' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}">
                         {{ $counts['adopted'] ?? 0 }}
                     </span>
                 </a>
@@ -258,6 +246,11 @@
                                 <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                                     {{ ucfirst($pet->type ?? 'Pet') }} &bull; {{ ucfirst($pet->size ?? 'Medium') }} &bull; {{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}
                                 </p>
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20">
+                                        {{ $pet->days_in_shelter_formatted }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -305,7 +298,7 @@
                         <p class="font-extrabold text-slate-700 dark:text-slate-300 text-sm mb-1">No pets found</p>
                         <p class="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search query or add a new rescue pet.</p>
                         @if(request('q'))
-                            <a href="{{ route('pets.index') }}" class="inline-block mt-3 text-xs font-bold text-[#199CA4] hover:underline">Clear search filter</a>
+                            <a href="{{ route('pets.index', ['status' => $activeTab ?? 'in_shelter']) }}" class="inline-block mt-3 text-xs font-bold text-[#199CA4] hover:underline">Clear search filter</a>
                         @endif
                     </div>
                 @endforelse
@@ -319,7 +312,7 @@
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Breed</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Color</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Added</th>
+                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Stay Duration</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Type</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
                             <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
@@ -362,7 +355,14 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300 font-bold">{{ $pet->breed ?? '—' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">{{ $pet->color ?? '—' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 font-medium">{{ $pet->created_at->diffForHumans() }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="font-extrabold text-slate-800 dark:text-slate-200 block text-xs">
+                                        {{ $pet->days_in_shelter_formatted }}
+                                    </span>
+                                    <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium block mt-0.5">
+                                        Added {{ $pet->created_at ? $pet->created_at->diffForHumans() : 'recently' }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
                                         {{ ucfirst($pet->type ?? 'Unknown') }}
@@ -413,6 +413,9 @@
                                 <td colspan="7" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
                                     <p class="font-bold text-slate-600 dark:text-slate-300 mb-1">No pets found</p>
                                     <p class="text-xs text-slate-400 dark:text-slate-500">Try adjusting your search query or add a new rescue pet.</p>
+                                    @if(request('q'))
+                                        <a href="{{ route('pets.index', ['status' => $activeTab ?? 'in_shelter']) }}" class="inline-block mt-3 text-xs font-bold text-[#199CA4] hover:underline">Clear search filter</a>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse

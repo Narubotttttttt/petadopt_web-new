@@ -39,10 +39,11 @@ class PetController extends Controller
         $temperamentTags = TemperamentTag::orderBy('name')->get();
 
         $pet = new Pet();
-        $status = $request->query('status');
-        if (in_array($status, ['in_shelter', 'available'])) {
-            $pet->status = $status;
+        $status = $request->query('status', 'in_shelter');
+        if (!in_array($status, ['in_shelter', 'available'])) {
+            $status = 'in_shelter';
         }
+        $pet->status = $status;
 
         return view('pets.create', [
             'pet' => $pet,
@@ -53,12 +54,13 @@ class PetController extends Controller
     public function index()
     {
         $q = trim((string) request()->input('q', ''));
-        $activeTab = request()->input('status', 'all');
+        $isStaffOrAdmin = in_array(Auth::user()?->role, ['admin', 'staff']);
+        $activeTab = $isStaffOrAdmin ? request()->input('status', 'in_shelter') : 'available';
 
         $baseQuery = Pet::query();
 
         // If not staff/admin (e.g. adopter browsing), only show available pets
-        if (!in_array(Auth::user()?->role, ['admin', 'staff'])) {
+        if (!$isStaffOrAdmin) {
             $baseQuery->where('status', 'available');
         }
 
@@ -112,9 +114,6 @@ class PetController extends Controller
         // Apply status filter based on active tab
         $query = clone $baseQuery;
         switch ($activeTab) {
-            case 'in_shelter':
-                $query->where('status', 'in_shelter');
-                break;
             case 'available':
                 $query->where('status', 'available');
                 break;
@@ -125,9 +124,12 @@ class PetController extends Controller
                 $query->where('status', 'adopted');
                 break;
             case 'all':
-            default:
-                $activeTab = 'all';
                 $query->where('status', '!=', 'deceased');
+                break;
+            case 'in_shelter':
+            default:
+                $activeTab = 'in_shelter';
+                $query->where('status', 'in_shelter');
                 break;
         }
 

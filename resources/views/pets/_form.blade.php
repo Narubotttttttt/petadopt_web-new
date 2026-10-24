@@ -85,7 +85,7 @@
     $currentGender = old('gender', optional($pet)->gender ?? '');
     $currentSize = old('size', optional($pet)->size ?? '');
     $currentAge = old('age', optional($pet)->age ?? '');
-    $currentStatus = old('status', optional($pet)->status ?? '');
+    $currentStatus = old('status', optional($pet)->status ?? 'in_shelter');
     $currentDescription = old('description', optional($pet)->description ?? '');
 
     // Cagayan de Oro City Barangays list
@@ -849,11 +849,11 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Species / Pet Type</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Type</label>
                 <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : (type === 'dog' ? 'Aspin (Mixed Breed)' : '')); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
-                    <option value="" disabled {{ empty($currentType) ? 'selected' : '' }} hidden style="display: none;">Select a pet</option>
+                    <option value="" disabled {{ empty($currentType) ? 'selected' : '' }} hidden style="display: none;">Select pet type</option>
                     <option value="dog" {{ $currentType == 'dog' ? 'selected' : '' }}>Dog</option>
                     <option value="cat" {{ $currentType == 'cat' ? 'selected' : '' }}>Cat</option>
                 </select>
@@ -868,7 +868,7 @@
                 <div class="relative">
                     <input type="text"
                         readonly
-                        :value="!type ? 'Select a pet first' : (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)')"
+                        :value="!type ? 'Select pet type first' : (type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)')"
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] text-gray-700 dark:text-slate-200 shadow-sm text-sm cursor-not-allowed font-semibold select-none focus:outline-none">
                     <span x-show="type" class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-[#199CA4]/10 text-[#199CA4] border border-[#199CA4]/20">
                         Mixed Breed
@@ -889,7 +889,7 @@
                 {{-- Disabled state when species is not yet selected --}}
                 <select x-show="!type || (type !== 'dog' && type !== 'cat')" disabled
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-xs text-sm">
-                    <option value="" disabled selected hidden style="display: none;">Select a pet first</option>
+                    <option value="" disabled selected hidden style="display: none;">Select pet type first</option>
                 </select>
 
                 {{-- Dog Colors Dropdown --}}
@@ -944,9 +944,9 @@
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
                     <option value="" disabled {{ empty($currentSize) ? 'selected' : '' }} hidden style="display: none;">Select size category</option>
-                    <option value="small" {{ $currentSize == 'small' ? 'selected' : '' }}>Small (under 10 kg / Toy, Puppy, Cat)</option>
-                    <option value="medium" {{ $currentSize == 'medium' ? 'selected' : '' }}>Medium (10 - 20 kg / Standard Native)</option>
-                    <option value="large" {{ $currentSize == 'large' ? 'selected' : '' }}>Large (21+ kg / Large Native)</option>
+                    <option value="small" {{ $currentSize == 'small' ? 'selected' : '' }}>Small</option>
+                    <option value="medium" {{ $currentSize == 'medium' ? 'selected' : '' }}>Medium</option>
+                    <option value="large" {{ $currentSize == 'large' ? 'selected' : '' }}>Large</option>
                 </select>
             </div>
 
@@ -961,103 +961,103 @@
                     </template>
                 </select>
                 <select x-show="!type" disabled class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] text-gray-400 dark:text-slate-500 shadow-sm">
-                    <option value="" disabled selected hidden style="display: none;">Select a pet first</option>
+                    <option value="" disabled selected hidden style="display: none;">Select pet type first</option>
                 </select>
             </div>
         </div>
 
-        {{-- Status & Rescue Intake Information --}}
-        <div class="mb-8 space-y-4">
-            <div>
+        {{-- Status Field: In Add mode, status is fixed by the registration option selected earlier. In Edit mode, show dropdown. --}}
+        @if(!optional($pet)->id)
+            <input type="hidden" name="status" :value="status" value="{{ $currentStatus }}">
+        @else
+            {{-- Status dropdown (Only shown when editing an existing pet) --}}
+            <div class="mb-8">
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">
-                    Pet Status / Intake Stage <span class="text-rose-500">*</span>
+                    Pet Status <span class="text-rose-500">*</span>
                 </label>
                 <select name="status"
                     x-model="status"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white font-semibold text-xs sm:text-sm">
-                    <option value="" disabled {{ empty($currentStatus) ? 'selected' : '' }} hidden style="display: none;">Select pet status / intake stage</option>
                     <option value="in_shelter" {{ $currentStatus == 'in_shelter' ? 'selected' : '' }}>
                         In Shelter (Newly Rescued / Under Care & Treatment)
                     </option>
                     <option value="available" {{ $currentStatus == 'available' ? 'selected' : '' }}>
                         Ready for Adoption (Available)
                     </option>
-                    @if(optional($pet)->id)
-                        <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Pending Adoption</option>
-                        <option value="adopted" {{ $currentStatus == 'adopted' ? 'selected' : '' }}>Adopted</option>
-                        <option value="deceased" {{ $currentStatus == 'deceased' ? 'selected' : '' }}>Deceased</option>
-                    @endif
+                    <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Pending Adoption</option>
+                    <option value="adopted" {{ $currentStatus == 'adopted' ? 'selected' : '' }}>Adopted</option>
+                    <option value="deceased" {{ $currentStatus == 'deceased' ? 'selected' : '' }}>Deceased</option>
                 </select>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5" x-show="status">
-                    <span x-show="status === 'in_shelter'">This pet will be registered for internal shelter monitoring and veterinary care, and will not appear in public adopter recommendations until marked ready.</span>
+                    <span x-show="status === 'in_shelter'">This pet is registered for internal shelter monitoring and veterinary care, and will not appear in public adopter recommendations until marked ready.</span>
                     <span x-show="status === 'available'">This pet is healthy, cleared, and immediately available for public adoption and AI matching.</span>
                 </p>
             </div>
+        @endif
 
-            {{-- Rescue & Intake Details Card (Only shown when In Shelter is selected) --}}
-            <div x-show="status === 'in_shelter'" 
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 -translate-y-2"
-                 class="p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-3.5">
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300 flex items-center justify-center">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    </div>
-                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-sky-900 dark:text-sky-200">Rescue & Intake Details</h3>
+        {{-- Rescue & Intake Details Card (Only shown when In Shelter is selected) --}}
+        <div x-show="status === 'in_shelter'" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-2"
+             class="mb-8 p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-3.5">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-sky-900 dark:text-sky-200">Rescue & Intake Details</h3>
+            </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Rescue / Intake Date</label>
-                        <input type="date" name="rescue_date" 
-                               value="{{ old('rescue_date', optional($pet)->rescue_date ? optional($pet)->rescue_date->format('Y-m-d') : now()->format('Y-m-d')) }}" 
-                               class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
-                            Rescue Barangay / Origin
-                        </label>
-                        {{-- Hidden input submitted with form carrying the combined standardized value --}}
-                        <input type="hidden" name="rescue_location" :value="computedRescueLocation">
-
-                        <select x-model="rescueBarangay"
-                                class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
-                            <option value="" disabled {{ empty($initialRescueBarangay) ? 'selected' : '' }} hidden style="display: none;">Select rescue barangay / origin</option>
-                            <option value="City Pound (CDO City Vet)" {{ $initialRescueBarangay === 'City Pound (CDO City Vet)' ? 'selected' : '' }}>
-                                City Pound (CDO City Vet)
-                            </option>
-                            <option value="Outside CDO / Other Area" {{ $initialRescueBarangay === 'Outside CDO / Other Area' ? 'selected' : '' }}>
-                                Outside CDO / Other Municipality
-                            </option>
-                            <option disabled class="text-slate-400 font-bold bg-slate-50 dark:bg-slate-900">── Cagayan de Oro Barangays (80) ──</option>
-                            @foreach($cdoBarangays as $bgy)
-                                <option value="{{ $bgy }}" {{ $initialRescueBarangay === $bgy ? 'selected' : '' }}>{{ $bgy }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Rescue / Intake Date</label>
+                    <input type="date" name="rescue_date" 
+                           value="{{ old('rescue_date', optional($pet)->rescue_date ? optional($pet)->rescue_date->format('Y-m-d') : now()->format('Y-m-d')) }}" 
+                           class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
                 </div>
-
-                {{-- Optional Specific Street / Landmark (Shown when a barangay or outside CDO is selected) --}}
-                <div x-show="rescueBarangay && rescueBarangay !== 'City Pound (CDO City Vet)'" 
-                     x-transition:enter="transition ease-out duration-150"
-                     x-transition:enter-start="opacity-0 -translate-y-1"
-                     x-transition:enter-end="opacity-100 translate-y-0"
-                     class="space-y-1">
-                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                        <span x-show="rescueBarangay !== 'Outside CDO / Other Area'">Specific Street / Landmark (Optional)</span>
-                        <span x-show="rescueBarangay === 'Outside CDO / Other Area'">Specify Municipality / Area Location</span>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                        Rescue Barangay / Origin
                     </label>
-                    <input type="text" x-model="rescueLandmark" 
-                           :placeholder="rescueBarangay === 'Outside CDO / Other Area' ? 'e.g. Tagoloan, Opol, El Salvador...' : 'e.g. Near Public Market, Purok 3, Riverbank...'" 
-                           class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
-                    <p class="text-[10px] text-slate-400 dark:text-slate-500" x-show="computedRescueLocation">
-                        Recorded location: <span class="font-semibold text-[#199CA4]" x-text="computedRescueLocation"></span>
-                    </p>
+                    {{-- Hidden input submitted with form carrying the combined standardized value --}}
+                    <input type="hidden" name="rescue_location" :value="computedRescueLocation">
+
+                    <select x-model="rescueBarangay"
+                            class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
+                        <option value="" disabled {{ empty($initialRescueBarangay) ? 'selected' : '' }} hidden style="display: none;">Select rescue barangay / origin</option>
+                        <option value="City Pound (CDO City Vet)" {{ $initialRescueBarangay === 'City Pound (CDO City Vet)' ? 'selected' : '' }}>
+                            City Pound (CDO City Vet)
+                        </option>
+                        <option value="Outside CDO / Other Area" {{ $initialRescueBarangay === 'Outside CDO / Other Area' ? 'selected' : '' }}>
+                            Outside CDO / Other Municipality
+                        </option>
+                        <option disabled class="text-slate-400 font-bold bg-slate-50 dark:bg-slate-900">── Cagayan de Oro Barangays (80) ──</option>
+                        @foreach($cdoBarangays as $bgy)
+                            <option value="{{ $bgy }}" {{ $initialRescueBarangay === $bgy ? 'selected' : '' }}>{{ $bgy }}</option>
+                        @endforeach
+                    </select>
                 </div>
+            </div>
+
+            {{-- Optional Specific Street / Landmark (Shown when a barangay or outside CDO is selected) --}}
+            <div x-show="rescueBarangay && rescueBarangay !== 'City Pound (CDO City Vet)'" 
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 -translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="space-y-1">
+                <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    <span x-show="rescueBarangay !== 'Outside CDO / Other Area'">Specific Street / Landmark (Optional)</span>
+                    <span x-show="rescueBarangay === 'Outside CDO / Other Area'">Specify Municipality / Area Location</span>
+                </label>
+                <input type="text" x-model="rescueLandmark" 
+                       :placeholder="rescueBarangay === 'Outside CDO / Other Area' ? 'e.g. Tagoloan, Opol, El Salvador...' : 'e.g. Near Public Market, Purok 3, Riverbank...'" 
+                       class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
+                <p class="text-[10px] text-slate-400 dark:text-slate-500" x-show="computedRescueLocation">
+                    Recorded location: <span class="font-semibold text-[#199CA4]" x-text="computedRescueLocation"></span>
+                </p>
             </div>
         </div>
 
@@ -1067,11 +1067,22 @@
                 class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition">
                 Cancel
             </a>
-            <button type="button" @click="nextStep(1)"
-                class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#199CA4] text-white text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
-                <span x-text="status === 'in_shelter' ? 'Next: Intake Health & Photo' : 'Next: Health & Traits'">Next: Health & Traits</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </button>
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                @if(optional($pet)->id)
+                    <button type="button" @click="submitWizard($event)"
+                        :disabled="submitting"
+                        :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
+                        class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl border border-[#199CA4] text-[#199CA4] dark:text-[#41C1CB] hover:bg-[#199CA4]/10 text-xs sm:text-sm font-semibold transition cursor-pointer">
+                        <svg x-show="submitting" class="animate-spin h-3.5 w-3.5 text-[#199CA4]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span x-text="submitting ? 'Updating...' : 'Save & Update'">Save & Update</span>
+                    </button>
+                @endif
+                <button type="button" @click="nextStep(1)"
+                    class="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-[#199CA4] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
+                    <span x-text="status === 'in_shelter' ? 'Next: Intake Health & Photo' : 'Next: Health & Traits'">Next: Health & Traits</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1411,25 +1422,36 @@
         {{-- Step 2 Navigation Buttons (Wizard Mode Only) --}}
         <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
             <button type="button" @click="prevStep(2)"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
+                class="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span>Back to General Details</span>
             </button>
-            <button type="button" @click="nextStep(2)"
-                :disabled="submitting"
-                :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
-                class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#199CA4] text-white text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
-                <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span x-text="status === 'in_shelter' ? (submitting ? 'Saving to Shelter...' : 'Save to Shelter Intake') : 'Next: Photo & Bio'">Next: Photo & Bio</span>
-                <svg x-show="!submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <template x-if="status === 'in_shelter'">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                    </template>
-                    <template x-if="status !== 'in_shelter'">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                    </template>
-                </svg>
-            </button>
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                @if(optional($pet)->id)
+                    <button type="button" x-show="status !== 'in_shelter'" @click="submitWizard($event)"
+                        :disabled="submitting"
+                        :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
+                        class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl border border-[#199CA4] text-[#199CA4] dark:text-[#41C1CB] hover:bg-[#199CA4]/10 text-xs sm:text-sm font-semibold transition cursor-pointer">
+                        <svg x-show="submitting" class="animate-spin h-3.5 w-3.5 text-[#199CA4]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span x-text="submitting ? 'Updating...' : 'Save & Update'">Save & Update</span>
+                    </button>
+                @endif
+                <button type="button" @click="nextStep(2)"
+                    :disabled="submitting"
+                    :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
+                    class="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-[#199CA4] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
+                    <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span x-text="status === 'in_shelter' ? (submitting ? '{{ optional($pet)->id ? 'Updating Pet Profile...' : 'Saving to Shelter...' }}' : '{{ optional($pet)->id ? 'Update Pet Profile' : 'Save to Shelter Intake' }}') : 'Next: Photo & Bio'">Next: Photo & Bio</span>
+                    <svg x-show="!submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <template x-if="status === 'in_shelter'">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </template>
+                        <template x-if="status !== 'in_shelter'">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </template>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1553,7 +1575,7 @@
         {{-- Step 3 Navigation & Save Buttons (Wizard Mode Only) --}}
         <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
             <button type="button" @click="prevStep(3)"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
+                class="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span>Back to Health & Traits</span>
             </button>
@@ -1561,9 +1583,9 @@
                 @click="submitWizard($event)"
                 :disabled="submitting"
                 :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
-                class="inline-flex items-center gap-2 px-7 py-2.5 bg-[#199CA4] text-white text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
+                class="inline-flex items-center gap-2 px-6 sm:px-7 py-2.5 bg-[#199CA4] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
                 <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span x-text="submitting ? 'Saving Pet...' : 'Save Pet Profile'">Save Pet Profile</span>
+                <span x-text="submitting ? '{{ optional($pet)->id ? 'Updating Pet Profile...' : 'Saving Pet...' }}' : '{{ optional($pet)->id ? 'Update Pet Profile' : 'Save Pet Profile' }}'">{{ optional($pet)->id ? 'Update Pet Profile' : 'Save Pet Profile' }}</span>
             </button>
         </div>
     </div>

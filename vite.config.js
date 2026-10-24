@@ -35,6 +35,9 @@ export default defineConfig(({ mode }) => {
             hmr: {
                 host: host,
             },
+            watch: {
+                ignored: ['**/ml/**', '**/.venv/**', '**/storage/**'],
+            },
         },
         plugins: [
             laravel({

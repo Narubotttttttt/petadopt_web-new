@@ -69,11 +69,12 @@ class PetIntakeAndShelterStatusTest extends TestCase
             'status' => 'available',
         ]);
 
-        // 1. All Pets Tab
-        $allResponse = $this->actingAs($staff)->get(route('pets.index', ['status' => 'all']));
-        $allResponse->assertOk();
-        $allResponse->assertSee('Shelter Dog');
-        $allResponse->assertSee('Ready Dog');
+        // 1. Default Directory View (Defaults to In Shelter, All Pets tab removed)
+        $defaultResponse = $this->actingAs($staff)->get(route('pets.index'));
+        $defaultResponse->assertOk();
+        $defaultResponse->assertSee('Shelter Dog');
+        $defaultResponse->assertDontSee('Ready Dog');
+        $defaultResponse->assertDontSee('All Pets');
 
         // 2. In Shelter Tab
         $inShelterResponse = $this->actingAs($staff)->get(route('pets.index', ['status' => 'in_shelter']));
@@ -172,6 +173,8 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $response->assertSee('Shelter Pet Intake Registration');
         $response->assertSee('Streamlined 2-step intake triage');
         $response->assertSee("status: 'in_shelter'", false);
+        $response->assertSee('type="hidden" name="status"', false);
+        $response->assertDontSee('Pet Status / Intake Stage');
     }
 
     public function test_create_pet_screen_preselects_available_mode(): void
@@ -186,5 +189,102 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $response->assertSee('Ready for Adoption Registration');
         $response->assertSee('Full 3-step listing profile');
         $response->assertSee("status: 'available'", false);
+        $response->assertSee('type="hidden" name="status"', false);
+        $response->assertDontSee('Pet Status / Intake Stage');
+    }
+
+    public function test_edit_pet_screen_displays_status_dropdown(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Editable Pet',
+            'breed' => 'Aspin',
+            'color' => 'Brown',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'in_shelter',
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('pets.edit', $pet));
+        $response->assertOk();
+        $response->assertSee('<select name="status"', false);
+        $response->assertSee('isWizard: true', false);
+        $response->assertSee('General Details');
+        $response->assertSee('Next: Intake Health & Photo', false);
+        $response->assertSee('Save & Update', false);
+        $response->assertSee('Update Pet Profile');
+    }
+
+    public function test_pet_model_computes_days_in_shelter_and_displays_on_views(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $recentPet = Pet::create([
+            'name' => 'New Arrival',
+            'breed' => 'Aspin',
+            'color' => 'White',
+            'gender' => 'female',
+            'type' => 'dog',
+            'status' => 'in_shelter',
+            'created_at' => now(),
+        ]);
+
+        $shelterPet = Pet::create([
+            'name' => 'Long Stay Dog',
+            'breed' => 'Aspin',
+            'color' => 'Brown',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'in_shelter',
+            'rescue_date' => now()->subDays(12)->toDateString(),
+            'rescue_location' => 'Highway Overpass',
+            'created_at' => now()->subDays(12),
+        ]);
+
+        $adoptedPet = Pet::create([
+            'name' => 'Happy Dog',
+            'breed' => 'Golden Retriever',
+            'color' => 'Golden',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'adopted',
+            'created_at' => now()->subDays(30),
+        ]);
+
+        // Model attribute assertions
+        $this->assertSame(0, $recentPet->days_in_shelter);
+        $this->assertSame('Registered today', $recentPet->days_in_shelter_formatted);
+
+        $this->assertSame(12, $shelterPet->days_in_shelter);
+        $this->assertSame('12 days in shelter', $shelterPet->days_in_shelter_formatted);
+
+        $this->assertSame('Adopted', $adoptedPet->days_in_shelter_formatted);
+
+        // JSON Serialization / API assertion
+        $arrayData = $shelterPet->toArray();
+        $this->assertArrayHasKey('days_in_shelter', $arrayData);
+        $this->assertArrayHasKey('days_in_shelter_formatted', $arrayData);
+        $this->assertSame(12, $arrayData['days_in_shelter']);
+        $this->assertSame('12 days in shelter', $arrayData['days_in_shelter_formatted']);
+
+        // Directory view assertion
+        $indexResponse = $this->actingAs($staff)->get(route('pets.index', ['status' => 'in_shelter']));
+        $indexResponse->assertOk();
+        $indexResponse->assertSee('Stay Duration');
+        $indexResponse->assertSee('12 days in shelter');
+        $indexResponse->assertSee('Registered today');
+
+        // Show view assertion
+        $showResponse = $this->actingAs($staff)->get(route('pets.show', $shelterPet));
+        $showResponse->assertOk();
+        $showResponse->assertSee('Shelter Stay');
+        $showResponse->assertSee('12 days in shelter');
     }
 }
