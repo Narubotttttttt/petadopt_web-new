@@ -1,31 +1,38 @@
 {
-  "model_name": "Random Forest Compatibility Classifier (Lifestyle & Temperament Focused)",
+  "model_name": "Random Forest Multi-Species Compatibility Classifier (Canine & Feline)",
   "framework": "Scikit-Learn",
-  "dataset_source": "Austin Animal Center Real Shelter Outcomes (Kaggle)",
-  "accuracy": 96.09,
-  "precision": 93.59,
-  "recall": 95.59,
-  "f1_score": 0.9458,
+  "dataset_source": "Multi-Species Pet Adoption Master Dataset (Kaggle & ASPCA)",
+  "total_samples": 67000,
+  "train_samples": 53600,
+  "test_samples": 13400,
+  "features_count": 38,
+  "accuracy": 78.22,
+  "precision": 94.15,
+  "recall": 80.48,
+  "f1_score": 0.8678,
+  "roc_auc": 0.7719,
   "confusion_matrix": [
     [
-      9131,
-      344
+      903,
+      595
     ],
     [
-      232,
-      5026
+      2323,
+      9579
     ]
   ],
-  "total_samples": 73664,
-  "train_samples": 58931,
-  "test_samples": 14733,
-  "n_estimators": 160,
-  "features_count": 49,
-  "weights": {
-    "lifestyle_and_living_environment": "50%",
-    "temperament_behavioral": "40%",
-    "age_demographic_tie_breaker": "10%",
-    "coat_color": "0% (removed from primary scoring)",
-    "gender": "0% (removed from primary scoring)"
-  }
+  "top_features": {
+    "aggression_score": 0.1601,
+    "training_level": 0.1067,
+    "reactivity_to_dogs": 0.092,
+    "anxiety_separation": 0.0821,
+    "expectation_score": 0.0605,
+    "energy_mismatch": 0.0519,
+    "hours_alone_per_day": 0.0468,
+    "species_cat": 0.0446,
+    "adopter_activity_level": 0.0418,
+    "energy_level": 0.0389
+  },
+  "n_estimators": 120,
+  "max_depth": 12
 }
