@@ -181,43 +181,54 @@ class RecommendationApiController extends Controller
             if ($process->isSuccessful()) {
                 $output = json_decode($process->getOutput(), true);
                 if (isset($output['recommendations'])) {
-                    // Enforce Top 3 recommendations limit based on client interview policy
-                    $output['recommendations'] = array_slice($output['recommendations'], 0, 3);
-                    $output['count'] = count($output['recommendations']);
-
                     // Enrich recommendations with full pet details (photo URLs, etc.)
+                    // Strictly enforce status 'available' (ready for adoption)
                     $petMap = Pet::whereIn('id', collect($output['recommendations'])->pluck('pet_id'))
+                        ->where('status', 'available')
                         ->with('temperamentTags')
                         ->get()
                         ->keyBy('id');
 
-                    foreach ($output['recommendations'] as &$rec) {
+                    $validRecs = [];
+                    foreach ($output['recommendations'] as $rec) {
                         $petModel = $petMap->get($rec['pet_id']);
-                        if ($petModel) {
-                            $photoUrl = null;
-                            if ($petModel->photo_path) {
-                                $photoUrl = str_starts_with($petModel->photo_path, 'http')
-                                    ? $petModel->photo_path
-                                    : asset('storage/' . ltrim($petModel->photo_path, '/'));
-                            }
-
-                            $rec['id'] = $petModel->id;
-                            $rec['name'] = $petModel->name ?: ('Pet no. ' . $petModel->id);
-                            $rec['type'] = ucfirst($petModel->type ?: 'Dog');
-                            $rec['breed'] = $petModel->breed ?: 'Mixed Breed';
-                            $rec['color'] = $petModel->color ?: 'N/A';
-                            $rec['gender'] = ucfirst($petModel->gender ?: 'Unknown');
-                            $rec['age'] = $petModel->age ?: 'Unknown';
-                            $rec['description'] = $petModel->description ?: 'Loving rescue pet looking for a forever home.';
-                            $rec['medical_history'] = $petModel->medical_history ?: 'No medical history recorded.';
-                            $rec['image'] = $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80';
-                            $rec['photo_url'] = $rec['image'];
-                            $rec['status'] = $petModel->status;
-                            $rec['temperament'] = $petModel->temperamentTags->pluck('name')->toArray();
-                            $rec['temperaments'] = $rec['temperament'];
+                        if (! $petModel || strtolower($petModel->status) !== 'available') {
+                            continue;
                         }
+
+                        $photoUrl = null;
+                        if ($petModel->photo_path) {
+                            $photoUrl = str_starts_with($petModel->photo_path, 'http')
+                                ? $petModel->photo_path
+                                : asset('storage/' . ltrim($petModel->photo_path, '/'));
+                        }
+
+                        $rec['id'] = $petModel->id;
+                        $rec['name'] = $petModel->name ?: ('Pet no. ' . $petModel->id);
+                        $rec['type'] = ucfirst($petModel->type ?: 'Dog');
+                        $rec['breed'] = $petModel->breed ?: 'Mixed Breed';
+                        $rec['color'] = $petModel->color ?: 'N/A';
+                        $rec['gender'] = ucfirst($petModel->gender ?: 'Unknown');
+                        $rec['age'] = $petModel->age ?: 'Unknown';
+                        $rec['description'] = $petModel->description ?: 'Loving rescue pet looking for a forever home.';
+                        $rec['medical_history'] = $petModel->medical_history ?: 'No medical history recorded.';
+                        $rec['image'] = $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80';
+                        $rec['photo_url'] = $rec['image'];
+                        $rec['status'] = 'available';
+                        $rec['temperament'] = $petModel->temperamentTags->pluck('name')->toArray();
+                        $rec['temperaments'] = $rec['temperament'];
+
+                        $rawPct = $rec['match_percentage'] ?? $rec['match_score'] ?? 80;
+                        $numPct = is_numeric($rawPct) ? (float)$rawPct : (float)str_replace('%', '', (string)$rawPct);
+                        $rec['match_percentage'] = $numPct;
+                        $rec['compatibility_score'] = $numPct;
+
+                        $validRecs[] = $rec;
                     }
 
+                    // Enforce Top 3 recommendations limit strictly from available pets
+                    $output['recommendations'] = array_slice($validRecs, 0, 3);
+                    $output['count'] = count($output['recommendations']);
                     $output['is_locked'] = ($user && $saved !== null);
 
                     return response()->json($output);

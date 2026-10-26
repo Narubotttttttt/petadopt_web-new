@@ -52,6 +52,14 @@ class AdoptionApiController extends Controller
             ], 403);
         }
 
+        $targetPet = Pet::find($request->pet_id);
+        if (!$targetPet || strtolower($targetPet->status) !== 'available') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This pet is currently in shelter care or not ready for adoption.',
+            ], 422);
+        }
+
         $existing = AdoptionApplication::where('pet_id', $request->pet_id)
             ->where(function ($q) use ($user, $request) {
                 if ($user && !empty($user->email)) {

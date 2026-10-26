@@ -393,9 +393,14 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
     if not isinstance(adopter_profile, dict):
         adopter_profile = {}
 
-    available = [p for p in pets_data if str(p.get('status', 'available')).lower() == 'available']
+    # STRICT FILTER: Focus ONLY on pets that are ready for adoption (status == 'available').
+    # Pets with status 'in_shelter', 'pending', 'adopted', or 'deceased' MUST NEVER be recommended.
+    available = [
+        p for p in pets_data
+        if str(p.get('status', '')).strip().lower() == 'available'
+    ]
     if not available:
-        available = pets_data
+        return []
 
     # Strict species filter if user requested
     pref_species = str(adopter_profile.get('preferred_species', 'any')).lower()
@@ -441,10 +446,10 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             feat_df = _build_multi_species_feature_vector(adopter_profile, pet, feature_cols)
             proba = model.predict_proba(feat_df)[0]
             rf_prob = float(proba[1])  # Predicted probability of compatibility
-            final_metric = (0.60 * rf_prob) + (0.30 * tag_sim) + (0.10 * age_score)
+            final_metric = (0.70 * rf_prob) + (0.30 * tag_sim)
             algo_name = 'Scikit-Learn Random Forest Classifier (Multi-Species Trained Model)'
         else:
-            final_metric = (0.50 * 0.70) + (0.40 * tag_sim) + (0.10 * age_score)
+            final_metric = (0.60 * 0.70) + (0.40 * tag_sim)
             algo_name = 'Multi-Species Compatibility Engine'
 
         match_pct = round(min(99.0, max(52.0, (final_metric * 45.0) + 53.0)), 1)
@@ -467,7 +472,8 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             'status'              : pet.get('status'),
             'temperaments'        : pet_tags_list,
             'match_score'         : match_pct,
-            'match_percentage'    : f"{match_pct}%",
+            'match_percentage'    : match_pct,
+            'match_percentage_str': f"{match_pct}%",
             'reasons'             : reasons,
             'algorithm_used'      : algo_name
         })

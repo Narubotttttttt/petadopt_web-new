@@ -287,4 +287,83 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $showResponse->assertSee('Shelter Stay');
         $showResponse->assertSee('12 days in shelter');
     }
+
+    public function test_recommendation_engine_never_recommends_in_shelter_pets(): void
+    {
+        $adopter = User::factory()->create([
+            'role' => 'adopter',
+            'email_verified_at' => now(),
+        ]);
+
+        $tag = \App\Models\TemperamentTag::firstOrCreate(['name' => 'Playful']);
+
+        $inShelterPet = Pet::create([
+            'name' => 'Shelter Only Pet',
+            'breed' => 'Aspin',
+            'color' => 'Brown',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'in_shelter',
+        ]);
+        $inShelterPet->temperamentTags()->attach($tag);
+
+        $availablePet = Pet::create([
+            'name' => 'Available Adopter Pet',
+            'breed' => 'Aspin',
+            'color' => 'Brown',
+            'gender' => 'male',
+            'type' => 'dog',
+            'status' => 'available',
+        ]);
+        $availablePet->temperamentTags()->attach($tag);
+
+        $response = $this->actingAs($adopter, 'sanctum')->postJson('/api/recommendations/match', [
+            'preferred_species'    => 'dog',
+            'living_environment'   => 'house_fenced',
+            'activity_level'       => 'high',
+            'desired_temperaments' => ['Playful'],
+        ]);
+
+        $response->assertOk();
+        $recs = $response->json('recommendations');
+        $this->assertNotEmpty($recs);
+
+        $recommendedPetIds = collect($recs)->pluck('id')->all();
+        $this->assertContains($availablePet->id, $recommendedPetIds);
+        $this->assertNotContains($inShelterPet->id, $recommendedPetIds);
+
+        foreach ($recs as $rec) {
+            $this->assertSame('available', strtolower($rec['status']));
+        }
+    }
+
+    public function test_adoption_application_cannot_be_submitted_for_in_shelter_pet(): void
+    {
+        $adopter = User::factory()->create([
+            'role' => 'adopter',
+            'email_verified_at' => now(),
+        ]);
+
+        $inShelterPet = Pet::create([
+            'name' => 'Intake Triage Dog',
+            'breed' => 'Aspin',
+            'color' => 'Black',
+            'gender' => 'female',
+            'type' => 'dog',
+            'status' => 'in_shelter',
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')->postJson('/api/adoption-applications', [
+            'pet_id'    => $inShelterPet->id,
+            'full_name' => 'Adopter Test',
+            'phone'     => '09123456789',
+            'address'   => 'Cagayan de Oro City',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+            'message' => 'This pet is currently in shelter care or not ready for adoption.',
+        ]);
+    }
 }
