@@ -18,13 +18,17 @@ class RecommendationApiController extends Controller
     {
         $user = $request->user();
         if (! $user) {
-            return response()->json(['preferences' => null]);
+            return response()->json([
+                'preferences' => null,
+                'is_locked'   => false,
+            ]);
         }
 
         $preference = AdopterPreference::where('user_id', $user->id)->first();
 
         return response()->json([
             'preferences' => $preference,
+            'is_locked'   => $preference !== null,
         ]);
     }
 
@@ -46,12 +50,22 @@ class RecommendationApiController extends Controller
             $saved = AdopterPreference::where('user_id', $user->id)->first();
         }
 
+        // Business rule: Once an adopter has submitted their match quiz, they cannot modify or retake it.
+        if ($user && $saved && $hasQuizInPayload) {
+            return response()->json([
+                'success'   => false,
+                'is_locked' => true,
+                'message'   => 'Your compatibility quiz has already been submitted and cannot be changed or retaken.',
+            ], 403);
+        }
+
         // 3. If the adopter has not answered the quiz yet (neither in request nor in database),
         // return an empty recommendation list so "Recommended for you" remains blank.
         if (! $hasQuizInPayload && ! $saved) {
             return response()->json([
                 'success'         => true,
                 'has_quiz'        => false,
+                'is_locked'       => false,
                 'algorithm'       => 'Python Scikit-Learn Random Forest Engine',
                 'count'           => 0,
                 'recommendations' => [],
@@ -62,25 +76,23 @@ class RecommendationApiController extends Controller
         // 4. Resolve Adopter Profile (from request payload if submitted or saved database profile)
         $profile = $hasQuizInPayload ? $request->all() : ($saved ? $saved->toArray() : []);
 
-        // Save / update preferences if user is authenticated and sent answers
-        if ($user && $hasQuizInPayload) {
-            AdopterPreference::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'preferred_species'     => $request->input('preferred_species', 'any'),
-                    'preferred_gender'      => $request->input('preferred_gender', 'any'),
-                    'preferred_age'         => $request->input('preferred_age', 'any'),
-                    'preferred_color'       => $request->input('preferred_color'),
-                    'living_environment'    => $request->input('living_environment', 'apartment'),
-                    'activity_level'        => $request->input('activity_level', 'moderate'),
-                    'pet_experience'        => $request->input('pet_experience', 'first_time'),
-                    'has_children'          => filter_var($request->input('has_children', false), FILTER_VALIDATE_BOOLEAN),
-                    'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
-                    'hours_alone'           => $request->input('hours_alone', '4_7'),
-                    'special_care_capacity' => filter_var($request->input('special_care_capacity', false), FILTER_VALIDATE_BOOLEAN),
-                    'desired_temperaments'  => $request->input('desired_temperaments', []),
-                ]
-            );
+        // Save preferences if user is authenticated and submitted answers for the first time
+        if ($user && $hasQuizInPayload && ! $saved) {
+            $saved = AdopterPreference::create([
+                'user_id'               => $user->id,
+                'preferred_species'     => $request->input('preferred_species', 'any'),
+                'preferred_gender'      => $request->input('preferred_gender', 'any'),
+                'preferred_age'         => $request->input('preferred_age', 'any'),
+                'preferred_color'       => $request->input('preferred_color'),
+                'living_environment'    => $request->input('living_environment', 'apartment'),
+                'activity_level'        => $request->input('activity_level', 'moderate'),
+                'pet_experience'        => $request->input('pet_experience', 'first_time'),
+                'has_children'          => filter_var($request->input('has_children', false), FILTER_VALIDATE_BOOLEAN),
+                'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
+                'hours_alone'           => $request->input('hours_alone', '4_7'),
+                'special_care_capacity' => filter_var($request->input('special_care_capacity', false), FILTER_VALIDATE_BOOLEAN),
+                'desired_temperaments'  => $request->input('desired_temperaments', []),
+            ]);
         }
 
         $petsQuery = Pet::where('status', 'available');
@@ -117,6 +129,7 @@ class RecommendationApiController extends Controller
                 'success'         => true,
                 'algorithm'       => 'Scikit-Learn Random Forest Classifier (Color, Age, Gender Prioritized)',
                 'count'           => 0,
+                'is_locked'       => ($user && $saved !== null),
                 'recommendations' => [],
             ]);
         }
@@ -204,6 +217,8 @@ class RecommendationApiController extends Controller
                             $rec['temperaments'] = $rec['temperament'];
                         }
                     }
+
+                    $output['is_locked'] = ($user && $saved !== null);
 
                     return response()->json($output);
                 }
