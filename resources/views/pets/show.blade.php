@@ -84,40 +84,128 @@
             </div>
         @endif
 
-        {{-- In-Shelter Action Callout for Staff --}}
+        {{-- Shelter Care & Adoption Readiness Checklist (Combined Option 1 & 2) --}}
         @if(in_array(Auth::user()?->role, ['admin', 'staff']) && $pet->status === 'in_shelter')
-            <div class="p-4 sm:p-5 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 text-sky-950 dark:text-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h3 class="text-sm font-extrabold text-sky-950 dark:text-sky-100">
-                                Pet Under Shelter Care / Intake
-                            </h3>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-sky-600 text-white">
-                                In Shelter
-                            </span>
+            <div class="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#12141C] border border-sky-200/90 dark:border-sky-800/60 shadow-sm space-y-4">
+                
+                {{-- Header row --}}
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-200/60 shadow-2xs">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
                         </div>
-                        <p class="text-xs sm:text-sm text-sky-800 dark:text-sky-300 font-medium mt-0.5">
-                            This pet is not yet listed for public adoption. Once health treatments and quarantine are complete, mark ready for adoption.
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">
+                                    Adoption Readiness Checklist
+                                </h3>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40">
+                                    In Shelter Care
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Clear clinical milestones and temperament traits to promote this pet for Petfinder recommendations.
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Promote Button that opens Readiness Modal --}}
+                    <button type="button" 
+                            @click="window.dispatchEvent(new CustomEvent('open-readiness-modal', {
+                                detail: {
+                                    id: {{ $pet->id }},
+                                    name: '{{ addslashes($pet->name ?: ('Pet no. ' . $pet->id)) }}',
+                                    type: '{{ $pet->type }}',
+                                    action: '{{ route('pets.mark-available', $pet) }}',
+                                    hasVaccine: {{ $latestVaccine ? 'true' : 'false' }},
+                                    vaccineName: '{{ addslashes($latestVaccine?->vaccine_name ?? '') }}',
+                                    hasDeworming: {{ $latestDeworming ? 'true' : 'false' }},
+                                    dewormingName: '{{ addslashes($latestDeworming?->vaccine_name ?? '') }}',
+                                    selectedTags: {{ json_encode($pet->temperamentTags->pluck('id')->toArray()) }},
+                                    description: '{{ addslashes($pet->description ?? '') }}'
+                                }
+                            }))"
+                            class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        <span>Review & Launch for Adoption</span>
+                    </button>
+                </div>
+
+                {{-- Visual 3-Item Readiness Grid --}}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    
+                    {{-- 1. Core Vaccination --}}
+                    <div class="p-3.5 rounded-2xl border {{ $latestVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40' : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">1. Core Vaccine</span>
+                            @if($latestVaccine)
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    Cleared
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    Pending
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">
+                            {{ $latestVaccine ? ($latestVaccine->vaccine_name ?: 'Logged') : 'No vaccine on file' }}
+                        </p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            {{ $latestVaccine ? $latestVaccine->date->format('M d, Y') : 'Can be logged during launch' }}
                         </p>
                     </div>
+
+                    {{-- 2. Deworming --}}
+                    <div class="p-3.5 rounded-2xl border {{ $latestDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/40' : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">2. Deworming</span>
+                            @if($latestDeworming)
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 dark:text-purple-300">
+                                    <svg class="w-3.5 h-3.5 text-purple-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    Cleared
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    Pending
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">
+                            {{ $latestDeworming ? ($latestDeworming->vaccine_name ?: 'Administered') : 'No deworming on file' }}
+                        </p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            {{ $latestDeworming ? $latestDeworming->date->format('M d, Y') : 'Can be logged during launch' }}
+                        </p>
+                    </div>
+
+                    {{-- 3. Behavior / Temperament --}}
+                    <div class="p-3.5 rounded-2xl border {{ $pet->temperamentTags->isNotEmpty() ? 'bg-slate-50 dark:bg-[#171923] border-slate-200 dark:border-white/[0.08]' : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40' }}">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">3. Behavior Tags</span>
+                            @if($pet->temperamentTags->isNotEmpty())
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-[#199CA4] dark:text-[#41C1CB]">
+                                    {{ $pet->temperamentTags->count() }} Tags
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    Untagged
+                                </span>
+                            @endif
+                        </div>
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate">
+                            {{ $pet->temperamentTags->isNotEmpty() ? $pet->temperamentTags->pluck('name')->take(2)->implode(', ') . ($pet->temperamentTags->count() > 2 ? ' +' . ($pet->temperamentTags->count() - 2) : '') : 'Needed for Petfinder' }}
+                        </p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            {{ $pet->temperamentTags->isNotEmpty() ? 'Ready for ML match' : 'Click launch to assign' }}
+                        </p>
+                    </div>
+
                 </div>
-                <button type="button" 
-                        data-title='Promote "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>" to Ready for Adoption?'
-                        data-message="This pet will become visible to the public in the adoption directory."
-                        data-action="{{ route('pets.mark-available', $pet) }}"
-                        data-confirm-text="Mark Ready for Adoption"
-                        data-loading-text="Promoting..."
-                        data-type="success"
-                        data-method="POST"
-                        onclick="openConfirmModal(this.dataset)"
-                        class="shrink-0 self-end sm:self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Mark Ready for Adoption</span>
-                </button>
+
             </div>
         @endif
 
@@ -357,6 +445,11 @@
                 </div>
             @endif
         </div>
+
+        {{-- Adoption Readiness Modal Component --}}
+        @if(in_array(Auth::user()?->role, ['admin', 'staff']))
+            @include('pets._readiness_modal')
+        @endif
 
     </div>
 </x-app-layout>

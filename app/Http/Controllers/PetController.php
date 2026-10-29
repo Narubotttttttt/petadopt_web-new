@@ -133,13 +133,20 @@ class PetController extends Controller
                 break;
         }
 
-        $pets = $query->latest('created_at')->paginate(10)->withQueryString();
+        $this->ensureDefaultTemperamentTags();
+        $allTemperamentTags = TemperamentTag::orderBy('name')->get();
+
+        $pets = $query->with([
+            'temperamentTags',
+            'medicalLogs' => fn($q) => $q->latest('date'),
+        ])->latest('created_at')->paginate(10)->withQueryString();
 
         return view('pets.index', [
-            'pets'      => $pets,
-            'q'         => $q,
-            'activeTab' => $activeTab,
-            'counts'    => $counts,
+            'pets'               => $pets,
+            'q'                  => $q,
+            'activeTab'          => $activeTab,
+            'counts'             => $counts,
+            'allTemperamentTags' => $allTemperamentTags,
         ]);
     }
 
@@ -284,10 +291,13 @@ class PetController extends Controller
 
     public function show(Pet $pet)
     {
+        $this->ensureDefaultTemperamentTags();
         $pet->load(['medicalLogs.creator', 'temperamentTags', 'addedBy.staffProfile']);
+        $allTemperamentTags = TemperamentTag::orderBy('name')->get();
 
         return view('pets.show', [
-            'pet' => $pet,
+            'pet'                => $pet,
+            'allTemperamentTags' => $allTemperamentTags,
         ]);
     }
 
@@ -446,17 +456,91 @@ class PetController extends Controller
         return redirect()->route('pets.index');
     }
 
-    public function markAvailable(Pet $pet)
+    public function markAvailable(Request $request, Pet $pet)
     {
         if (!in_array(Auth::user()?->role, ['admin', 'staff'])) {
             abort(403, 'Unauthorized.');
         }
 
-        $pet->update([
-            'status' => 'available',
+        $data = $request->validate([
+            'temperament_tags'   => 'nullable|array',
+            'temperament_tags.*' => 'exists:temperament_tags,id',
+            'custom_temperament' => 'nullable|string|max:255',
+            'log_vaccine'        => 'nullable|boolean',
+            'vaccine_name'       => 'nullable|string|max:120',
+            'vaccine_date'       => 'nullable|date',
+            'vaccine_next_due'   => 'nullable|date',
+            'log_deworming'      => 'nullable|boolean',
+            'dewormer_name'      => 'nullable|string|max:120',
+            'dewormer_date'      => 'nullable|date',
+            'dewormer_next_due'  => 'nullable|date',
+            'description'        => 'nullable|string',
         ]);
 
-        return redirect()->back()->with('success', ($pet->name ?: ('Pet no. ' . $pet->id)) . ' is now marked as Ready for Adoption.');
+        $user = Auth::user();
+
+        DB::transaction(function () use ($pet, $data, $user, $request) {
+            $updates = ['status' => 'available'];
+            if (!empty($data['description'])) {
+                $updates['description'] = $data['description'];
+            }
+            $pet->update($updates);
+
+            if ($request->has('temperament_tags')) {
+                $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
+                $rawCustom = $request->input('custom_temperament');
+                if (!empty($rawCustom)) {
+                    $names = is_array($rawCustom)
+                        ? $rawCustom
+                        : array_map('trim', preg_split('/[,&]| and /i', (string) $rawCustom));
+
+                    foreach ($names as $name) {
+                        $name = trim($name);
+                        if ($name !== '') {
+                            $created = TemperamentTag::firstOrCreate(['name' => ucfirst($name)]);
+                            $tagIds[] = $created->id;
+                        }
+                    }
+                }
+                $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
+            }
+
+            if ($request->boolean('log_vaccine')) {
+                $defaultVax = $pet->type === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
+                $vaxName = trim((string) ($data['vaccine_name'] ?? '')) ?: $defaultVax;
+                $vaxDate = $data['vaccine_date'] ?: now()->toDateString();
+                $vaxNextDue = $data['vaccine_next_due'] ?: Carbon::parse($vaxDate)->addMonths(6)->toDateString();
+
+                MedicalLog::create([
+                    'pet_id'          => $pet->id,
+                    'category'        => 'vaccination',
+                    'vaccine_name'    => $vaxName,
+                    'date'            => $vaxDate,
+                    'next_due_date'   => $vaxNextDue,
+                    'administered_by' => $user?->name ?? 'Shelter Clinician',
+                    'created_by'      => $user?->id,
+                ]);
+            }
+
+            if ($request->boolean('log_deworming')) {
+                $dewormName = trim((string) ($data['dewormer_name'] ?? '')) ?: 'Anthelmintic Dewormer';
+                $dewormDate = $data['dewormer_date'] ?: now()->toDateString();
+                $dewormNextDue = $data['dewormer_next_due'] ?: Carbon::parse($dewormDate)->addMonths(3)->toDateString();
+
+                MedicalLog::create([
+                    'pet_id'          => $pet->id,
+                    'category'        => 'deworming',
+                    'vaccine_name'    => $dewormName,
+                    'date'            => $dewormDate,
+                    'next_due_date'   => $dewormNextDue,
+                    'administered_by' => $user?->name ?? 'Shelter Clinician',
+                    'created_by'      => $user?->id,
+                ]);
+            }
+        });
+
+        $petIdentifier = $pet->name ?: ('Pet no. ' . $pet->id);
+        return redirect()->back()->with('success', "{$petIdentifier} is now Ready for Adoption and discoverable on Petfinder.");
     }
 
     public function destroy(Pet $pet)

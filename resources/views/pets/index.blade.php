@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="w-full py-6 sm:py-8 px-4 sm:px-6 lg:px-8 animate-fade-in space-y-5 sm:space-y-6" 
+    <div class="w-full py-4 sm:py-5 px-3 sm:px-6 lg:px-8 animate-fade-in space-y-3.5 sm:space-y-4" 
          x-data="{ 
              registrationModal: false,
              init() {
@@ -14,37 +14,37 @@
          }">
         
         {{-- Header & Search Actions --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Rescue Pets Directory</h1>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage and track all rescued dogs and cats in the CAWS database.</p>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Rescue Pets Directory</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and track all rescued dogs and cats in the CAWS database.</p>
             </div>
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
                 <form method="GET" action="{{ route('pets.index') }}" class="flex items-center gap-2 w-full sm:w-auto">
                     <input type="hidden" name="status" value="{{ $activeTab ?? 'in_shelter' }}">
-                    <div class="relative flex-1 sm:w-72 md:w-80">
+                    <div class="relative flex-1 sm:w-64 md:w-72">
                         <input 
                             name="q" 
                             value="{{ old('q', request('q')) }}" 
-                            placeholder="Search by name, ID (e.g. Pet no. 1), breed..." 
-                            class="w-full pl-9 {{ request('q') ? 'pr-8' : 'pr-4' }} py-2.5 bg-white dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs transition font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl" 
+                            placeholder="Search by name, ID, breed..." 
+                            class="w-full pl-8 {{ request('q') ? 'pr-7' : 'pr-3' }} py-2 bg-white dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-xs focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs transition font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl" 
                         />
-                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         @if(request('q'))
-                            <a href="{{ route('pets.index', ['status' => $activeTab ?? 'in_shelter']) }}" title="Clear search" class="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <a href="{{ route('pets.index', ['status' => $activeTab ?? 'in_shelter']) }}" title="Clear search" class="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </a>
                         @endif
                     </div>
-                    <button type="submit" class="px-4 sm:px-5 py-2.5 bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-xs transition-all cursor-pointer shrink-0">
+                    <button type="submit" class="px-3.5 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold rounded-xl text-xs shadow-xs transition-all cursor-pointer shrink-0">
                         Search
                     </button>
                 </form>
                 @if(in_array(Auth::user()?->role, ['admin', 'staff']))
                     <button type="button" 
                             @click="registrationModal = true" 
-                            class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold shadow-xs transition-all duration-200 shrink-0 cursor-pointer">
-                        <span class="text-base leading-none">+</span> Add New Pet
+                            class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs font-extrabold shadow-xs transition-all duration-200 shrink-0 cursor-pointer">
+                        <span class="text-sm leading-none">+</span> Add New Pet
                     </button>
                 @endif
             </div>
@@ -107,7 +107,7 @@
 
         {{-- Status Filter Tabs Bar (matching Adoption Requests layout) --}}
         @if(in_array(Auth::user()?->role, ['admin', 'staff']))
-            <div class="flex items-center gap-2 overflow-x-auto pt-1 pb-1 scrollbar-none">
+            <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none no-scrollbar">
                 {{-- Tab 1: In Shelter (Newly rescued, under care/treatment) --}}
                 <a href="{{ route('pets.index', ['status' => 'in_shelter', 'q' => $q]) }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
@@ -162,14 +162,14 @@
         <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-slate-200/80 dark:border-white/[0.07] overflow-hidden relative">
             
             {{-- Card Header --}}
-            <div class="p-4 sm:p-6 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/50 dark:bg-[#171923]">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30 flex items-center justify-center font-bold text-sm">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+            <div class="px-4 py-3 sm:px-5 sm:py-3 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/50 dark:bg-[#171923]">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30 flex items-center justify-center font-bold text-xs">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                     </div>
                     <h2 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Pet Profiles</h2>
                 </div>
-                <span class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider bg-slate-100 dark:bg-white/[0.06] px-2.5 sm:px-3 py-1 rounded-full border border-slate-200 dark:border-white/[0.08]">
+                <span class="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300 font-extrabold uppercase tracking-wider bg-slate-100 dark:bg-white/[0.06] px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-white/[0.08]">
                     Total: {{ $pets->total() }} Pets
                 </span>
             </div>
@@ -205,6 +205,8 @@
                         $style = $statusStyles[$pet->status] ?? 'bg-slate-50 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]';
                         $dot = $dotColors[$pet->status] ?? 'bg-slate-400';
                         $isNewlyAdded = session('new_pet_id') && session('new_pet_id') == $pet->id;
+                        $latestVaccine = $pet->medicalLogs->firstWhere('category', 'vaccination');
+                        $latestDeworming = $pet->medicalLogs->firstWhere('category', 'deworming');
                     @endphp
                     <div class="p-4 space-y-3 transition-colors {{ $isNewlyAdded ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-50/50 dark:hover:bg-[#161822]' }}">
                         
@@ -246,10 +248,31 @@
                                 <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                                     {{ ucfirst($pet->type ?? 'Pet') }} &bull; {{ ucfirst($pet->size ?? 'Medium') }} &bull; {{ ucfirst($pet->gender ?? 'Unknown') }} &bull; {{ $pet->age ?? 'Age N/A' }}
                                 </p>
-                                <div class="mt-1">
+                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20">
                                         {{ $pet->days_in_shelter_formatted }}
                                     </span>
+                                    @if($pet->status === 'in_shelter')
+                                        @if($latestVaccine)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                                                Vax Logged
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+                                                No Vax
+                                            </span>
+                                        @endif
+
+                                        @if($pet->temperamentTags->isNotEmpty())
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/[0.08]">
+                                                {{ $pet->temperamentTags->count() }} tags
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+                                                Untagged
+                                            </span>
+                                        @endif
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -258,14 +281,20 @@
                         <div class="flex items-center gap-2 pt-0.5">
                             @if(in_array(Auth::user()?->role, ['admin', 'staff']) && $pet->status === 'in_shelter')
                                 <button type="button" 
-                                        data-title='Promote "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>" to Ready for Adoption?'
-                                        data-message="This pet will become visible to the public in the adoption directory."
-                                        data-action="{{ route('pets.mark-available', $pet) }}"
-                                        data-confirm-text="Mark Ready"
-                                        data-loading-text="Promoting..."
-                                        data-type="success"
-                                        data-method="POST"
-                                        onclick="openConfirmModal(this.dataset)"
+                                        @click="window.dispatchEvent(new CustomEvent('open-readiness-modal', {
+                                            detail: {
+                                                id: {{ $pet->id }},
+                                                name: '{{ addslashes($pet->name ?: ('Pet no. ' . $pet->id)) }}',
+                                                type: '{{ $pet->type }}',
+                                                action: '{{ route('pets.mark-available', $pet) }}',
+                                                hasVaccine: {{ $latestVaccine ? 'true' : 'false' }},
+                                                vaccineName: '{{ addslashes($latestVaccine?->vaccine_name ?? '') }}',
+                                                hasDeworming: {{ $latestDeworming ? 'true' : 'false' }},
+                                                dewormingName: '{{ addslashes($latestDeworming?->vaccine_name ?? '') }}',
+                                                selectedTags: {{ json_encode($pet->temperamentTags->pluck('id')->toArray()) }},
+                                                description: '{{ addslashes($pet->description ?? '') }}'
+                                            }
+                                        }))"
                                         class="flex-1 py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition shadow-2xs cursor-pointer">
                                     Mark Ready
                                 </button>
@@ -309,17 +338,17 @@
             </div>
 
             {{-- 2. Desktop High-Density Data Table (>= md screens) --}}
-            <div class="hidden md:block overflow-x-auto">
-                <table class="min-w-full text-left border-collapse">
+            <div class="hidden md:block overflow-x-auto no-scrollbar">
+                <table class="w-full text-left border-collapse table-auto">
                     <thead class="bg-slate-50/80 dark:bg-[#171923] border-b border-slate-200/80 dark:border-white/[0.06]">
                         <tr>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Breed</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Color</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Stay Duration</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Type</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
-                            <th class="px-6 py-3.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Breed</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Color</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Stay Duration</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Type</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
+                            <th class="px-3 py-2.5 sm:px-4 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06]">
@@ -328,27 +357,29 @@
                                 $style = $statusStyles[$pet->status] ?? 'bg-slate-50 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]';
                                 $dot = $dotColors[$pet->status] ?? 'bg-slate-400';
                                 $isNewlyAdded = session('new_pet_id') && session('new_pet_id') == $pet->id;
+                                $latestVaccine = $pet->medicalLogs->firstWhere('category', 'vaccination');
+                                $latestDeworming = $pet->medicalLogs->firstWhere('category', 'deworming');
                             @endphp
-                            <tr class="text-xs sm:text-sm transition-colors {{ $isNewlyAdded ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-50/70 dark:hover:bg-[#181A24]' }}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center gap-3.5">
-                                        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-[#171923] overflow-hidden flex items-center justify-center border border-slate-200 dark:border-white/[0.08] shadow-2xs shrink-0 group relative">
+                            <tr class="text-xs transition-colors {{ $isNewlyAdded ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-50/70 dark:hover:bg-[#181A24]' }}">
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#171923] overflow-hidden flex items-center justify-center border border-slate-200 dark:border-white/[0.08] shadow-2xs shrink-0 group relative">
                                             @if($pet->photo_path)
                                                 <img src="{{ asset('storage/'.$pet->photo_path) }}" alt="Pet photo" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                 <div class="hidden w-full h-full bg-[#199CA4]/10 dark:bg-[#199CA4]/20 items-center justify-center text-[#199CA4] dark:text-[#41C1CB]">
-                                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                                                 </div>
                                             @else
                                                 <div class="w-full h-full bg-[#199CA4]/10 dark:bg-[#199CA4]/20 flex items-center justify-center text-[#199CA4] dark:text-[#41C1CB]">
-                                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                                                 </div>
                                             @endif
                                         </div>
                                         <div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="font-extrabold text-slate-900 dark:text-white">{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</p>
+                                            <div class="flex items-center gap-1.5">
+                                                <p class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white">{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</p>
                                                 @if($isNewlyAdded)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#199CA4] text-white shrink-0 tracking-wide uppercase shadow-2xs">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#199CA4] text-white shrink-0 tracking-wide uppercase shadow-2xs">
                                                         Just Added
                                                     </span>
                                                 @endif
@@ -357,47 +388,76 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300 font-bold">{{ $pet->breed ?? '—' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium">{{ $pet->color ?? '—' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-slate-700 dark:text-slate-300 font-bold text-xs sm:text-sm">{{ $pet->breed ?? '—' }}</td>
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-slate-600 dark:text-slate-400 font-medium text-xs sm:text-sm">{{ $pet->color ?? '—' }}</td>
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap">
                                     <span class="font-extrabold text-slate-800 dark:text-slate-200 block text-xs">
                                         {{ $pet->days_in_shelter_formatted }}
                                     </span>
-                                    <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium block mt-0.5">
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium block">
                                         Added {{ $pet->created_at ? $pet->created_at->diffForHumans() : 'recently' }}
                                     </span>
+                                    @if($pet->status === 'in_shelter')
+                                        <div class="flex items-center gap-1 mt-1 flex-wrap">
+                                            @if($latestVaccine)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40" title="Vaccination: {{ $latestVaccine->vaccine_name ?: 'Logged' }}">
+                                                    Vax Logged
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40" title="No core vaccination record">
+                                                    No Vax
+                                                </span>
+                                            @endif
+
+                                            @if($pet->temperamentTags->isNotEmpty())
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/[0.08]" title="{{ $pet->temperamentTags->pluck('name')->implode(', ') }}">
+                                                    {{ $pet->temperamentTags->count() }} tags
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40" title="Behavior tags missing for ML matching">
+                                                    Untagged
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1 font-bold text-xs text-slate-700 dark:text-slate-300">
                                         {{ ucfirst($pet->type ?? 'Unknown') }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border {{ $style }}">
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border {{ $style }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $dot }} animate-pulse"></span>
                                         {{ $statusLabels[$pet->status] ?? ucfirst(str_replace('_', ' ', $pet->status ?? 'Unknown')) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right">
-                                    <div class="inline-flex items-center gap-1.5">
+                                <td class="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-right">
+                                    <div class="inline-flex items-center gap-1">
                                         @if(in_array(Auth::user()?->role, ['admin', 'staff']) && $pet->status === 'in_shelter')
                                             <button type="button" 
-                                                    data-title='Promote "<strong>{{ $pet->name ?: ('Pet no. ' . $pet->id) }}</strong>" to Ready for Adoption?'
-                                                    data-message="This pet will become visible to the public in the adoption directory."
-                                                    data-action="{{ route('pets.mark-available', $pet) }}"
-                                                    data-confirm-text="Mark Ready"
-                                                    data-loading-text="Promoting..."
-                                                    data-type="success"
-                                                    data-method="POST"
-                                                    onclick="openConfirmModal(this.dataset)"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all duration-200 shadow-2xs text-xs whitespace-nowrap cursor-pointer"
-                                                    title="Promote to Ready for Adoption">
+                                                    @click="window.dispatchEvent(new CustomEvent('open-readiness-modal', {
+                                                        detail: {
+                                                            id: {{ $pet->id }},
+                                                            name: '{{ addslashes($pet->name ?: ('Pet no. ' . $pet->id)) }}',
+                                                            type: '{{ $pet->type }}',
+                                                            action: '{{ route('pets.mark-available', $pet) }}',
+                                                            hasVaccine: {{ $latestVaccine ? 'true' : 'false' }},
+                                                            vaccineName: '{{ addslashes($latestVaccine?->vaccine_name ?? '') }}',
+                                                            hasDeworming: {{ $latestDeworming ? 'true' : 'false' }},
+                                                            dewormingName: '{{ addslashes($latestDeworming?->vaccine_name ?? '') }}',
+                                                            selectedTags: {{ json_encode($pet->temperamentTags->pluck('id')->toArray()) }},
+                                                            description: '{{ addslashes($pet->description ?? '') }}'
+                                                        }
+                                                    }))"
+                                                    class="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all duration-200 shadow-2xs text-[11px] whitespace-nowrap cursor-pointer"
+                                                    title="Review & Mark Ready for Adoption">
                                                 Mark Ready
                                             </button>
                                         @endif
-                                        <a href="{{ route('pets.show', $pet) }}" class="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-white/[0.08] text-white dark:text-slate-200 hover:bg-slate-800 dark:hover:bg-white/[0.12] border border-slate-800 dark:border-white/[0.08] font-extrabold transition-all duration-200 shadow-2xs text-xs">View</a>
+                                        <a href="{{ route('pets.show', $pet) }}" class="px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-white/[0.08] text-white dark:text-slate-200 hover:bg-slate-800 dark:hover:bg-white/[0.12] border border-slate-800 dark:border-white/[0.08] font-extrabold transition-all duration-200 shadow-2xs text-[11px]">View</a>
                                         @if(in_array(Auth::user()?->role, ['admin', 'staff']))
-                                            <a href="{{ route('pets.edit', $pet) }}" class="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] hover:text-[#199CA4] dark:hover:text-white font-bold transition-all text-xs">Edit</a>
+                                            <a href="{{ route('pets.edit', $pet) }}" class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] hover:text-[#199CA4] dark:hover:text-white font-bold transition-all text-[11px]">Edit</a>
                                             @if(Auth::user()?->role === 'admin')
                                                 <button 
                                                     type="button" 
@@ -407,7 +467,7 @@
                                                     data-confirm-text="Delete"
                                                     data-method="DELETE"
                                                     onclick="openConfirmModal(this.dataset)"
-                                                    class="px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors text-xs cursor-pointer"
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors text-[11px] cursor-pointer"
                                                 >
                                                     Delete
                                                 </button>
@@ -432,8 +492,8 @@
             </div>
 
             {{-- Footer Pagination --}}
-            <div class="p-4 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#171923]">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+            <div class="px-4 py-2.5 sm:px-5 sm:py-3 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#171923]">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
                         Showing {{ $pets->firstItem() ?? 0 }} to {{ $pets->lastItem() ?? 0 }} of {{ $pets->total() }} pets
                     </p>
@@ -596,4 +656,9 @@
         </div>
     </template>
     </div>
+
+    {{-- Adoption Readiness Modal Component --}}
+    @if(in_array(Auth::user()?->role, ['admin', 'staff']))
+        @include('pets._readiness_modal')
+    @endif
 </x-app-layout>
