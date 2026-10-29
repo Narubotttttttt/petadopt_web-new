@@ -178,15 +178,29 @@
                         </div>
 
                         <div class="pt-1 flex flex-col gap-2.5 w-full">
-                            {{-- Firebase App Distribution Download Link --}}
-                            <a href="{{ config('services.firebase.app_distribution_url', 'https://appdistribution.firebase.dev') }}" 
-                               target="_blank" 
-                               rel="noopener" 
-                               title="Download Mobile App via Firebase App Distribution"
+                            {{-- Direct APK Download Button (Instant install for evaluators) --}}
+                            <a href="{{ route('mobile.download') }}" 
+                               title="Download Android APK directly"
                                class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0D5B62] font-extrabold text-xs sm:text-sm hover:bg-teal-50 active:scale-95 transition-all duration-150 shadow-md">
                                 <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                <span>Get Mobile App (Firebase)</span>
+                                <span>Download Mobile App (APK)</span>
                             </a>
+
+                            {{-- Firebase App Distribution Link if configured with custom invite token --}}
+                            @php
+                                $firebaseUrl = config('services.firebase.app_distribution_url', 'https://appdistribution.firebase.dev');
+                                $hasFirebaseToken = $firebaseUrl && !str_ends_with(rtrim($firebaseUrl, '/'), 'appdistribution.firebase.dev');
+                            @endphp
+                            @if($hasFirebaseToken)
+                                <a href="{{ $firebaseUrl }}" 
+                                   target="_blank" 
+                                   rel="noopener" 
+                                   title="Download via Firebase App Distribution"
+                                   class="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full border border-amber-300/40 text-amber-200 font-semibold text-xs hover:bg-white/10 active:scale-95 transition-all duration-150">
+                                    <svg class="w-3.5 h-3.5 text-amber-300" fill="currentColor" viewBox="0 0 24 24"><path d="M3.89 15.672L6.255.946A.571.571 0 0 1 7.301.69l3.52 6.592-6.93 8.39zm16.545 3.328l-1.92-12.08a.573.573 0 0 0-.962-.303L3.487 20.375l8.03 4.508a1.054 1.054 0 0 0 1.026 0l7.892-4.527v-.002a.57.57 0 0 0-.001-.854zM11.37 8.243L8.683 3.195a.573.573 0 0 0-1.02.046L3.992 16.56l7.378-8.317z"/></svg>
+                                    <span>Get via Firebase App Distribution</span>
+                                </a>
+                            @endif
 
                             <a href="https://www.facebook.com" target="_blank" rel="noopener" 
                                class="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full border border-white/40 text-white font-semibold text-xs hover:bg-white/10 active:scale-95 transition-all duration-150">

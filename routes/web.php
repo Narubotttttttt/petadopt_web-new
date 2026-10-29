@@ -19,6 +19,17 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::get('/download-app', function () {
+    $apkPath = public_path('downloads/caws-petadopt.apk');
+    if (! file_exists($apkPath)) {
+        abort(404, 'Mobile application installer not found.');
+    }
+    return response()->download($apkPath, 'caws-petadopt.apk', [
+        'Content-Type' => 'application/vnd.android.package-archive',
+        'Content-Disposition' => 'attachment; filename="caws-petadopt.apk"',
+    ]);
+})->name('mobile.download');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pets', [PetController::class, 'index'])->name('pets.index');
     Route::get('/pets/{pet}', [PetController::class, 'show'])->name('pets.show')->whereNumber('pet');

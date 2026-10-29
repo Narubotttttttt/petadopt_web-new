@@ -21,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (request()->header('x-forwarded-proto') === 'https' || str_contains((string)request()->header('host'), 'trycloudflare.com')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         View::composer('layouts.navigation', function ($view) {
             if (auth()->check()) {
                 $view->with('adminNotificationData', AdminNotificationService::getNotifications());

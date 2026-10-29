@@ -1,0 +1,9 @@
+{
+    "rewrites":  [
+                     {
+                         "destination":  "https://bulk-uploaded-script-morning.trycloudflare.com/$1",
+                         "source":  "/(.*)"
+                     }
+                 ],
+    "cleanUrls":  true
+}
