@@ -48,7 +48,7 @@
         {{-- Print-Only Header --}}
         <div class="hidden print:block border-b-2 border-slate-800 pb-3 mb-4">
             <h1 class="text-xl font-bold uppercase text-slate-900">CDO Animal Welfare Society Inc.</h1>
-            <h2 class="text-sm font-semibold uppercase text-slate-700 mt-0.5">{{ $reportType === 'intakes' ? 'Rescued Pets' : ucfirst($reportType) }} Report</h2>
+            <h2 class="text-sm font-semibold uppercase text-slate-700 mt-0.5">{{ $reportType === 'intakes' ? 'Pet Inventory' : ucfirst($reportType) }} Report</h2>
             <p class="text-xs text-slate-500 mt-1">Period: {{ $dateRangeLabel }} | Generated: {{ now()->format('F d, Y h:i A') }}</p>
         </div>
 
@@ -60,7 +60,7 @@
                     $simpleTabs = [
                         'overview'   => 'Overview',
                         'adoptions'  => 'Adoptions',
-                        'intakes'    => 'Rescued Pets',
+                        'intakes'    => 'Pet Inventory',
                         'compliance' => 'Compliance',
                     ];
                 @endphp
@@ -81,6 +81,9 @@
             <form method="GET" action="{{ route('reports.index') }}" class="flex items-center gap-2">
                 <input type="hidden" name="type" value="{{ $reportType }}">
                 <input type="hidden" name="preset" value="{{ $preset }}">
+                @if(request('status') && request('status') !== 'all')
+                    <input type="hidden" name="status" value="{{ request('status') }}">
+                @endif
                 <div class="relative">
                     <input type="text" name="q" value="{{ $search }}" placeholder="Search records..."
                         class="pl-8 pr-3 py-2 bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-xs w-48 sm:w-64 focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs transition font-medium">
@@ -100,23 +103,41 @@
         </div>
 
         {{-- Simple Summary Metric Cards --}}
-        <div class="grid grid-cols-1 {{ $reportType === 'overview' ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-4' }} gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             @if($reportType === 'overview')
-                {{-- Rescued Pets --}}
+                {{-- Period Rescues --}}
                 <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Rescued Pets</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Period Rescues</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalIntakes'] ?? 0 }}</div>
                     <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         {{ $stats['dogIntakes'] ?? 0 }} Dogs, {{ $stats['catIntakes'] ?? 0 }} Cats
                     </p>
                 </div>
 
-                {{-- Total Adoption --}}
+                {{-- Live Shelter Census --}}
                 <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Adoption</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Live Shelter Census</span>
+                    <div class="mt-2 text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{{ $stats['currentLiveCensus'] ?? 0 }}</div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $stats['inShelterCount'] ?? 0 }} in care &bull; {{ $stats['availableCount'] ?? 0 }} ready
+                    </p>
+                </div>
+
+                {{-- Finalized Adoptions --}}
+                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Finalized Adoptions</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ $stats['approvedAdoptions'] ?? 0 }}</div>
                     <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        Finalized adoptions ({{ $stats['conversionRate'] ?? 0 }}% rate)
+                        {{ $stats['conversionRate'] ?? 0 }}% rate ({{ $stats['totalApplications'] ?? 0 }} apps)
+                    </p>
+                </div>
+
+                {{-- Healthcare Procedures --}}
+                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Healthcare Procedures</span>
+                    <div class="mt-2 text-2xl sm:text-3xl font-black text-[#199CA4] dark:text-[#41C1CB]">{{ $stats['totalMedicalProcedures'] ?? 0 }}</div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $stats['vaccinationCount'] ?? 0 }} Vax &bull; {{ $stats['surgeryCount'] ?? 0 }} Surgeries
                     </p>
                 </div>
 
@@ -154,32 +175,40 @@
                 </div>
 
             @elseif($reportType === 'intakes')
-                {{-- Total Rescued --}}
+                {{-- Live Shelter Census --}}
                 <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Rescued</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Live Shelter Census</span>
+                    <div class="mt-2 text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">{{ $stats['currentLiveCensus'] ?? 0 }}</div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $stats['liveDogs'] ?? 0 }} Dogs, {{ $stats['liveCats'] ?? 0 }} Cats in shelter
+                    </p>
+                </div>
+
+                {{-- Average Length of Stay --}}
+                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Avg Length of Stay</span>
+                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['avgDaysInShelter'] ?? 0 }} <span class="text-sm font-semibold text-slate-400">days</span></div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $stats['longStayCount'] ?? 0 }} pets with long stay (&ge;60d)
+                    </p>
+                </div>
+
+                {{-- Period Rescues --}}
+                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Period Rescues</span>
                     <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalIntakes'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Shelter rescues</p>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $stats['dogCount'] ?? 0 }} Dogs, {{ $stats['catCount'] ?? 0 }} Cats registered
+                    </p>
                 </div>
 
-                {{-- Available --}}
+                {{-- Healthcare & Medical Logs --}}
                 <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Available</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ $stats['availableCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Ready for adoption</p>
-                </div>
-
-                {{-- Adopted --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Adopted</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-[#199CA4] dark:text-[#41C1CB]">{{ $stats['adoptedCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Successfully rehomed</p>
-                </div>
-
-                {{-- Species Ratio --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Species Ratio</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['dogCount'] ?? 0 }} / {{ $stats['catCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Dogs vs Cats</p>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Medical Treatments</span>
+                    <div class="mt-2 text-2xl sm:text-3xl font-black text-[#199CA4] dark:text-[#41C1CB]">{{ $stats['totalMedicalProcedures'] ?? 0 }}</div>
+                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {{ $stats['vaccinationCount'] ?? 0 }} Vax &bull; {{ $stats['dewormingCount'] ?? 0 }} Deworm &bull; {{ $stats['surgeryCount'] ?? 0 }} Surg
+                    </p>
                 </div>
 
             @elseif($reportType === 'compliance')
@@ -227,7 +256,7 @@
                         @elseif($reportType === 'adoptions')
                             Adoption Applications
                         @elseif($reportType === 'intakes')
-                            Rescued Pets
+                            Pet Inventory Registry
                         @elseif($reportType === 'compliance')
                             Adopter Compliance Records
                         @endif
@@ -241,6 +270,38 @@
                     </p>
                 </div>
             </div>
+
+            {{-- Optional Sub-status Filter Bar for Pet Inventory --}}
+            @if($reportType === 'intakes')
+                <div class="px-4 sm:px-5 py-2.5 bg-slate-50/60 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Status:</span>
+                    @php
+                        $currentStatus = request('status', 'all');
+                        $statusFilters = [
+                            'all'        => ['label' => 'All Inventory', 'count' => $stats['totalIntakes'] ?? 0],
+                            'in_shelter' => ['label' => 'In Shelter', 'count' => $stats['inShelterCount'] ?? 0],
+                            'available'  => ['label' => 'Available', 'count' => $stats['availableCount'] ?? 0],
+                            'pending'    => ['label' => 'Pending', 'count' => $stats['pendingCount'] ?? 0],
+                            'adopted'    => ['label' => 'Adopted', 'count' => $stats['adoptedCount'] ?? 0],
+                            'deceased'   => ['label' => 'Deceased', 'count' => $stats['deceasedCount'] ?? 0],
+                        ];
+                    @endphp
+                    @foreach($statusFilters as $sKey => $sInfo)
+                        @php
+                            $sParams = array_merge(request()->query(), ['status' => $sKey]);
+                            unset($sParams['page']);
+                            $isActiveStatus = ($currentStatus === $sKey);
+                        @endphp
+                        <a href="{{ route('reports.index', $sParams) }}"
+                           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $isActiveStatus ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05]' }}">
+                            <span>{{ $sInfo['label'] }}</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $isActiveStatus ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300' }}">
+                                {{ $sInfo['count'] }}
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
 
             {{-- Table View --}}
             <div class="overflow-x-auto">
@@ -317,45 +378,77 @@
                         <thead class="bg-slate-50/80 dark:bg-[#171923] text-[11px] uppercase font-bold text-slate-400 dark:text-slate-400 border-b border-slate-100 dark:border-white/[0.06]">
                             <tr>
                                 <th class="py-3 px-4 sm:px-5">Pet Code</th>
-                                <th class="py-3 px-4 sm:px-5">Pet Name</th>
-                                <th class="py-3 px-4 sm:px-5">Species & Breed</th>
-                                <th class="py-3 px-4 sm:px-5">Status</th>
-                                <th class="py-3 px-4 sm:px-5">Rescue Date</th>
+                                <th class="py-3 px-4 sm:px-5">Pet Details</th>
+                                <th class="py-3 px-4 sm:px-5">Inventory Status</th>
+                                <th class="py-3 px-4 sm:px-5">Length of Stay</th>
+                                <th class="py-3 px-4 sm:px-5">Rescue Details</th>
+                                <th class="py-3 px-4 sm:px-5">Intake Condition</th>
                                 <th class="py-3 px-4 sm:px-5 text-right print:hidden">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06]">
                             @forelse($records as $pet)
                                 <tr class="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors">
-                                    <td class="py-3 px-4 sm:px-5 font-mono font-bold text-slate-900 dark:text-white">
+                                    <td class="py-3 px-4 sm:px-5 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                                         #PET-{{ str_pad($pet->id, 4, '0', STR_PAD_LEFT) }}
                                     </td>
-                                    <td class="py-3 px-4 sm:px-5 font-bold text-slate-900 dark:text-white">
-                                        {{ $pet->name ?? 'Pet no. ' . $pet->id }}
-                                    </td>
                                     <td class="py-3 px-4 sm:px-5">
-                                        <div class="font-semibold text-slate-800 dark:text-slate-200 capitalize">{{ $pet->type ?? 'N/A' }}</div>
-                                        <div class="text-[11px] text-slate-400">{{ $pet->breed ?? 'Mixed Breed' }}</div>
+                                        <div class="font-bold text-slate-900 dark:text-white">{{ $pet->name ?? 'Pet no. ' . $pet->id }}</div>
+                                        <div class="text-[11px] text-slate-400 capitalize">
+                                            {{ $pet->type ?? 'N/A' }} &bull; {{ $pet->breed ?? 'Mixed Breed' }}
+                                        </div>
                                     </td>
-                                    <td class="py-3 px-4 sm:px-5">
-                                        @if($pet->status === 'available')
+                                    <td class="py-3 px-4 sm:px-5 whitespace-nowrap">
+                                        @if($pet->status === 'in_shelter')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-100/80 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300">
+                                                In Shelter (Care)
+                                            </span>
+                                        @elseif($pet->status === 'available')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                                                Available
+                                                Ready for Adoption
+                                            </span>
+                                        @elseif($pet->status === 'pending')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
+                                                Pending Adoption
                                             </span>
                                         @elseif($pet->status === 'adopted')
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB]">
                                                 Adopted
                                             </span>
+                                        @elseif($pet->status === 'deceased')
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400">
+                                                Deceased
+                                            </span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
-                                                Pending
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300">
+                                                {{ ucfirst($pet->status ?? 'Unknown') }}
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="py-3 px-4 sm:px-5 text-slate-500 whitespace-nowrap">
-                                        {{ $pet->created_at ? $pet->created_at->format('M d, Y') : 'N/A' }}
+                                    <td class="py-3 px-4 sm:px-5 whitespace-nowrap">
+                                        <div class="font-bold text-slate-800 dark:text-slate-200">
+                                            {{ $pet->days_in_shelter ?? 0 }} {{ ($pet->days_in_shelter ?? 0) === 1 ? 'day' : 'days' }}
+                                        </div>
+                                        @if(($pet->days_in_shelter ?? 0) >= 60 && in_array($pet->status, ['in_shelter', 'available', 'pending']))
+                                            <span class="inline-block text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                                Long stay (&ge;60d)
+                                            </span>
+                                        @endif
                                     </td>
-                                    <td class="py-3 px-4 sm:px-5 text-right print:hidden">
+                                    <td class="py-3 px-4 sm:px-5 text-slate-500">
+                                        <div class="whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">
+                                            {{ ($pet->rescue_date ?? $pet->created_at)?->format('M d, Y') ?? 'N/A' }}
+                                        </div>
+                                        <div class="text-[11px] text-slate-400 truncate max-w-[160px]">
+                                            {{ $pet->rescue_location ?? 'Not specified' }}
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 sm:px-5 text-slate-600 dark:text-slate-300 max-w-[200px]">
+                                        <span class="line-clamp-2 text-[11px]">
+                                            {{ $pet->intake_condition ?? 'Healthy / Normal condition' }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 sm:px-5 text-right print:hidden whitespace-nowrap">
                                         <a href="{{ route('pets.show', $pet->id) }}"
                                             class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold text-[#199CA4] hover:text-white dark:text-[#41C1CB] hover:bg-[#199CA4] transition-colors">
                                             Profile
@@ -364,8 +457,8 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
-                                        No rescued pets found.
+                                    <td colspan="7" class="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
+                                        No pet inventory records found for the selected criteria.
                                     </td>
                                 </tr>
                             @endforelse

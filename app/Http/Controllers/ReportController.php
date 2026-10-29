@@ -160,8 +160,10 @@ class ReportController extends Controller
                 break;
 
             case 'intakes':
-                $query = Pet::with('addedBy')
-                    ->whereBetween('created_at', [$startDate, $endDate]);
+                $query = Pet::with(['addedBy', 'medicalLogs'])
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->whereBetween(DB::raw('COALESCE(rescue_date, created_at)'), [$startDate, $endDate]);
+                    });
 
                 if ($species !== 'all') {
                     $query->where('type', $species);
@@ -175,29 +177,69 @@ class ReportController extends Controller
                     $query->where(function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%")
                           ->orWhere('breed', 'like', "%{$search}%")
-                          ->orWhere('color', 'like', "%{$search}%");
+                          ->orWhere('color', 'like', "%{$search}%")
+                          ->orWhere('rescue_location', 'like', "%{$search}%")
+                          ->orWhere('intake_condition', 'like', "%{$search}%");
                     });
                 }
 
+                // Rescues in period by status
                 $totalIntakes   = (clone $query)->count();
                 $dogCount       = (clone $query)->where('type', 'dog')->count();
                 $catCount       = (clone $query)->where('type', 'cat')->count();
+                $inShelterCount = (clone $query)->where('status', 'in_shelter')->count();
                 $availableCount = (clone $query)->where('status', 'available')->count();
-                $adoptedCount   = (clone $query)->where('status', 'adopted')->count();
                 $pendingCount   = (clone $query)->where('status', 'pending')->count();
+                $adoptedCount   = (clone $query)->where('status', 'adopted')->count();
+                $deceasedCount  = (clone $query)->where('status', 'deceased')->count();
+
+                // Live Active Facility Census (Animals physically under shelter care today)
+                $liveQuery = Pet::whereIn('status', ['in_shelter', 'available', 'pending']);
+                $currentLiveCensus = (clone $liveQuery)->count();
+                $liveDogs = (clone $liveQuery)->where('type', 'dog')->count();
+                $liveCats = (clone $liveQuery)->where('type', 'cat')->count();
+
+                // Average Length of Stay (ALOS for live population)
+                $allCurrentPets = (clone $liveQuery)->get();
+                $avgDaysInShelter = $allCurrentPets->count() > 0
+                    ? round($allCurrentPets->avg('days_in_shelter'))
+                    : 0;
+                $longStayCount = $allCurrentPets->filter(fn($p) => $p->days_in_shelter >= 60)->count();
+
+                // Healthcare / Medical Procedures in Period
+                $medicalQuery = MedicalLog::whereBetween('date', [$startDate, $endDate]);
+                $totalMedicalProcedures = (clone $medicalQuery)->count();
+                $vaccinationCount       = (clone $medicalQuery)->where('category', 'like', '%vaccin%')->count();
+                $dewormingCount         = (clone $medicalQuery)->where('category', 'like', '%deworm%')->count();
+                $surgeryCount           = (clone $medicalQuery)->where(function ($q) {
+                    $q->where('category', 'like', '%surg%')
+                      ->orWhere('category', 'like', '%spay%')
+                      ->orWhere('category', 'like', '%neuter%');
+                })->count();
 
                 $stats = [
-                    'totalIntakes'   => $totalIntakes,
-                    'dogCount'       => $dogCount,
-                    'catCount'       => $catCount,
-                    'availableCount' => $availableCount,
-                    'adoptedCount'   => $adoptedCount,
-                    'pendingCount'   => $pendingCount,
+                    'totalIntakes'           => $totalIntakes,
+                    'dogCount'               => $dogCount,
+                    'catCount'               => $catCount,
+                    'inShelterCount'         => $inShelterCount,
+                    'availableCount'         => $availableCount,
+                    'pendingCount'           => $pendingCount,
+                    'adoptedCount'           => $adoptedCount,
+                    'deceasedCount'          => $deceasedCount,
+                    'currentLiveCensus'      => $currentLiveCensus,
+                    'liveDogs'               => $liveDogs,
+                    'liveCats'               => $liveCats,
+                    'avgDaysInShelter'       => $avgDaysInShelter,
+                    'longStayCount'          => $longStayCount,
+                    'totalMedicalProcedures' => $totalMedicalProcedures,
+                    'vaccinationCount'       => $vaccinationCount,
+                    'dewormingCount'         => $dewormingCount,
+                    'surgeryCount'           => $surgeryCount,
                 ];
 
-
-
-                $records = $isExport ? $query->latest('created_at')->get() : $query->latest('created_at')->paginate(20)->withQueryString();
+                $records = $isExport
+                    ? $query->orderByRaw('COALESCE(rescue_date, created_at) DESC')->get()
+                    : $query->orderByRaw('COALESCE(rescue_date, created_at) DESC')->paginate(20)->withQueryString();
                 break;
 
             case 'compliance':
@@ -307,10 +349,30 @@ class ReportController extends Controller
             default:
                 $reportType = 'overview';
 
-                $totalIntakes = Pet::whereBetween('created_at', [$startDate, $endDate])->count();
-                $dogIntakes   = Pet::where('type', 'dog')->whereBetween('created_at', [$startDate, $endDate])->count();
-                $catIntakes   = Pet::where('type', 'cat')->whereBetween('created_at', [$startDate, $endDate])->count();
+                // Period Intakes
+                $intakesQuery = Pet::where(function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween(DB::raw('COALESCE(rescue_date, created_at)'), [$startDate, $endDate]);
+                });
+                $totalIntakes = (clone $intakesQuery)->count();
+                $dogIntakes   = (clone $intakesQuery)->where('type', 'dog')->count();
+                $catIntakes   = (clone $intakesQuery)->where('type', 'cat')->count();
 
+                // Live Active Facility Census (Animals physically in shelter today)
+                $liveQuery = Pet::whereIn('status', ['in_shelter', 'available', 'pending']);
+                $currentLiveCensus    = (clone $liveQuery)->count();
+                $inShelterCount       = (clone $liveQuery)->where('status', 'in_shelter')->count();
+                $availableCount       = (clone $liveQuery)->where('status', 'available')->count();
+                $pendingAdoptionCount = (clone $liveQuery)->where('status', 'pending')->count();
+                $liveDogs             = (clone $liveQuery)->where('type', 'dog')->count();
+                $liveCats             = (clone $liveQuery)->where('type', 'cat')->count();
+
+                // Average Length of Stay (ALOS for live population)
+                $allCurrentPets = (clone $liveQuery)->get();
+                $avgDaysInShelter = $allCurrentPets->count() > 0
+                    ? round($allCurrentPets->avg('days_in_shelter'))
+                    : 0;
+
+                // Adoptions in Period
                 $totalAdoptions       = AdoptionApplication::where('status', 'approved')
                     ->where(function ($q) use ($startDate, $endDate) {
                         $q->whereBetween('approved_at', [$startDate, $endDate])
@@ -333,16 +395,36 @@ class ReportController extends Controller
 
                 $conversionRate = $totalApplications > 0 ? round(($totalAdoptions / $totalApplications) * 100, 1) : 0;
 
+                // Healthcare & Medical Log metrics
+                $medicalQuery = MedicalLog::whereBetween('date', [$startDate, $endDate]);
+                $totalMedicalProcedures = (clone $medicalQuery)->count();
+                $vaccinationCount       = (clone $medicalQuery)->where('category', 'like', '%vaccin%')->count();
+                $surgeryCount           = (clone $medicalQuery)->where(function ($q) {
+                    $q->where('category', 'like', '%surg%')
+                      ->orWhere('category', 'like', '%spay%')
+                      ->orWhere('category', 'like', '%neuter%');
+                })->count();
+
                 $stats = [
-                    'totalIntakes'         => $totalIntakes,
-                    'dogIntakes'           => $dogIntakes,
-                    'catIntakes'           => $catIntakes,
-                    'approvedAdoptions'    => $totalAdoptions,
-                    'totalApplications'    => $totalApplications,
-                    'underReviewAdoptions' => $underReviewAdoptions,
-                    'pendingAdoptions'     => $pendingAdoptions,
-                    'rejectedAdoptions'    => $rejectedAdoptions,
-                    'conversionRate'       => $conversionRate,
+                    'totalIntakes'            => $totalIntakes,
+                    'dogIntakes'              => $dogIntakes,
+                    'catIntakes'              => $catIntakes,
+                    'currentLiveCensus'       => $currentLiveCensus,
+                    'inShelterCount'          => $inShelterCount,
+                    'availableCount'          => $availableCount,
+                    'pendingAdoptionCount'    => $pendingAdoptionCount,
+                    'liveDogs'                => $liveDogs,
+                    'liveCats'                => $liveCats,
+                    'avgDaysInShelter'        => $avgDaysInShelter,
+                    'approvedAdoptions'       => $totalAdoptions,
+                    'totalApplications'       => $totalApplications,
+                    'underReviewAdoptions'    => $underReviewAdoptions,
+                    'pendingAdoptions'        => $pendingAdoptions,
+                    'rejectedAdoptions'       => $rejectedAdoptions,
+                    'conversionRate'          => $conversionRate,
+                    'totalMedicalProcedures'  => $totalMedicalProcedures,
+                    'vaccinationCount'        => $vaccinationCount,
+                    'surgeryCount'            => $surgeryCount,
                 ];
 
                 // Key milestone records for the overview table

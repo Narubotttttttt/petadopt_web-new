@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CAWS - {{ ucfirst($reportType) }} Report</title>
+    <title>CAWS - {{ $reportType === 'intakes' ? 'Pet Inventory' : ucfirst($reportType) }} Report</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -167,6 +167,9 @@
         .badge-pending { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
         .badge-rejected { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
         .badge-available { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-inshelter { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .badge-adopted { background-color: #ccfbf1; color: #115e59; border: 1px solid #99f6e4; }
+        .badge-deceased { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
         .badge-neutral { background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
 
         /* Sign-off certification */
@@ -225,7 +228,7 @@
 
     {{-- Report Title & Meta --}}
     <div class="report-title-bar">
-        <div class="report-title">{{ $reportType === 'intakes' ? 'Rescued Pets' : ucfirst($reportType) }} Report & Analytics Summary</div>
+        <div class="report-title">{{ $reportType === 'intakes' ? 'Pet Inventory' : ucfirst($reportType) }} Report & Analytics Summary</div>
     </div>
 
     <table class="meta-table">
@@ -270,24 +273,24 @@
                 </td>
             @elseif($reportType === 'intakes')
                 <td>
-                    <div class="stat-label">Total Rescues</div>
+                    <div class="stat-label">Live Shelter Census</div>
+                    <div class="stat-value">{{ $stats['currentLiveCensus'] ?? 0 }}</div>
+                    <div class="stat-sub">{{ $stats['liveDogs'] ?? 0 }} Dogs, {{ $stats['liveCats'] ?? 0 }} Cats</div>
+                </td>
+                <td>
+                    <div class="stat-label">Avg Length of Stay</div>
+                    <div class="stat-value">{{ $stats['avgDaysInShelter'] ?? 0 }} Days</div>
+                    <div class="stat-sub">{{ $stats['longStayCount'] ?? 0 }} Long-Stay (&ge;60d)</div>
+                </td>
+                <td>
+                    <div class="stat-label">Period Rescues</div>
                     <div class="stat-value">{{ $stats['totalIntakes'] ?? 0 }}</div>
-                    <div class="stat-sub">Rescued Pets</div>
+                    <div class="stat-sub">{{ $stats['dogCount'] ?? 0 }} Dogs, {{ $stats['catCount'] ?? 0 }} Cats</div>
                 </td>
                 <td>
-                    <div class="stat-label">Dogs Registered</div>
-                    <div class="stat-value">{{ $stats['dogCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Canine Rescues</div>
-                </td>
-                <td>
-                    <div class="stat-label">Cats Registered</div>
-                    <div class="stat-value">{{ $stats['catCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Feline Rescues</div>
-                </td>
-                <td>
-                    <div class="stat-label">Available / Adopted</div>
-                    <div class="stat-value">{{ $stats['availableCount'] ?? 0 }} / {{ $stats['adoptedCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Inventory Status</div>
+                    <div class="stat-label">Medical Procedures</div>
+                    <div class="stat-value">{{ $stats['totalMedicalProcedures'] ?? 0 }}</div>
+                    <div class="stat-sub">{{ $stats['vaccinationCount'] ?? 0 }} Vax &bull; {{ $stats['surgeryCount'] ?? 0 }} Surg</div>
                 </td>
             @elseif($reportType === 'compliance')
                 <td>
@@ -303,7 +306,7 @@
                 <td>
                     <div class="stat-label">Due Soon</div>
                     <div class="stat-value">{{ $stats['dueSoonCount'] ?? 0 }}</div>
-                    <div class="stat-sub">≤ 7 Days</div>
+                    <div class="stat-sub">&le; 7 Days</div>
                 </td>
                 <td>
                     <div class="stat-label">Overdue</div>
@@ -311,15 +314,25 @@
                     <div class="stat-sub">Action Required</div>
                 </td>
             @else
-                <td style="width: 50%;">
-                    <div class="stat-label">Total Rescues</div>
+                <td style="width: 25%;">
+                    <div class="stat-label">Period Rescues</div>
                     <div class="stat-value">{{ $stats['totalIntakes'] ?? 0 }}</div>
-                    <div class="stat-sub">Rescued Pets</div>
+                    <div class="stat-sub">{{ $stats['dogIntakes'] ?? 0 }} Dogs, {{ $stats['catIntakes'] ?? 0 }} Cats</div>
                 </td>
-                <td style="width: 50%;">
+                <td style="width: 25%;">
+                    <div class="stat-label">Live Shelter Census</div>
+                    <div class="stat-value">{{ $stats['currentLiveCensus'] ?? 0 }}</div>
+                    <div class="stat-sub">{{ $stats['inShelterCount'] ?? 0 }} Care &bull; {{ $stats['availableCount'] ?? 0 }} Ready</div>
+                </td>
+                <td style="width: 25%;">
                     <div class="stat-label">Adoptions</div>
                     <div class="stat-value">{{ $stats['approvedAdoptions'] ?? 0 }}</div>
-                    <div class="stat-sub">{{ $stats['conversionRate'] ?? 0 }}% Rate</div>
+                    <div class="stat-sub">{{ $stats['conversionRate'] ?? 0 }}% Conversion</div>
+                </td>
+                <td style="width: 25%;">
+                    <div class="stat-label">Medical Procedures</div>
+                    <div class="stat-value">{{ $stats['totalMedicalProcedures'] ?? 0 }}</div>
+                    <div class="stat-sub">{{ $stats['vaccinationCount'] ?? 0 }} Vax &bull; {{ $stats['surgeryCount'] ?? 0 }} Surg</div>
                 </td>
             @endif
         </tr>
@@ -364,30 +377,51 @@
         @elseif($reportType === 'intakes')
             <thead>
                 <tr>
-                    <th style="width: 12%;">Pet ID</th>
-                    <th style="width: 22%;">Name</th>
-                    <th style="width: 10%;">Species</th>
-                    <th style="width: 22%;">Breed & Color</th>
-                    <th style="width: 14%;">Status</th>
-                    <th style="width: 20%;">Rescue Date</th>
+                    <th style="width: 10%;">Pet ID</th>
+                    <th style="width: 18%;">Name & Species</th>
+                    <th style="width: 14%;">Inventory Status</th>
+                    <th style="width: 12%;">Length of Stay</th>
+                    <th style="width: 22%;">Rescue Origin & Date</th>
+                    <th style="width: 24%;">Intake Condition</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($records as $pet)
                     <tr>
                         <td>#PET-{{ str_pad($pet->id, 4, '0', STR_PAD_LEFT) }}</td>
-                        <td><strong>{{ $pet->name ?? 'Pet no. ' . $pet->id }}</strong></td>
-                        <td style="text-transform: capitalize;">{{ $pet->type ?? 'N/A' }}</td>
-                        <td>{{ $pet->breed ?? 'Mixed' }} ({{ $pet->color ?? 'N/A' }})</td>
                         <td>
-                            <span class="badge {{ $pet->status === 'available' ? 'badge-available' : 'badge-neutral' }}">
-                                {{ ucfirst($pet->status ?? 'available') }}
-                            </span>
+                            <strong>{{ $pet->name ?? 'Pet no. ' . $pet->id }}</strong><br>
+                            <span style="color: #64748b; text-transform: capitalize;">{{ $pet->type ?? 'N/A' }} &bull; {{ $pet->breed ?? 'Mixed' }}</span>
                         </td>
-                        <td>{{ $pet->created_at ? $pet->created_at->format('M d, Y') : 'N/A' }}</td>
+                        <td>
+                            @if($pet->status === 'in_shelter')
+                                <span class="badge badge-inshelter">In Shelter</span>
+                            @elseif($pet->status === 'available')
+                                <span class="badge badge-available">Available</span>
+                            @elseif($pet->status === 'pending')
+                                <span class="badge badge-pending">Pending</span>
+                            @elseif($pet->status === 'adopted')
+                                <span class="badge badge-adopted">Adopted</span>
+                            @elseif($pet->status === 'deceased')
+                                <span class="badge badge-deceased">Deceased</span>
+                            @else
+                                <span class="badge badge-neutral">{{ ucfirst($pet->status ?? 'N/A') }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            <strong>{{ $pet->days_in_shelter ?? 0 }} days</strong>
+                            @if(($pet->days_in_shelter ?? 0) >= 60 && in_array($pet->status, ['in_shelter', 'available', 'pending']))
+                                <br><span style="color: #d97706; font-size: 7px; font-weight: bold;">(Long stay &ge;60d)</span>
+                            @endif
+                        </td>
+                        <td>
+                            <strong>{{ ($pet->rescue_date ?? $pet->created_at)?->format('M d, Y') ?? 'N/A' }}</strong><br>
+                            <span style="color: #64748b;">{{ $pet->rescue_location ?? 'Not specified' }}</span>
+                        </td>
+                        <td>{{ Str::limit($pet->intake_condition ?? 'Healthy / Normal condition', 55) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No rescued pets found.</td></tr>
+                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No pet inventory records found.</td></tr>
                 @endforelse
             </tbody>
 
