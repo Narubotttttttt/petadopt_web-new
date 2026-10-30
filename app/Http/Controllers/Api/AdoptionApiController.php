@@ -36,8 +36,21 @@ class AdoptionApiController extends Controller
 
         $hasExperience = null;
         if ($preference && !empty($preference->pet_experience)) {
-            $hasExperience = ($preference->pet_experience === 'experienced');
+            $expVal = strtolower(trim($preference->pet_experience));
+            $hasExperience = in_array($expVal, ['experienced', 'yes', 'true', '1']) || str_contains($expVal, 'experienc');
         }
+
+        $latestApp = AdoptionApplication::where('applicant_email', $user->email)->latest()->first();
+        if ($hasExperience === null && $latestApp) {
+            if (str_contains(strtolower($latestApp->message ?? ''), 'has pet experience: yes')) {
+                $hasExperience = true;
+            } elseif (str_contains(strtolower($latestApp->message ?? ''), 'has pet experience: no')) {
+                $hasExperience = false;
+            }
+        }
+        $suggestedOwnership = $latestApp?->home_ownership ?? null;
+        $landlordName = ($suggestedOwnership === 'rented') ? $latestApp?->landlord_name : null;
+        $landlordPhone = ($suggestedOwnership === 'rented') ? $latestApp?->landlord_phone : null;
 
         $existingApp = null;
         if ($request->filled('pet_id')) {
@@ -57,6 +70,9 @@ class AdoptionApiController extends Controller
                 'city'               => $profile?->city ?: 'Cagayan de Oro City',
                 'province'           => $profile?->province ?: 'Misamis Oriental',
                 'home_type'          => $homeType,
+                'home_ownership'     => $suggestedOwnership,
+                'landlord_name'      => $landlordName,
+                'landlord_phone'     => $landlordPhone,
                 'living_environment' => $livingEnvironment,
                 'has_other_pets'     => $preference?->has_other_pets !== null ? (bool) $preference->has_other_pets : null,
                 'has_experience'     => $hasExperience,
@@ -109,6 +125,9 @@ class AdoptionApiController extends Controller
             'address'              => ['required', 'string'],
             'id_type'              => ['nullable', 'string', 'max:100'],
             'home_type'            => ['nullable', 'string'],
+            'home_ownership'       => ['nullable', 'string', 'in:owned,rented'],
+            'landlord_name'        => ['nullable', 'string', 'max:255'],
+            'landlord_phone'       => ['nullable', 'string', 'max:50'],
             'has_other_pets'       => ['nullable'],
             'other_pets_details'   => ['nullable', 'string'],
             'has_experience'       => ['nullable'],
@@ -200,6 +219,18 @@ class AdoptionApiController extends Controller
         if (!empty($homeType)) {
             $messageParts[] = "Home Type: " . $homeType;
         }
+        $homeOwnership = $request->input('home_ownership', 'owned');
+        if ($homeOwnership === 'rented') {
+            $messageParts[] = "Housing Status: Rented / Tenant";
+            if ($request->filled('landlord_name')) {
+                $messageParts[] = "Landlord Name: " . $request->input('landlord_name');
+            }
+            if ($request->filled('landlord_phone')) {
+                $messageParts[] = "Landlord Contact Phone: " . $request->input('landlord_phone');
+            }
+        } else {
+            $messageParts[] = "Housing Status: Owned Property";
+        }
         if ($hasOtherPets !== null) {
             $messageParts[] = "Has Other Pets: " . ($hasOtherPets ? 'Yes' : 'No');
             $details = $request->input('other_pets_details');
@@ -259,6 +290,9 @@ class AdoptionApiController extends Controller
             'applicant_email'           => $user->email ?? $request->email ?? 'adopter@email.com',
             'applicant_phone'           => $request->phone,
             'id_type'                   => $request->input('id_type', 'Philippine National ID (PhilSys)'),
+            'home_ownership'            => $homeOwnership,
+            'landlord_name'             => ($homeOwnership === 'rented') ? $request->input('landlord_name') : null,
+            'landlord_phone'            => ($homeOwnership === 'rented') ? $request->input('landlord_phone') : null,
             'message'                   => $fullMessage,
             'valid_id_path'             => $validIdPath,
             'barangay_certificate_path' => $barangayCertPath,

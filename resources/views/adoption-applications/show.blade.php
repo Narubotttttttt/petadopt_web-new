@@ -352,6 +352,22 @@
                             @endforeach
                         </div>
 
+                        @if(($application->home_ownership ?? '') === 'rented' || !empty($application->landlord_name))
+                            <div class="bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3.5 flex items-start gap-3">
+                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <div class="space-y-0.5">
+                                    <p class="text-xs font-bold text-amber-900 dark:text-amber-200">Tenant / Rental Property Application</p>
+                                    <p class="text-[11px] text-amber-800 dark:text-amber-300">
+                                        Applicant is a tenant. Landlord / Property Admin: <strong>{{ $application->landlord_name ?? 'Provided in questionnaire' }}</strong>
+                                        @if(!empty($application->landlord_phone))
+                                            (Phone: <a href="tel:{{ $application->landlord_phone }}" class="underline font-bold">{{ $application->landlord_phone }}</a>)
+                                        @endif.
+                                        Staff must inspect the physical <strong>Landlord Permission Letter</strong> during face-to-face meet-and-greet screening before pet release.
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+
                         @if(!empty($reasonText))
                             <div class="bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6]/50 dark:from-[#133036] dark:to-[#17454d]/50 p-4 rounded-xl border border-[#199CA4]/20 dark:border-[#41C1CB]/30 space-y-1">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Reason for Adoption</p>
@@ -871,7 +887,10 @@
                     ->pluck('event_location')
                     ->values()
                     ->toArray();
-                $defaultEventNotes = "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original Valid ID and Barangay Certificate to the event for face-to-face verification before the pet is released.";
+                $isRenting = ($application->home_ownership === 'rented') || str_contains(strtolower($application->message ?? ''), 'housing status: rented');
+                $defaultEventNotes = $isRenting
+                    ? "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original Valid ID, Barangay Certificate, and Landlord Permission Letter (or signed lease agreement showing pets are allowed) to the event for face-to-face verification before the pet is released."
+                    : "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original Valid ID and Barangay Certificate to the event for face-to-face verification before the pet is released.";
                 $initialEventNotes = old('event_notes', !empty($application->event_notes) ? $application->event_notes : $defaultEventNotes);
                 $initialLocation = old('event_location', $application->event_location ?? $defaultVenue);
             @endphp
