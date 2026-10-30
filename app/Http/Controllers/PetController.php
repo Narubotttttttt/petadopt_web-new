@@ -186,7 +186,11 @@ class PetController extends Controller
             $medicalHistory = trim($medicalHistory);
         }
 
-        $data['medical_history'] = $medicalHistory ?? null;
+                $data['medical_history'] = $medicalHistory ?? null;
+
+        if ($data['type'] === 'cat' && ($data['size'] ?? '') === 'large') {
+            $data['size'] = 'medium';
+        }
 
         if ($request->hasFile('photo')) {
             $data['photo_path'] = $request->file('photo')->store('pets', 'public');
@@ -350,7 +354,11 @@ class PetController extends Controller
             $medicalHistory = trim($medicalHistory);
         }
 
-        $data['medical_history'] = $medicalHistory ?? null;
+                $data['medical_history'] = $medicalHistory ?? null;
+
+        if ($data['type'] === 'cat' && ($data['size'] ?? '') === 'large') {
+            $data['size'] = 'medium';
+        }
 
         if ($request->hasFile('photo')) {
             if ($pet->photo_path && Storage::disk('public')->exists($pet->photo_path)) {

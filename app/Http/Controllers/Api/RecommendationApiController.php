@@ -223,6 +223,13 @@ class RecommendationApiController extends Controller
                         $rec['match_percentage'] = $numPct;
                         $rec['compatibility_score'] = $numPct;
 
+                        $recReasons = $rec['match_reasons'] ?? $rec['reasons'] ?? [];
+                        if (empty($recReasons)) {
+                            $recReasons = ['Strong overall behavioral and lifestyle compatibility'];
+                        }
+                        $rec['match_reasons'] = $recReasons;
+                        $rec['reasons'] = $recReasons;
+
                         $validRecs[] = $rec;
                     }
 

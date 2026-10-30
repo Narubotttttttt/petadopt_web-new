@@ -298,14 +298,6 @@
                             @endif
                             @if($pet->created_at) &bull; {{ $pet->created_at->format('M d, Y') }} @endif
                         </p>
-
-                        @unless(in_array(Auth::user()?->role, ['admin', 'staff']))
-                            @if($pet->status === 'available')
-                                <a href="{{ route('adoption-applications.create', $pet) }}" class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-[#199CA4] hover:bg-[#13787F] text-white rounded-xl text-xs sm:text-sm font-extrabold shadow-xs transition-all">
-                                    Apply to Adopt
-                                </a>
-                            @endif
-                        @endunless
                     </div>
                 </div>
             </div>

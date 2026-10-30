@@ -93,7 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
             $userData['avatar'] = $profile->avatar;
             $userData['avatar_url'] = $profile->avatar_url;
             $userData['adopter_code'] = $profile->adopter_code;
-            $userData['phone'] = $profile->phone ?: $user->phone;
+            $userData['phone'] = $profile->phone;
             $userData['address'] = $profile->address;
             $userData['city'] = $profile->city;
             $userData['province'] = $profile->province;
@@ -103,6 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 $userData['digital_signature_url'] = $profile->digital_signature_url;
             }
         }
+
+        $pref = \App\Models\AdopterPreference::where('user_id', $user->id)->first();
+        $userData['has_quiz_completed'] = !empty($pref);
 
         return response()->json($userData);
     });
@@ -127,7 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 'user_id'      => $user->id,
                 'adopter_code' => $code,
                 'full_name'    => $user->name,
-                'phone'        => $request->phone ?: $user->phone ?? null,
+                'phone'        => $request->phone ?: ($existingProf?->phone ?? null),
                 'address'      => $request->address,
                 'city'         => $request->city ?: 'Cagayan de Oro City',
                 'province'     => $request->province ?: 'Misamis Oriental',
@@ -141,6 +144,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'profile' => $profile,
         ]);
     });
+    Route::get('/adoption-applications/prefill', [AdoptionApiController::class, 'getPrefillData']);
     Route::post('/adoption-applications', [AdoptionApiController::class, 'store']);
     Route::get('/my-applications', [AdoptionApiController::class, 'myApplications']);
     Route::post('/adoption-applications/{id}/sign', [AdoptionApiController::class, 'signContract']);

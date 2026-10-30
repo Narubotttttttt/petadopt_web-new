@@ -366,6 +366,11 @@
     get ageOptions() {
         return this.type === 'dog' ? this.dogAges : (this.type === 'cat' ? this.catAges : []);
     },
+    get sizeOptions() {
+        return this.type === 'cat'
+            ? [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }]
+            : [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }];
+    },
     get disabilityValue() {
         if (!this.hasDisability) return '';
         if (this.disabilityType === 'Other') {
@@ -414,6 +419,9 @@
     },
 
     init() {
+        if (this.type === 'cat' && this.size === 'large') {
+            this.size = 'medium';
+        }
         if (!this.breed || this.breed === '') {
             this.breed = this.type === 'cat' ? 'Puspin (Mixed Breed)' : 'Aspin (Mixed Breed)';
         }
@@ -850,7 +858,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Type</label>
-                <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : (type === 'dog' ? 'Aspin (Mixed Breed)' : '')); age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
+                <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : (type === 'dog' ? 'Aspin (Mixed Breed)' : '')); if (type === 'cat' && size === 'large') { size = 'medium'; } age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
                     <option value="" disabled {{ empty($currentType) ? 'selected' : '' }} hidden style="display: none;">Select pet type</option>
@@ -944,9 +952,9 @@
                     :required="!isWizard"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white">
                     <option value="" disabled {{ empty($currentSize) ? 'selected' : '' }} hidden style="display: none;">Select size category</option>
-                    <option value="small" {{ $currentSize == 'small' ? 'selected' : '' }}>Small</option>
-                    <option value="medium" {{ $currentSize == 'medium' ? 'selected' : '' }}>Medium</option>
-                    <option value="large" {{ $currentSize == 'large' ? 'selected' : '' }}>Large</option>
+                    <template x-for="opt in sizeOptions" :key="opt.value">
+                        <option :value="opt.value" :selected="opt.value === size" x-text="opt.label"></option>
+                    </template>
                 </select>
             </div>
 

@@ -4,44 +4,121 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdoptionApplication;
+use App\Models\AdopterPreference;
+use App\Models\AdoptersProfile;
 use App\Models\Pet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AdoptionApiController extends Controller
 {
+    public function getPrefillData(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $profile = AdoptersProfile::where('email', $user->email)
+            ->orWhere('user_id', $user->id)
+            ->first();
+
+        $preference = AdopterPreference::where('user_id', $user->id)->first();
+
+        $homeTypeMap = [
+            'apartment'       => 'Apartment / Condo',
+            'house_with_yard' => 'House with Yard',
+            'house_no_yard'   => 'House (No Yard)',
+        ];
+
+        $livingEnvironment = $preference?->living_environment;
+        $homeType = $livingEnvironment ? ($homeTypeMap[$livingEnvironment] ?? ucfirst(str_replace('_', ' ', $livingEnvironment))) : null;
+
+        $hasExperience = null;
+        if ($preference && !empty($preference->pet_experience)) {
+            $hasExperience = ($preference->pet_experience === 'experienced');
+        }
+
+        $existingApp = null;
+        if ($request->filled('pet_id')) {
+            $existingApp = AdoptionApplication::where('pet_id', $request->query('pet_id'))
+                ->where('applicant_email', $user->email)
+                ->whereIn('status', ['pending', 'under_review', 'approved'])
+                ->first();
+        }
+
+        return response()->json([
+            'success' => true,
+            'prefill' => [
+                'full_name'          => $user->name,
+                'email'              => $user->email,
+                'phone'              => $profile?->phone,
+                'address'            => $profile?->address,
+                'city'               => $profile?->city ?: 'Cagayan de Oro City',
+                'province'           => $profile?->province ?: 'Misamis Oriental',
+                'home_type'          => $homeType,
+                'living_environment' => $livingEnvironment,
+                'has_other_pets'     => $preference?->has_other_pets !== null ? (bool) $preference->has_other_pets : null,
+                'has_experience'     => $hasExperience,
+                'pet_experience'     => $preference?->pet_experience,
+                'has_children'       => $preference?->has_children !== null ? (bool) $preference->has_children : null,
+                'activity_level'     => $preference?->activity_level,
+                'preferred_species'  => $preference?->preferred_species,
+            ],
+            'has_quiz_completed'   => !empty($preference),
+            'existing_application' => $existingApp ? [
+                'id'     => $existingApp->id,
+                'status' => $existingApp->status,
+            ] : null,
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'pet_id'          => ['required', 'exists:pets,id'],
-            'full_name'       => ['required', 'string', 'max:255'],
-            'phone'           => ['required', 'string', 'max:50'],
-            'address'         => ['required', 'string'],
-            'id_type'         => ['nullable', 'string', 'max:100'],
-            'home_type'          => ['nullable', 'string'],
-            'has_other_pets'     => ['nullable'],
-            'other_pets_details' => ['nullable', 'string'],
-            'has_experience'     => ['nullable'],
-            'proposed_pet_name'  => ['nullable', 'string', 'max:255'],
-            'reason'             => ['nullable', 'string'],
-            'valid_id'             => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-            'barangay_certificate' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-            'application_source'   => ['nullable', 'string', 'in:recommendation,manual_browsing'],
-            'compatibility_score'  => ['nullable', 'numeric', 'between:0,100'],
-        ]);
-
         $user = $request->user();
         $applicantEmail = strtolower(trim($user?->email ?: $request->input('applicant_email', $request->input('email', ''))));
 
         $adopterProfile = null;
         if ($user) {
-            $adopterProfile = \App\Models\AdoptersProfile::where('user_id', $user->id)
+            $adopterProfile = AdoptersProfile::where('user_id', $user->id)
                 ->orWhere('email', strtolower(trim($user->email)))
                 ->first();
         }
         if (!$adopterProfile && !empty($applicantEmail)) {
-            $adopterProfile = \App\Models\AdoptersProfile::where('email', $applicantEmail)->first();
+            $adopterProfile = AdoptersProfile::where('email', $applicantEmail)->first();
         }
+
+        // Auto-merge user or profile values if omitted in request
+        if (!$request->filled('full_name') && $user?->name) {
+            $request->merge(['full_name' => $user->name]);
+        }
+        if (!$request->filled('phone')) {
+            $defaultPhone = $adopterProfile?->phone;
+            if ($defaultPhone) {
+                $request->merge(['phone' => $defaultPhone]);
+            }
+        }
+        if (!$request->filled('address') && !empty($adopterProfile?->address)) {
+            $request->merge(['address' => $adopterProfile->address]);
+        }
+
+        $validated = $request->validate([
+            'pet_id'               => ['required', 'exists:pets,id'],
+            'full_name'            => ['required', 'string', 'max:255'],
+            'phone'                => ['required', 'string', 'max:50'],
+            'address'              => ['required', 'string'],
+            'id_type'              => ['nullable', 'string', 'max:100'],
+            'home_type'            => ['nullable', 'string'],
+            'has_other_pets'       => ['nullable'],
+            'other_pets_details'   => ['nullable', 'string'],
+            'has_experience'       => ['nullable'],
+            'proposed_pet_name'    => ['nullable', 'string', 'max:255'],
+            'reason'               => ['nullable', 'string'],
+            'valid_id'             => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'barangay_certificate' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'application_source'   => ['nullable', 'string', 'in:recommendation'],
+            'compatibility_score'  => ['nullable', 'numeric', 'between:0,100'],
+        ]);
 
         if ($adopterProfile && in_array($adopterProfile->status, ['blacklisted', 'restricted'])) {
             $statusName = $adopterProfile->status === 'blacklisted' ? 'Banned / Blacklisted' : 'Restricted';
@@ -80,6 +157,36 @@ class AdoptionApiController extends Controller
             ], 422);
         }
 
+        // Fallback to saved AdopterPreference if living/pet questions are omitted
+        $preference = null;
+        if ($user) {
+            $preference = AdopterPreference::where('user_id', $user->id)->first();
+        }
+
+        $homeType = $request->input('home_type');
+        if (empty($homeType) && $preference?->living_environment) {
+            $homeTypeMap = [
+                'apartment'       => 'Apartment / Condo',
+                'house_with_yard' => 'House with Yard',
+                'house_no_yard'   => 'House (No Yard)',
+            ];
+            $homeType = $homeTypeMap[$preference->living_environment] ?? ucfirst(str_replace('_', ' ', $preference->living_environment));
+        }
+
+        $hasOtherPets = null;
+        if ($request->has('has_other_pets') && $request->input('has_other_pets') !== null && $request->input('has_other_pets') !== '') {
+            $hasOtherPets = filter_var($request->has_other_pets, FILTER_VALIDATE_BOOLEAN);
+        } elseif ($preference && $preference->has_other_pets !== null) {
+            $hasOtherPets = (bool) $preference->has_other_pets;
+        }
+
+        $hasExperience = null;
+        if ($request->has('has_experience') && $request->input('has_experience') !== null && $request->input('has_experience') !== '') {
+            $hasExperience = filter_var($request->has_experience, FILTER_VALIDATE_BOOLEAN);
+        } elseif ($preference && !empty($preference->pet_experience)) {
+            $hasExperience = ($preference->pet_experience === 'experienced');
+        }
+
         $messageParts = [];
         if ($request->filled('id_type')) {
             $messageParts[] = "Valid ID Type: " . $request->id_type;
@@ -90,20 +197,18 @@ class AdoptionApiController extends Controller
         if ($request->filled('address')) {
             $messageParts[] = "Address: " . $request->address;
         }
-        if ($request->filled('home_type')) {
-            $messageParts[] = "Home Type: " . $request->home_type;
+        if (!empty($homeType)) {
+            $messageParts[] = "Home Type: " . $homeType;
         }
-        if ($request->has('has_other_pets')) {
-            $hasOtherPets = filter_var($request->has_other_pets, FILTER_VALIDATE_BOOLEAN);
+        if ($hasOtherPets !== null) {
             $messageParts[] = "Has Other Pets: " . ($hasOtherPets ? 'Yes' : 'No');
             $details = $request->input('other_pets_details');
             if ($hasOtherPets && !empty($details)) {
                 $messageParts[] = "Other Pets Details: " . $details;
             }
         }
-        if ($request->has('has_experience')) {
-            $hasExp = filter_var($request->has_experience, FILTER_VALIDATE_BOOLEAN);
-            $messageParts[] = "Has Pet Experience: " . ($hasExp ? 'Yes' : 'No');
+        if ($hasExperience !== null) {
+            $messageParts[] = "Has Pet Experience: " . ($hasExperience ? 'Yes' : 'No');
         }
         if ($request->filled('reason')) {
             $messageParts[] = "Reason for Adoption:\n" . $request->reason;
@@ -125,16 +230,16 @@ class AdoptionApiController extends Controller
         $adopterAddress = $validated['address'] ?? null;
         $adopterPhone = $validated['phone'] ?? null;
         if (!empty($user?->email)) {
-            $existingProf = \App\Models\AdoptersProfile::where('email', $user->email)->first();
+            $existingProf = AdoptersProfile::where('email', $user->email)->first();
             $profStatus = $existingProf?->status ?? 'active';
 
-            \App\Models\AdoptersProfile::updateOrCreate(
+            AdoptersProfile::updateOrCreate(
                 ['email' => $user->email],
                 [
                     'user_id'      => $user->id,
                     'adopter_code' => sprintf('ADP-%04d', $user->id),
                     'full_name'    => $user->name,
-                    'phone'        => $adopterPhone ?: ($existingProf?->phone ?: $user->phone),
+                    'phone'        => $adopterPhone ?: ($existingProf?->phone ?? null),
                     'address'      => $adopterAddress ?: $existingProf?->address,
                     'city'         => $existingProf?->city ?: 'Cagayan de Oro City',
                     'province'     => $existingProf?->province ?: 'Misamis Oriental',
@@ -143,15 +248,8 @@ class AdoptionApiController extends Controller
             );
         }
 
-        $source = $request->input('application_source');
-        if (!$source) {
-            if ($request->boolean('is_recommended') || $request->boolean('isRecommended') || $request->filled('compatibility_score')) {
-                $source = 'recommendation';
-            } else {
-                $source = 'manual_browsing';
-            }
-        }
-        $compatibilityScore = ($source === 'recommendation' && $request->filled('compatibility_score'))
+        $source = 'recommendation';
+        $compatibilityScore = $request->filled('compatibility_score')
             ? (float) $request->input('compatibility_score')
             : null;
 
@@ -692,7 +790,7 @@ class AdoptionApiController extends Controller
             'guardian' => [
                 'name'               => $application?->applicant_name ?? $adopterProfile?->full_name ?? $user->name,
                 'adopter_code'       => $adopterProfile?->adopter_code ?? sprintf('ADP-%04d', $user->id),
-                'phone'              => $application?->applicant_phone ?? $adopterProfile?->phone ?? $user->phone ?? 'N/A',
+                'phone'              => $application?->applicant_phone ?? $adopterProfile?->phone ?? 'N/A',
                 'email'              => $application?->applicant_email ?? $adopterProfile?->email ?? $user->email,
                 'address'            => $adopterProfile?->address ?? 'Cagayan de Oro City',
                 'application_id'     => $application?->id,

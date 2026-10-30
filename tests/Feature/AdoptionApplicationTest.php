@@ -643,7 +643,7 @@ class AdoptionApplicationTest extends TestCase
         ]);
     }
 
-    public function test_application_defaults_to_manual_browsing(): void
+    public function test_application_defaults_to_recommendation(): void
     {
         $adopter = User::factory()->create(['role' => 'adopter']);
         $pet = Pet::create([
@@ -663,9 +663,114 @@ class AdoptionApplicationTest extends TestCase
         $this->assertDatabaseHas('adoption_applications', [
             'pet_id'              => $pet->id,
             'applicant_name'      => 'John Smith',
-            'application_source'  => 'manual_browsing',
+            'application_source'  => 'recommendation',
             'compatibility_score' => null,
         ]);
+    }
+
+    public function test_adopter_can_get_prefill_data_from_quiz_preferences(): void
+    {
+        $adopter = User::factory()->create([
+            'role'  => 'adopter',
+            'name'  => 'Alice Walker',
+        ]);
+
+        \App\Models\AdoptersProfile::create([
+            'user_id'      => $adopter->id,
+            'email'        => $adopter->email,
+            'adopter_code' => 'ADP-9999',
+            'full_name'    => 'Alice Walker',
+            'phone'        => '09171234567',
+            'address'      => 'Barangay Macasandig, CDO',
+            'city'         => 'Cagayan de Oro City',
+            'province'     => 'Misamis Oriental',
+            'status'       => 'active',
+        ]);
+
+        \App\Models\AdopterPreference::create([
+            'user_id'            => $adopter->id,
+            'preferred_species'  => 'dog',
+            'living_environment' => 'apartment',
+            'pet_experience'     => 'experienced',
+            'has_other_pets'     => true,
+            'has_children'       => false,
+            'activity_level'     => 'moderate',
+        ]);
+
+        $pet = Pet::create([
+            'name'   => 'Cooper',
+            'type'   => 'dog',
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')
+            ->getJson('/api/adoption-applications/prefill?pet_id=' . $pet->id);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success'            => true,
+            'has_quiz_completed' => true,
+            'prefill'            => [
+                'full_name'          => 'Alice Walker',
+                'email'              => $adopter->email,
+                'phone'              => '09171234567',
+                'address'            => 'Barangay Macasandig, CDO',
+                'home_type'          => 'Apartment / Condo',
+                'living_environment' => 'apartment',
+                'has_other_pets'     => true,
+                'has_experience'     => true,
+            ],
+            'existing_application' => null,
+        ]);
+    }
+
+    public function test_application_automatically_populates_missing_fields_from_quiz_preference(): void
+    {
+        $adopter = User::factory()->create([
+            'role'  => 'adopter',
+            'name'  => 'Bob Builder',
+        ]);
+
+        \App\Models\AdoptersProfile::create([
+            'user_id'      => $adopter->id,
+            'email'        => $adopter->email,
+            'adopter_code' => 'ADP-8888',
+            'full_name'    => 'Bob Builder',
+            'phone'        => '09223334444',
+            'address'      => 'Carmen, CDO',
+            'status'       => 'active',
+        ]);
+
+        \App\Models\AdopterPreference::create([
+            'user_id'            => $adopter->id,
+            'preferred_species'  => 'cat',
+            'living_environment' => 'house_with_yard',
+            'pet_experience'     => 'experienced',
+            'has_other_pets'     => false,
+            'has_children'       => true,
+            'activity_level'     => 'calm',
+        ]);
+
+        $pet = Pet::create([
+            'name'   => 'Whiskers',
+            'type'   => 'cat',
+            'status' => 'available',
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')->postJson('/api/adoption-applications', [
+            'pet_id'    => $pet->id,
+            'full_name' => 'Bob Builder',
+            'phone'     => '09223334444',
+            'address'   => 'Carmen, CDO',
+        ]);
+
+        $response->assertStatus(201);
+        $app = AdoptionApplication::where('pet_id', $pet->id)->first();
+        $this->assertNotNull($app);
+        $this->assertEquals('recommendation', $app->application_source);
+        $this->assertStringContainsString('Home Type: House with Yard', $app->message);
+        $this->assertStringContainsString('Has Other Pets: No', $app->message);
+        $this->assertStringContainsString('Has Pet Experience: Yes', $app->message);
     }
 
     public function test_admin_and_staff_see_recommendation_match_on_show_page(): void

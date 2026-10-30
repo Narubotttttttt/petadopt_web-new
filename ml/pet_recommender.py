@@ -182,6 +182,8 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
     pet_tags = [t for t in pet.get('temperaments', []) if t in ALL_TEMPERAMENT_TAGS]
     age_yrs  = _parse_age_numeric(pet.get('age', '2 years'))
     pet_size = str(pet.get('size', 'medium')).lower()
+    if species == 'cat' and pet_size not in ['small', 'medium']:
+        pet_size = 'medium'
 
     # Behavioral metrics based on species & temperament
     if species == 'cat':
@@ -319,6 +321,7 @@ def _generate_reasons(adopter_profile, pet, pet_tags_list, tag_sim,
 
     reasons = []
     tags_lower = [t.lower() for t in pet_tags_list]
+    pref_species = str(adopter_profile.get('preferred_species', 'any')).lower().strip()
     pref_age   = str(adopter_profile.get('preferred_age', 'any')).lower().strip()
     species    = str(pet.get('type', 'dog')).lower()
 
@@ -330,51 +333,79 @@ def _generate_reasons(adopter_profile, pet, pet_tags_list, tag_sim,
     hours    = str(adopter_profile.get('hours_alone', '')).lower()
     sp_cap   = bool(adopter_profile.get('special_care_capacity', False) or adopter_profile.get('special_care_capability', False))
 
+    # 1. Preferred species match
+    if pref_species in ['dog', 'cat'] and pref_species == species:
+        reasons.append(f"Matches your preference for adopting a rescue {species}")
+
+    # 2. Living environment compatibility
     if species == 'cat':
-        if 'apartment' in living and ('calm' in tags_lower or 'affectionate' in tags_lower):
-            reasons.append("Gentle and calm disposition well-suited for relaxed apartment living")
-        elif 'apartment' in living and ('playful' in tags_lower or 'energetic' in tags_lower) and activity in ['high', 'active']:
-            reasons.append("Engaging play style that matches your active, interactive home")
+        if 'apartment' in living:
+            if 'calm' in tags_lower or 'affectionate' in tags_lower:
+                reasons.append("Gentle and calm disposition well-suited for relaxed apartment living")
+            else:
+                reasons.append("Indoor-friendly cat well-suited for apartment living")
         elif 'yard' in living or 'house' in living:
-            reasons.append("Enjoys having spacious territory to explore indoors")
-
-        if hours in ['8_plus', '8+'] and ('independent' in tags_lower or 'calm' in tags_lower):
-            reasons.append("Independent personality comfortable while you are away during work hours")
-
-        if has_kids and ('friendly' in tags_lower or 'playful' in tags_lower):
-            reasons.append("Patient and friendly demeanor tested safe around children")
-        elif not has_kids and 'shy' in tags_lower:
-            reasons.append("Gentle cat that will thrive in your quiet, calm household")
+            reasons.append("Enjoys having spacious territory to explore in your house")
     else:
         pet_size = str(pet.get('size', 'medium')).lower()
-        if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living) and ('energetic' in tags_lower or pet_size in ['large', 'xlarge']):
+        if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living):
             reasons.append("Thrives in a home with secure yard space for daily exercise")
-        elif 'apartment' in living and ('calm' in tags_lower or pet_size == 'small'):
+        elif 'apartment' in living or 'no_yard' in living:
             reasons.append("Manageable size and calm behavior ideal for apartment living")
+        elif 'house' in living:
+            reasons.append("Great companion for your household environment")
 
-        if activity in ['high', 'active'] and ('energetic' in tags_lower or 'playful' in tags_lower):
+    # 3. Energy & Activity Level
+    if activity in ['high', 'active']:
+        if 'energetic' in tags_lower or 'playful' in tags_lower:
             reasons.append("High stamina and enthusiasm matching your active lifestyle")
-        elif activity == 'relaxed' and 'calm' in tags_lower:
-            reasons.append("Peaceful, low-key companion perfect for relaxed home routines")
+        else:
+            reasons.append("Active companion matching your dynamic daily routine")
+    elif activity in ['relaxed', 'low', 'calm']:
+        reasons.append("Peaceful, low-key companion perfect for relaxed home routines")
+    elif activity in ['moderate', 'medium']:
+        reasons.append("Balanced energy level compatible with your daily routine")
 
-        if hours in ['8_plus', '8+'] and 'independent' in tags_lower:
-            reasons.append("Self-sufficient and comfortable resting during work hours")
+    # 4. Work Schedule & Hours Alone
+    if hours in ['8_plus', '8+']:
+        if 'independent' in tags_lower or 'calm' in tags_lower:
+            reasons.append("Independent personality comfortable while you are away during work hours")
+        else:
+            reasons.append("Self-sufficient companion able to adapt comfortably while you work")
 
-        if has_kids and ('friendly' in tags_lower or 'playful' in tags_lower):
-            reasons.append("Gentle and playful companion safe for family households with kids")
-
-    if exp == 'first_time' and ('friendly' in tags_lower or 'calm' in tags_lower):
+    # 5. Experience
+    if exp in ['first_time', 'beginner']:
         reasons.append("Easygoing and predictable nature recommended for first-time owners")
+    elif exp == 'experienced':
+        reasons.append("Great match for your prior pet ownership experience")
 
-    if has_pets and ('friendly' in tags_lower or 'playful' in tags_lower):
-        reasons.append("Sociable disposition tested compatible with other resident pets")
+    # 6. Household Members (Kids & Other Pets)
+    if has_kids:
+        if 'friendly' in tags_lower or 'playful' in tags_lower:
+            reasons.append("Patient and friendly demeanor tested safe around children")
+        else:
+            reasons.append("Gentle family companion suitable for a household with kids")
 
+    if has_pets:
+        if 'friendly' in tags_lower or 'playful' in tags_lower:
+            reasons.append("Sociable disposition tested compatible with other resident pets")
+        else:
+            reasons.append("Sociable temperament suitable for a multi-pet home")
+
+    # 7. Medical Special Care
     med_hist = str(pet.get('medical_history', '')).lower()
     if any(k in med_hist for k in ['special', 'chronic', 'amputee', 'blind', 'deaf', 'disabilit']) and sp_cap:
         reasons.append("Matches your readiness and compassion to support special medical needs")
 
+    # 8. Life stage & Preferred Age
     if pref_age not in ['any', 'all', '', 'any age'] and age_match_score >= 0.75:
         reasons.append(f"Matches your preferred {pet.get('age', 'age')} life stage")
+
+    # 9. Key Temperament Highlights
+    if 'affectionate' in tags_lower and not any('affectionate' in r.lower() for r in reasons):
+        reasons.append("Loving and affectionate companion that enjoys close bonding")
+    if 'playful' in tags_lower and not any('playful' in r.lower() for r in reasons):
+        reasons.append("Playful demeanor that brings joyful energy to your home")
 
     return reasons[:3] if reasons else ["Strong overall behavioral and lifestyle compatibility"]
 
@@ -466,7 +497,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             'breed'               : pet.get('breed'),
             'age'                 : pet.get('age'),
             'gender'              : pet.get('gender'),
-            'size'                : pet.get('size'),
+            'size'                : 'medium' if species == 'cat' and str(pet.get('size', '')).lower() == 'large' else pet.get('size'),
             'color'               : pet.get('color'),
             'photo_path'          : pet.get('photo_path'),
             'status'              : pet.get('status'),
@@ -475,6 +506,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             'match_percentage'    : match_pct,
             'match_percentage_str': f"{match_pct}%",
             'reasons'             : reasons,
+            'match_reasons'       : reasons,
             'algorithm_used'      : algo_name
         })
 
