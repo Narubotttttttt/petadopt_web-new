@@ -122,6 +122,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::get('/pets/{pet}/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create-for-pet');
     Route::get('/medical-logs/{medicalLog}/edit', [MedicalLogController::class, 'edit'])->name('medical-logs.edit');
     Route::match(['put', 'patch'], '/medical-logs/{medicalLog}', [MedicalLogController::class, 'update'])->name('medical-logs.update');
+    Route::patch('/medical-logs/{medicalLog}/verify', [MedicalLogController::class, 'verify'])->name('medical-logs.verify');
 
     Route::get('/pet-history', [PetHistoryController::class, 'index'])->name('pet-history.index');
 

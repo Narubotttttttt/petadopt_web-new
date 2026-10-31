@@ -790,6 +790,10 @@ class AdoptionApiController extends Controller
                 'next_due_date'      => $log->next_due_date?->format('Y-m-d'),
                 'next_due_formatted' => $log->next_due_date?->format('M d, Y'),
                 'administered_by'    => $log->administered_by ?: ($log->creator?->name ?? 'CAWS Veterinary Officer'),
+                'is_external'        => (bool) $log->is_external,
+                'clinic_name'        => $log->clinic_name,
+                'proof_photo_url'    => $log->proof_photo_url,
+                'verification_status'=> $log->verification_status ?? 'verified',
                 'is_overdue'         => $isOverdue,
                 'is_due_soon'        => $isDueSoon,
             ];
@@ -906,6 +910,120 @@ class AdoptionApiController extends Controller
                 'shelter_code' => 'Pet no. ' . $pet->id,
             ],
         ]);
+    }
+
+    public function storeExternalMedicalLog(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        $pet = Pet::findOrFail($id);
+
+        $isStaff = in_array($user->role, ['admin', 'staff']);
+        $application = AdoptionApplication::where('pet_id', $pet->id)
+            ->where('applicant_email', $user->email)
+            ->whereIn('status', ['approved', 'adopted'])
+            ->latest()
+            ->first();
+
+        if (!$isStaff && !$application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only the authorized adopter of this pet can submit veterinary health updates.',
+            ], 403);
+        }
+
+        $request->validate([
+            'category'        => ['required', 'string', 'in:vaccination,deworming,checkup,treatment'],
+            'vaccine_name'    => ['required_if:category,vaccination,deworming', 'nullable', 'string', 'max:150'],
+            'date'            => ['required', 'date', 'before_or_equal:today'],
+            'next_due_date'   => ['nullable', 'date', 'after_or_equal:date'],
+            'clinic_name'     => ['required', 'string', 'min:3', 'max:255'],
+            'veterinarian'    => ['nullable', 'string', 'max:150'],
+            'proof_photo'     => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+            'notes'           => ['nullable', 'string', 'max:1000'],
+        ], [
+            'proof_photo.required' => 'Please upload a photo of the veterinary card, booklet, or official receipt.',
+            'clinic_name.required' => 'Please provide the name of the private veterinary clinic.',
+            'vaccine_name.required_if' => 'Please specify the name of the vaccine or treatment given.',
+        ]);
+
+        $proofPath = $request->file('proof_photo')->store('medical_proofs', 'public');
+
+        $administeredBy = trim($request->clinic_name);
+        if ($request->filled('veterinarian')) {
+            $vetName = trim($request->veterinarian);
+            if (!str_starts_with(strtolower($vetName), 'dr.')) {
+                $vetName = 'Dr. ' . $vetName;
+            }
+            $administeredBy .= " ({$vetName})";
+        }
+
+        // Calculate next due date if not manually provided
+        $nextDueDate = $request->input('next_due_date');
+        if (empty($nextDueDate)) {
+            if ($request->category === 'vaccination') {
+                $nextDueDate = \Illuminate\Support\Carbon::parse($request->date)->addYear()->toDateString();
+            } elseif ($request->category === 'deworming') {
+                $nextDueDate = \Illuminate\Support\Carbon::parse($request->date)->addMonths(3)->toDateString();
+            }
+        }
+
+        $vaccineName = trim($request->input('vaccine_name', ''));
+        if (empty($vaccineName)) {
+            $vaccineName = ucfirst($request->category);
+        }
+
+        $log = MedicalLog::create([
+            'pet_id'              => $pet->id,
+            'date'                => $request->date,
+            'category'            => $request->category,
+            'vaccine_name'        => $vaccineName,
+            'administered_by'     => $administeredBy,
+            'clinic_name'         => $request->clinic_name,
+            'next_due_date'       => $nextDueDate,
+            'is_external'         => true,
+            'proof_photo_path'    => $proofPath,
+            'verification_status' => 'verified',
+            'created_by'          => $user->id,
+        ]);
+
+        \App\Services\AdminNotificationService::clearCache();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Veterinary vaccination record submitted successfully. CAWS records and pet health card have been updated.',
+            'data'    => [
+                'id'                  => $log->id,
+                'category'            => $log->category,
+                'category_label'      => ucfirst(str_replace('_', ' ', $log->category)),
+                'vaccine_name'        => $log->vaccine_name,
+                'date'                => $log->date?->format('Y-m-d'),
+                'date_formatted'      => $log->date?->format('M d, Y'),
+                'next_due_date'       => $log->next_due_date?->format('Y-m-d'),
+                'next_due_formatted'  => $log->next_due_date?->format('M d, Y'),
+                'administered_by'     => $log->administered_by,
+                'clinic_name'         => $log->clinic_name,
+                'is_external'         => true,
+                'proof_photo_url'     => $log->proof_photo_url,
+                'verification_status' => $log->verification_status,
+            ],
+        ], 201);
+    }
+
+    public function verifyMedicalLog(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $log = MedicalLog::findOrFail($id);
+        $log->update([
+            'verification_status' => 'verified',
+            'verified_by'         => $user->id,
+            'verified_at'         => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Medical record verified successfully.']);
     }
 }
 

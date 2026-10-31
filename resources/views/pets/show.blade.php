@@ -420,10 +420,22 @@
                                         {{ !in_array($log->category, ['vaccination', 'deworming']) ? 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08]' : '' }}">
                                         {{ ucfirst(str_replace('_', ' ', $log->category)) }}
                                     </span>
+                                    @if($log->is_external)
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
+                                            {{ $log->clinic_name ? 'Vet: '.$log->clinic_name : 'External Vet' }}
+                                        </span>
+                                    @endif
                                 </div>
-                                <span class="text-[11px] text-slate-400 truncate max-w-[140px] sm:max-w-none text-right">
-                                    {{ $log->administered_by ?: ($log->creator?->name ?? 'Staff') }}
-                                </span>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    @if($log->proof_photo_url)
+                                        <a href="{{ $log->proof_photo_url }}" target="_blank" class="text-[10px] font-bold text-[#199CA4] hover:underline">
+                                            Proof &rarr;
+                                        </a>
+                                    @endif
+                                    <span class="text-[11px] text-slate-400 truncate max-w-[140px] sm:max-w-none text-right">
+                                        {{ $log->administered_by ?: ($log->creator?->name ?? 'Staff') }}
+                                    </span>
+                                </div>
                             </div>
                         @endforeach
                     </div>

@@ -458,10 +458,15 @@
                                             return [
                                                 'id' => $m->id,
                                                 'category' => $m->category,
-                                                'name' => ucfirst($m->category),
+                                                'name' => $m->vaccine_name ?: ucfirst($m->category),
                                                 'date' => $m->date ? $m->date->format('M d, Y') : '',
                                                 'next_due_date' => $m->next_due_date ? $m->next_due_date->format('M d, Y') : null,
                                                 'administered_by' => $m->administered_by ?: ($m->creator ? $m->creator->name : 'Staff'),
+                                                'is_external' => (bool) $m->is_external,
+                                                'clinic_name' => $m->clinic_name,
+                                                'proof_photo_url' => $m->proof_photo_url,
+                                                'verification_status' => $m->verification_status ?? 'verified',
+                                                'notes' => $m->notes,
                                             ];
                                         })->values()->toArray() : [];
                                     @endphp
@@ -915,21 +920,51 @@
                         <div class="space-y-3" x-show="historyLogs.length > 0">
                             <template x-for="log in historyLogs" :key="log.id">
                                 <div class="p-3.5 rounded-2xl border border-slate-200 dark:border-white/[0.06] bg-slate-50/70 dark:bg-[#171923] hover:bg-white dark:hover:bg-[#1D1F2C] hover:border-[#199CA4]/30 hover:shadow-xs transition">
-                                    <div class="flex items-center justify-between gap-2 mb-1.5">
-                                        <div class="flex items-center gap-2">
+                                    <div class="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                                        <div class="flex items-center gap-2 flex-wrap">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
                                                 :class="log.category === 'vaccination' ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60' : 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'"
                                                 x-text="log.category === 'vaccination' ? 'Vaccination' : 'Deworming'">
                                             </span>
+                                            <template x-if="log.is_external">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60"
+                                                    x-text="log.clinic_name ? 'Vet: ' + log.clinic_name : 'External Vet'">
+                                                </span>
+                                            </template>
+                                            <template x-if="log.is_external && log.verification_status === 'pending'">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                                                    Pending Review
+                                                </span>
+                                            </template>
                                             <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white" x-text="log.name"></span>
                                         </div>
                                         <span class="text-xs font-semibold text-slate-500 dark:text-slate-400" x-text="log.date"></span>
                                     </div>
-                                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap gap-2">
                                         <span x-show="log.administered_by" class="font-semibold text-slate-700 dark:text-slate-300" x-text="'Administered by: ' + log.administered_by"></span>
                                         <span x-show="log.next_due_date" class="font-semibold text-amber-700 dark:text-amber-400" x-text="'Next Due: ' + log.next_due_date"></span>
                                     </div>
                                     <p x-show="log.notes" class="text-xs text-slate-600 dark:text-slate-300 mt-1.5 bg-white dark:bg-[#0C0D13] p-2 rounded-lg border border-slate-200/80 dark:border-white/[0.06]" x-text="log.notes"></p>
+
+                                    {{-- Proof photo and Verification actions --}}
+                                    <div x-show="log.proof_photo_url || (log.is_external && log.verification_status === 'pending')" class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
+                                        <template x-if="log.proof_photo_url">
+                                            <a :href="log.proof_photo_url" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                <span>View Vet Card Proof</span>
+                                            </a>
+                                        </template>
+                                        <template x-if="log.is_external && log.verification_status === 'pending'">
+                                            <form :action="'/medical-logs/' + log.id + '/verify'" method="POST" class="inline-flex items-center gap-1.5 ms-auto">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="status" value="verified">
+                                                <button type="submit" class="px-2.5 py-1 text-[11px] font-extrabold bg-[#199CA4] hover:bg-[#13787F] text-white rounded-lg transition shadow-2xs cursor-pointer">
+                                                    Verify Record
+                                                </button>
+                                            </form>
+                                        </template>
+                                    </div>
                                 </div>
                             </template>
                         </div>

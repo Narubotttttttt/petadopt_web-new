@@ -186,8 +186,27 @@
                             </div>
                         </div>
 
+                        @if($log->is_external)
+                            <div class="px-2.5 py-1.5 text-[11px] bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-between">
+                                <span class="text-slate-600 dark:text-slate-300 font-medium">Vet: {{ $log->clinic_name ?: 'Private Clinic' }}</span>
+                                @if($log->proof_photo_url)
+                                    <a href="{{ $log->proof_photo_url }}" target="_blank" class="font-bold text-[#199CA4] hover:underline text-[10px]">View Proof &rarr;</a>
+                                @endif
+                            </div>
+                        @endif
+
                         {{-- Touch-Friendly Actions Row --}}
                         <div class="flex items-center gap-2 pt-1">
+                            @if($log->is_external && $log->verification_status === 'pending')
+                                <form action="{{ route('medical-logs.verify', $log) }}" method="POST" class="flex-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="verified">
+                                    <button type="submit" class="w-full py-2 text-center rounded-xl bg-[#199CA4] text-white font-bold text-xs shadow-2xs cursor-pointer">
+                                        Verify
+                                    </button>
+                                </form>
+                            @endif
                             <a href="{{ route('medical-logs.edit', $log) }}"
                                 class="flex-1 py-2 text-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold text-xs transition shadow-2xs">
                                 Edit
@@ -275,15 +294,35 @@
                                 {{-- 2. Medication / Vaccine --}}
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col gap-1">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border w-fit {{ $badgeStyle }}">
-                                            @if($dotStyle)
-                                                <span class="w-1.5 h-1.5 rounded-full {{ $dotStyle }}"></span>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border w-fit {{ $badgeStyle }}">
+                                                @if($dotStyle)
+                                                    <span class="w-1.5 h-1.5 rounded-full {{ $dotStyle }}"></span>
+                                                @endif
+                                                <span>{{ ucfirst(str_replace('_', ' ', $log->category)) }}</span>
+                                            </span>
+                                            @if($log->is_external)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                                                    {{ $log->clinic_name ? 'Vet: '.$log->clinic_name : 'External Vet' }}
+                                                </span>
                                             @endif
-                                            <span>{{ ucfirst(str_replace('_', ' ', $log->category)) }}</span>
-                                        </span>
-                                        <span class="font-bold text-slate-800 dark:text-slate-200 text-xs">
-                                            {{ $log->vaccine_name ?: $fallbackMed }}
-                                        </span>
+                                            @if($log->is_external && $log->verification_status === 'pending')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                                                    Pending
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                                                {{ $log->vaccine_name ?: $fallbackMed }}
+                                            </span>
+                                            @if($log->proof_photo_url)
+                                                <a href="{{ $log->proof_photo_url }}" target="_blank" title="View Vet Record Proof" class="inline-flex items-center gap-1 text-[11px] text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] font-bold hover:underline">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                    Proof
+                                                </a>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
 
@@ -311,6 +350,16 @@
                                 {{-- 5. Actions --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-2">
+                                        @if($log->is_external && $log->verification_status === 'pending')
+                                            <form action="{{ route('medical-logs.verify', $log) }}" method="POST" class="inline-block">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="status" value="verified">
+                                                <button type="submit" class="px-3 py-1.5 text-center rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-bold transition text-xs shadow-2xs cursor-pointer">
+                                                    Verify
+                                                </button>
+                                            </form>
+                                        @endif
                                         <a href="{{ route('medical-logs.edit', $log) }}" 
                                             class="px-3.5 py-1.5 text-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs inline-block">
                                             Edit

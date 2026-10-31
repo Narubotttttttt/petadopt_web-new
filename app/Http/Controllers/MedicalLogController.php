@@ -265,6 +265,26 @@ class MedicalLogController extends Controller
         }
     }
 
+    public function verify(Request $request, MedicalLog $medicalLog): RedirectResponse
+    {
+        $status = $request->input('status', 'verified');
+        if (!in_array($status, ['verified', 'rejected'])) {
+            $status = 'verified';
+        }
+
+        $medicalLog->update([
+            'verification_status' => $status,
+            'verified_by' => Auth::id(),
+            'verified_at' => now(),
+        ]);
+
+        $petName = $medicalLog->pet->name ?? ('Pet no. ' . $medicalLog->pet_id);
+        $statusLabel = ucfirst($status);
+        session()->flash('success', "External medical log for {$petName} was {$statusLabel}.");
+
+        return redirect()->back();
+    }
+
     public function destroy(MedicalLog $medicalLog): RedirectResponse
     {
         if (Auth::user()->role !== 'admin') {

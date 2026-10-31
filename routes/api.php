@@ -175,6 +175,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-health-updates', [AdoptionApiController::class, 'getHealthUpdates']);
     Route::get('/pets/{id}/medical-passport', [AdoptionApiController::class, 'petMedicalPassport']);
     Route::get('/pets/{id}/medical-card', [AdoptionApiController::class, 'petMedicalPassport']);
+    Route::post('/pets/{id}/external-medical-log', [AdoptionApiController::class, 'storeExternalMedicalLog']);
+    Route::patch('/medical-logs/{id}/verify', [AdoptionApiController::class, 'verifyMedicalLog']);
     Route::post('/pets/{id}/update-name', [AdoptionApiController::class, 'updatePetName']);
     Route::post('/save-fcm-token', function (Request $request) {
         $request->validate(['fcm_token' => 'required|string']);
