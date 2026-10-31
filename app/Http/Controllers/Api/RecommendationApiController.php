@@ -169,6 +169,7 @@ class RecommendationApiController extends Controller
             'PYTHONPATH'         => $pythonPath,
             'PYTHONIOENCODING'   => 'utf-8',
             'PYTHONASYNCIODEBUG' => '0',
+            'GEMINI_API_KEY'     => env('GEMINI_API_KEY', ''),
         ]);
 
         $process = new Process([$pythonBin, '-W', 'ignore', $pythonScript], base_path(), $processEnv);
