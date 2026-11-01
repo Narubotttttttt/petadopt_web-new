@@ -181,8 +181,11 @@
                                 <span class="font-bold text-slate-800 dark:text-slate-200 truncate block">{{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Core Vaccine' : 'Routine Dose') }}</span>
                             </div>
                             <div>
-                                <span class="text-slate-400 block text-[10px] font-medium">Staff:</span>
-                                <span class="font-medium text-slate-600 dark:text-slate-400 truncate block">{{ $log->administered_by ?: ($log->creator?->name ?? 'Staff') }}</span>
+                                <span class="text-slate-400 block text-[10px] font-medium">Administered By:</span>
+                                <span class="font-medium text-slate-600 dark:text-slate-400 truncate block">
+                                    {{ $log->administered_by ?: ($log->creator?->name ?? 'Shelter Clinician') }}
+                                    <span class="text-[10px] text-slate-400 font-normal">({{ $log->administered_role_label }})</span>
+                                </span>
                             </div>
                         </div>
 
@@ -340,9 +343,9 @@
                                         </div>
                                         <div>
                                             <span class="font-medium text-slate-700 dark:text-slate-300 block text-xs">
-                                                {{ $log->administered_by ?: ($log->creator?->name ?? 'Shelter Staff') }}
+                                                {{ $log->administered_by ?: ($log->creator?->name ?? 'Shelter Clinician') }}
                                             </span>
-                                            <span class="text-[10px] text-slate-400 font-medium">Authorized Staff</span>
+                                            <span class="text-[10px] text-slate-400 font-medium">{{ $log->administered_role_label }}</span>
                                         </div>
                                     </div>
                                 </td>

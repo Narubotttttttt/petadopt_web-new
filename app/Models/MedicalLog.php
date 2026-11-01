@@ -34,6 +34,7 @@ class MedicalLog extends Model
 
     protected $appends = [
         'proof_photo_url',
+        'administered_role_label',
     ];
 
     public function getProofPhotoUrlAttribute(): ?string
@@ -62,5 +63,30 @@ class MedicalLog extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getAdministeredRoleLabelAttribute(): string
+    {
+        $clinician = $this->creator;
+        if ((!$clinician || $clinician->name !== $this->administered_by) && !empty($this->administered_by)) {
+            $matched = User::where('name', $this->administered_by)->first();
+            if ($matched) {
+                $clinician = $matched;
+            }
+        }
+
+        if ($clinician?->role === 'admin' || stripos((string)$this->administered_by, 'admin') !== false) {
+            return 'Admin';
+        }
+
+        if ($clinician?->role === 'staff') {
+            return 'Authorized Staff';
+        }
+
+        if ($this->is_external) {
+            return 'Licensed Veterinarian';
+        }
+
+        return 'Authorized Staff';
     }
 }

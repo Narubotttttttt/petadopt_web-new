@@ -78,9 +78,12 @@ class MedicalLogController extends Controller
             $q->latest('date')->take(5);
         }])->orderBy('name')->orderBy('id')->get();
 
+        $authorizedUsers = User::whereIn('role', ['admin', 'staff'])->orderBy('name')->get();
+
         return view('medical-logs.create', [
             'pet' => $pet,
             'pets' => $pets,
+            'authorizedUsers' => $authorizedUsers,
         ]);
     }
 
@@ -111,6 +114,8 @@ class MedicalLogController extends Controller
 
         try {
             $administeredBy = trim($request->input('administered_by', '')) ?: Auth::user()->name;
+            $clinicianUser = User::where('name', $administeredBy)->first();
+            $creatorId = $clinicianUser?->id ?: Auth::id();
 
             // If an entry already exists for this pet, category, and date, update it in-place to avoid duplicates
             $targetLogId = $request->input('log_id') ?: $request->input('medical_log_id');
@@ -136,7 +141,7 @@ class MedicalLogController extends Controller
                 $log = MedicalLog::create([
                     ...$data,
                     'administered_by' => $administeredBy,
-                    'created_by' => Auth::id(),
+                    'created_by' => $creatorId,
                 ]);
                 $actionVerb = 'added';
             }
@@ -174,10 +179,13 @@ class MedicalLogController extends Controller
             $q->latest('date')->take(5);
         }])->orderBy('name')->orderBy('id')->get();
 
+        $authorizedUsers = User::whereIn('role', ['admin', 'staff'])->orderBy('name')->get();
+
         return view('medical-logs.edit', [
             'medicalLog' => $medicalLog,
             'pet' => $medicalLog->pet,
             'pets' => $pets,
+            'authorizedUsers' => $authorizedUsers,
         ]);
     }
 
@@ -200,6 +208,13 @@ class MedicalLogController extends Controller
         unset($data['deworming_name']);
 
         $data['next_due_date'] = $this->calculateNextDueDate($data['category'], $data['date'], $data['next_due_date'] ?? null);
+
+        if (!empty($data['administered_by'])) {
+            $clinicianUser = User::where('name', $data['administered_by'])->first();
+            if ($clinicianUser) {
+                $data['created_by'] = $clinicianUser->id;
+            }
+        }
 
         $medicalLog->update($data);
 

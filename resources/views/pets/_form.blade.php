@@ -214,6 +214,39 @@
         $initialDewormerNextDue = old('dewormer_next_due');
     }
 
+    $knownStandardVaccines = [
+        '5-in-1 (DHPP)',
+        '6-in-1 (DHLPP)',
+        '8-in-1 (DHLPPC)',
+        'Anti-Rabies',
+        'Bordetella (Kennel Cough)',
+        'Canine Parvovirus (CPV)',
+        '4-in-1 (FVRCP)',
+        '3-in-1 (FVRCP)',
+        'FeLV (Feline Leukemia)',
+    ];
+
+    $initialVaccineSelect = ($currentType === 'cat') ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
+    $initialVaccineOther = '';
+
+    if (!empty($initialVaccineName)) {
+        $vNameTrimmed = trim($initialVaccineName);
+        if ($vNameTrimmed === '5-in-1') {
+            $initialVaccineSelect = '5-in-1 (DHPP)';
+        } elseif ($vNameTrimmed === 'Anti-Parvo' || stripos($vNameTrimmed, 'Parvovirus') !== false) {
+            $initialVaccineSelect = 'Canine Parvovirus (CPV)';
+        } elseif (stripos($vNameTrimmed, 'Rabies') !== false) {
+            $initialVaccineSelect = 'Anti-Rabies';
+        } elseif (stripos($vNameTrimmed, 'FVRCP') !== false || stripos($vNameTrimmed, '4-in-1') !== false) {
+            $initialVaccineSelect = '4-in-1 (FVRCP)';
+        } elseif (in_array($vNameTrimmed, $knownStandardVaccines, true)) {
+            $initialVaccineSelect = $vNameTrimmed;
+        } else {
+            $initialVaccineSelect = 'Other';
+            $initialVaccineOther = $vNameTrimmed;
+        }
+    }
+
     $standardDisabilityOptions = [
         'Blind / Visually Impaired',
         'Deaf / Hearing Impaired',
@@ -315,7 +348,8 @@
     disabilityOther: '{{ addslashes($initialDisabilityOther) }}',
 
     isVaccinated: {{ $hasVaccinatedInitial ? 'true' : 'false' }},
-    vaccineSelect: '{{ addslashes(str_contains(strtolower($initialVaccineName), "rabies") ? "Anti-Rabies" : (str_contains(strtolower($initialVaccineName), "parvo") ? "Anti-Parvo" : "5-in-1")) }}',
+    vaccineSelect: '{{ addslashes($initialVaccineSelect) }}',
+    vaccineOther: '{{ addslashes($initialVaccineOther) }}',
     vaccineDate: '{{ addslashes($initialVaccineDate) }}',
     vaccineNextDue: '{{ addslashes($initialVaccineNextDue) }}',
 
@@ -383,7 +417,10 @@
     },
     get finalVaccineName() {
         if (!this.isVaccinated) return '';
-        return this.vaccineSelect || '5-in-1';
+        if (this.vaccineSelect === 'Other') {
+            return this.vaccineOther ? this.vaccineOther.trim() : (this.type === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)');
+        }
+        return this.vaccineSelect || (this.type === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)');
     },
     get finalDewormerName() {
         if (!this.isDewormed) return '';
@@ -432,6 +469,20 @@
                 this.colorSelect = 'Other Specified';
             }
         }
+
+        this.$watch('type', (newType) => {
+            if (newType === 'cat') {
+                const dogOnly = ['5-in-1 (DHPP)', '6-in-1 (DHLPP)', '8-in-1 (DHLPPC)', 'Bordetella (Kennel Cough)', 'Canine Parvovirus (CPV)'];
+                if (dogOnly.includes(this.vaccineSelect)) {
+                    this.vaccineSelect = '4-in-1 (FVRCP)';
+                }
+            } else if (newType === 'dog') {
+                const catOnly = ['4-in-1 (FVRCP)', '3-in-1 (FVRCP)', 'FeLV (Feline Leukemia)'];
+                if (catOnly.includes(this.vaccineSelect)) {
+                    this.vaccineSelect = '5-in-1 (DHPP)';
+                }
+            }
+        });
     },
     handleFileChange(e) {
         const file = e.target.files[0];
@@ -550,9 +601,15 @@
     },
     validateStep2() {
         this.errorMessage = '';
-        if (this.isVaccinated && (!this.vaccineDate || !this.vaccineDate.trim())) {
-            this.errorMessage = 'Please provide the date when the vaccine was administered.';
-            return false;
+        if (this.isVaccinated) {
+            if (!this.vaccineDate || !this.vaccineDate.trim()) {
+                this.errorMessage = 'Please provide the date when the vaccine was administered.';
+                return false;
+            }
+            if (this.vaccineSelect === 'Other' && (!this.vaccineOther || !this.vaccineOther.trim())) {
+                this.errorMessage = 'Please specify the custom vaccine name.';
+                return false;
+            }
         }
         if (this.isDewormed) {
             if (!this.dewormerDate || !this.dewormerDate.trim()) {
@@ -992,9 +1049,6 @@
                     <option value="available" {{ $currentStatus == 'available' ? 'selected' : '' }}>
                         Ready for Adoption (Available)
                     </option>
-                    <option value="pending" {{ $currentStatus == 'pending' ? 'selected' : '' }}>Pending Adoption</option>
-                    <option value="adopted" {{ $currentStatus == 'adopted' ? 'selected' : '' }}>Adopted</option>
-                    <option value="deceased" {{ $currentStatus == 'deceased' ? 'selected' : '' }}>Deceased</option>
                 </select>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5" x-show="status">
                     <span x-show="status === 'in_shelter'">This pet is registered for internal shelter monitoring and veterinary care, and will not appear in public adopter recommendations until marked ready.</span>
@@ -1203,13 +1257,32 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="sm:col-span-1">
                             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaccine Name *</label>
-                            <select x-model="vaccineSelect"
-                                class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
-                                <option value="" disabled {{ empty($initialVaccineName) ? 'selected' : '' }} hidden style="display: none;">Select vaccine</option>
-                                <option value="Anti-Rabies">Anti-Rabies</option>
-                                <option value="5-in-1">5-in-1</option>
-                                <option value="Anti-Parvo">Anti-Parvo (Parvovirus)</option>
-                            </select>
+                            {{-- Feline Vaccines Dropdown --}}
+                            <div x-show="type === 'cat'">
+                                <select x-model="vaccineSelect"
+                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
+                                    <option value="" disabled hidden style="display: none;">Select feline vaccine</option>
+                                    <option value="4-in-1 (FVRCP)">4-in-1 (FVRCP) - Core Feline</option>
+                                    <option value="3-in-1 (FVRCP)">3-in-1 (FVRCP)</option>
+                                    <option value="Anti-Rabies">Anti-Rabies</option>
+                                    <option value="FeLV (Feline Leukemia)">FeLV (Feline Leukemia)</option>
+                                    <option value="Other">Other (Specify below)</option>
+                                </select>
+                            </div>
+                            {{-- Canine Vaccines Dropdown --}}
+                            <div x-show="type !== 'cat'">
+                                <select x-model="vaccineSelect"
+                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-semibold">
+                                    <option value="" disabled hidden style="display: none;">Select canine vaccine</option>
+                                    <option value="5-in-1 (DHPP)">5-in-1 (DHPP) - Core Canine</option>
+                                    <option value="6-in-1 (DHLPP)">6-in-1 (DHLPP)</option>
+                                    <option value="8-in-1 (DHLPPC)">8-in-1 (DHLPPC)</option>
+                                    <option value="Anti-Rabies">Anti-Rabies</option>
+                                    <option value="Bordetella (Kennel Cough)">Bordetella (Kennel Cough)</option>
+                                    <option value="Canine Parvovirus (CPV)">Canine Parvovirus (CPV)</option>
+                                    <option value="Other">Other (Specify below)</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div>
@@ -1233,6 +1306,12 @@
                             <input type="date" x-model="vaccineNextDue"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
                         </div>
+                    </div>
+
+                    <div x-show="vaccineSelect === 'Other'" x-transition class="pt-1">
+                        <label class="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">Custom Vaccine Name</label>
+                        <input type="text" x-model="vaccineOther" placeholder="e.g., Vanguard Plus, Nobivac, Fel-O-Vax..."
+                            class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
                     </div>
                 </div>
 

@@ -437,16 +437,17 @@ def _generate_xai_feature_reasons(adopter_profile, pet, pet_tags_list, tag_sim,
     hours = str(adopter_profile.get('hours_alone', '')).lower()
     pet_size = str(pet.get('size', 'medium')).lower()
 
-    # 1. Behavioral & Temperament Vector Cosine Alignment
-    matching_tags = [t for t in pet_tags_list if t in adopter_profile.get('desired_temperaments', [])]
-    if matching_tags:
-        reasons.append(f"Demonstrates strong behavioral alignment in {' and '.join(matching_tags).lower()} temperament")
-    elif tag_sim >= 0.70:
-        reasons.append("High behavioral compatibility score based on overall temperament profile")
-    elif 'friendly' in tags_lower:
-        reasons.append("Friendly and approachable temperament compatible with your preferences")
-    elif 'calm' in tags_lower:
-        reasons.append("Calm and gentle demeanor aligning well with your home atmosphere")
+    # 1. Behavioral & Temperament Compatibility
+    if 'calm' in tags_lower and ('apartment' in living or hours in ['8_plus', '8+']):
+        reasons.append("Calm and gentle demeanor aligning well with your quiet household schedule")
+    elif 'friendly' in tags_lower and (has_kids or has_pets):
+        reasons.append("Friendly and highly social nature tested safe and compatible with household members")
+    elif 'independent' in tags_lower and hours in ['4_7', '8_plus', '8+']:
+        reasons.append("Self-sufficient and low-maintenance behavior suitable for your work routine")
+    elif 'playful' in tags_lower and activity in ['high', 'active', 'moderate']:
+        reasons.append("Playful disposition provides engaging companionship for your active routine")
+    elif tags_lower:
+        reasons.append(f"Demonstrates predictable {' and '.join(pet_tags_list[:2]).lower()} shelter temperament")
 
     # 2. Living Environment & Space Suitability Metric
     if species == 'cat':
@@ -558,10 +559,11 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             feat_df = _build_multi_species_feature_vector(adopter_profile, pet, feature_cols)
             proba = model.predict_proba(feat_df)[0]
             rf_prob = float(proba[1])  # Predicted probability of compatibility
-            final_metric = (0.70 * rf_prob) + (0.30 * tag_sim)
+            # Pure 100% Machine Learning probability prediction derived from lifestyle features
+            final_metric = rf_prob
             algo_name = 'Scikit-Learn Random Forest Classifier (Multi-Species Trained Model)'
         else:
-            final_metric = (0.60 * 0.70) + (0.40 * tag_sim)
+            final_metric = 0.70
             algo_name = 'Multi-Species Compatibility Engine'
 
         match_pct = round(min(99.0, max(52.0, (final_metric * 45.0) + 53.0)), 1)

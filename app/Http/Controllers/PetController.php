@@ -248,7 +248,8 @@ class PetController extends Controller
 
                 // 1. Auto-create clinical MedicalLog for Vaccination if checked
                 if ($request->boolean('is_vaccinated')) {
-                    $vaccineName = trim((string) $request->input('vaccine_name')) ?: '5-in-1';
+                    $defaultVax = $pet->type === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
+                    $vaccineName = trim((string) $request->input('vaccine_name')) ?: $defaultVax;
                     $vaccineDate = $request->input('vaccine_date') ?: now()->toDateString();
                     $vaccineNextDue = $request->input('vaccine_next_due') ?: Carbon::parse($vaccineDate)->addMonths(6)->toDateString();
 
@@ -406,7 +407,8 @@ class PetController extends Controller
 
             // 1. Update or create clinical MedicalLog for Vaccination if checked
             if ($request->boolean('is_vaccinated')) {
-                $vaccineName = trim((string) $request->input('vaccine_name')) ?: '5-in-1';
+                $defaultVax = $pet->type === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
+                $vaccineName = trim((string) $request->input('vaccine_name')) ?: $defaultVax;
                 $vaccineDate = $request->input('vaccine_date') ?: now()->toDateString();
                 $vaccineNextDue = $request->input('vaccine_next_due') ?: Carbon::parse($vaccineDate)->addMonths(6)->toDateString();
 
@@ -485,6 +487,17 @@ class PetController extends Controller
             'description'        => 'nullable|string',
         ]);
 
+        // Enforce required behavioral traits (temperament) for recommendations
+        $selectedTagCount = count($request->input('temperament_tags', []));
+        $hasCustom = trim((string) $request->input('custom_temperament')) !== '';
+        if ($selectedTagCount === 0 && !$hasCustom && $pet->temperamentTags()->count() === 0) {
+            return redirect()->back()->withErrors([
+                'temperament_tags' => 'At least one temperament trait must be selected to mark this pet ready for adoption.'
+            ]);
+        }
+
+
+
         $user = Auth::user();
 
         DB::transaction(function () use ($pet, $data, $user, $request) {
@@ -494,7 +507,7 @@ class PetController extends Controller
             }
             $pet->update($updates);
 
-            if ($request->has('temperament_tags')) {
+            if ($request->has('temperament_tags') || !empty($rawCustom)) {
                 $tagIds = array_map('intval', $data['temperament_tags'] ?? []);
                 $rawCustom = $request->input('custom_temperament');
                 if (!empty($rawCustom)) {
@@ -510,6 +523,13 @@ class PetController extends Controller
                         }
                     }
                 }
+
+                // Remove observation tag when promoting to available for adoption
+                $obsTag = TemperamentTag::where('name', 'Under Behavioral Observation')->first();
+                if ($obsTag) {
+                    $tagIds = array_diff($tagIds, [$obsTag->id]);
+                }
+
                 $pet->temperamentTags()->sync(array_values(array_unique($tagIds)));
             }
 

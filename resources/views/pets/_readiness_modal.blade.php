@@ -72,7 +72,7 @@
             </div>
 
             {{-- Form Body --}}
-            <form :action="actionUrl" method="POST" @submit="isSubmitting = true">
+            <form :action="actionUrl" method="POST" @submit.prevent="if (isFormValid && !isSubmitting) { isSubmitting = true; $el.submit(); }">
                 @csrf
 
                 {{-- Hidden Inputs for Selected Temperament Tag IDs --}}
@@ -88,14 +88,14 @@
                             <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
                                 <span>1. Clinical Clearance Check</span>
                             </h4>
-                            <span class="text-[11px] text-slate-400 dark:text-slate-500">Core vaccinations & deworming</span>
+                            <span class="text-[11px] text-slate-400 dark:text-slate-500">Core vaccinations & deworming (Optional)</span>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             
                             {{-- Core Vaccination Card --}}
                             <div class="p-4 rounded-2xl border transition-all"
-                                 :class="hasVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40' : (logVaccine ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-900/40')">
+                                 :class="hasVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40' : (logVaccine ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.08]')">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
                                         <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Core Vaccination</span>
@@ -107,8 +107,10 @@
                                                 </div>
                                             </template>
                                             <template x-if="!hasVaccine">
-                                                <div class="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                                    No vaccination recorded yet
+                                                <div>
+                                                    <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                        No vaccination recorded yet
+                                                    </div>
                                                 </div>
                                             </template>
                                         </div>
@@ -130,8 +132,35 @@
                                         <div x-show="logVaccine" class="mt-2.5 space-y-2" x-transition>
                                             <div>
                                                 <label class="text-[10px] font-bold text-slate-500 uppercase">Vaccine Name</label>
-                                                <input type="text" name="vaccine_name" x-model="vaccineNameInput" 
-                                                       class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                {{-- Feline Vaccines Dropdown --}}
+                                                <div x-show="petType === 'cat'">
+                                                    <select x-model="vaccinePreset"
+                                                            class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                        <option value="4-in-1 (FVRCP)">4-in-1 (FVRCP) - Core Feline</option>
+                                                        <option value="3-in-1 (FVRCP)">3-in-1 (FVRCP)</option>
+                                                        <option value="Anti-Rabies">Anti-Rabies</option>
+                                                        <option value="FeLV (Feline Leukemia)">FeLV (Feline Leukemia)</option>
+                                                        <option value="Other">Other (Specify Custom Vaccine)</option>
+                                                    </select>
+                                                </div>
+                                                {{-- Canine Vaccines Dropdown --}}
+                                                <div x-show="petType !== 'cat'">
+                                                    <select x-model="vaccinePreset"
+                                                            class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                        <option value="5-in-1 (DHPP)">5-in-1 (DHPP) - Core Canine</option>
+                                                        <option value="6-in-1 (DHLPP)">6-in-1 (DHLPP)</option>
+                                                        <option value="8-in-1 (DHLPPC)">8-in-1 (DHLPPC)</option>
+                                                        <option value="Anti-Rabies">Anti-Rabies</option>
+                                                        <option value="Bordetella (Kennel Cough)">Bordetella (Kennel Cough)</option>
+                                                        <option value="Canine Parvovirus (CPV)">Canine Parvovirus (CPV)</option>
+                                                        <option value="Other">Other (Specify Custom Vaccine)</option>
+                                                    </select>
+                                                </div>
+                                                <input type="hidden" name="vaccine_name" :value="vaccinePreset === 'Other' ? (vaccineCustomInput.trim() || (petType === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)')) : vaccinePreset">
+                                                <div x-show="vaccinePreset === 'Other'" class="mt-1.5" x-transition>
+                                                    <input type="text" x-model="vaccineCustomInput" placeholder="Specify custom vaccine name..."
+                                                           class="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                </div>
                                             </div>
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div>
@@ -152,7 +181,7 @@
 
                             {{-- Deworming Card --}}
                             <div class="p-4 rounded-2xl border transition-all"
-                                 :class="hasDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200/80 dark:border-purple-800/40' : (logDeworming ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200/80 dark:border-amber-900/40')">
+                                 :class="hasDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200/80 dark:border-purple-800/40' : (logDeworming ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.08]')">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
                                         <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Deworming</span>
@@ -164,8 +193,10 @@
                                                 </div>
                                             </template>
                                             <template x-if="!hasDeworming">
-                                                <div class="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                                                    No deworming recorded yet
+                                                <div>
+                                                    <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                        No deworming recorded yet
+                                                    </div>
                                                 </div>
                                             </template>
                                         </div>
@@ -187,8 +218,21 @@
                                         <div x-show="logDeworming" class="mt-2.5 space-y-2" x-transition>
                                             <div>
                                                 <label class="text-[10px] font-bold text-slate-500 uppercase">Dewormer Product</label>
-                                                <input type="text" name="dewormer_name" x-model="dewormerNameInput" 
-                                                       class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                <select x-model="dewormerPreset"
+                                                        class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                    <option value="Pyrantel Embonate">Pyrantel Embonate</option>
+                                                    <option value="Canex Puppy/Dog">Canex Puppy/Dog</option>
+                                                    <option value="Drontal Plus">Drontal Plus</option>
+                                                    <option value="Heartgard Plus">Heartgard Plus</option>
+                                                    <option value="Broadline (Feline Spot-on)">Broadline (Feline Spot-on)</option>
+                                                    <option value="Anthelmintic Dewormer">Anthelmintic Dewormer (Standard)</option>
+                                                    <option value="Other">Other (Specify Custom Brand)</option>
+                                                </select>
+                                                <input type="hidden" name="dewormer_name" :value="dewormerPreset === 'Other' ? (dewormerCustomInput.trim() || 'Anthelmintic Dewormer') : dewormerPreset">
+                                                <div x-show="dewormerPreset === 'Other'" class="mt-1.5" x-transition>
+                                                    <input type="text" x-model="dewormerCustomInput" placeholder="Specify custom dewormer brand..."
+                                                           class="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
+                                                </div>
                                             </div>
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div>
@@ -213,15 +257,18 @@
                     {{-- Section 2: Behavioral Assessment & Temperament Tags --}}
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white">
-                                2. Behavioral Assessment (Petfinder Compatibility)
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
+                                <span>2. Behavioral Assessment (Petfinder Compatibility)</span>
+                                <span class="text-rose-500 font-bold">*</span>
                             </h4>
-                            <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">
-                                <span x-text="selectedTags.length"></span> tag(s) selected
+                            <span class="text-[11px] font-bold"
+                                  :class="isTemperamentClear ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-rose-500 dark:text-rose-400'">
+                                <span x-show="!isTemperamentClear">Required (Select at least 1)</span>
+                                <span x-show="isTemperamentClear"><span x-text="selectedTags.length"></span> tag(s) selected</span>
                             </span>
                         </div>
                         <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                            Select 2 or more behavior tags. Petfinder matches adopter compatibility quiz profiles directly against these traits.
+                            Select at least 1 behavior tag. Petfinder matches adopter compatibility quiz profiles directly against these traits.
                         </p>
 
                         {{-- Clickable Tag Chips --}}
@@ -269,29 +316,56 @@
 
                 </div>
 
+                {{-- Live Validation Checklist Banner --}}
+                <div x-show="!isFormValid" class="px-4 py-3 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200/80 dark:border-amber-800/40 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div class="flex-1">
+                        <span class="font-bold">Cannot publish yet — please complete the required readiness criteria:</span>
+                        <ul class="list-disc list-inside mt-1 space-y-0.5 text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                            <template x-for="req in missingRequirements" :key="req">
+                                <li x-text="req"></li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+
                 {{-- Modal Footer Actions --}}
-                <div class="p-3.5 sm:p-4 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-end gap-2">
-                    <button type="button" 
-                            @click="closeModal()" 
-                            class="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] text-xs font-bold transition cursor-pointer">
-                        Cancel
-                    </button>
-                    <button type="submit" 
-                            :disabled="isSubmitting"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer">
-                        <template x-if="isSubmitting">
-                            <span class="inline-block animate-spin mr-1">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                </svg>
+                <div class="p-3.5 sm:p-4 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between gap-2">
+                    <div>
+                        <template x-if="isFormValid">
+                            <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                All readiness requirements satisfied
                             </span>
                         </template>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span x-text="isSubmitting ? 'Promoting...' : 'Confirm & Launch to Adoption Directory'"></span>
-                    </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" 
+                                @click="closeModal()" 
+                                class="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] text-xs font-bold transition cursor-pointer">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                :disabled="isSubmitting || !isFormValid"
+                                :class="(!isFormValid || isSubmitting) ? 'opacity-50 cursor-not-allowed bg-slate-400 dark:bg-slate-600 text-slate-200 shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm'"
+                                :title="!isFormValid ? 'Please complete all requirements above' : 'Ready to launch'"
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all">
+                            <template x-if="isSubmitting">
+                                <span class="inline-block animate-spin mr-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                </span>
+                            </template>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span x-text="isSubmitting ? 'Promoting...' : 'Confirm & Launch to Adoption Directory'"></span>
+                        </button>
+                    </div>
                 </div>
             </form>
 
@@ -314,14 +388,16 @@
             dewormingName: '',
             logVaccine: false,
             logDeworming: false,
-            vaccineNameInput: '5-in-1 (DHPP)',
+            vaccinePreset: '5-in-1 (DHPP)',
+            vaccineCustomInput: '',
             vaccineDateInput: new Date().toISOString().split('T')[0],
             vaccineNextDueInput: (() => {
                 const d = new Date();
                 d.setMonth(d.getMonth() + 6);
                 return d.toISOString().split('T')[0];
             })(),
-            dewormerNameInput: 'Anthelmintic Dewormer',
+            dewormerPreset: 'Pyrantel Embonate',
+            dewormerCustomInput: '',
             dewormerDateInput: new Date().toISOString().split('T')[0],
             dewormerNextDueInput: (() => {
                 const d = new Date();
@@ -332,6 +408,52 @@
             customTemperament: '',
             description: '',
             allTags: @json($modalTemperamentTags),
+
+            get isVaccineValid() {
+                if (!this.logVaccine) return true;
+                if (this.vaccinePreset === 'Other' && !this.vaccineCustomInput.trim()) return false;
+                if (!this.vaccineDateInput) return false;
+                return true;
+            },
+
+            get isDewormingValid() {
+                if (!this.logDeworming) return true;
+                if (this.dewormerPreset === 'Other' && !this.dewormerCustomInput.trim()) return false;
+                if (!this.dewormerDateInput) return false;
+                return true;
+            },
+
+            get isTemperamentClear() {
+                return (this.selectedTags && this.selectedTags.length >= 1) || (this.customTemperament && this.customTemperament.trim().length > 0);
+            },
+
+            get isFormValid() {
+                return this.isTemperamentClear && this.isVaccineValid && this.isDewormingValid;
+            },
+
+            get missingRequirements() {
+                const missing = [];
+                if (!this.isTemperamentClear) {
+                    missing.push('Select at least 1 verified temperament tag (Basis of ML recommendations)');
+                }
+                if (this.logVaccine) {
+                    if (this.vaccinePreset === 'Other' && !this.vaccineCustomInput.trim()) {
+                        missing.push('Specify custom vaccine name');
+                    }
+                    if (!this.vaccineDateInput) {
+                        missing.push('Provide vaccine administration date');
+                    }
+                }
+                if (this.logDeworming) {
+                    if (this.dewormerPreset === 'Other' && !this.dewormerCustomInput.trim()) {
+                        missing.push('Specify custom dewormer brand');
+                    }
+                    if (!this.dewormerDateInput) {
+                        missing.push('Provide deworming administration date');
+                    }
+                }
+                return missing;
+            },
 
             openModal(detail) {
                 this.petId = detail.id;
@@ -344,8 +466,10 @@
                 this.dewormingName = detail.dewormingName || '';
                 this.logVaccine = false;
                 this.logDeworming = false;
-                this.vaccineNameInput = (this.petType === 'cat') ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
-                this.dewormerNameInput = 'Anthelmintic Dewormer';
+                this.vaccinePreset = (this.petType === 'cat') ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
+                this.vaccineCustomInput = '';
+                this.dewormerPreset = (this.petType === 'cat') ? 'Broadline (Feline Spot-on)' : 'Pyrantel Embonate';
+                this.dewormerCustomInput = '';
 
                 const allowedTagIds = this.allTags.map(t => Number(t.id));
                 this.selectedTags = Array.isArray(detail.selectedTags)
