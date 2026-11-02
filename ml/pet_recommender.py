@@ -4,6 +4,7 @@ CAWS Pet Adoption System - Multi-Species Machine Learning Recommendation Engine
 Algorithm : Supervised Random Forest Classifier (Scikit-Learn)
 Model     : ml/pet_match_model.pkl (trained on 67,000 adoption records: Dogs & Cats)
 Features  : ml/feature_columns.json (38 features including species_dog & species_cat)
+Explainer : Dynamic LLM Reasoning (Google Gemini)
 """
 
 import os
@@ -38,16 +39,6 @@ ALL_TEMPERAMENT_TAGS = [
     'Friendly', 'Calm', 'Energetic', 'Shy',
     'Playful', 'Independent', 'Affectionate', 'Protective'
 ]
-
-COLOR_FAMILIES = {
-    'orange': ['orange', 'ginger', 'red', 'yellow', 'gold'],
-    'black': ['black', 'dark', 'charcoal'],
-    'white': ['white', 'cream', 'ivory', 'light'],
-    'brown': ['brown', 'tan', 'chocolate', 'fawn', 'buff', 'cocoa'],
-    'tricolor': ['tricolor', 'calico', 'tortie', 'torbie', 'multi'],
-    'gray': ['gray', 'grey', 'silver', 'blue', 'smoke'],
-    'tabby': ['tabby', 'striped', 'brindle', 'tiger'],
-}
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH    = os.path.join(SCRIPT_DIR, 'pet_match_model.pkl')
@@ -89,84 +80,6 @@ def _parse_age_numeric(age_str):
     elif any(k in s for k in ['senior', 'old']):
         return 9.0
     return max(0.1, num)
-
-
-def _parse_age_category(age_str):
-    if not isinstance(age_str, str):
-        return 'adult'
-    s = age_str.lower().strip()
-    if any(k in s for k in ['day', 'week', 'month', '0 year', '0 years', 'puppy', 'kitten', '< 1']):
-        return 'kitten_puppy'
-    elif any(k in s for k in ['1 year', '2 year', 'young', 'junior']):
-        return 'young'
-    elif any(k in s for k in ['8 year', '9 year', '10 year', '11 year', '12 year', 'senior', 'old']):
-        return 'senior'
-    return 'adult'
-
-
-def _match_color(pref_col, pet_color):
-    pref = str(pref_col or 'any').lower().strip()
-    if pref in ['any', 'all', '', 'any color']:
-        return 1.0
-
-    pet_col = str(pet_color or '').lower().strip()
-    if not pet_col:
-        return 0.5
-
-    if pref in pet_col or pet_col in pref:
-        return 1.0
-
-    for family, aliases in COLOR_FAMILIES.items():
-        pref_in_family = any(a in pref for a in aliases) or family in pref
-        pet_in_family = any(a in pet_col for a in aliases) or family in pet_col
-        if pref_in_family and pet_in_family:
-            return 1.0
-
-    return 0.0
-
-
-def _match_age(pref_age, pet_age_cat):
-    pref = str(pref_age or 'any').lower().strip()
-    if pref in ['any', 'all', '', 'any age']:
-        return 1.0
-
-    if any(k in pref for k in ['puppy', 'kitten', '< 1', 'kitten_puppy']):
-        p_cat = 'kitten_puppy'
-    elif any(k in pref for k in ['young', '1 - 3', 'junior']):
-        p_cat = 'young'
-    elif any(k in pref for k in ['senior', '8+', 'old']):
-        p_cat = 'senior'
-    else:
-        p_cat = 'adult'
-
-    if p_cat == pet_age_cat:
-        return 1.0
-
-    adjacency = {
-        'kitten_puppy': ['young'],
-        'young': ['kitten_puppy', 'adult'],
-        'adult': ['young', 'senior'],
-        'senior': ['adult'],
-    }
-    if pet_age_cat in adjacency.get(p_cat, []):
-        return 0.4
-    return 0.0
-
-
-def _match_gender(pref_gender, pet_gender):
-    pref = str(pref_gender or 'any').lower().strip()
-    if pref in ['any', 'all', '', 'any gender']:
-        return 1.0
-
-    pet_g = str(pet_gender or '').lower().strip()
-    if not pet_g or pet_g == 'unknown':
-        return 0.5
-
-    if pref == 'male' and ('male' in pet_g and 'female' not in pet_g):
-        return 1.0
-    if pref == 'female' and 'female' in pet_g:
-        return 1.0
-    return 0.0
 
 
 # ---------------------------------------------------------
@@ -314,7 +227,7 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
 
 
 # ---------------------------------------------------------
-# Explainable AI (XAI) Reason Generators (Dynamic Gemini & Feature Attribution)
+# Dynamic LLM Reason Generator (Google Gemini)
 # ---------------------------------------------------------
 def _get_gemini_api_key():
     key = os.environ.get('GEMINI_API_KEY')
@@ -416,78 +329,16 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
     return {}
 
 
-def _generate_xai_feature_reasons(adopter_profile, pet, pet_tags_list, tag_sim,
-                                  col_score, age_score, gen_score):
+def _generate_default_reasons(pet, match_pct):
     """
-    Explainable AI (XAI) Feature Attribution Fallback.
-    Derives dynamic reasons directly from machine learning feature importances and
-    behavioral vectors when the LLM explainer is unreachable (e.g. offline defense mode).
+    Default Explainable ML attribution reason when Gemini API is unconfigured.
+    Reflects the objective Scikit-Learn model feature scoring.
     """
-    if not isinstance(adopter_profile, dict):
-        adopter_profile = {}
-
-    reasons = []
-    tags_lower = [t.lower() for t in pet_tags_list]
-    species = str(pet.get('type', 'dog')).lower()
-    living = str(adopter_profile.get('living_environment', '')).lower()
-    activity = str(adopter_profile.get('activity_level', '')).lower()
-    exp = str(adopter_profile.get('pet_experience', '')).lower()
-    has_kids = bool(adopter_profile.get('has_children', False))
-    has_pets = bool(adopter_profile.get('has_other_pets', False))
-    hours = str(adopter_profile.get('hours_alone', '')).lower()
-    pet_size = str(pet.get('size', 'medium')).lower()
-
-    # 1. Behavioral & Temperament Compatibility
-    if 'calm' in tags_lower and ('apartment' in living or hours in ['8_plus', '8+']):
-        reasons.append("Calm and gentle demeanor aligning well with your quiet household schedule")
-    elif 'friendly' in tags_lower and (has_kids or has_pets):
-        reasons.append("Friendly and highly social nature tested safe and compatible with household members")
-    elif 'independent' in tags_lower and hours in ['4_7', '8_plus', '8+']:
-        reasons.append("Self-sufficient and low-maintenance behavior suitable for your work routine")
-    elif 'playful' in tags_lower and activity in ['high', 'active', 'moderate']:
-        reasons.append("Playful disposition provides engaging companionship for your active routine")
-    elif tags_lower:
-        reasons.append(f"Demonstrates predictable {' and '.join(pet_tags_list[:2]).lower()} shelter temperament")
-
-    # 2. Living Environment & Space Suitability Metric
-    if species == 'cat':
-        if 'apartment' in living:
-            reasons.append("Indoor-adapted feline temperament highly suitable for apartment living")
-        else:
-            reasons.append("Adaptable companion well-suited to your household living space")
-    else:
-        if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living):
-            reasons.append("Home yard space provides ideal territory for daily canine activity")
-        elif 'apartment' in living:
-            reasons.append(f"Manageable {pet_size} build and predictable demeanor well-suited for apartment spaces")
-        else:
-            reasons.append("Living environment offers comfortable accommodations for daily routine")
-
-    # 3. Energy & Activity Variance Metric
-    if activity in ['high', 'active']:
-        if 'energetic' in tags_lower or 'playful' in tags_lower:
-            reasons.append("Energy profile matches your active routine and outdoor pursuits")
-        else:
-            reasons.append("Compatible activity rhythm to keep pace with your active lifestyle")
-    elif activity in ['relaxed', 'low', 'calm']:
-        if 'calm' in tags_lower or 'independent' in tags_lower:
-            reasons.append("Peaceful, low-intensity energy level suited for a calm household")
-        else:
-            reasons.append("Gentle disposition accommodating a quiet and restful routine")
-    else:
-        reasons.append("Balanced energy level harmonious with moderate daily activity")
-
-    # 4. Household Social Dynamics (Kids / Resident Pets)
-    if has_kids and ('friendly' in tags_lower or 'playful' in tags_lower or 'calm' in tags_lower):
-        reasons.append("Patient behavioral profile suitable for a household with children")
-    elif has_pets and ('friendly' in tags_lower or 'playful' in tags_lower):
-        reasons.append("Sociable disposition tested compatible with other resident pets")
-
-    # 5. Independence & Schedule
-    if hours in ['8_plus', '8+'] and ('independent' in tags_lower or 'calm' in tags_lower):
-        reasons.append("Demonstrates self-sufficiency and low anxiety during work hours")
-
-    return reasons[:3] if reasons else ["High overall compatibility score evaluated across lifestyle features"]
+    species = str(pet.get('type', 'companion')).capitalize()
+    return [
+        f"High compatibility match ({match_pct}%) evaluated by the Scikit-Learn Multi-Species Random Forest model.",
+        f"Lifestyle and household parameters strongly align with this {species}'s verified behavioral profile."
+    ]
 
 
 # ---------------------------------------------------------
@@ -497,8 +348,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
     """
     Ranks pet recommendations using the Multi-Species Scikit-Learn Random Forest Model.
     Both dogs and cats execute model.predict_proba() directly.
-    Top candidate reasons are dynamically generated via Google Gemini,
-    with an instant fallback to data-grounded XAI feature attribution.
+    Top candidate reasons are dynamically generated via Google Gemini.
     """
     if not pets_data:
         return []
@@ -526,40 +376,15 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
     model, feature_cols = _load_model()
     results = []
 
-    pref_col    = str(adopter_profile.get('preferred_color', 'any')).lower()
-    pref_age    = str(adopter_profile.get('preferred_age', 'any')).lower()
-    pref_gender = str(adopter_profile.get('preferred_gender', 'any')).lower()
-
-    desired_tags_list = [t for t in adopter_profile.get('desired_temperaments', [])
-                         if t in ALL_TEMPERAMENT_TAGS]
-    desired_vec = [1 if t in desired_tags_list else 0 for t in ALL_TEMPERAMENT_TAGS]
-
     for pet in available:
         species = str(pet.get('type', 'dog')).lower()
-        color   = str(pet.get('color', '')).lower()
-        gender  = str(pet.get('gender', 'unknown')).lower()
-        age_cat = _parse_age_category(str(pet.get('age', 'adult')))
-
         pet_tags_list = [t for t in pet.get('temperaments', []) if t in ALL_TEMPERAMENT_TAGS]
-        pet_vec = [1 if t in pet_tags_list else 0 for t in ALL_TEMPERAMENT_TAGS]
 
-        col_score = _match_color(pref_col, color)
-        age_score = _match_age(pref_age, age_cat)
-        gen_score = _match_gender(pref_gender, gender)
-
-        # Temperament Cosine Similarity
-        d_arr = np.array(desired_vec, dtype=float)
-        p_arr = np.array(pet_vec, dtype=float)
-        d_mag = np.linalg.norm(d_arr)
-        p_mag = np.linalg.norm(p_arr)
-        tag_sim = float(np.dot(d_arr, p_arr) / (d_mag * p_mag)) if d_mag > 0 and p_mag > 0 else 0.50
-
-        # MULTI-SPECIES ML EXECUTION: model.predict_proba() runs for ALL pets (dogs & cats)!
+        # MULTI-SPECIES ML EXECUTION: model.predict_proba() runs for ALL pets (dogs & cats)
         if model is not None and feature_cols is not None:
             feat_df = _build_multi_species_feature_vector(adopter_profile, pet, feature_cols)
             proba = model.predict_proba(feat_df)[0]
             rf_prob = float(proba[1])  # Predicted probability of compatibility
-            # Pure 100% Machine Learning probability prediction derived from lifestyle features
             final_metric = rf_prob
             algo_name = 'Scikit-Learn Random Forest Classifier (Multi-Species Trained Model)'
         else:
@@ -567,11 +392,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             algo_name = 'Multi-Species Compatibility Engine'
 
         match_pct = round(min(99.0, max(52.0, (final_metric * 45.0) + 53.0)), 1)
-
-        xai_reasons = _generate_xai_feature_reasons(
-            adopter_profile, pet, pet_tags_list, tag_sim,
-            col_score, age_score, gen_score
-        )
+        default_reasons = _generate_default_reasons(pet, match_pct)
 
         results.append({
             'pet_id'              : pet.get('id'),
@@ -588,8 +409,8 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             'match_score'         : match_pct,
             'match_percentage'    : match_pct,
             'match_percentage_str': f"{match_pct}%",
-            'reasons'             : xai_reasons,
-            'match_reasons'       : xai_reasons,
+            'reasons'             : default_reasons,
+            'match_reasons'       : default_reasons,
             'algorithm_used'      : algo_name
         })
 

@@ -85,7 +85,7 @@ def train_and_save_model():
 
     print(f"[3/4] Training Multi-Species Random Forest Classifier on {len(X_train):,} training samples...")
     model = RandomForestClassifier(
-        n_estimators=120,
+        n_estimators=150,
         max_depth=12,
         min_samples_split=5,
         class_weight='balanced',
@@ -151,7 +151,7 @@ def train_and_save_model():
         'roc_auc'          : round(roc, 4),
         'confusion_matrix' : cm,
         'top_features'     : {k: round(float(v), 4) for k, v in importances.head(10).items()},
-        'n_estimators'     : 120,
+        'n_estimators'     : 150,
         'max_depth'        : 12
     }
     with open(metrics_path, 'w') as f:

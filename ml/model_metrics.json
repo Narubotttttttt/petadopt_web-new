@@ -7,32 +7,32 @@
   "test_samples": 13400,
   "features_count": 38,
   "accuracy": 78.22,
-  "precision": 94.15,
-  "recall": 80.48,
-  "f1_score": 0.8678,
-  "roc_auc": 0.7719,
+  "precision": 94.22,
+  "recall": 80.42,
+  "f1_score": 0.8677,
+  "roc_auc": 0.7721,
   "confusion_matrix": [
     [
-      903,
-      595
+      911,
+      587
     ],
     [
-      2323,
-      9579
+      2331,
+      9571
     ]
   ],
   "top_features": {
-    "aggression_score": 0.1601,
-    "training_level": 0.1067,
-    "reactivity_to_dogs": 0.092,
-    "anxiety_separation": 0.0821,
-    "expectation_score": 0.0605,
-    "energy_mismatch": 0.0519,
+    "aggression_score": 0.1634,
+    "training_level": 0.1041,
+    "reactivity_to_dogs": 0.0927,
+    "anxiety_separation": 0.0814,
+    "expectation_score": 0.0609,
+    "energy_mismatch": 0.0516,
     "hours_alone_per_day": 0.0468,
-    "species_cat": 0.0446,
-    "adopter_activity_level": 0.0418,
-    "energy_level": 0.0389
+    "species_cat": 0.0443,
+    "adopter_activity_level": 0.0413,
+    "species_dog": 0.0393
   },
-  "n_estimators": 120,
+  "n_estimators": 150,
   "max_depth": 12
 }
