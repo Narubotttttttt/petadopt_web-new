@@ -21,11 +21,15 @@ class PetHealthUpdate extends Model
         'check_in_date',
         'status',
         'staff_remarks',
+        'review_decision',
+        'reviewed_by',
+        'reviewed_at',
     ];
 
     protected $casts = [
         'check_in_date' => 'date',
         'weight' => 'float',
+        'reviewed_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -58,5 +62,10 @@ class PetHealthUpdate extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

@@ -149,6 +149,15 @@ class AdoptionApiController extends Controller
             ], 403);
         }
 
+        // Enforce 3-pet household limit on active pets
+        $activeAdoptedCount = AdoptionApplication::getActiveAdoptedCount($applicantEmail);
+        if ($activeAdoptedCount >= 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You currently have 3 companions in your active household care and have reached the maximum shelter adoption limit.',
+            ], 422);
+        }
+
         $targetPet = Pet::find($request->pet_id);
         if (!$targetPet || strtolower($targetPet->status) !== 'available') {
             return response()->json([
@@ -648,6 +657,7 @@ class AdoptionApiController extends Controller
             'notes'                   => $request->notes,
             'check_in_date'           => now()->toDateString(),
             'status'                  => $isDeceased ? 'memorial_recorded' : 'submitted',
+            'review_decision'         => $isDeceased ? 'pending' : null,
         ]);
 
         if ($isDeceased) {
@@ -695,6 +705,8 @@ class AdoptionApiController extends Controller
                 'check_in_date_raw'       => $item->check_in_date ? $item->check_in_date->format('Y-m-d') : '',
                 'status'                  => $item->status,
                 'staff_remarks'           => $item->staff_remarks,
+                'review_decision'         => $item->review_decision,
+                'reviewed_at'             => $item->reviewed_at ? $item->reviewed_at->format('M d, Y') : null,
                 'created_at'              => $item->created_at ? $item->created_at->toIso8601String() : null,
             ];
         });

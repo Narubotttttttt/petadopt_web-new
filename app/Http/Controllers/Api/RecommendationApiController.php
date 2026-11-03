@@ -26,17 +26,49 @@ class RecommendationApiController extends Controller
         }
 
         $preference = AdopterCompatibilityProfile::where('user_id', $user->id)->first();
-        $adoptedCount = \App\Models\AdoptionApplication::where('applicant_email', $user->email)
-            ->whereIn('status', ['approved', 'adopted'])
-            ->count();
+        $capacity = \App\Models\AdoptionApplication::getAdoptionCapacityDetails($user->email);
+        $adoptedCount = $capacity['active_pets_count'];
+
+        $canRetake = false;
+        $retakeStatus = 'none';
+        $daysRemaining = 0;
+        $nextRetakeDate = null;
+
+        if ($preference) {
+            $revCount = (int)($preference->revision_count ?? 0);
+            $nextAvail = $preference->next_retake_available_at;
+
+            if ($revCount === 0) {
+                // Initial completion: 1 immediate grace revision available!
+                $canRetake = true;
+                $retakeStatus = 'grace_period';
+            } elseif ($nextAvail === null || now()->greaterThanOrEqualTo($nextAvail)) {
+                // 30-day cooldown passed: monthly update window open!
+                $canRetake = true;
+                $retakeStatus = 'monthly_available';
+            } else {
+                // Currently on 30-day cooldown
+                $canRetake = false;
+                $retakeStatus = 'cooldown';
+                $daysRemaining = max(1, (int)now()->diffInDays($nextAvail, false));
+                $nextRetakeDate = $nextAvail->format('M d, Y');
+            }
+        }
 
         return response()->json([
             'preferences'           => $preference,
             'compatibility_profile' => $preference,
-            'is_locked'        => $preference !== null,
-            'adopted_count'    => $adoptedCount,
-            'max_pets_allowed' => 3,
-            'remaining_slots'  => max(0, 3 - $adoptedCount),
+            'is_locked'             => $preference !== null,
+            'can_retake'            => $canRetake,
+            'retake_status'         => $retakeStatus,
+            'days_remaining'        => $daysRemaining,
+            'next_retake_date'      => $nextRetakeDate,
+            'revision_count'        => (int)($preference?->revision_count ?? 0),
+            'adopted_count'          => $adoptedCount,
+            'cleared_deceased_count' => $capacity['cleared_deceased_count'],
+            'max_pets_allowed'       => 3,
+            'remaining_slots'        => $capacity['remaining_slots'],
+            'can_adopt_more'         => $capacity['can_adopt_more'],
         ]);
     }
 
@@ -57,10 +89,8 @@ class RecommendationApiController extends Controller
         if ($user) {
             $saved = AdopterCompatibilityProfile::where('user_id', $user->id)->first();
 
-            // Business rule: Maximum household adoption limit of 3 pets per adopter
-            $adoptedCount = \App\Models\AdoptionApplication::where('applicant_email', $user->email)
-                ->whereIn('status', ['approved', 'adopted'])
-                ->count();
+            // Business rule: Maximum household adoption limit of 3 active pets per adopter
+            $adoptedCount = \App\Models\AdoptionApplication::getActiveAdoptedCount($user->email);
 
             if ($adoptedCount >= 3) {
                 return response()->json([
@@ -75,13 +105,41 @@ class RecommendationApiController extends Controller
             }
         }
 
-        // Business rule: Once an adopter has submitted their match quiz, they cannot modify or retake it.
+        // Check cooldown and retake eligibility if adopter already has a profile and submits new quiz answers
         if ($user && $saved && $hasQuizInPayload) {
-            return response()->json([
-                'success'   => false,
-                'is_locked' => true,
-                'message'   => 'Your compatibility quiz has already been submitted and cannot be changed or retaken.',
-            ], 403);
+            $revCount = (int)($saved->revision_count ?? 0);
+            $nextAvail = $saved->next_retake_available_at;
+            $canRetake = ($revCount === 0) || ($nextAvail === null || now()->greaterThanOrEqualTo($nextAvail));
+
+            if (! $canRetake) {
+                $daysRemaining = max(1, (int)now()->diffInDays($nextAvail, false));
+                $nextRetakeDate = $nextAvail ? $nextAvail->format('M d, Y') : 'in 30 days';
+                return response()->json([
+                    'success'        => false,
+                    'is_locked'      => true,
+                    'can_retake'     => false,
+                    'days_remaining' => $daysRemaining,
+                    'next_retake_date' => $nextRetakeDate,
+                    'message'        => "Your compatibility assessment is locked. Next update will be available on {$nextRetakeDate} ({$daysRemaining} days remaining).",
+                ], 403);
+            }
+
+            // Update existing profile, increment revision count, and activate 30-day cooldown
+            $saved->update([
+                'preferred_species'     => $request->input('preferred_species', 'any'),
+                'living_environment'    => $request->input('living_environment', 'apartment'),
+                'has_yard'              => filter_var($request->input('has_yard', false), FILTER_VALIDATE_BOOLEAN),
+                'yard_type'             => $request->input('yard_type'),
+                'activity_level'        => $request->input('activity_level', 'moderate'),
+                'pet_experience'        => $request->input('pet_experience', 'first_time'),
+                'has_children'          => filter_var($request->input('has_children', false), FILTER_VALIDATE_BOOLEAN),
+                'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
+                'hours_alone'           => $request->input('hours_alone', '4_7'),
+                'special_care_capacity' => filter_var($request->input('special_care_capacity', false), FILTER_VALIDATE_BOOLEAN),
+                'desired_temperaments'  => $request->input('desired_temperaments', []),
+                'revision_count'        => $revCount + 1,
+                'next_retake_available_at' => now()->addDays(30),
+            ]);
         }
 
         // 3. If the adopter has not answered the quiz yet (neither in request nor in database),
@@ -116,6 +174,8 @@ class RecommendationApiController extends Controller
                 'hours_alone'           => $request->input('hours_alone', '4_7'),
                 'special_care_capacity' => filter_var($request->input('special_care_capacity', false), FILTER_VALIDATE_BOOLEAN),
                 'desired_temperaments'  => $request->input('desired_temperaments', []),
+                'revision_count'        => 0,
+                'next_retake_available_at' => null,
             ]);
         }
 
@@ -255,6 +315,8 @@ class RecommendationApiController extends Controller
                         $rec['match_reasons'] = $recReasons;
                         $rec['reasons'] = $recReasons;
                         $rec['compatibility_breakdown'] = $rec['compatibility_breakdown'] ?? ['space' => 88, 'routine' => 85, 'temperament' => 90];
+                        $rec['care_tip'] = $rec['care_tip'] ?? $rec['consideration'] ?? 'Establish consistent daily routines during initial transition.';
+                        $rec['consideration'] = $rec['care_tip'];
 
                         $validRecs[] = $rec;
                     }
@@ -267,6 +329,8 @@ class RecommendationApiController extends Controller
                     $output['recommendations'] = array_slice($highMatchRecs, 0, 3);
                     $output['count'] = count($output['recommendations']);
                     $output['is_locked'] = ($user && $saved !== null);
+                    $output['can_retake'] = $saved ? ((int)($saved->revision_count ?? 0) === 0 || ($saved->next_retake_available_at === null || now()->greaterThanOrEqualTo($saved->next_retake_available_at))) : true;
+                    $output['revision_count'] = (int)($saved?->revision_count ?? 0);
                     $output['adopted_count'] = $adoptedCount ?? 0;
                     $output['max_pets_allowed'] = 3;
                     $output['remaining_slots'] = max(0, 3 - ($adoptedCount ?? 0));

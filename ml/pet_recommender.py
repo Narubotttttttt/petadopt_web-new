@@ -287,15 +287,17 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
     prompt = (
         "You are an AI explainability engine for a shelter pet recommendation system.\n"
         "Our Scikit-Learn Random Forest model ranked these candidate pets as the top matches for the adopter.\n"
-        "Generate 2 to 3 concise, unscripted, natural compatibility reasons (max 15 words each) explaining why each pet suits the adopter's lifestyle.\n"
+        "For each pet, provide:\n"
+        "1. 'reasons': 2 to 3 concise, natural compatibility reasons (max 15 words each) explaining lifestyle and space fit.\n"
+        "2. 'care_tip': 1 realistic pre-adoption care consideration or settling-in decompression tip (max 15 words) specific to that pet.\n"
         "Strict rules:\n"
         "- Do NOT use any emojis.\n"
-        "- Ground each reason directly in the adopter's home, work hours, lifestyle, and temperament alignment.\n"
-        "- Return ONLY valid JSON mapping pet id to an array of reason strings.\n\n"
+        "- Ground each point directly in the adopter's home, work hours, lifestyle, and temperament alignment.\n"
+        "- Return ONLY valid JSON in format: {\"pet_id\": {\"reasons\": [\"reason 1\", \"reason 2\"], \"care_tip\": \"tip text\"}}\n\n"
         f"Adopter Profile: {json.dumps(compact_adopter)}\n"
         f"Candidate Pets: {json.dumps(compact_pets)}\n\n"
         "JSON format example:\n"
-        '{"1": ["reason 1", "reason 2"]}'
+        '{"1": {"reasons": ["Well-suited for apartment living", "Matches your moderate daily pace"], "care_tip": "Allow 2 to 3 days of quiet space for initial decompression."}}'
     )
 
     models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash']
@@ -320,16 +322,49 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
             with urlopen(req, context=ctx, timeout=4.0) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 raw_text = data['candidates'][0]['content']['parts'][0]['text']
-                reasons_dict = json.loads(raw_text)
-                return {
-                    str(k): [str(r).strip() for r in v if str(r).strip()]
-                    for k, v in reasons_dict.items()
-                    if isinstance(v, list)
-                }
+                parsed_json = json.loads(raw_text)
+                out_map = {}
+                for k, v in parsed_json.items():
+                    if isinstance(v, dict):
+                        reasons = [str(r).strip() for r in v.get('reasons', []) if str(r).strip()]
+                        care_tip = str(v.get('care_tip', '')).strip()
+                        out_map[str(k)] = {'reasons': reasons, 'care_tip': care_tip}
+                    elif isinstance(v, list):
+                        reasons = [str(r).strip() for r in v if str(r).strip()]
+                        out_map[str(k)] = {'reasons': reasons, 'care_tip': ''}
+                return out_map
         except Exception:
             continue
 
     return {}
+
+
+def _generate_care_tip(pet: dict[str, Any], adopter_profile: dict[str, Any]) -> str:
+    """
+    Generates a practical shelter care consideration or settling-in decompression tip
+    grounded in the pet's behavioral traits, age, and adopter lifestyle constraints.
+    """
+    tags = [t for t in pet.get('temperaments', []) if t in ALL_TEMPERAMENT_TAGS]
+    age_yrs = _parse_age_numeric(pet.get('age', '2 years'))
+    hours = str(adopter_profile.get('hours_alone', '4_7')).lower()
+    has_kids = bool(adopter_profile.get('has_children', False))
+
+    if 'Shy' in tags:
+        return "Allow 2 to 3 days of quiet space in a dedicated room for initial decompression."
+    elif 'Energetic' in tags:
+        return "Provide 30 to 45 minutes of daily structured play or active walks to channel energy."
+    elif 'Independent' in tags:
+        return "Respect their personal space and allow them to initiate contact during early bonding."
+    elif 'Protective' in tags:
+        return "Introduce unfamiliar guests gradually using calm guidance and positive reinforcement."
+    elif hours in ['8_plus', '8+', '8plus']:
+        return "Provide interactive puzzle toys or safe enrichment items during longer alone hours."
+    elif age_yrs < 1.0:
+        return "Maintain a consistent potty schedule and crate routine to build confidence."
+    elif has_kids:
+        return "Supervise initial family interactions to establish gentle boundaries with children."
+    else:
+        return "Establish consistent daily feeding and rest schedules to build trust during week one." 
 
 
 def _generate_default_reasons(pet, match_pct):
@@ -438,6 +473,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
         }
 
         default_reasons = _generate_default_reasons(pet, match_pct)
+        care_tip = _generate_care_tip(pet, adopter_profile)
 
         results.append({
             'pet_id'                 : pet.get('id'),
@@ -457,6 +493,8 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             'compatibility_breakdown': compat_breakdown,
             'reasons'                : default_reasons,
             'match_reasons'          : default_reasons,
+            'care_tip'               : care_tip,
+            'consideration'          : care_tip,
             'algorithm_used'         : algo_name
         })
 
@@ -472,7 +510,12 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
             for item in top_candidates:
                 pid_str = str(item.get('pet_id'))
                 if gemini_map.get(pid_str):
-                    item['reasons'] = gemini_map[pid_str]
-                    item['match_reasons'] = gemini_map[pid_str]
+                    entry = gemini_map[pid_str]
+                    if entry.get('reasons'):
+                        item['reasons'] = entry['reasons']
+                        item['match_reasons'] = entry['reasons']
+                    if entry.get('care_tip'):
+                        item['care_tip'] = entry['care_tip']
+                        item['consideration'] = entry['care_tip']
 
     return top_candidates

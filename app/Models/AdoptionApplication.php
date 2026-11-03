@@ -262,4 +262,76 @@ class AdoptionApplication extends Model
     {
         return $this->belongsTo(User::class, 'documents_verified_by');
     }
+
+    /**
+     * Calculate the count of active living pets currently in an adopter's care.
+     * 
+     * Rule: Deceased pets that have been officially reviewed and cleared by
+     * shelter staff as accidental or natural passing without neglect are
+     * subtracted from the active household limit, freeing up an adoption slot.
+     */
+    public static function getActiveAdoptedCount(string $email): int
+    {
+        $details = self::getAdoptionCapacityDetails($email);
+        return $details['active_pets_count'];
+    }
+
+    /**
+     * Get detailed summary of active vs deceased pets for an adopter.
+     */
+    public static function getAdoptionCapacityDetails(string $email): array
+    {
+        $normalizedEmail = strtolower(trim($email));
+
+        $applications = self::whereRaw('LOWER(applicant_email) = ?', [$normalizedEmail])
+            ->whereIn('status', ['approved', 'adopted'])
+            ->with(['pet.healthUpdates' => function ($q) {
+                $q->where('health_status', 'deceased')->latest();
+            }])
+            ->get();
+
+        $activeCount = 0;
+        $clearedDeceasedCount = 0;
+        $pendingDeceasedCount = 0;
+        $neglectDeceasedCount = 0;
+
+        foreach ($applications as $app) {
+            $pet = $app->pet;
+            if (!$pet) {
+                continue;
+            }
+
+            if ($pet->status !== 'deceased') {
+                $activeCount++;
+                continue;
+            }
+
+            $deceasedUpdate = $pet->healthUpdates
+                ->where('health_status', 'deceased')
+                ->first();
+
+            $decision = $deceasedUpdate?->review_decision;
+
+            if (in_array($decision, ['cleared_accidental', 'cleared_natural', 'approved'])) {
+                $clearedDeceasedCount++;
+            } elseif ($decision === 'neglect_confirmed') {
+                $neglectDeceasedCount++;
+                $activeCount++;
+            } else {
+                $pendingDeceasedCount++;
+                $activeCount++;
+            }
+        }
+
+        return [
+            'total_adoptions'        => $applications->count(),
+            'active_pets_count'      => $activeCount,
+            'cleared_deceased_count' => $clearedDeceasedCount,
+            'pending_deceased_count' => $pendingDeceasedCount,
+            'neglect_deceased_count' => $neglectDeceasedCount,
+            'max_pets_allowed'       => 3,
+            'remaining_slots'        => max(0, 3 - $activeCount),
+            'can_adopt_more'         => $activeCount < 3,
+        ];
+    }
 }

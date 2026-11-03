@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://carey-place-mono-singh.trycloudflare.com/$1",
+                         "destination":  "https://rss-capability-champagne-inns.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

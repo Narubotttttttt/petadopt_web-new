@@ -286,7 +286,8 @@ class AdopterProfileController extends Controller
         $query = PetHealthUpdate::with([
             'pet',
             'user.adoptersProfile',
-            'application'
+            'application',
+            'reviewer'
         ]);
 
         if (!empty($search)) {
@@ -335,6 +336,12 @@ class AdopterProfileController extends Controller
 
         $totalApprovedAdopters = AdoptionApplication::where('status', 'approved')->distinct('applicant_email')->count();
 
+        $pendingDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where(function($q) {
+            $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
+        })->count();
+        $clearedDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'cleared_accidental')->count();
+        $neglectDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'neglect_confirmed')->count();
+
         return view('adopters.reports', compact(
             'reports',
             'search',
@@ -346,7 +353,78 @@ class AdopterProfileController extends Controller
             'healthyReports',
             'attentionReports',
             'deceasedReports',
+            'pendingDeceasedCount',
+            'clearedDeceasedCount',
+            'neglectDeceasedCount',
             'totalApprovedAdopters'
         ));
+    }
+
+    /**
+     * Review a reported deceased pet life event.
+     * 
+     * If approved as accidental / natural passing (no neglect):
+     * - The adopter remains in good standing.
+     * - The pet is officially cleared from their active household count,
+     *   reducing their active pet count by 1 and freeing up capacity.
+     * 
+     * If determined as neglect / care violation:
+     * - The adopter profile is restricted/blacklisted.
+     * - Official investigation findings are recorded.
+     * - Future adoption applications are prohibited.
+     */
+    public function reviewDeceasedReport(Request $request, int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'staff'])) {
+            abort(403, 'Unauthorized. Shelter staff or admin privileges required.');
+        }
+
+        $validated = $request->validate([
+            'decision'      => 'required|in:cleared_accidental,neglect_confirmed',
+            'staff_remarks' => 'required|string|min:5|max:2000',
+        ], [
+            'decision.required'      => 'Please select an official review decision for this life event.',
+            'staff_remarks.required' => 'Please provide detailed staff remarks explaining the review findings.',
+            'staff_remarks.min'      => 'Staff remarks must be at least 5 characters.',
+        ]);
+
+        $report = PetHealthUpdate::with(['pet', 'user.adoptersProfile', 'application'])->findOrFail($id);
+
+        if ($report->health_status !== 'deceased') {
+            return back()->with('error', 'Only deceased / memorial pet life event reports require this review procedure.');
+        }
+
+        $report->update([
+            'review_decision' => $validated['decision'],
+            'staff_remarks'   => $validated['staff_remarks'],
+            'reviewed_by'     => $user->id,
+            'reviewed_at'     => now(),
+            'status'          => $validated['decision'] === 'cleared_accidental' ? 'memorial_cleared' : 'memorial_neglect',
+        ]);
+
+        $petName = $report->pet?->name ?? 'companion';
+
+        if ($validated['decision'] === 'neglect_confirmed') {
+            $adopterEmail = $report->application?->applicant_email ?? $report->user?->email;
+            $profile = null;
+            if ($report->user?->adoptersProfile) {
+                $profile = $report->user->adoptersProfile;
+            } elseif ($adopterEmail) {
+                $profile = AdoptersProfile::where('email', $adopterEmail)->first();
+            }
+
+            if ($profile) {
+                $existingNotes = $profile->admin_notes ? $profile->admin_notes . ' | ' : '';
+                $profile->update([
+                    'status'      => 'restricted',
+                    'admin_notes' => $existingNotes . 'Administrative Investigation (' . now()->format('M d, Y') . '): Neglect confirmed in passing of pet ' . $petName . '. Remarks: ' . $validated['staff_remarks'],
+                ]);
+            }
+
+            return back()->with('success', "Deceased report for {$petName} reviewed: Neglect confirmed. Adopter account has been restricted from future shelter adoptions.");
+        }
+
+        return back()->with('success', "Deceased report for {$petName} verified as accidental / natural passing. Adopter remains in good standing, and 1 adoption slot has been freed up under household limit.");
     }
 }

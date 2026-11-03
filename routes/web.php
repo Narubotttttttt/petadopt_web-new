@@ -115,6 +115,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
     Route::get('/adopters/reports', [\App\Http\Controllers\AdopterProfileController::class, 'monthlyReports'])->name('adopters.reports');
+    Route::patch('/adopters/reports/{id}/review', [\App\Http\Controllers\AdopterProfileController::class, 'reviewDeceasedReport'])->name('adopters.reports.review');
 
     Route::get('/medical-logs', [MedicalLogController::class, 'index'])->name('medical-logs.index');
     Route::get('/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create');

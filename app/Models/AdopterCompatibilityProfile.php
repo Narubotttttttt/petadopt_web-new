@@ -24,6 +24,8 @@ class AdopterCompatibilityProfile extends Model
         'hours_alone',
         'special_care_capacity',
         'desired_temperaments',
+        'revision_count',
+        'next_retake_available_at',
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class AdopterCompatibilityProfile extends Model
         'has_other_pets' => 'boolean',
         'special_care_capacity' => 'boolean',
         'desired_temperaments' => 'array',
+        'revision_count' => 'integer',
+        'next_retake_available_at' => 'datetime',
     ];
 
     public function user()

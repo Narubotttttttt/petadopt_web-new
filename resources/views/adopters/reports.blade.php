@@ -9,6 +9,26 @@
              photoModalStatus: '',
              photoModalNotes: '',
 
+             showReviewModal: false,
+             reviewReportId: null,
+             reviewPetName: '',
+             reviewAdopterName: '',
+             reviewAdopterNotes: '',
+             reviewCheckInDate: '',
+             reviewCurrentDecision: 'cleared_accidental',
+             reviewCurrentRemarks: '',
+
+             openReviewModal(id, petName, adopterName, date, notes, decision, remarks) {
+                 this.reviewReportId = id;
+                 this.reviewPetName = petName || 'Companion';
+                 this.reviewAdopterName = adopterName || 'Adopter';
+                 this.reviewCheckInDate = date || '';
+                 this.reviewAdopterNotes = notes || '';
+                 this.reviewCurrentDecision = decision || 'cleared_accidental';
+                 this.reviewCurrentRemarks = remarks || '';
+                 this.showReviewModal = true;
+             },
+
              openPhotoModal(url, title, date, weight, status, notes) {
                  if (!url) return;
                  this.photoModalUrl = url;
@@ -297,13 +317,31 @@
 
                         {{-- Life Event Banner for Deceased Reports --}}
                         @if($report->health_status === 'deceased')
-                            <div class="px-4 sm:px-5 py-2.5 bg-slate-900 text-white flex items-center justify-between text-xs font-bold border-b border-slate-800">
-                                <div class="flex items-center gap-2 text-rose-300">
-                                    <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                    <span>Life Event Notice: Pet Passed Away</span>
+                            @if($report->review_decision === 'cleared_accidental')
+                                <div class="px-4 sm:px-5 py-2.5 bg-emerald-950 text-white flex items-center justify-between text-xs font-bold border-b border-emerald-800">
+                                    <div class="flex items-center gap-2 text-emerald-300">
+                                        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Life Event: Passed Away (Verified Accidental / Natural)</span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">Slot Restored</span>
                                 </div>
-                                <span class="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold bg-white/10 text-slate-200 border border-white/20">Memorial Record</span>
-                            </div>
+                            @elseif($report->review_decision === 'neglect_confirmed')
+                                <div class="px-4 sm:px-5 py-2.5 bg-rose-950 text-white flex items-center justify-between text-xs font-bold border-b border-rose-800">
+                                    <div class="flex items-center gap-2 text-rose-300">
+                                        <svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        <span>Life Event: Neglect Confirmed (Adopter Restricted)</span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold bg-rose-500/20 text-rose-200 border border-rose-400/30">Sanctioned</span>
+                                </div>
+                            @else
+                                <div class="px-4 sm:px-5 py-2.5 bg-amber-950 text-white flex items-center justify-between text-xs font-bold border-b border-amber-800">
+                                    <div class="flex items-center gap-2 text-amber-300">
+                                        <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Life Event: Pet Passed Away (Awaiting Staff Verification)</span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold bg-amber-500/20 text-amber-200 border border-amber-400/30">Needs Review</span>
+                                </div>
+                            @endif
                         @endif
 
                         {{-- Adopted Pet Subheader Bar --}}
@@ -427,11 +465,22 @@
                             </span>
                         @endif
 
-                        <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}"
-                           class="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center gap-1">
-                            <span>Adopter Profile</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                        </a>
+                        <div class="flex items-center gap-2">
+                            @if($report->health_status === 'deceased')
+                                <button type="button"
+                                        @click="openReviewModal({{ $report->id }}, '{{ addslashes($petName) }}', '{{ addslashes($adopterName) }}', '{{ addslashes($checkInDateStr) }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $report->notes ?? '')) }}', '{{ $report->review_decision ?? 'cleared_accidental' }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $report->staff_remarks ?? '')) }}')"
+                                        class="px-2.5 py-1.5 rounded-xl {{ empty($report->review_decision) || $report->review_decision === 'pending' ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs font-bold' : 'bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-semibold' }} text-xs flex items-center gap-1 transition cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                    <span>{{ empty($report->review_decision) || $report->review_decision === 'pending' ? 'Review Life Event' : 'Edit Decision' }}</span>
+                                </button>
+                            @endif
+
+                            <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}"
+                               class="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center gap-1">
+                                <span>Adopter Profile</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                        </div>
                     </div>
 
                 </div>
@@ -537,4 +586,126 @@
         </div>
 
     </div>
+
+        {{-- Deceased Life Event Review Modal --}}
+        <div x-show="showReviewModal" 
+             x-cloak 
+             class="fixed inset-0 z-[75] overflow-y-auto" 
+             aria-labelledby="review-modal-title" 
+             role="dialog" 
+             aria-modal="true"
+             @keydown.escape.window="showReviewModal = false">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-black/80 backdrop-blur-xs" 
+                     @click="showReviewModal = false"
+                     x-show="showReviewModal"
+                     x-transition:enter="ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-150"></div>
+
+                <div class="relative inline-block w-full max-w-xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] shadow-2xl rounded-3xl border border-slate-200 dark:border-white/[0.1] z-10"
+                     x-show="showReviewModal"
+                     x-transition:enter="ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-150">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/[0.08]">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white" id="review-modal-title">
+                                    Review Deceased Life Event
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Companion: <span class="font-bold text-slate-700 dark:text-slate-200" x-text="reviewPetName"></span> | Adopter: <span class="font-bold text-slate-700 dark:text-slate-200" x-text="reviewAdopterName"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showReviewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer">&times;</button>
+                    </div>
+
+                    {{-- Adopter's Submitted Statement --}}
+                    <div class="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-1">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span>Adopter's Reported Circumstances:</span>
+                            <span x-text="reviewCheckInDate"></span>
+                        </div>
+                        <p class="text-xs font-medium text-slate-800 dark:text-slate-200 leading-relaxed italic whitespace-pre-line" x-text="'&quot;' + reviewAdopterNotes + '&quot;'"></p>
+                    </div>
+
+                    {{-- Form --}}
+                    <form :action="'{{ url('/adopters/reports') }}/' + reviewReportId + '/review'" method="POST" class="mt-5 space-y-4">
+                        @csrf
+                        @method('PATCH')
+
+                        <div>
+                            <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
+                                Official Shelter Determination:
+                            </label>
+                            <div class="space-y-2.5">
+                                {{-- Option 1: Cleared Accidental / Natural --}}
+                                <label class="p-3.5 rounded-2xl border flex items-start gap-3 cursor-pointer transition"
+                                       :class="reviewCurrentDecision === 'cleared_accidental' ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/20 ring-1 ring-emerald-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
+                                    <input type="radio" name="decision" value="cleared_accidental" x-model="reviewCurrentDecision" class="mt-1 text-emerald-600 focus:ring-emerald-500">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-extrabold text-emerald-900 dark:text-emerald-300">Acceptable Cause (Natural Passing / Accidental - No Neglect)</span>
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Restores Slot</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
+                                            Passing was due to natural causes, illness despite care, or unavoidable accident. Adopter remains in good standing. This deceased companion is removed from their active count, freeing up 1 slot under the 3-pet household limit.
+                                        </p>
+                                    </div>
+                                </label>
+
+                                {{-- Option 2: Neglect Confirmed --}}
+                                <label class="p-3.5 rounded-2xl border flex items-start gap-3 cursor-pointer transition"
+                                       :class="reviewCurrentDecision === 'neglect_confirmed' ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/20 ring-1 ring-rose-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
+                                    <input type="radio" name="decision" value="neglect_confirmed" x-model="reviewCurrentDecision" class="mt-1 text-rose-600 focus:ring-rose-500">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-extrabold text-rose-900 dark:text-rose-300">Adopter Neglect / Welfare Violation Confirmed</span>
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200">Restricts Adopter</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
+                                            Investigation confirms death was caused by neglect, abandonment, or care violation. The adopter's profile will be flagged as Restricted, blocking them from submitting future adoption applications.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Staff Remarks --}}
+                        <div>
+                            <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1.5">
+                                Shelter Assessment Remarks & Evidence (Required):
+                            </label>
+                            <textarea name="staff_remarks" 
+                                      rows="3" 
+                                      required 
+                                      x-model="reviewCurrentRemarks"
+                                      placeholder="Provide the official shelter explanation, veterinary documentation, or justification for this decision..."
+                                      class="w-full text-xs rounded-xl border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#171923] text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                        </div>
+
+                        {{-- Modal Action Buttons --}}
+                        <div class="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end gap-3">
+                            <button type="button" @click="showReviewModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] rounded-xl transition cursor-pointer">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black dark:bg-[#199CA4] dark:hover:bg-[#13787F] rounded-xl transition cursor-pointer shadow-sm">
+                                Save Official Decision
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
 </x-app-layout>
