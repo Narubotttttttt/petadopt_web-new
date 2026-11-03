@@ -687,7 +687,7 @@ class AdoptionApplicationTest extends TestCase
             'status'       => 'active',
         ]);
 
-        \App\Models\AdopterPreference::create([
+        \App\Models\AdopterCompatibilityProfile::create([
             'user_id'            => $adopter->id,
             'preferred_species'  => 'dog',
             'living_environment' => 'apartment',
@@ -741,7 +741,7 @@ class AdoptionApplicationTest extends TestCase
             'status'       => 'active',
         ]);
 
-        \App\Models\AdopterPreference::create([
+        \App\Models\AdopterCompatibilityProfile::create([
             'user_id'            => $adopter->id,
             'preferred_species'  => 'cat',
             'living_environment' => 'house_with_yard',

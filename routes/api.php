@@ -104,7 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
             }
         }
 
-        $pref = \App\Models\AdopterPreference::where('user_id', $user->id)->first();
+        $pref = \App\Models\AdopterCompatibilityProfile::where('user_id', $user->id)->first();
         $userData['has_quiz_completed'] = !empty($pref);
 
         return response()->json($userData);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdoptionApplication;
+use App\Models\AdopterCompatibilityProfile;
 use App\Models\AdopterPreference;
 use App\Models\AdoptersProfile;
 use App\Models\Pet;
@@ -23,7 +24,7 @@ class AdoptionApiController extends Controller
             ->orWhere('user_id', $user->id)
             ->first();
 
-        $preference = AdopterPreference::where('user_id', $user->id)->first();
+        $preference = AdopterCompatibilityProfile::where('user_id', $user->id)->first();
 
         $homeTypeMap = [
             'apartment'       => 'Apartment / Condo',
@@ -179,7 +180,7 @@ class AdoptionApiController extends Controller
         // Fallback to saved AdopterPreference if living/pet questions are omitted
         $preference = null;
         if ($user) {
-            $preference = AdopterPreference::where('user_id', $user->id)->first();
+            $preference = AdopterCompatibilityProfile::where('user_id', $user->id)->first();
         }
 
         $homeType = $request->input('home_type');

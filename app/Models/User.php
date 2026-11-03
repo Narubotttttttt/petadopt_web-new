@@ -102,9 +102,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->staffProfile?->digital_signature_url;
     }
 
+    public function adopterCompatibilityProfile()
+    {
+        return $this->hasOne(AdopterCompatibilityProfile::class);
+    }
+
     public function adopterPreference()
     {
-        return $this->hasOne(AdopterPreference::class);
+        return $this->hasOne(AdopterCompatibilityProfile::class);
     }
 
     public function adoptionApplications()

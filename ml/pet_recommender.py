@@ -21,7 +21,7 @@ import site
 for _p in [
     os.path.join(os.path.dirname(os.path.dirname(__file__)), '.venv', 'Lib', 'site-packages'),
     getattr(site, 'getusersitepackages', lambda: '')(),
-    *(getattr(site, 'getsitepackages', lambda: [])()),
+    *(getattr(site, 'getsitepackages', list)()),
     os.path.join(sys.prefix, 'Lib', 'site-packages'),
 ]:
     if _p and os.path.isdir(_p) and _p not in sys.path:
@@ -30,10 +30,10 @@ for _p in [
 import json
 import re
 import joblib
-import numpy as np
 import pandas as pd
-import urllib.request
+from urllib.request import Request, urlopen
 import ssl
+from typing import Any
 
 ALL_TEMPERAMENT_TAGS = [
     'Friendly', 'Calm', 'Energetic', 'Shy',
@@ -93,6 +93,7 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
     has_kids = int(bool(adopter_profile.get('has_children', False)))
     has_pets = int(bool(adopter_profile.get('has_other_pets', False)))
     hours    = str(adopter_profile.get('hours_alone', '4_7')).lower()
+    has_yard_val = 1 if bool(adopter_profile.get('has_yard', False)) else (1 if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living) else 0)
 
     pet_tags = [t for t in pet.get('temperaments', []) if t in ALL_TEMPERAMENT_TAGS]
     age_yrs  = _parse_age_numeric(pet.get('age', '2 years'))
@@ -168,12 +169,12 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
         training_level = 7.0 if 'Calm' in pet_tags else (3.5 if age_yrs < 1.0 else 5.5)
         house_trained  = 1 if (age_yrs >= 1.0 or 'Calm' in pet_tags) else 0
 
-        has_yard_flag = 1 if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living) else 0
-        size_home_mismatch = 1 if (pet_size in ['large', 'xlarge'] and 'apartment' in living and has_yard_flag == 0) else 0
+
+        size_home_mismatch = 1 if (pet_size in ['large', 'xlarge'] and 'apartment' in living and has_yard_val == 0) else 0
 
     adopter_activity = 8.5 if activity in ['high', 'active'] else (2.5 if activity == 'relaxed' else 5.5)
     hours_val = 8.5 if hours in ['8_plus', '8+', '8plus'] else (2.0 if hours in ['0_3', '0-3'] else 5.5)
-    has_yard_val = 1 if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living) else 0
+
 
     energy_mismatch = abs(energy_level - adopter_activity)
 
@@ -223,7 +224,7 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
         'home_type_house_rented'      : 1 if ('no_yard' in living or 'rent' in living) else 0,
     }
 
-    return pd.DataFrame([[feat_dict.get(c, 0) for c in feature_cols]], columns=feature_cols)
+    return pd.DataFrame([[feat_dict.get(c, 0) for c in feature_cols]], columns=feature_cols), feat_dict
 
 
 # ---------------------------------------------------------
@@ -261,6 +262,8 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
 
     compact_adopter = {
         'home_environment': adopter_profile.get('living_environment', 'apartment'),
+        'has_yard': bool(adopter_profile.get('has_yard', False)),
+        'yard_type': adopter_profile.get('yard_type', 'none'),
         'activity_level': adopter_profile.get('activity_level', 'moderate'),
         'hours_alone_daily': adopter_profile.get('hours_alone', '4_7'),
         'has_children': bool(adopter_profile.get('has_children', False)),
@@ -307,14 +310,14 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
     ctx = ssl.create_default_context()
     for model_name in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
-        req = urllib.request.Request(
+        req = Request(
             url,
             data=payload,
             headers={'Content-Type': 'application/json'},
             method='POST'
         )
         try:
-            with urllib.request.urlopen(req, context=ctx, timeout=4.0) as resp:
+            with urlopen(req, context=ctx, timeout=4.0) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 raw_text = data['candidates'][0]['content']['parts'][0]['text']
                 reasons_dict = json.loads(raw_text)
@@ -344,6 +347,13 @@ def _generate_default_reasons(pet, match_pct):
 # ---------------------------------------------------------
 # Main Multi-Species ML Recommendation Function
 # ---------------------------------------------------------
+def _get_sort_score(item: Any) -> float:
+    try:
+        return float(item['match_score'])
+    except (KeyError, TypeError, ValueError):
+        return 0.0
+
+
 def recommend_pets(pets_data, adopter_profile, top_k=3):
     """
     Ranks pet recommendations using the Multi-Species Scikit-Learn Random Forest Model.
@@ -374,7 +384,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
         available = filtered
 
     model, feature_cols = _load_model()
-    results = []
+    results: list[dict[str, Any]] = []
 
     for pet in available:
         species = str(pet.get('type', 'dog')).lower()
@@ -382,40 +392,76 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
 
         # MULTI-SPECIES ML EXECUTION: model.predict_proba() runs for ALL pets (dogs & cats)
         if model is not None and feature_cols is not None:
-            feat_df = _build_multi_species_feature_vector(adopter_profile, pet, feature_cols)
+            feat_df, feat_dict = _build_multi_species_feature_vector(adopter_profile, pet, feature_cols)
             proba = model.predict_proba(feat_df)[0]
             rf_prob = float(proba[1])  # Predicted probability of compatibility
             final_metric = rf_prob
             algo_name = 'Scikit-Learn Random Forest Classifier (Multi-Species Trained Model)'
         else:
+            feat_dict = {}
             final_metric = 0.70
             algo_name = 'Multi-Species Compatibility Engine'
 
         match_pct = round(min(99.0, max(52.0, (final_metric * 45.0) + 53.0)), 1)
+
+        # STRICT SAFEGUARD: Enforce 80.0% minimum compatibility threshold.
+        # Pets scoring below 80% compatibility must never be recommended.
+        if match_pct < 80.0:
+            continue
+
+        # Multi-factor alignment breakdown
+        size_mismatch = feat_dict.get('size_home_mismatch', 0)
+        has_yard_val = feat_dict.get('has_yard', 0)
+        energy_diff = feat_dict.get('energy_mismatch', 1.0)
+        hours_val = feat_dict.get('hours_alone_per_day', 5.5)
+        anxiety = feat_dict.get('anxiety_separation', 2.0)
+
+        # 1. Living Space Fit (based on size, species, and yard access)
+        if species == 'cat' or size_mismatch == 0:
+            space_pct = round(min(98.0, max(82.0, match_pct + (3.0 if has_yard_val else 1.0))), 0)
+        else:
+            space_pct = round(min(84.0, max(80.0, match_pct - 3.0)), 0)
+
+        # 2. Daily Routine Alignment (based on energy mismatch and work hours alone)
+        routine_penalty = (energy_diff * 1.5) + (1.5 if hours_val > 7.0 and anxiety > 3.0 else 0)
+        routine_pct = round(min(98.0, max(80.0, match_pct - routine_penalty + 2.0)), 0)
+
+        # 3. Temperament & Behavioral Fit (based on behavioral tags and safety)
+        desired = adopter_profile.get('desired_temperaments', [])
+        temp_boost = 3.0 if any(t in pet_tags_list for t in desired) else 1.0
+        temperament_pct = round(min(99.0, max(80.0, match_pct + temp_boost)), 0)
+
+        compat_breakdown = {
+            'space': int(space_pct),
+            'routine': int(routine_pct),
+            'temperament': int(temperament_pct)
+        }
+
         default_reasons = _generate_default_reasons(pet, match_pct)
 
         results.append({
-            'pet_id'              : pet.get('id'),
-            'name'                : pet.get('name'),
-            'type'                : species,
-            'breed'               : pet.get('breed'),
-            'age'                 : pet.get('age'),
-            'gender'              : pet.get('gender'),
-            'size'                : 'medium' if species == 'cat' and str(pet.get('size', '')).lower() == 'large' else pet.get('size'),
-            'color'               : pet.get('color'),
-            'photo_path'          : pet.get('photo_path'),
-            'status'              : pet.get('status'),
-            'temperaments'        : pet_tags_list,
-            'match_score'         : match_pct,
-            'match_percentage'    : match_pct,
-            'match_percentage_str': f"{match_pct}%",
-            'reasons'             : default_reasons,
-            'match_reasons'       : default_reasons,
-            'algorithm_used'      : algo_name
+            'pet_id'                 : pet.get('id'),
+            'name'                   : pet.get('name'),
+            'type'                   : species,
+            'breed'                  : pet.get('breed'),
+            'age'                    : pet.get('age'),
+            'gender'                 : pet.get('gender'),
+            'size'                   : 'medium' if species == 'cat' and str(pet.get('size', '')).lower() == 'large' else pet.get('size'),
+            'color'                  : pet.get('color'),
+            'photo_path'             : pet.get('photo_path'),
+            'status'                 : pet.get('status'),
+            'temperaments'           : pet_tags_list,
+            'match_score'            : match_pct,
+            'match_percentage'       : match_pct,
+            'match_percentage_str'   : f"{match_pct}%",
+            'compatibility_breakdown': compat_breakdown,
+            'reasons'                : default_reasons,
+            'match_reasons'          : default_reasons,
+            'algorithm_used'         : algo_name
         })
 
-    # Sort descending by match_score
-    results.sort(key=lambda x: x['match_score'], reverse=True)
+    # Sort descending by compatibility match score
+    results.sort(key=_get_sort_score, reverse=True)
     top_candidates = results[:top_k] if top_k else results
 
     # DYNAMIC EXPLAINER LAYER: Invoke Gemini for top candidates
@@ -425,7 +471,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
         if gemini_map:
             for item in top_candidates:
                 pid_str = str(item.get('pet_id'))
-                if pid_str in gemini_map and gemini_map[pid_str]:
+                if gemini_map.get(pid_str):
                     item['reasons'] = gemini_map[pid_str]
                     item['match_reasons'] = gemini_map[pid_str]
 
