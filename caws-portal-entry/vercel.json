@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://can-trains-universe-venue.trycloudflare.com/$1",
+                         "destination":  "https://dame-illustrations-poison-disciplinary.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

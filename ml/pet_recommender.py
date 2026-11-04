@@ -92,6 +92,8 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
     exp      = str(adopter_profile.get('pet_experience', 'first_time')).lower()
     has_kids = int(bool(adopter_profile.get('has_children', False)))
     has_pets = int(bool(adopter_profile.get('has_other_pets', False)))
+    if has_pets:
+        exp = 'experienced'
     hours    = str(adopter_profile.get('hours_alone', '4_7')).lower()
     has_yard_val = 1 if bool(adopter_profile.get('has_yard', False)) else (1 if ('yard' in living and 'no_yard' not in living and 'no_fence' not in living) else 0)
 
@@ -268,7 +270,7 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
         'hours_alone_daily': adopter_profile.get('hours_alone', '4_7'),
         'has_children': bool(adopter_profile.get('has_children', False)),
         'has_other_pets': bool(adopter_profile.get('has_other_pets', False)),
-        'experience_level': adopter_profile.get('pet_experience', 'first_time'),
+        'experience_level': 'experienced' if bool(adopter_profile.get('has_other_pets', False)) else adopter_profile.get('pet_experience', 'first_time'),
         'desired_temperaments': adopter_profile.get('desired_temperaments', [])
     }
 

@@ -307,51 +307,187 @@
                         @endif
                     </div>
 
-                    {{-- Questionnaire Answers --}}
-                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
-                            <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                                <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                <span>Mobile Application Questionnaire Responses</span>
-                            </h2>
-                            <span class="text-xs text-slate-400 font-medium">Self-reported by applicant</span>
-                        </div>
-                        
-                        @php
-                            $lines = explode("\n", $application->message);
-                            $reasonText = '';
-                            $isReason = false;
-                            $questionnaire = [];
+                    {{-- Questionnaire & Compatibility Profile Assessment --}}
+                    @php
+                        $quizProfile = $application->user?->adopterCompatibilityProfile 
+                            ?? \App\Models\AdopterCompatibilityProfile::whereHas('user', function ($q) use ($application) {
+                                $q->where('email', $application->applicant_email);
+                            })->first();
 
-                            foreach ($lines as $line) {
-                                $line = trim($line);
-                                if (empty($line)) continue;
-                                if (str_starts_with($line, 'Reason for Adoption:')) {
-                                    $isReason = true;
-                                    continue;
-                                }
-                                if ($isReason) {
-                                    $reasonText .= ($reasonText ? "\n" : "") . $line;
+                        $lines = explode("\n", $application->message);
+                        $reasonText = '';
+                        $isReason = false;
+                        $questionnaire = [];
+
+                        foreach ($lines as $line) {
+                            $line = trim($line);
+                            if (empty($line)) continue;
+                            if (str_starts_with($line, 'Reason for Adoption:')) {
+                                $isReason = true;
+                                continue;
+                            }
+                            if ($isReason) {
+                                $reasonText .= ($reasonText ? "\n" : "") . $line;
+                            } else {
+                                $parts = explode(':', $line, 2);
+                                if (count($parts) === 2) {
+                                    $questionnaire[trim($parts[0])] = trim($parts[1]);
                                 } else {
-                                    $parts = explode(':', $line, 2);
-                                    if (count($parts) === 2) {
-                                        $questionnaire[trim($parts[0])] = trim($parts[1]);
-                                    } else {
-                                        $questionnaire[] = $line;
-                                    }
+                                    $questionnaire[] = $line;
                                 }
                             }
-                        @endphp
+                        }
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            @foreach($questionnaire as $key => $val)
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800 {{ str_contains(strtolower($key), 'address') || str_contains(strtolower($key), 'other pets') ? 'sm:col-span-2' : '' }}">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">{{ is_string($key) ? $key : 'Detail' }}</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200 leading-relaxed">{{ $val }}</p>
-                                </div>
-                            @endforeach
+                        if (isset($questionnaire['Has Other Pets']) && strtolower($questionnaire['Has Other Pets']) === 'yes') {
+                            if (isset($questionnaire['Has Pet Experience']) && strtolower($questionnaire['Has Pet Experience']) === 'no') {
+                                $questionnaire['Has Pet Experience'] = 'Yes (Active pet owner)';
+                            }
+                        }
+                    @endphp
+
+                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                            <div>
+                                <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span>Adopter Compatibility & Lifestyle Assessment</span>
+                                </h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Basis of adoption evaluation from official Compatibility Quiz</p>
+                            </div>
+                            @if($quizProfile)
+                                <span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                                    Quiz Verified
+                                </span>
+                            @else
+                                <span class="text-xs text-slate-400 font-medium">Self-reported by applicant</span>
+                            @endif
                         </div>
 
+                        @if($quizProfile)
+                            {{-- Official Compatibility Quiz Grid --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {{-- Living Environment --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Living Space</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        @php
+                                            $livingMap = [
+                                                'apartment' => 'Apartment',
+                                                'condo' => 'Condominium',
+                                                'house_with_yard' => 'House with Yard',
+                                                'house_no_yard' => 'House (No Yard)',
+                                            ];
+                                            $env = $quizProfile->living_environment;
+                                            echo $livingMap[$env] ?? ucwords(str_replace('_', ' ', $env));
+                                        @endphp
+                                    </p>
+                                </div>
+
+                                {{-- Yard Security --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Yard Security</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        @if($quizProfile->yard_type === 'fenced')
+                                            Fully Fenced Yard
+                                        @elseif($quizProfile->yard_type === 'unfenced')
+                                            Unfenced Yard
+                                        @else
+                                            No Yard / Indoor Only
+                                        @endif
+                                    </p>
+                                </div>
+
+                                {{-- Hours Alone Daily --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Daily Hours Alone</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        @if($quizProfile->hours_alone === '0_3')
+                                            0 - 3 Hours (Frequent company)
+                                        @elseif($quizProfile->hours_alone === '4_7')
+                                            4 - 7 Hours (Standard workday)
+                                        @elseif($quizProfile->hours_alone === '8_plus')
+                                            8+ Hours (Busy work routine)
+                                        @else
+                                            {{ $quizProfile->hours_alone ?? 'Standard' }}
+                                        @endif
+                                    </p>
+                                </div>
+
+                                {{-- Children in Home --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Household Children</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ $quizProfile->has_children ? 'Yes, children present in household' : 'No children in household' }}
+                                    </p>
+                                </div>
+
+                                {{-- Other Pets --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Other Pets at Home</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ $quizProfile->has_other_pets ? 'Yes, active pet owner (pets present)' : 'No other pets (First / solo pet)' }}
+                                    </p>
+                                </div>
+
+                                {{-- Pet Care Experience --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Pet Care Experience</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ ($quizProfile->pet_experience === 'experienced' || $quizProfile->has_other_pets) ? 'Experienced Pet Owner' : 'First-time Pet Owner' }}
+                                    </p>
+                                </div>
+
+                                {{-- Special Care Capacity --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Special Care Capacity</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ $quizProfile->special_care_capacity ? 'Equipped for special medical/dietary care' : 'Standard healthy companion care' }}
+                                    </p>
+                                </div>
+
+                                {{-- Activity Level --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Activity Capacity</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ ucfirst($quizProfile->activity_level ?? 'Moderate') }} Activity
+                                    </p>
+                                </div>
+
+                                {{-- Preferred Species --}}
+                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Preferred Species</p>
+                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                        {{ ucfirst($quizProfile->preferred_species ?? 'Any') }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            @if(!empty($quizProfile->desired_temperaments) && is_array($quizProfile->desired_temperaments))
+                                <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Sought Pet Temperaments</p>
+                                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                                        @foreach($quizProfile->desired_temperaments as $tag)
+                                            <span class="px-2 py-0.5 text-[11px] font-semibold bg-white dark:bg-[#163035] text-slate-700 dark:text-slate-300 rounded-md border border-slate-200/80 dark:border-slate-700">
+                                                {{ ucfirst($tag) }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                        @else
+                            {{-- Fallback: Questionnaire Answers from Message --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                @foreach($questionnaire as $key => $val)
+                                    <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800 {{ str_contains(strtolower($key), 'address') || str_contains(strtolower($key), 'other pets') ? 'sm:col-span-2' : '' }}">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">{{ is_string($key) ? $key : 'Detail' }}</p>
+                                        <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200 leading-relaxed">{{ $val }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        {{-- Housing Ownership / Tenant Inspection Alert --}}
                         @if(($application->home_ownership ?? '') === 'rented' || !empty($application->landlord_name))
                             <div class="bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3.5 flex items-start gap-3">
                                 <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -366,11 +502,16 @@
                                     </p>
                                 </div>
                             </div>
+                        @else
+                            <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Property Ownership</span>
+                                <span class="text-xs font-bold text-slate-800 dark:text-white">Owned Property (Owner / Family Home)</span>
+                            </div>
                         @endif
 
                         @if(!empty($reasonText))
                             <div class="bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6]/50 dark:from-[#133036] dark:to-[#17454d]/50 p-4 rounded-xl border border-[#199CA4]/20 dark:border-[#41C1CB]/30 space-y-1">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Reason for Adoption</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Adoption Details / Notes</p>
                                 <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line">{{ $reasonText }}</p>
                             </div>
                         @endif
@@ -378,7 +519,7 @@
 
                 </div>
 
-                {{-- PANEL 2: Verification Documents --}}
+                                {{-- PANEL 2: Verification Documents --}}
                 <div x-show="activeTab === 'documents'" x-transition class="space-y-4">
                     <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">

@@ -186,7 +186,7 @@ class AdoptionApplicationController extends Controller
     {
         AdminNotificationService::markAdoptionRequestsViewed();
 
-        $application->load(['pet.medicalLogs.creator', 'staff.staffProfile', 'evaluator']);
+        $application->load(['pet.medicalLogs.creator', 'staff.staffProfile', 'evaluator', 'user.adopterCompatibilityProfile', 'user.adoptersProfile']);
 
         $competingApplications = AdoptionApplication::where('pet_id', $application->pet_id)
             ->where('id', '!=', $application->id)

@@ -241,6 +241,16 @@ class AdoptionApiController extends Controller
         } else {
             $messageParts[] = "Housing Status: Owned Property";
         }
+
+        // Retrieve lifestyle answers directly from Adopter Compatibility Quiz profile
+        $quizProfile = $user ? \App\Models\AdopterCompatibilityProfile::where('user_id', $user->id)->first() : null;
+        if ($hasOtherPets === null && $quizProfile) {
+            $hasOtherPets = (bool)$quizProfile->has_other_pets;
+        }
+        if ($hasExperience === null && $quizProfile) {
+            $hasExperience = $quizProfile->pet_experience === 'experienced' || $hasOtherPets;
+        }
+
         if ($hasOtherPets !== null) {
             $messageParts[] = "Has Other Pets: " . ($hasOtherPets ? 'Yes' : 'No');
             $details = $request->input('other_pets_details');
@@ -248,8 +258,9 @@ class AdoptionApiController extends Controller
                 $messageParts[] = "Other Pets Details: " . $details;
             }
         }
-        if ($hasExperience !== null) {
-            $messageParts[] = "Has Pet Experience: " . ($hasExperience ? 'Yes' : 'No');
+        if ($hasExperience !== null || $hasOtherPets) {
+            $effectiveExp = $hasOtherPets ? true : (bool)$hasExperience;
+            $messageParts[] = "Has Pet Experience: " . ($effectiveExp ? 'Yes' : 'No');
         }
         if ($request->filled('reason')) {
             $messageParts[] = "Reason for Adoption:\n" . $request->reason;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AdopterCompatibilityProfile;
 use App\Models\AdopterPreference;
+use App\Models\AdoptionApplication;
 use App\Models\Pet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -131,7 +132,7 @@ class RecommendationApiController extends Controller
                 'has_yard'              => filter_var($request->input('has_yard', false), FILTER_VALIDATE_BOOLEAN),
                 'yard_type'             => $request->input('yard_type'),
                 'activity_level'        => $request->input('activity_level', 'moderate'),
-                'pet_experience'        => $request->input('pet_experience', 'first_time'),
+                'pet_experience'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN) ? 'experienced' : $request->input('pet_experience', 'first_time'),
                 'has_children'          => filter_var($request->input('has_children', false), FILTER_VALIDATE_BOOLEAN),
                 'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
                 'hours_alone'           => $request->input('hours_alone', '4_7'),
@@ -158,6 +159,9 @@ class RecommendationApiController extends Controller
 
         // 4. Resolve Adopter Profile (from request payload if submitted or saved database profile)
         $profile = $hasQuizInPayload ? $request->all() : ($saved ? $saved->toArray() : []);
+        if (!empty($profile['has_other_pets']) && filter_var($profile['has_other_pets'], FILTER_VALIDATE_BOOLEAN)) {
+            $profile['pet_experience'] = 'experienced';
+        }
 
         // Save preferences if user is authenticated and submitted answers for the first time
         if ($user && $hasQuizInPayload && ! $saved) {
@@ -168,7 +172,7 @@ class RecommendationApiController extends Controller
                 'has_yard'              => filter_var($request->input('has_yard', false), FILTER_VALIDATE_BOOLEAN),
                 'yard_type'             => $request->input('yard_type'),
                 'activity_level'        => $request->input('activity_level', 'moderate'),
-                'pet_experience'        => $request->input('pet_experience', 'first_time'),
+                'pet_experience'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN) ? 'experienced' : $request->input('pet_experience', 'first_time'),
                 'has_children'          => filter_var($request->input('has_children', false), FILTER_VALIDATE_BOOLEAN),
                 'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
                 'hours_alone'           => $request->input('hours_alone', '4_7'),
@@ -180,6 +184,21 @@ class RecommendationApiController extends Controller
         }
 
         $petsQuery = Pet::where('status', 'available');
+
+        // Exclude pets that this adopter has already applied for or adopted
+        $appliedPetIds = [];
+        if ($user) {
+            $appliedPetIds = AdoptionApplication::where('applicant_email', $user->email)
+                ->whereIn('status', ['pending', 'under_review', 'approved', 'adopted'])
+                ->pluck('pet_id')
+                ->filter()
+                ->unique()
+                ->toArray();
+
+            if (!empty($appliedPetIds)) {
+                $petsQuery->whereNotIn('id', $appliedPetIds);
+            }
+        }
 
         // Strict species filtering if user specified 'dog' or 'cat'
         $prefSpecies = strtolower($profile['preferred_species'] ?? $request->input('preferred_species', 'any'));
@@ -277,7 +296,7 @@ class RecommendationApiController extends Controller
                     $validRecs = [];
                     foreach ($output['recommendations'] as $rec) {
                         $petModel = $petMap->get($rec['pet_id']);
-                        if (! $petModel || strtolower($petModel->status) !== 'available') {
+                        if (! $petModel || strtolower($petModel->status) !== 'available' || in_array($rec['pet_id'], $appliedPetIds)) {
                             continue;
                         }
 
