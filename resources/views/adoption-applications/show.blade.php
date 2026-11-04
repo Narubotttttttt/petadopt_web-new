@@ -272,6 +272,33 @@
                 {{-- PANEL 1: Questionnaire & Contact Details --}}
                 <div x-show="activeTab === 'questionnaire'" x-transition class="space-y-4">
                     
+                    @if(isset($siblingApplications) && $siblingApplications->isNotEmpty())
+                        <div class="bg-cyan-50/70 dark:bg-cyan-950/30 rounded-2xl border border-cyan-200 dark:border-cyan-800/50 p-4 mb-4">
+                            <div class="flex items-start gap-3">
+                                <div class="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-900/50 text-[#199CA4] dark:text-[#41C1CB] shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-extrabold text-cyan-950 dark:text-cyan-100">
+                                        Multi-Companion Applicant ({{ $siblingApplications->count() + 1 }} Pets in Application Batch)
+                                    </p>
+                                    <p class="text-xs text-cyan-800/90 dark:text-cyan-300/90 mt-0.5 leading-relaxed">
+                                        This applicant also submitted companion applications for:
+                                    </p>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        @foreach($siblingApplications as $sib)
+                                            <a href="{{ route('adoption-applications.show', $sib->id) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#12272b] border border-cyan-200 dark:border-cyan-800 text-xs font-bold text-slate-800 dark:text-slate-100 hover:border-[#199CA4] transition-colors shadow-xs">
+                                                <span>{{ $sib->pet?->name ?? ('Pet #' . $sib->pet_id) }}</span>
+                                                <span class="text-[10px] font-semibold text-slate-400">({{ ucfirst($sib->pet?->type ?? 'Pet') }} &bull; {{ $sib->compatibility_score ? number_format($sib->compatibility_score, 1) . '%' : 'Review' }})</span>
+                                                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $sib->status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ ucfirst($sib->status) }}</span>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Contact Information Overview --}}
                     <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-3">
                         <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">

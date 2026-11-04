@@ -120,24 +120,27 @@ class AdoptionApiController extends Controller
         }
 
         $validated = $request->validate([
-            'pet_id'               => ['required', 'exists:pets,id'],
-            'full_name'            => ['required', 'string', 'max:255'],
-            'phone'                => ['required', 'string', 'max:50'],
-            'address'              => ['required', 'string'],
-            'id_type'              => ['nullable', 'string', 'max:100'],
-            'home_type'            => ['nullable', 'string'],
-            'home_ownership'       => ['nullable', 'string', 'in:owned,rented'],
-            'landlord_name'        => ['nullable', 'string', 'max:255'],
-            'landlord_phone'       => ['nullable', 'string', 'max:50'],
-            'has_other_pets'       => ['nullable'],
-            'other_pets_details'   => ['nullable', 'string'],
-            'has_experience'       => ['nullable'],
-            'proposed_pet_name'    => ['nullable', 'string', 'max:255'],
-            'reason'               => ['nullable', 'string'],
-            'valid_id'             => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-            'barangay_certificate' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
-            'application_source'   => ['nullable', 'string', 'in:recommendation'],
-            'compatibility_score'  => ['nullable', 'numeric', 'between:0,100'],
+            'pet_id'                => ['nullable', 'exists:pets,id'],
+            'pet_ids'               => ['nullable'],
+            'full_name'             => ['required', 'string', 'max:255'],
+            'phone'                 => ['required', 'string', 'max:50'],
+            'address'               => ['required', 'string'],
+            'id_type'               => ['nullable', 'string', 'max:100'],
+            'home_type'             => ['nullable', 'string'],
+            'home_ownership'        => ['nullable', 'string', 'in:owned,rented'],
+            'landlord_name'         => ['nullable', 'string', 'max:255'],
+            'landlord_phone'        => ['nullable', 'string', 'max:50'],
+            'has_other_pets'        => ['nullable'],
+            'other_pets_details'    => ['nullable', 'string'],
+            'has_experience'        => ['nullable'],
+            'proposed_pet_name'     => ['nullable', 'string', 'max:255'],
+            'proposed_pet_names'    => ['nullable'],
+            'reason'                => ['nullable', 'string'],
+            'valid_id'              => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'barangay_certificate'  => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'application_source'    => ['nullable', 'string', 'in:recommendation'],
+            'compatibility_score'   => ['nullable', 'numeric', 'between:0,100'],
+            'compatibility_scores'  => ['nullable'],
         ]);
 
         if ($adopterProfile && in_array($adopterProfile->status, ['blacklisted', 'restricted'])) {
@@ -149,7 +152,37 @@ class AdoptionApiController extends Controller
             ], 403);
         }
 
-        // Enforce 3-pet household limit on active pets
+        // Resolve target pet IDs (supports single pet_id or multi pet_ids array up to 3)
+        $petIds = [];
+        if ($request->filled('pet_ids')) {
+            $rawIds = $request->input('pet_ids');
+            if (is_string($rawIds)) {
+                $decoded = json_decode($rawIds, true);
+                $petIds = is_array($decoded) ? $decoded : array_map('trim', explode(',', $rawIds));
+            } elseif (is_array($rawIds)) {
+                $petIds = $rawIds;
+            }
+        }
+        if (empty($petIds) && $request->filled('pet_id')) {
+            $petIds = [(int)$request->input('pet_id')];
+        }
+        $petIds = array_values(array_unique(array_filter(array_map('intval', $petIds))));
+
+        if (empty($petIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select at least 1 companion to apply for.',
+            ], 422);
+        }
+
+        if (count($petIds) > 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You may apply for at most 3 companions in a single application.',
+            ], 422);
+        }
+
+        // Enforce 3-pet household limit on active pets + newly applied pets
         $activeAdoptedCount = AdoptionApplication::getActiveAdoptedCount($applicantEmail);
         if ($activeAdoptedCount >= 3) {
             return response()->json([
@@ -158,29 +191,43 @@ class AdoptionApiController extends Controller
             ], 422);
         }
 
-        $targetPet = Pet::find($request->pet_id);
-        if (!$targetPet || strtolower($targetPet->status) !== 'available') {
+        if (($activeAdoptedCount + count($petIds)) > 3) {
+            $remaining = max(0, 3 - $activeAdoptedCount);
             return response()->json([
                 'success' => false,
-                'message' => 'This pet is currently in shelter care or not ready for adoption.',
+                'message' => "You currently have {$activeAdoptedCount} active companions in your household. You can apply for at most {$remaining} companion(s) to adhere to the 3-pet shelter limit.",
             ], 422);
         }
 
-        $existing = AdoptionApplication::where('pet_id', $request->pet_id)
-            ->where(function ($q) use ($user, $request) {
+        $targetPets = Pet::whereIn('id', $petIds)->get()->keyBy('id');
+        foreach ($petIds as $pid) {
+            $target = $targetPets->get($pid);
+            if (!$target || strtolower($target->status) !== 'available') {
+                $name = $target ? $target->name : "Pet #{$pid}";
+                return response()->json([
+                    'success' => false,
+                    'message' => "{$name} is currently in shelter care or not ready for adoption.",
+                ], 422);
+            }
+        }
+
+        $existing = AdoptionApplication::whereIn('pet_id', $petIds)
+            ->where(function ($q) use ($user, $applicantEmail) {
                 if ($user && !empty($user->email)) {
                     $q->where('applicant_email', $user->email);
-                } elseif ($request->filled('email')) {
-                    $q->where('applicant_email', $request->email);
+                } elseif (!empty($applicantEmail)) {
+                    $q->where('applicant_email', $applicantEmail);
                 }
             })
             ->whereIn('status', ['pending', 'under_review', 'approved'])
+            ->with('pet')
             ->first();
 
         if ($existing) {
+            $petName = $existing->pet?->name ?: "Pet #{$existing->pet_id}";
             return response()->json([
                 'success' => false,
-                'message' => 'You already have an active adoption application for this pet (' . ucfirst(str_replace('_', ' ', $existing->status)) . ').',
+                'message' => "You already have an active adoption application for {$petName} (" . ucfirst(str_replace('_', ' ', $existing->status)) . ").",
                 'application_id' => $existing->id,
                 'status' => $existing->status,
             ], 422);
@@ -301,34 +348,86 @@ class AdoptionApiController extends Controller
         }
 
         $source = 'recommendation';
-        $compatibilityScore = $request->filled('compatibility_score')
-            ? (float) $request->input('compatibility_score')
-            : null;
+        $batchRef = count($petIds) > 1 ? 'BATCH-' . strtoupper(\Illuminate\Support\Str::random(8)) : null;
 
-        $application = AdoptionApplication::create([
-            'pet_id'                    => $request->pet_id,
-            'applicant_name'            => $request->full_name,
-            'applicant_email'           => $user->email ?? $request->email ?? 'adopter@email.com',
-            'applicant_phone'           => $request->phone,
-            'id_type'                   => $request->input('id_type', 'Philippine National ID (PhilSys)'),
-            'home_ownership'            => $homeOwnership,
-            'landlord_name'             => ($homeOwnership === 'rented') ? $request->input('landlord_name') : null,
-            'landlord_phone'            => ($homeOwnership === 'rented') ? $request->input('landlord_phone') : null,
-            'message'                   => $fullMessage,
-            'valid_id_path'             => $validIdPath,
-            'barangay_certificate_path' => $barangayCertPath,
-            'status'                    => 'pending',
-            'application_source'        => $source,
-            'compatibility_score'       => $compatibilityScore,
-        ]);
+        $scoresMap = [];
+        if ($request->filled('compatibility_scores')) {
+            $rawScores = $request->input('compatibility_scores');
+            $scoresMap = is_string($rawScores) ? (json_decode($rawScores, true) ?: []) : (is_array($rawScores) ? $rawScores : []);
+        }
+
+        $namesMap = [];
+        if ($request->filled('proposed_pet_names')) {
+            $rawNames = $request->input('proposed_pet_names');
+            $namesMap = is_string($rawNames) ? (json_decode($rawNames, true) ?: []) : (is_array($rawNames) ? $rawNames : []);
+        }
+
+        $createdApps = [];
+        \Illuminate\Support\Facades\DB::transaction(function () use (
+            $petIds, $request, $applicantEmail, $homeOwnership, $fullMessage,
+            $batchRef, $validIdPath, $barangayCertPath, $source, $scoresMap,
+            $namesMap, &$createdApps
+        ) {
+            foreach ($petIds as $pid) {
+                $compScore = null;
+                if (isset($scoresMap[$pid])) {
+                    $compScore = (float)$scoresMap[$pid];
+                } elseif (isset($scoresMap[(string)$pid])) {
+                    $compScore = (float)$scoresMap[(string)$pid];
+                } elseif ($request->filled('compatibility_score')) {
+                    $compScore = (float)$request->input('compatibility_score');
+                }
+
+                $propName = $namesMap[$pid] ?? ($namesMap[(string)$pid] ?? $request->input('proposed_pet_name'));
+                $appMsg = $fullMessage;
+                if ($propName && !str_contains($appMsg, 'Proposed Pet Name:')) {
+                    $appMsg .= "\nProposed Pet Name: " . $propName;
+                }
+                if ($batchRef) {
+                    $appMsg .= "\nMulti-Pet Application Group: " . $batchRef;
+                }
+
+                $app = AdoptionApplication::create([
+                    'pet_id'                    => $pid,
+                    'applicant_name'            => $request->full_name,
+                    'applicant_email'           => $applicantEmail ?: ($request->email ?? 'adopter@email.com'),
+                    'applicant_phone'           => $request->phone,
+                    'id_type'                   => $request->input('id_type', 'Philippine National ID (PhilSys)'),
+                    'home_ownership'            => $homeOwnership,
+                    'landlord_name'             => ($homeOwnership === 'rented') ? $request->input('landlord_name') : null,
+                    'landlord_phone'            => ($homeOwnership === 'rented') ? $request->input('landlord_phone') : null,
+                    'message'                   => trim($appMsg),
+                    'valid_id_path'             => $validIdPath,
+                    'barangay_certificate_path' => $barangayCertPath,
+                    'status'                    => 'pending',
+                    'application_source'        => $source,
+                    'compatibility_score'       => $compScore,
+                ]);
+
+                $createdApps[] = $app;
+            }
+        });
+
+        $firstApp = $createdApps[0];
+        $petNames = collect($createdApps)->map(fn($a) => $targetPets->get($a->pet_id)?->name ?: "Pet #{$a->pet_id}")->implode(', ');
 
         return response()->json([
             'success' => true,
-            'message' => 'Adoption application submitted successfully.',
+            'message' => count($createdApps) > 1
+                ? "Adoption applications submitted successfully for {$petNames}."
+                : "Adoption application submitted successfully for {$petNames}.",
+            'count'   => count($createdApps),
             'data'    => [
-                'id'         => $application->id,
-                'status'     => $application->status,
-                'created_at' => $application->created_at->format('Y-m-d H:i:s'),
+                'id'           => $firstApp->id,
+                'status'       => $firstApp->status,
+                'created_at'   => $firstApp->created_at->format('Y-m-d H:i:s'),
+                'batch_id'     => $batchRef,
+                'applications' => collect($createdApps)->map(fn($a) => [
+                    'id'                  => $a->id,
+                    'pet_id'              => $a->pet_id,
+                    'status'              => $a->status,
+                    'compatibility_score' => $a->compatibility_score,
+                ]),
             ],
         ], 201);
     }
@@ -359,7 +458,7 @@ class AdoptionApiController extends Controller
                 $isAdoptedByOther = $isPetAdopted && ! $app->is_finalized;
 
                 $proposedName = null;
-                if ($app->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $app->message, $matches)) {
+                if ($app->message && preg_match('/Proposed Pet Name:\s*([^\n]+)/i', $app->message, $matches)) {
                     $proposedName = trim($matches[1]);
                 }
 
@@ -916,8 +1015,8 @@ class AdoptionApiController extends Controller
         $pet->update(['name' => $newName]);
 
         // 2. Also update or append "Proposed Pet Name: ..." in the application message
-        if ($application->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $application->message)) {
-            $updatedMessage = preg_replace('/Proposed Pet Name:\s*([^\r\n]+)/i', 'Proposed Pet Name: ' . $newName, $application->message);
+        if ($application->message && preg_match('/Proposed Pet Name:\s*([^\n]+)/i', $application->message)) {
+            $updatedMessage = preg_replace('/Proposed Pet Name:\s*([^\n]+)/i', 'Proposed Pet Name: ' . $newName, $application->message);
         } else {
             $updatedMessage = "Proposed Pet Name: " . $newName . ($application->message ? ("\n" . $application->message) : "");
         }

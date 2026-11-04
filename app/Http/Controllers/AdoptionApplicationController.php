@@ -195,7 +195,13 @@ class AdoptionApplicationController extends Controller
             ->latest('created_at')
             ->get();
 
-        return view('adoption-applications.show', compact('application', 'competingApplications'));
+        $siblingApplications = AdoptionApplication::where('applicant_email', $application->applicant_email)
+            ->where('id', '!=', $application->id)
+            ->whereIn('status', ['pending', 'under_review', 'approved'])
+            ->with('pet')
+            ->get();
+
+        return view('adoption-applications.show', compact('application', 'competingApplications', 'siblingApplications'));
     }
 
     public function markViewed(?Request $request = null): JsonResponse

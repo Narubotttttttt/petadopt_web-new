@@ -336,6 +336,13 @@ class RecommendationApiController extends Controller
                         $rec['compatibility_breakdown'] = $rec['compatibility_breakdown'] ?? ['space' => 88, 'routine' => 85, 'temperament' => 90];
                         $rec['care_tip'] = $rec['care_tip'] ?? $rec['consideration'] ?? 'Establish consistent daily routines during initial transition.';
                         $rec['consideration'] = $rec['care_tip'];
+                        $rec['comparison_traits'] = $rec['comparison_traits'] ?? [
+                            'energy_level'          => 'Moderate',
+                            'space_fit'             => 'Apartment Friendly',
+                            'alone_tolerance'       => 'Moderate',
+                            'social_compatibility' => 'Friendly with pets',
+                            'grooming_care'         => 'Low maintenance',
+                        ];
 
                         $validRecs[] = $rec;
                     }
@@ -353,6 +360,16 @@ class RecommendationApiController extends Controller
                     $output['adopted_count'] = $adoptedCount ?? 0;
                     $output['max_pets_allowed'] = 3;
                     $output['remaining_slots'] = max(0, 3 - ($adoptedCount ?? 0));
+
+                    if (!isset($output['comparative_analysis']) || empty($output['comparative_analysis']['summary'])) {
+                        $p1 = $output['recommendations'][0] ?? null;
+                        $p1Name = $p1['name'] ?? 'Your top candidate';
+                        $p1Score = $p1['match_percentage'] ?? 80;
+                        $output['comparative_analysis'] = [
+                            'summary' => "{$p1Name} ({$p1Score}% Match) demonstrates the strongest behavioral and schedule compatibility for your household, while other matched candidates provide great alternative options.",
+                            'verdict' => "{$p1Name} is your recommended primary companion.",
+                        ];
+                    }
 
                     return response()->json($output);
                 }

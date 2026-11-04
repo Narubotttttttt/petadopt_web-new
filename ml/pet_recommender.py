@@ -255,9 +255,10 @@ def _get_gemini_api_key():
 
 def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
     """
-    Dynamic natural language explainer powered by Google Gemini.
-    Generates unscripted, contextual reasons for top candidates in a single fast batch request.
-    Strictly adheres to: Zero Emojis, max 15 words per reason, valid JSON structure.
+    Dynamic natural language explainer and comparative analyst powered by Google Gemini.
+    Generates unscripted, contextual compatibility reasons, pre-adoption care tips, trait metrics,
+    and a holistic comparative analysis for the top candidate companions in a single fast batch request.
+    Strictly adheres to: Zero Emojis, valid JSON structure.
     """
     if not key or not top_pets:
         return {}
@@ -287,28 +288,43 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
         })
 
     prompt = (
-        "You are an AI explainability engine for a shelter pet recommendation system.\n"
+        "You are an AI explainability and comparative analysis engine for a shelter pet recommendation system.\n"
         "Our Scikit-Learn Random Forest model ranked these candidate pets as the top matches for the adopter.\n"
-        "For each pet, provide:\n"
-        "1. 'reasons': Exactly 3 to 4 distinct, compelling compatibility reasons (each 10 to 18 words) covering:\n"
-        "   - Space & home environment alignment (living space, yard, apartment setup).\n"
-        "   - Routine & schedule fit (daily hours away, activity level, exercise needs).\n"
-        "   - Behavioral & temperament synergy (energy level, calmness, friendliness, socialization).\n"
-        "   - Household compatibility (family dynamic, children, other pets, or adopter experience).\n"
-        "2. 'care_tip': 1 realistic pre-adoption care consideration or settling-in decompression tip (max 15 words) specific to that pet.\n"
-        "Strict rules:\n"
-        "- Do NOT use any emojis.\n"
-        "- Ground each point directly in the adopter's home, work hours, lifestyle, and temperament alignment.\n"
-        "- Return ONLY valid JSON in format: {\"pet_id\": {\"reasons\": [\"reason 1\", \"reason 2\", \"reason 3\", \"reason 4\"], \"care_tip\": \"tip text\"}}\n\n"
         f"Adopter Profile: {json.dumps(compact_adopter)}\n"
         f"Candidate Pets: {json.dumps(compact_pets)}\n\n"
-        "JSON format example:\n"
-        '{"1": {"reasons": ['
-        '"Spacious fenced yard provides a secure outdoor environment for protective tendencies.", '
-        '"Low daily alone hours align with your frequent presence at home.", '
-        '"Calm temperament matches your relaxed daily household pace and experience level.", '
-        '"Adult maturity supports a smooth and predictable transition into your home."'
-        '], "care_tip": "Allow 2 to 3 days of quiet space for initial decompression."}}'
+        "Tasks:\n"
+        "1. For each pet, provide:\n"
+        "   - 'reasons': Exactly 3 to 4 distinct compatibility reasons (each 10 to 18 words) covering space, routine, temperament, and household.\n"
+        "   - 'care_tip': 1 realistic pre-adoption care consideration or settling-in decompression tip (max 15 words).\n"
+        "   - 'energy_level': One of 'Calm', 'Moderate', 'Active'\n"
+        "   - 'space_fit': Short label (e.g. 'Apartment Friendly', 'Yard Preferred', 'Flexible Space')\n"
+        "   - 'alone_tolerance': Short label (e.g. 'Tolerates 6+ hrs', 'Needs midday check', 'Moderate')\n"
+        "   - 'social_compatibility': Short label (e.g. 'Great with pets', 'Friendly with kids', 'Best as only pet')\n"
+        "   - 'grooming_care': Short label (e.g. 'Low maintenance', 'Regular brushing', 'Moderate grooming')\n"
+        "2. For the overall comparison, provide 'comparative_analysis':\n"
+        "   - 'summary': A natural 2 to 3 sentence comparative breakdown directly contrasting the candidates against the adopter's lifestyle, explaining why candidate #1 is the top match and how candidates #2 and #3 compare as alternatives.\n"
+        "   - 'verdict': A concise 1-sentence executive takeaway recommending how the adopter should choose between them.\n\n"
+        "Strict rules:\n"
+        "- Do NOT use any emojis.\n"
+        "- Ground every point in the adopter's home, work hours, and temperament alignment.\n"
+        "- Return ONLY valid JSON in format:\n"
+        "{\n"
+        "  \"pets\": {\n"
+        "    \"<pet_id>\": {\n"
+        "      \"reasons\": [\"...\"],\n"
+        "      \"care_tip\": \"...\",\n"
+        "      \"energy_level\": \"...\",\n"
+        "      \"space_fit\": \"...\",\n"
+        "      \"alone_tolerance\": \"...\",\n"
+        "      \"social_compatibility\": \"...\",\n"
+        "      \"grooming_care\": \"...\"\n"
+        "    }\n"
+        "  },\n"
+        "  \"comparative_analysis\": {\n"
+        "    \"summary\": \"...\",\n"
+        "    \"verdict\": \"...\"\n"
+        "  }\n"
+        "}\n"
     )
 
     models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash']
@@ -316,7 +332,7 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
         'contents': [{'parts': [{'text': prompt}]}],
         'generationConfig': {
             'responseMimeType': 'application/json',
-            'temperature': 0.25
+            'temperature': 0.2
         }
     }).encode('utf-8')
 
@@ -330,25 +346,112 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
             method='POST'
         )
         try:
-            with urlopen(req, context=ctx, timeout=4.0) as resp:
+            with urlopen(req, context=ctx, timeout=8.0) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 raw_text = data['candidates'][0]['content']['parts'][0]['text']
                 parsed_json = json.loads(raw_text)
-                out_map = {}
-                for k, v in parsed_json.items():
+                
+                pets_map = {}
+                raw_pets = parsed_json.get('pets', {})
+                if not raw_pets and isinstance(parsed_json, dict):
+                    for k, v in parsed_json.items():
+                        if k not in ['comparative_analysis', 'summary', 'verdict'] and isinstance(v, dict):
+                            raw_pets[str(k)] = v
+
+                for k, v in raw_pets.items():
                     if isinstance(v, dict):
                         reasons = [str(r).strip() for r in v.get('reasons', []) if str(r).strip()]
                         care_tip = str(v.get('care_tip', '')).strip()
-                        out_map[str(k)] = {'reasons': reasons, 'care_tip': care_tip}
-                    elif isinstance(v, list):
-                        reasons = [str(r).strip() for r in v if str(r).strip()]
-                        out_map[str(k)] = {'reasons': reasons, 'care_tip': ''}
-                return out_map
+                        pets_map[str(k)] = {
+                            'reasons': reasons,
+                            'care_tip': care_tip,
+                            'energy_level': str(v.get('energy_level', 'Moderate')).strip(),
+                            'space_fit': str(v.get('space_fit', 'Apartment Friendly')).strip(),
+                            'alone_tolerance': str(v.get('alone_tolerance', 'Moderate')).strip(),
+                            'social_compatibility': str(v.get('social_compatibility', 'Friendly with pets')).strip(),
+                            'grooming_care': str(v.get('grooming_care', 'Low maintenance')).strip(),
+                        }
+
+                comp_analysis = parsed_json.get('comparative_analysis', {})
+                if not comp_analysis or not isinstance(comp_analysis, dict):
+                    comp_analysis = {
+                        'summary': str(parsed_json.get('summary', '')).strip(),
+                        'verdict': str(parsed_json.get('verdict', '')).strip(),
+                    }
+
+                return {
+                    'pets': pets_map,
+                    'comparative_analysis': comp_analysis,
+                }
         except Exception:
             continue
 
     return {}
 
+
+def _generate_default_comparative_analysis(top_pets, adopter_profile):
+    """
+    Deterministic explainable fallback generator that produces comparative traits
+    and synthetic analysis grounded in the Scikit-Learn model feature scoring.
+    """
+    if not top_pets:
+        return {
+            'pets': {},
+            'comparative_analysis': {
+                'summary': 'No candidate pets available for comparison.',
+                'verdict': 'Complete the compatibility quiz to evaluate shelter companions.',
+            }
+        }
+
+    home_env = str(adopter_profile.get('living_environment', 'home')).replace('_', ' ')
+    p1 = top_pets[0]
+    p1_name = p1.get('name') or f"Pet #{p1.get('pet_id')}"
+    p1_score = p1.get('match_percentage') or p1.get('match_score') or 80
+
+    other_names = [p.get('name') or f"Pet #{p.get('pet_id')}" for p in top_pets[1:]]
+    others_str = " and ".join(other_names) if other_names else "other candidates"
+
+    summary = (
+        f"{p1_name} ({p1_score}%) emerges as your highest compatibility match, demonstrating exceptional synergy "
+        f"with your {home_env} environment and daily routine. {others_str} provide excellent alternative companions "
+        f"with distinctive temperaments and activity profiles."
+    )
+    verdict = (
+        f"{p1_name} is your strongest primary match, while {others_str} offer wonderful companion options "
+        f"depending on your preferred activity level and household dynamics."
+    )
+
+    pets_map = {}
+    for p in top_pets:
+        pid = str(p.get('pet_id'))
+        temps = [str(t).lower() for t in p.get('temperaments', [])]
+        species = str(p.get('type', 'dog')).lower()
+        size = str(p.get('size', 'medium')).lower()
+
+        is_calm = any(t in temps for t in ['calm', 'gentle', 'quiet', 'independent'])
+        is_active = any(t in temps for t in ['playful', 'energetic', 'active', 'curious'])
+
+        energy = 'Calm' if is_calm else ('Active' if is_active else 'Moderate')
+        space = 'Apartment Friendly' if (species == 'cat' or size in ['small', 'toy']) else ('Yard Preferred' if is_active else 'Flexible Space')
+        alone = 'High (6+ hrs)' if is_calm else ('Moderate' if species == 'cat' else 'Needs regular routine')
+        social = 'Great with other pets' if any(t in temps for t in ['friendly', 'social', 'playful']) else 'Gentle companion'
+        grooming = 'Low maintenance' if 'short' in str(p.get('breed', '')).lower() else 'Regular care'
+
+        pets_map[pid] = {
+            'energy_level': energy,
+            'space_fit': space,
+            'alone_tolerance': alone,
+            'social_compatibility': social,
+            'grooming_care': grooming,
+        }
+
+    return {
+        'pets': pets_map,
+        'comparative_analysis': {
+            'summary': summary,
+            'verdict': verdict,
+        }
+    }
 
 def _generate_care_tip(pet: dict[str, Any], adopter_profile: dict[str, Any]) -> str:
     """
@@ -410,7 +513,7 @@ def _get_sort_tuple(item: Any) -> tuple:
         return (0.0, 0.0, 0.0, 0.0)
 
 
-def recommend_pets(pets_data, adopter_profile, top_k=3):
+def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
     """
     Ranks pet recommendations using the Multi-Species Scikit-Learn Random Forest Model.
     Both dogs and cats execute model.predict_proba() directly.
@@ -523,20 +626,49 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
     results.sort(key=_get_sort_tuple, reverse=True)
     top_candidates = results[:top_k] if top_k else results
 
-    # DYNAMIC EXPLAINER LAYER: Invoke Gemini for top candidates
+    # DYNAMIC EXPLAINER & COMPARATIVE LAYER: Invoke Gemini or Fallback
     api_key = _get_gemini_api_key()
+    gemini_result = None
     if api_key and top_candidates:
-        gemini_map = _generate_dynamic_reasons_gemini(top_candidates, adopter_profile, api_key)
-        if gemini_map:
-            for item in top_candidates:
-                pid_str = str(item.get('pet_id'))
-                if gemini_map.get(pid_str):
-                    entry = gemini_map[pid_str]
-                    if entry.get('reasons'):
-                        item['reasons'] = entry['reasons']
-                        item['match_reasons'] = entry['reasons']
-                    if entry.get('care_tip'):
-                        item['care_tip'] = entry['care_tip']
-                        item['consideration'] = entry['care_tip']
+        gemini_result = _generate_dynamic_reasons_gemini(top_candidates, adopter_profile, api_key)
 
-    return top_candidates
+    default_analysis = _generate_default_comparative_analysis(top_candidates, adopter_profile)
+    default_pets = default_analysis.get('pets', {})
+
+    comparative_analysis = {}
+    if gemini_result and gemini_result.get('comparative_analysis', {}).get('summary'):
+        comparative_analysis = gemini_result['comparative_analysis']
+    else:
+        comparative_analysis = default_analysis['comparative_analysis']
+
+    gemini_pets = (gemini_result.get('pets', {}) if gemini_result else {})
+
+    for item in top_candidates:
+        pid_str = str(item.get('pet_id'))
+        g_entry = gemini_pets.get(pid_str, {})
+        d_entry = default_pets.get(pid_str, {})
+
+        if g_entry.get('reasons'):
+            item['reasons'] = g_entry['reasons']
+            item['match_reasons'] = g_entry['reasons']
+        if g_entry.get('care_tip'):
+            item['care_tip'] = g_entry['care_tip']
+            item['consideration'] = g_entry['care_tip']
+
+        item['comparison_traits'] = {
+            'energy_level': g_entry.get('energy_level') or d_entry.get('energy_level', 'Moderate'),
+            'space_fit': g_entry.get('space_fit') or d_entry.get('space_fit', 'Apartment Friendly'),
+            'alone_tolerance': g_entry.get('alone_tolerance') or d_entry.get('alone_tolerance', 'Moderate'),
+            'social_compatibility': g_entry.get('social_compatibility') or d_entry.get('social_compatibility', 'Friendly with pets'),
+            'grooming_care': g_entry.get('grooming_care') or d_entry.get('grooming_care', 'Low maintenance'),
+        }
+
+    return top_candidates, comparative_analysis
+
+
+def recommend_pets(pets_data, adopter_profile, top_k=3):
+    """
+    Backward-compatible wrapper returning top candidate recommendations.
+    """
+    recs, _ = recommend_pets_with_analysis(pets_data, adopter_profile, top_k=top_k)
+    return recs

@@ -63,16 +63,17 @@ except json.JSONDecodeError as e:
     sys.exit(1)
 
 # 6. Run recommendation and output JSON
-recommendations = mod.recommend_pets(
+recommendations, comparative_analysis = mod.recommend_pets_with_analysis(
     payload.get('pets', []),
     payload.get('adopter_profile', {})
 )
 
 output = {
-    'success'        : True,
-    'algorithm'      : 'Random Forest Classifier - Scikit-Learn (Trained Model)',
-    'count'          : len(recommendations),
-    'recommendations': recommendations,
+    'success'             : True,
+    'algorithm'           : 'Random Forest Classifier - Scikit-Learn (Trained Model) + Google Gemini AI Explainer',
+    'count'               : len(recommendations),
+    'recommendations'     : recommendations,
+    'comparative_analysis': comparative_analysis,
 }
 
 sys.stdout.write(json.dumps(output, ensure_ascii=False))
