@@ -8,6 +8,10 @@ use App\Http\Controllers\Api\AdoptionApiController;
 use App\Http\Controllers\Api\PetApiController;
 use App\Http\Controllers\Api\RecommendationApiController;
 
+Route::get('/ping', function () {
+    return response()->json(['status' => 'ok', 'timestamp' => now()->timestamp]);
+});
+
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
