@@ -63,10 +63,16 @@ except json.JSONDecodeError as e:
     sys.exit(1)
 
 # 6. Run recommendation and output JSON
-recommendations, comparative_analysis = mod.recommend_pets_with_analysis(
+rec_result = mod.recommend_pets_with_analysis(
     payload.get('pets', []),
     payload.get('adopter_profile', {})
 )
+if isinstance(rec_result, tuple):
+    recommendations = rec_result[0]
+    comparative_analysis = rec_result[1] if len(rec_result) > 1 else {}
+else:
+    recommendations = rec_result
+    comparative_analysis = {}
 
 output = {
     'success'             : True,

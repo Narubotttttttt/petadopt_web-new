@@ -277,7 +277,7 @@ class RecommendationApiController extends Controller
 
         $process = new Process([$pythonBin, '-W', 'ignore', $pythonScript], base_path(), $processEnv);
         $process->setInput(json_encode($payload));
-        $process->setTimeout(15);
+        $process->setTimeout(25);
 
         try {
             $process->run();

@@ -327,7 +327,7 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
         "}\n"
     )
 
-    models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash']
+    models = ['gemini-3.5-flash']
     payload = json.dumps({
         'contents': [{'parts': [{'text': prompt}]}],
         'generationConfig': {
@@ -346,7 +346,7 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
             method='POST'
         )
         try:
-            with urlopen(req, context=ctx, timeout=8.0) as resp:
+            with urlopen(req, context=ctx, timeout=3.5) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 raw_text = data['candidates'][0]['content']['parts'][0]['text']
                 parsed_json = json.loads(raw_text)
@@ -519,8 +519,12 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
     Both dogs and cats execute model.predict_proba() directly.
     Top candidate reasons are dynamically generated via Google Gemini.
     """
+    empty_analysis = {
+        'summary': 'No candidate pets available for comparison.',
+        'verdict': 'Check back soon for newly rescued companions.',
+    }
     if not pets_data:
-        return []
+        return [], empty_analysis
 
     if not isinstance(adopter_profile, dict):
         adopter_profile = {}
@@ -529,17 +533,17 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
     # Pets with status 'in_shelter', 'pending', 'adopted', or 'deceased' MUST NEVER be recommended.
     available = [
         p for p in pets_data
-        if str(p.get('status', '')).strip().lower() == 'available'
+        if not p.get('status') or str(p.get('status', '')).strip().lower() == 'available'
     ]
     if not available:
-        return []
+        return [], empty_analysis
 
     # Strict species filter if user requested
     pref_species = str(adopter_profile.get('preferred_species', 'any')).lower()
     if pref_species in ['dog', 'cat']:
         filtered = [p for p in available if str(p.get('type', '')).lower() == pref_species]
         if not filtered:
-            return []
+            return [], empty_analysis
         available = filtered
 
     model, feature_cols = _load_model()
@@ -621,6 +625,9 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
             'consideration'          : care_tip,
             'algorithm_used'         : algo_name
         })
+
+    if not results:
+        return [], empty_analysis
 
     # Sort descending by compatibility match score
     results.sort(key=_get_sort_tuple, reverse=True)
