@@ -288,16 +288,25 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
         "You are an AI explainability engine for a shelter pet recommendation system.\n"
         "Our Scikit-Learn Random Forest model ranked these candidate pets as the top matches for the adopter.\n"
         "For each pet, provide:\n"
-        "1. 'reasons': 2 to 3 concise, natural compatibility reasons (max 15 words each) explaining lifestyle and space fit.\n"
+        "1. 'reasons': Exactly 3 to 4 distinct, compelling compatibility reasons (each 10 to 18 words) covering:\n"
+        "   - Space & home environment alignment (living space, yard, apartment setup).\n"
+        "   - Routine & schedule fit (daily hours away, activity level, exercise needs).\n"
+        "   - Behavioral & temperament synergy (energy level, calmness, friendliness, socialization).\n"
+        "   - Household compatibility (family dynamic, children, other pets, or adopter experience).\n"
         "2. 'care_tip': 1 realistic pre-adoption care consideration or settling-in decompression tip (max 15 words) specific to that pet.\n"
         "Strict rules:\n"
         "- Do NOT use any emojis.\n"
         "- Ground each point directly in the adopter's home, work hours, lifestyle, and temperament alignment.\n"
-        "- Return ONLY valid JSON in format: {\"pet_id\": {\"reasons\": [\"reason 1\", \"reason 2\"], \"care_tip\": \"tip text\"}}\n\n"
+        "- Return ONLY valid JSON in format: {\"pet_id\": {\"reasons\": [\"reason 1\", \"reason 2\", \"reason 3\", \"reason 4\"], \"care_tip\": \"tip text\"}}\n\n"
         f"Adopter Profile: {json.dumps(compact_adopter)}\n"
         f"Candidate Pets: {json.dumps(compact_pets)}\n\n"
         "JSON format example:\n"
-        '{"1": {"reasons": ["Well-suited for apartment living", "Matches your moderate daily pace"], "care_tip": "Allow 2 to 3 days of quiet space for initial decompression."}}'
+        '{"1": {"reasons": ['
+        '"Spacious fenced yard provides a secure outdoor environment for protective tendencies.", '
+        '"Low daily alone hours align with your frequent presence at home.", '
+        '"Calm temperament matches your relaxed daily household pace and experience level.", '
+        '"Adult maturity supports a smooth and predictable transition into your home."'
+        '], "care_tip": "Allow 2 to 3 days of quiet space for initial decompression."}}'
     )
 
     models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.8-flash']
@@ -373,20 +382,30 @@ def _generate_default_reasons(pet, match_pct):
     Reflects the objective Scikit-Learn model feature scoring.
     """
     species = str(pet.get('type', 'companion')).capitalize()
+    size = str(pet.get('size', 'medium')).capitalize()
+    age = str(pet.get('age', 'adult')).capitalize()
     return [
-        f"High compatibility match ({match_pct}%) evaluated by the Scikit-Learn Multi-Species Random Forest model.",
-        f"Lifestyle and household parameters strongly align with this {species}'s verified behavioral profile."
+        f"High compatibility match ({match_pct}%) evaluated by the Random Forest model.",
+        f"Living environment and available space align with this {size} {species}'s frame and exercise needs.",
+        f"Daily schedule and household routine strongly support this {age} companion's care requirements.",
+        f"Verified behavioral temperament complements your lifestyle preferences and household dynamics."
     ]
 
 
 # ---------------------------------------------------------
 # Main Multi-Species ML Recommendation Function
 # ---------------------------------------------------------
-def _get_sort_score(item: Any) -> float:
+def _get_sort_tuple(item: Any) -> tuple:
     try:
-        return float(item['match_score'])
+        score = float(item.get('match_score', 0.0))
+        breakdown = item.get('compatibility_breakdown', {})
+        temp = float(breakdown.get('temperament', 0.0))
+        routine = float(breakdown.get('routine', 0.0))
+        space = float(breakdown.get('space', 0.0))
+        days = float(item.get('days_in_shelter', 0.0) or 0.0)
+        return (score, temp, (routine + space), days)
     except (KeyError, TypeError, ValueError):
-        return 0.0
+        return (0.0, 0.0, 0.0, 0.0)
 
 
 def recommend_pets(pets_data, adopter_profile, top_k=3):
@@ -499,7 +518,7 @@ def recommend_pets(pets_data, adopter_profile, top_k=3):
         })
 
     # Sort descending by compatibility match score
-    results.sort(key=_get_sort_score, reverse=True)
+    results.sort(key=_get_sort_tuple, reverse=True)
     top_candidates = results[:top_k] if top_k else results
 
     # DYNAMIC EXPLAINER LAYER: Invoke Gemini for top candidates

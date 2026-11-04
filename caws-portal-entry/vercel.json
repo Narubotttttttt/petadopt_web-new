@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://rss-capability-champagne-inns.trycloudflare.com/$1",
+                         "destination":  "https://can-trains-universe-venue.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

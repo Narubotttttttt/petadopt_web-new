@@ -402,8 +402,15 @@
     },
     get sizeOptions() {
         return this.type === 'cat'
-            ? [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }]
-            : [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }];
+            ? [
+                { value: 'small', label: 'Small (Under 4 kg / Kitten & Petite)' },
+                { value: 'medium', label: 'Medium (4 - 10 kg / Standard Cat)' }
+              ]
+            : [
+                { value: 'small', label: 'Small (Under 10 kg / Lap & Toy)' },
+                { value: 'medium', label: 'Medium (10 - 25 kg / Standard Aspin)' },
+                { value: 'large', label: 'Large (25+ kg / Large Breed)' }
+              ];
     },
     get disabilityValue() {
         if (!this.hasDisability) return '';
@@ -1013,6 +1020,7 @@
                         <option :value="opt.value" :selected="opt.value === size" x-text="opt.label"></option>
                     </template>
                 </select>
+                <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5">Based on estimated adult weight and body frame.</p>
             </div>
 
             <div>
@@ -1460,8 +1468,8 @@
             <p class="text-xs text-gray-500 dark:text-slate-400 mb-3">Upload an initial snapshot photo for shelter identification and kennel records.</p>
             
             <div class="border-2 border-dashed border-gray-200 dark:border-white/[0.1] hover:border-[#199CA4] rounded-2xl p-5 transition bg-gray-50/50 dark:bg-white/[0.02]">
-                <div x-show="previewUrl" class="flex flex-col sm:flex-row items-center gap-5">
-                    <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800">
+                <div x-show="previewUrl" class="flex flex-col items-center justify-center text-center py-2 space-y-3">
+                    <div class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800 mx-auto">
                         <img :src="previewUrl" alt="Pet preview" class="w-full h-full object-cover">
                         <span x-show="isNew" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#199CA4] text-white text-[10px] font-extrabold shadow-sm">
                             New Photo
@@ -1471,13 +1479,13 @@
                         </span>
                     </div>
 
-                    <div class="flex-1 text-center sm:text-left space-y-2 w-full">
+                    <div class="space-y-1.5 w-full max-w-sm text-center mx-auto">
                         <div>
-                            <p class="text-sm font-bold text-gray-800 dark:text-white truncate max-w-md" x-text="isNew ? (fileName || 'New photo chosen') : 'Current Pet Photo'"></p>
+                            <p class="text-sm font-bold text-gray-800 dark:text-white truncate" x-text="isNew ? (fileName || 'New photo chosen') : 'Current Pet Photo'"></p>
                             <p class="text-xs text-gray-500 dark:text-slate-400" x-text="isNew ? (fileSize ? 'File size: ' + fileSize : 'Ready to upload') : 'Stored in database'"></p>
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                        <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
                             <label for="pet_photo_input_step2" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#171923] border border-gray-200 dark:border-white/[0.12] text-xs font-bold text-gray-700 dark:text-slate-200 hover:border-[#199CA4] hover:text-[#199CA4] shadow-2xs transition cursor-pointer">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                                 Choose Different Photo
@@ -1556,8 +1564,8 @@
             <div class="border-2 border-dashed border-gray-200 dark:border-white/[0.1] hover:border-[#199CA4] rounded-2xl p-5 transition bg-gray-50/50 dark:bg-white/[0.02]">
                 
                 {{-- When an image is present (preview or current) --}}
-                <div x-show="previewUrl" class="flex flex-col sm:flex-row items-center gap-5">
-                    <div class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800">
+                <div x-show="previewUrl" class="flex flex-col items-center justify-center text-center py-2 space-y-3">
+                    <div class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800 mx-auto">
                         <img :src="previewUrl" alt="Pet preview" class="w-full h-full object-cover">
                         <span x-show="isNew" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#199CA4] text-white text-[10px] font-extrabold shadow-sm">
                             New Photo
@@ -1567,13 +1575,13 @@
                         </span>
                     </div>
 
-                    <div class="flex-1 text-center sm:text-left space-y-2 w-full">
+                    <div class="space-y-1.5 w-full max-w-sm text-center mx-auto">
                         <div>
-                            <p class="text-sm font-bold text-gray-800 dark:text-white truncate max-w-md" x-text="isNew ? (fileName || 'New photo chosen') : 'Current Pet Photo'"></p>
+                            <p class="text-sm font-bold text-gray-800 dark:text-white truncate" x-text="isNew ? (fileName || 'New photo chosen') : 'Current Pet Photo'"></p>
                             <p class="text-xs text-gray-500 dark:text-slate-400" x-text="isNew ? (fileSize ? 'File size: ' + fileSize : 'Ready to upload') : 'Stored in database'"></p>
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                        <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
                             <label for="pet_photo_input" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#171923] border border-gray-200 dark:border-white/[0.12] text-xs font-bold text-gray-700 dark:text-slate-200 hover:border-[#199CA4] hover:text-[#199CA4] shadow-2xs transition cursor-pointer">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                                 Choose Different Photo

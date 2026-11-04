@@ -1,5 +1,16 @@
 * text=auto eol=lf
 
+# Binary files - prevent CRLF translation and corruption
+*.pkl binary
+*.apk binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.sqlite binary
+*.sqlite3 binary
+
 *.blade.php diff=html
 *.css diff=css
 *.html diff=html
