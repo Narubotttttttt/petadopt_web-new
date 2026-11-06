@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://collaborative-regard-altered-invitation.trycloudflare.com/$1",
+                         "destination":  "https://para-nathan-excuse-share.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

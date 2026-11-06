@@ -1,6 +1,9 @@
 *.log
 .DS_Store
 .env
+.env.*
+!.env.example
+*.env
 .env.backup
 .env.production
 .phpactor.json
@@ -29,6 +32,11 @@ Thumbs.db
 __pycache__/
 *.pyc
 .venv/
+firebase-credentials.json
+*credentials*.json
+*.pem
+*.key
+*.cert
 
  
 # Android compiled binaries

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 CAWS ML Runner - Bootstrap wrapper for the pet recommendation engine.
 Called by Laravel as: python ml/run_recommender.py
@@ -13,16 +12,17 @@ if sys.platform == 'win32':
     if 'windir' not in os.environ:
         os.environ['windir'] = os.environ.get('WINDIR', r'C:\Windows')
 
+import importlib.util
 import io
 import json
-import importlib.util
 import pathlib
 
 # 1. Add user site-packages and standard site-packages to path so joblib, sklearn, pandas are found.
 import site
+
 for _p in [
     getattr(site, 'getusersitepackages', lambda: '')(),
-    *(getattr(site, 'getsitepackages', lambda: [])()),
+    *(getattr(site, 'getsitepackages', list)()),
     os.path.join(sys.prefix, 'Lib', 'site-packages'),
 ]:
     if _p and os.path.isdir(_p) and _p not in sys.path:
@@ -58,7 +58,7 @@ if not raw:
 try:
     payload = json.loads(raw)
 except json.JSONDecodeError as e:
-    sys.stdout.write(json.dumps({'error': f'JSON parse error: {str(e)}'}))
+    sys.stdout.write(json.dumps({'error': f'JSON parse error: {e!s}'}))
     sys.stdout.flush()
     sys.exit(1)
 

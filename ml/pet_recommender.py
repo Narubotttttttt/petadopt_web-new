@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 CAWS Pet Adoption System - Multi-Species Machine Learning Recommendation Engine
 Algorithm : Supervised Random Forest Classifier (Scikit-Learn)
@@ -18,6 +17,7 @@ if sys.platform == 'win32':
         os.environ['windir'] = os.environ.get('WINDIR', r'C:\Windows')
 
 import site
+
 for _p in [
     os.path.join(os.path.dirname(os.path.dirname(__file__)), '.venv', 'Lib', 'site-packages'),
     getattr(site, 'getusersitepackages', lambda: '')(),
@@ -29,11 +29,12 @@ for _p in [
 
 import json
 import re
-import joblib
-import pandas as pd
-from urllib.request import Request, urlopen
 import ssl
 from typing import Any
+from urllib.request import Request, urlopen
+
+import joblib
+import pandas as pd
 
 ALL_TEMPERAMENT_TAGS = [
     'Friendly', 'Calm', 'Energetic', 'Shy',
@@ -55,7 +56,7 @@ def _load_model():
             _trained_model   = joblib.load(MODEL_PATH)
             with open(FEATURES_PATH, 'r', encoding='utf-8') as f:
                 _feature_columns = json.load(f)
-        except Exception:
+        except (OSError, json.JSONDecodeError, KeyError, ValueError):
             _trained_model   = None
             _feature_columns = None
     return _trained_model, _feature_columns
@@ -248,12 +249,12 @@ def _get_gemini_api_key():
                         val = line.split('=', 1)[1].strip().strip('"\'')
                         if val:
                             return val
-        except Exception:
-            pass
+        except OSError:
+            return None
     return None
 
 
-def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
+def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_profile: dict[str, Any], key: str) -> dict[str, Any]:
     """
     Dynamic natural language explainer and comparative analyst powered by Google Gemini.
     Generates unscripted, contextual compatibility reasons, pre-adoption care tips, trait metrics,
@@ -277,35 +278,42 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
 
     compact_pets = []
     for p in top_pets:
+        pid = str(p.get('pet_id'))
+        name = p.get('name')
+        species = str(p.get('type') or 'companion').strip()
+        breed = str(p.get('breed') or '').strip()
+        # Shelter domain: pets do not have pre-assigned adopter names unless applied for.
+        label = f"Pet no. {pid}" + (f" ({breed} {species.capitalize()})" if breed else f" ({species.capitalize()})") if not name else f"{name} ({breed} {species.capitalize()})"
         compact_pets.append({
-            'id': str(p.get('pet_id')),
-            'name': p.get('name'),
-            'species': p.get('type'),
-            'breed': p.get('breed'),
+            'id': pid,
+            'shelter_label': label,
+            'species': species,
+            'breed': breed,
             'age': p.get('age'),
             'size': p.get('size'),
             'temperaments': p.get('temperaments', [])
         })
 
     prompt = (
-        "You are an AI explainability and comparative analysis engine for a shelter pet recommendation system.\n"
+        "You are an expert AI explainability and comparative analysis engine for a shelter pet adoption system.\n"
         "Our Scikit-Learn Random Forest model ranked these candidate pets as the top matches for the adopter.\n"
         f"Adopter Profile: {json.dumps(compact_adopter)}\n"
         f"Candidate Pets: {json.dumps(compact_pets)}\n\n"
         "Tasks:\n"
         "1. For each pet, provide:\n"
-        "   - 'reasons': Exactly 3 to 4 distinct compatibility reasons (each 10 to 18 words) covering space, routine, temperament, and household.\n"
+        "   - 'reasons': Exactly 3 to 4 distinct compatibility reasons (each 10 to 18 words) highlighting space, routine, temperament, and household dynamics. Reference them using their shelter label, e.g. 'Pet no. <id> (<Breed> <Species>)'.\n"
         "   - 'care_tip': 1 realistic pre-adoption care consideration or settling-in decompression tip (max 15 words).\n"
-        "   - 'energy_level': One of 'Calm', 'Moderate', 'Active'\n"
-        "   - 'space_fit': Short label (e.g. 'Apartment Friendly', 'Yard Preferred', 'Flexible Space')\n"
+        "   - 'energy_level': Exactly one of 'Calm', 'Moderate', 'Active'\n"
+        "   - 'space_fit': Short label (e.g. 'Apartment Friendly', 'Yard Preferred', 'House with Yard', 'Flexible Space')\n"
         "   - 'alone_tolerance': Short label (e.g. 'Tolerates 6+ hrs', 'Needs midday check', 'Moderate')\n"
-        "   - 'social_compatibility': Short label (e.g. 'Great with pets', 'Friendly with kids', 'Best as only pet')\n"
+        "   - 'social_compatibility': Short label (e.g. 'Great with pets', 'Friendly with kids', 'Gentle companion')\n"
         "   - 'grooming_care': Short label (e.g. 'Low maintenance', 'Regular brushing', 'Moderate grooming')\n"
         "2. For the overall comparison, provide 'comparative_analysis':\n"
-        "   - 'summary': A natural 2 to 3 sentence comparative breakdown directly contrasting the candidates against the adopter's lifestyle, explaining why candidate #1 is the top match and how candidates #2 and #3 compare as alternatives.\n"
-        "   - 'verdict': A concise 1-sentence executive takeaway recommending how the adopter should choose between them.\n\n"
+        "   - 'summary': A natural 2 to 3 sentence comparative breakdown directly contrasting the candidates against the adopter's lifestyle and home environment. Highlight concrete trade-offs between them (e.g. space, activity requirements, and alone-time adaptability) using their shelter label 'Pet no. <id>'.\n"
+        "   - 'verdict': A distinct 1 to 2 sentence recommendation advising the adopter how to choose between them based on lifestyle priorities (e.g. 'Choose Pet no. X if you prefer..., or Pet no. Y for...'). Do NOT simply repeat or restate the summary.\n\n"
         "Strict rules:\n"
-        "- Do NOT use any emojis.\n"
+        "- ZERO emojis anywhere.\n"
+        "- Do NOT invent fictional names (e.g. do NOT invent names like Snowy, Bella, Max). Pets in the shelter are referred to by their official shelter ID (e.g. 'Pet no. 5 (Puspin Cat)').\n"
         "- Ground every point in the adopter's home, work hours, and temperament alignment.\n"
         "- Return ONLY valid JSON in format:\n"
         "{\n"
@@ -327,7 +335,7 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
         "}\n"
     )
 
-    models = ['gemini-3.5-flash']
+    models = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite-preview']
     payload = json.dumps({
         'contents': [{'parts': [{'text': prompt}]}],
         'generationConfig': {
@@ -346,12 +354,12 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
             method='POST'
         )
         try:
-            with urlopen(req, context=ctx, timeout=3.5) as resp:
+            with urlopen(req, context=ctx, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 raw_text = data['candidates'][0]['content']['parts'][0]['text']
                 parsed_json = json.loads(raw_text)
                 
-                pets_map = {}
+                pets_map: dict[str, dict[str, Any]] = {}
                 raw_pets = parsed_json.get('pets', {})
                 if not raw_pets and isinstance(parsed_json, dict):
                     for k, v in parsed_json.items():
@@ -383,45 +391,20 @@ def _generate_dynamic_reasons_gemini(top_pets, adopter_profile, key):
                     'pets': pets_map,
                     'comparative_analysis': comp_analysis,
                 }
-        except Exception:
+        except Exception as e:  # noqa: BLE001
+            sys.stderr.write(f"[Gemini Error] Model {model_name} failed: {e}\n")
             continue
 
     return {}
 
 
-def _generate_default_comparative_analysis(top_pets, adopter_profile):
+def _generate_default_comparative_analysis(top_pets: list[dict[str, Any]], adopter_profile: dict[str, Any]) -> dict[str, Any]:
     """
-    Deterministic explainable fallback generator that produces comparative traits
-    and synthetic analysis grounded in the Scikit-Learn model feature scoring.
+    Baseline trait metrics derived strictly from pet profile features
+    used only if Gemini AI synthesis is unreachable.
+    Does NOT generate canned synthetic narrative text.
     """
-    if not top_pets:
-        return {
-            'pets': {},
-            'comparative_analysis': {
-                'summary': 'No candidate pets available for comparison.',
-                'verdict': 'Complete the compatibility quiz to evaluate shelter companions.',
-            }
-        }
-
-    home_env = str(adopter_profile.get('living_environment', 'home')).replace('_', ' ')
-    p1 = top_pets[0]
-    p1_name = p1.get('name') or f"Pet #{p1.get('pet_id')}"
-    p1_score = p1.get('match_percentage') or p1.get('match_score') or 80
-
-    other_names = [p.get('name') or f"Pet #{p.get('pet_id')}" for p in top_pets[1:]]
-    others_str = " and ".join(other_names) if other_names else "other candidates"
-
-    summary = (
-        f"{p1_name} ({p1_score}%) emerges as your highest compatibility match, demonstrating exceptional synergy "
-        f"with your {home_env} environment and daily routine. {others_str} provide excellent alternative companions "
-        f"with distinctive temperaments and activity profiles."
-    )
-    verdict = (
-        f"{p1_name} is your strongest primary match, while {others_str} offer wonderful companion options "
-        f"depending on your preferred activity level and household dynamics."
-    )
-
-    pets_map = {}
+    pets_map: dict[str, dict[str, Any]] = {}
     for p in top_pets:
         pid = str(p.get('pet_id'))
         temps = [str(t).lower() for t in p.get('temperaments', [])]
@@ -433,7 +416,7 @@ def _generate_default_comparative_analysis(top_pets, adopter_profile):
 
         energy = 'Calm' if is_calm else ('Active' if is_active else 'Moderate')
         space = 'Apartment Friendly' if (species == 'cat' or size in ['small', 'toy']) else ('Yard Preferred' if is_active else 'Flexible Space')
-        alone = 'High (6+ hrs)' if is_calm else ('Moderate' if species == 'cat' else 'Needs regular routine')
+        alone = 'Tolerates 6+ hrs' if is_calm else ('Moderate' if species == 'cat' else 'Needs regular routine')
         social = 'Great with other pets' if any(t in temps for t in ['friendly', 'social', 'playful']) else 'Gentle companion'
         grooming = 'Low maintenance' if 'short' in str(p.get('breed', '')).lower() else 'Regular care'
 
@@ -448,8 +431,8 @@ def _generate_default_comparative_analysis(top_pets, adopter_profile):
     return {
         'pets': pets_map,
         'comparative_analysis': {
-            'summary': summary,
-            'verdict': verdict,
+            'summary': 'AI comparative analysis is unavailable. Live Gemini reasoning could not be reached.',
+            'verdict': 'Verify network connection or Gemini API credentials.'
         }
     }
 
@@ -493,7 +476,7 @@ def _generate_default_reasons(pet, match_pct):
         f"High compatibility match ({match_pct}%) evaluated by the Random Forest model.",
         f"Living environment and available space align with this {size} {species}'s frame and exercise needs.",
         f"Daily schedule and household routine strongly support this {age} companion's care requirements.",
-        f"Verified behavioral temperament complements your lifestyle preferences and household dynamics."
+        "Verified behavioral temperament complements your lifestyle preferences and household dynamics."
     ]
 
 
@@ -635,39 +618,56 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
 
     # DYNAMIC EXPLAINER & COMPARATIVE LAYER: Invoke Gemini or Fallback
     api_key = _get_gemini_api_key()
-    gemini_result = None
+    gemini_result: dict[str, Any] | None = None
     if api_key and top_candidates:
         gemini_result = _generate_dynamic_reasons_gemini(top_candidates, adopter_profile, api_key)
 
     default_analysis = _generate_default_comparative_analysis(top_candidates, adopter_profile)
-    default_pets = default_analysis.get('pets', {})
 
-    comparative_analysis = {}
-    if gemini_result and gemini_result.get('comparative_analysis', {}).get('summary'):
-        comparative_analysis = gemini_result['comparative_analysis']
-    else:
-        comparative_analysis = default_analysis['comparative_analysis']
+    comparative_analysis: dict[str, Any] = {}
+    if isinstance(gemini_result, dict):
+        raw_ca = gemini_result.get('comparative_analysis')
+        if isinstance(raw_ca, dict) and raw_ca.get('summary'):
+            comparative_analysis = raw_ca
 
-    gemini_pets = (gemini_result.get('pets', {}) if gemini_result else {})
+    if not comparative_analysis and isinstance(default_analysis, dict):
+        raw_dca = default_analysis.get('comparative_analysis')
+        if isinstance(raw_dca, dict):
+            comparative_analysis = raw_dca
+
+    gemini_pets: dict[str, dict[str, Any]] = {}
+    if isinstance(gemini_result, dict):
+        raw_gp = gemini_result.get('pets')
+        if isinstance(raw_gp, dict):
+            gemini_pets = {str(k): v for k, v in raw_gp.items() if isinstance(v, dict)}
+
+    default_pets: dict[str, dict[str, Any]] = {}
+    if isinstance(default_analysis, dict):
+        raw_dp = default_analysis.get('pets')
+        if isinstance(raw_dp, dict):
+            default_pets = {str(k): v for k, v in raw_dp.items() if isinstance(v, dict)}
 
     for item in top_candidates:
         pid_str = str(item.get('pet_id'))
-        g_entry = gemini_pets.get(pid_str, {})
-        d_entry = default_pets.get(pid_str, {})
+        g_entry: dict[str, Any] = gemini_pets.get(pid_str) or {}
+        d_entry: dict[str, Any] = default_pets.get(pid_str) or {}
 
-        if g_entry.get('reasons'):
-            item['reasons'] = g_entry['reasons']
-            item['match_reasons'] = g_entry['reasons']
-        if g_entry.get('care_tip'):
-            item['care_tip'] = g_entry['care_tip']
-            item['consideration'] = g_entry['care_tip']
+        reasons = g_entry.get('reasons')
+        if isinstance(reasons, list) and reasons:
+            item['reasons'] = reasons
+            item['match_reasons'] = reasons
+
+        care_tip = g_entry.get('care_tip')
+        if isinstance(care_tip, str) and care_tip:
+            item['care_tip'] = care_tip
+            item['consideration'] = care_tip
 
         item['comparison_traits'] = {
-            'energy_level': g_entry.get('energy_level') or d_entry.get('energy_level', 'Moderate'),
-            'space_fit': g_entry.get('space_fit') or d_entry.get('space_fit', 'Apartment Friendly'),
-            'alone_tolerance': g_entry.get('alone_tolerance') or d_entry.get('alone_tolerance', 'Moderate'),
-            'social_compatibility': g_entry.get('social_compatibility') or d_entry.get('social_compatibility', 'Friendly with pets'),
-            'grooming_care': g_entry.get('grooming_care') or d_entry.get('grooming_care', 'Low maintenance'),
+            'energy_level': str(g_entry.get('energy_level') or d_entry.get('energy_level') or 'Moderate'),
+            'space_fit': str(g_entry.get('space_fit') or d_entry.get('space_fit') or 'Apartment Friendly'),
+            'alone_tolerance': str(g_entry.get('alone_tolerance') or d_entry.get('alone_tolerance') or 'Moderate'),
+            'social_compatibility': str(g_entry.get('social_compatibility') or d_entry.get('social_compatibility') or 'Friendly with pets'),
+            'grooming_care': str(g_entry.get('grooming_care') or d_entry.get('grooming_care') or 'Low maintenance'),
         }
 
     return top_candidates, comparative_analysis

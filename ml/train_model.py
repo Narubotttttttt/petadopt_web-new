@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 CAWS Pet Adoption System - Supervised Machine Learning Model Training
 Dataset  : Multi-Species Pet Adoption Master Dataset (67,000 Records: Dogs & Cats)
@@ -16,14 +15,14 @@ if sys.platform == 'win32':
     if 'windir' not in os.environ:
         os.environ['windir'] = os.environ.get('WINDIR', r'C:\Windows')
 
-import site
 import json
+import site
 
 # Ensure virtualenv and Python site-packages are loaded
 for _p in [
     os.path.join(os.path.dirname(os.path.dirname(__file__)), '.venv', 'Lib', 'site-packages'),
     getattr(site, 'getusersitepackages', lambda: '')(),
-    *(getattr(site, 'getsitepackages', lambda: [])()),
+    *(getattr(site, 'getsitepackages', list)()),
     os.path.join(sys.prefix, 'Lib', 'site-packages'),
 ]:
     if _p and os.path.isdir(_p) and _p not in sys.path:
@@ -32,16 +31,21 @@ for _p in [
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, classification_report, confusion_matrix
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
+from sklearn.model_selection import train_test_split
 
 # Force UTF-8 output so Windows terminal does not crash on special characters
 if hasattr(sys.stdout, 'reconfigure'):
-    getattr(sys.stdout, 'reconfigure')(encoding='utf-8', errors='replace')
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 
 def train_and_save_model():
@@ -105,7 +109,7 @@ def train_and_save_model():
     roc    = float(roc_auc_score(y_test, y_prob))
     cm     = confusion_matrix(y_test, y_pred).tolist()
 
-    print("")
+    print()
     print("==================================================================")
     print("  MODEL TRAINING COMPLETE - MULTI-SPECIES EVALUATION METRICS      ")
     print("==================================================================")
@@ -114,7 +118,7 @@ def train_and_save_model():
     print(f"  Recall    : {rec * 100:.2f}%")
     print(f"  F1-Score  : {f1:.4f}")
     print(f"  ROC-AUC   : {roc:.4f}")
-    print("")
+    print()
     print("  Classification Report:")
     print(classification_report(y_test, y_pred, target_names=['Incompatible', 'Compatible']))
     print("  Confusion Matrix:")
@@ -126,7 +130,7 @@ def train_and_save_model():
     print("\n  Top 10 Most Predictive Features:")
     for feat_name, imp_val in importances.head(10).items():
         print(f"    - {feat_name:25}: {imp_val * 100:.2f}%")
-    print("")
+    print()
 
     # 6. Save Artifacts
     joblib.dump(model, model_path, compress=3)
@@ -158,7 +162,7 @@ def train_and_save_model():
         json.dump(metrics, f, indent=2)
     print(f"  [+] Saved evaluation metrics        : {metrics_path}")
 
-    print("")
+    print()
     print("[4/4] Multi-species ML model is ready for real-time inference in CAWS PetAdopt!")
     return model, feature_cols
 
