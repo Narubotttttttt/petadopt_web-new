@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://helpful-muscles-agreement-injuries.trycloudflare.com/$1",
+                         "destination":  "https://founder-ash-surely-tube.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

@@ -462,17 +462,21 @@ class AdoptionApiController extends Controller
                 $isAdoptedByOther = $isPetAdopted && ! $app->is_finalized;
 
                 $proposedName = null;
-                if ($app->message && preg_match('/Proposed Pet Name:\s*([^\n]+)/i', $app->message, $matches)) {
+                if ($app->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $app->message, $matches)) {
                     $proposedName = trim($matches[1]);
+                    if (strtolower($proposedName) === 'adopted pet') {
+                        $proposedName = null;
+                    }
                 }
-
-                // If adopter proposed a custom name, that is the adopted pet's name.
-                // Otherwise use the pet's existing name if set and not empty.
-                // If neither, default to "Adopted Pet" (never fall back to pet->breed).
-                $adoptedPetName = $proposedName ?: (($pet && !empty($pet->name)) ? $pet->name : 'Adopted Pet');
 
                 $shelterPetId = $pet ? $pet->id : (int)$app->pet_id;
                 $shelterPetCode = 'Pet no. ' . $shelterPetId;
+
+                // If adopter proposed a custom name, that is the adopted pet's name.
+                // Otherwise use the pet's existing name if set and not empty.
+                // If neither, default to the official shelter code ("Pet no. <id>").
+                $existingPetName = ($pet && !empty($pet->name) && strtolower($pet->name) !== 'adopted pet') ? $pet->name : null;
+                $adoptedPetName = $proposedName ?: ($existingPetName ?: $shelterPetCode);
 
                 $sigUrl = $app->signature_path ? (str_starts_with($app->signature_path, 'http') ? $app->signature_path : $rootUrl . '/storage/' . ltrim($app->signature_path, '/')) : null;
                 $staffSigUrl = $app->staff_signature_url;

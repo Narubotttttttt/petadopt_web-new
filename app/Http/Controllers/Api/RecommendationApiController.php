@@ -194,6 +194,20 @@ class RecommendationApiController extends Controller
             ? "recommendations_user_{$user->id}"
             : (! empty($profile) ? ('recommendations_guest_' . md5(json_encode($profile))) : null);
 
+        $cleanBracketLabels = function ($text) {
+            if (!$text || !is_string($text)) return $text;
+            $text = preg_replace('/Puspin\s*\((?:Mixed|Mix)\s*Breed\)\s*Cat/i', 'Puspin Cat', $text);
+            $text = preg_replace('/Aspin\s*\((?:Mixed|Mix)\s*Breed\)\s*Dog/i', 'Aspin Dog', $text);
+            $text = preg_replace('/Puspin\s*\((?:Mixed|Mix)\s*Breed\)/i', 'Puspin', $text);
+            $text = preg_replace('/Aspin\s*\((?:Mixed|Mix)\s*Breed\)/i', 'Aspin', $text);
+            $text = preg_replace('/\(([^()]*?)\s*\((?:Mixed|Mix)\s*Breed\)\s*([^()]*?)\)/i', '($1 $2)', $text);
+            $text = preg_replace('/\(\s*\(([^()]+)\)\s*\)/', '($1)', $text);
+            $text = preg_replace('/\(\s+/', '(', $text);
+            $text = preg_replace('/\s+\)/', ')', $text);
+            $text = preg_replace('/\s{2,}/', ' ', $text);
+            return trim($text);
+        };
+
         if ($cacheKey && Cache::has($cacheKey)) {
             $cachedOutput = Cache::get($cacheKey);
             $cachedPetIds = collect($cachedOutput['recommendations'] ?? [])->pluck('id')->filter()->toArray();
@@ -208,6 +222,25 @@ class RecommendationApiController extends Controller
 
             $availableCount = Pet::whereIn('id', $cachedPetIds)->where('status', 'available')->count();
             if (!empty($cachedPetIds) && ! $hasApplied && $availableCount === count($cachedPetIds)) {
+                if (isset($cachedOutput['comparative_analysis'])) {
+                    if (isset($cachedOutput['comparative_analysis']['summary'])) {
+                        $cachedOutput['comparative_analysis']['summary'] = $cleanBracketLabels($cachedOutput['comparative_analysis']['summary']);
+                    }
+                    if (isset($cachedOutput['comparative_analysis']['verdict'])) {
+                        $cachedOutput['comparative_analysis']['verdict'] = $cleanBracketLabels($cachedOutput['comparative_analysis']['verdict']);
+                    }
+                }
+                if (!empty($cachedOutput['recommendations'])) {
+                    foreach ($cachedOutput['recommendations'] as &$r) {
+                        if (!empty($r['reasons']) && is_array($r['reasons'])) {
+                            $r['reasons'] = array_map($cleanBracketLabels, $r['reasons']);
+                        }
+                        if (!empty($r['match_reasons']) && is_array($r['match_reasons'])) {
+                            $r['match_reasons'] = array_map($cleanBracketLabels, $r['match_reasons']);
+                        }
+                    }
+                    unset($r);
+                }
                 return response()->json($cachedOutput);
             }
             Cache::forget($cacheKey);
@@ -399,6 +432,26 @@ class RecommendationApiController extends Controller
                             'summary' => "{$p1Name} ({$p1Score}% Match) demonstrates the strongest behavioral and schedule compatibility for your household, while other matched candidates provide great alternative options.",
                             'verdict' => "{$p1Name} is your recommended primary companion.",
                         ];
+                    }
+
+                    if (isset($output['comparative_analysis'])) {
+                        if (isset($output['comparative_analysis']['summary'])) {
+                            $output['comparative_analysis']['summary'] = $cleanBracketLabels($output['comparative_analysis']['summary']);
+                        }
+                        if (isset($output['comparative_analysis']['verdict'])) {
+                            $output['comparative_analysis']['verdict'] = $cleanBracketLabels($output['comparative_analysis']['verdict']);
+                        }
+                    }
+                    if (!empty($output['recommendations'])) {
+                        foreach ($output['recommendations'] as &$r) {
+                            if (!empty($r['reasons']) && is_array($r['reasons'])) {
+                                $r['reasons'] = array_map($cleanBracketLabels, $r['reasons']);
+                            }
+                            if (!empty($r['match_reasons']) && is_array($r['match_reasons'])) {
+                                $r['match_reasons'] = array_map($cleanBracketLabels, $r['match_reasons']);
+                            }
+                        }
+                        unset($r);
                     }
 
                     if ($cacheKey && !empty($output['recommendations'])) {

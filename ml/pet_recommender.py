@@ -254,6 +254,25 @@ def _get_gemini_api_key():
     return None
 
 
+def _clean_bracket_text(text: str) -> str:
+    """
+    Sanitizes AI-generated text to prevent nested or redundant parentheses,
+    such as '(Puspin (Mixed Breed) Cat)' -> '(Puspin Cat)' and '(Aspin (Mixed Breed) Dog)' -> '(Aspin Dog)'.
+    """
+    if not text:
+        return ""
+    text = re.sub(r'Puspin\s*\((?:Mixed|Mix)\s*Breed\)\s*Cat', 'Puspin Cat', text, flags=re.IGNORECASE)
+    text = re.sub(r'Aspin\s*\((?:Mixed|Mix)\s*Breed\)\s*Dog', 'Aspin Dog', text, flags=re.IGNORECASE)
+    text = re.sub(r'Puspin\s*\((?:Mixed|Mix)\s*Breed\)', 'Puspin', text, flags=re.IGNORECASE)
+    text = re.sub(r'Aspin\s*\((?:Mixed|Mix)\s*Breed\)', 'Aspin', text, flags=re.IGNORECASE)
+    text = re.sub(r'\(([^()]*?)\s*\((?:Mixed|Mix)\s*Breed\)\s*([^()]*?)\)', r'(\1 \2)', text, flags=re.IGNORECASE)
+    text = re.sub(r'\(\s*\(([^()]+)\)\s*\)', r'(\1)', text)
+    text = re.sub(r'\(\s+', '(', text)
+    text = re.sub(r'\s+\)', ')', text)
+    text = re.sub(r'\s{2,}', ' ', text)
+    return text.strip()
+
+
 def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_profile: dict[str, Any], key: str) -> dict[str, Any]:
     """
     Dynamic natural language explainer and comparative analyst powered by Google Gemini.
@@ -281,14 +300,22 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
         pid = str(p.get('pet_id'))
         name = p.get('name')
         species = str(p.get('type') or 'companion').strip()
-        breed = str(p.get('breed') or '').strip()
-        # Shelter domain: pets do not have pre-assigned adopter names unless applied for.
-        label = f"Pet no. {pid}" + (f" ({breed} {species.capitalize()})" if breed else f" ({species.capitalize()})") if not name else f"{name} ({breed} {species.capitalize()})"
+        raw_breed = str(p.get('breed') or '').strip()
+
+        # Clean breed: strip out any parenthesized text like '(Mixed Breed)' or '(Mix Breed)'
+        clean_breed = re.sub(r'\s*\([^)]*\)', '', raw_breed).strip()
+        if not clean_breed or clean_breed.lower() in ['mixed breed', 'mix breed', 'unknown', 'n/a']:
+            clean_breed = 'Puspin' if species.lower() == 'cat' else ('Aspin' if species.lower() == 'dog' else '')
+
+        species_label = species.capitalize()
+        descriptor = f"{clean_breed} {species_label}" if clean_breed else species_label
+        label = f"Pet no. {pid} ({descriptor})" if not name or name.lower().startswith("pet no.") else f"{name} ({descriptor})"
+
         compact_pets.append({
             'id': pid,
             'shelter_label': label,
             'species': species,
-            'breed': breed,
+            'breed': clean_breed,
             'age': p.get('age'),
             'size': p.get('size'),
             'temperaments': p.get('temperaments', [])
@@ -313,6 +340,7 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
         "   - 'verdict': A distinct 1 to 2 sentence recommendation advising the adopter how to choose between them based on lifestyle priorities (e.g. 'Choose Pet no. X if you prefer..., or Pet no. Y for...'). Do NOT simply repeat or restate the summary.\n\n"
         "Strict rules:\n"
         "- ZERO emojis anywhere.\n"
+        "- Clean labels only: Never use nested or double parentheses (e.g. write 'Pet no. 11 (Puspin Cat)' or 'Pet no. 2 (Aspin Dog)', NEVER write '(Puspin (Mixed Breed) Cat)' or double brackets).\n"
         "- Do NOT invent fictional names (e.g. do NOT invent names like Snowy, Bella, Max). Pets in the shelter are referred to by their official shelter ID (e.g. 'Pet no. 5 (Puspin Cat)').\n"
         "- Ground every point in the adopter's home, work hours, and temperament alignment.\n"
         "- Return ONLY valid JSON in format:\n"
@@ -368,8 +396,8 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
 
                 for k, v in raw_pets.items():
                     if isinstance(v, dict):
-                        reasons = [str(r).strip() for r in v.get('reasons', []) if str(r).strip()]
-                        care_tip = str(v.get('care_tip', '')).strip()
+                        reasons = [_clean_bracket_text(str(r)) for r in v.get('reasons', []) if str(r).strip()]
+                        care_tip = _clean_bracket_text(str(v.get('care_tip', ''))).strip()
                         pets_map[str(k)] = {
                             'reasons': reasons,
                             'care_tip': care_tip,
@@ -383,8 +411,13 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
                 comp_analysis = parsed_json.get('comparative_analysis', {})
                 if not comp_analysis or not isinstance(comp_analysis, dict):
                     comp_analysis = {
-                        'summary': str(parsed_json.get('summary', '')).strip(),
-                        'verdict': str(parsed_json.get('verdict', '')).strip(),
+                        'summary': _clean_bracket_text(str(parsed_json.get('summary', ''))).strip(),
+                        'verdict': _clean_bracket_text(str(parsed_json.get('verdict', ''))).strip(),
+                    }
+                else:
+                    comp_analysis = {
+                        'summary': _clean_bracket_text(str(comp_analysis.get('summary', ''))).strip(),
+                        'verdict': _clean_bracket_text(str(comp_analysis.get('verdict', ''))).strip(),
                     }
 
                 return {

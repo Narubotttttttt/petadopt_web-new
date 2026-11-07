@@ -27,7 +27,7 @@
          class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs transition-opacity"></div>
 
     {{-- Modal Dialog Panel --}}
-    <div class="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
+    <div class="flex min-h-full items-center justify-center p-2 sm:p-4 text-center">
         <div x-show="isOpen"
              x-transition:enter="ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
@@ -36,10 +36,10 @@
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95"
              @click.stop
-             class="relative transform overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-[#12141C] text-left shadow-2xl transition-all w-full max-w-2xl border border-slate-200/90 dark:border-white/[0.08]">
+             class="relative transform rounded-2xl sm:rounded-3xl bg-white dark:bg-[#12141C] text-left shadow-2xl transition-all w-full max-w-2xl border border-slate-200/90 dark:border-white/[0.08] max-h-[90vh] sm:max-h-[88vh] flex flex-col overflow-hidden my-auto">
 
             {{-- Form Header --}}
-            <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-white/[0.02]">
+            <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-start justify-between gap-4 bg-slate-50/50 dark:bg-white/[0.02] shrink-0">
                 <div class="flex items-center gap-3.5">
                     <div class="w-11 h-11 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0 border border-[#199CA4]/20 shadow-2xs">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -72,7 +72,7 @@
             </div>
 
             {{-- Form Body --}}
-            <form :action="actionUrl" method="POST" @submit.prevent="if (isFormValid && !isSubmitting) { isSubmitting = true; $el.submit(); }">
+            <form :action="actionUrl" method="POST" @submit.prevent="if (isFormValid && !isSubmitting) { isSubmitting = true; $el.submit(); }" class="flex flex-col flex-1 min-h-0 overflow-hidden">
                 @csrf
 
                 {{-- Hidden Inputs for Selected Temperament Tag IDs --}}
@@ -80,7 +80,7 @@
                     <input type="hidden" name="temperament_tags[]" :value="tagId">
                 </template>
 
-                <div class="p-4 sm:p-5 space-y-4 max-h-[calc(88vh-130px)] overflow-y-auto no-scrollbar">
+                <div class="p-4 sm:p-5 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
                     
                     {{-- Section 1: Clinical & Health Clearance Check --}}
                     <div class="space-y-3">
@@ -317,7 +317,7 @@
                 </div>
 
                 {{-- Live Validation Checklist Banner --}}
-                <div x-show="!isFormValid" class="px-4 py-3 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200/80 dark:border-amber-800/40 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+                <div x-show="!isFormValid" class="px-4 py-3 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200/80 dark:border-amber-800/40 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200 shrink-0">
                     <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
@@ -332,7 +332,7 @@
                 </div>
 
                 {{-- Modal Footer Actions --}}
-                <div class="p-3.5 sm:p-4 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between gap-2">
+                <div class="p-3.5 sm:p-4 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between gap-2 shrink-0">
                     <div>
                         <template x-if="isFormValid">
                             <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
