@@ -9,6 +9,7 @@ use App\Models\AdoptionApplication;
 use App\Models\Pet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Process\Process;
 
 class RecommendationApiController extends Controller
@@ -79,6 +80,9 @@ class RecommendationApiController extends Controller
     public function getRecommendations(Request $request): JsonResponse
     {
         $user = $request->user('sanctum') ?: $request->user();
+        if (! $user && $request->bearerToken()) {
+            $user = \Laravel\Sanctum\PersonalAccessToken::findToken($request->bearerToken())?->tokenable;
+        }
 
         // 1. Determine if quiz answers are provided in the current request payload
         $hasQuizInPayload = ! empty($request->input('living_environment'))
@@ -141,6 +145,8 @@ class RecommendationApiController extends Controller
                 'revision_count'        => $revCount + 1,
                 'next_retake_available_at' => now()->addDays(30),
             ]);
+
+            Cache::forget("recommendations_user_{$user->id}");
         }
 
         // 3. If the adopter has not answered the quiz yet (neither in request nor in database),
@@ -181,6 +187,30 @@ class RecommendationApiController extends Controller
                 'revision_count'        => 0,
                 'next_retake_available_at' => null,
             ]);
+        }
+
+        // Resolve cache key: User ID if authenticated, or MD5 fingerprint of quiz answers for guests
+        $cacheKey = $user
+            ? "recommendations_user_{$user->id}"
+            : (! empty($profile) ? ('recommendations_guest_' . md5(json_encode($profile))) : null);
+
+        if ($cacheKey && Cache::has($cacheKey)) {
+            $cachedOutput = Cache::get($cacheKey);
+            $cachedPetIds = collect($cachedOutput['recommendations'] ?? [])->pluck('id')->filter()->toArray();
+
+            $hasApplied = false;
+            if ($user) {
+                $hasApplied = AdoptionApplication::where('applicant_email', $user->email)
+                    ->whereIn('pet_id', $cachedPetIds)
+                    ->whereIn('status', ['pending', 'under_review', 'approved', 'adopted'])
+                    ->exists();
+            }
+
+            $availableCount = Pet::whereIn('id', $cachedPetIds)->where('status', 'available')->count();
+            if (!empty($cachedPetIds) && ! $hasApplied && $availableCount === count($cachedPetIds)) {
+                return response()->json($cachedOutput);
+            }
+            Cache::forget($cacheKey);
         }
 
         $petsQuery = Pet::where('status', 'available');
@@ -369,6 +399,10 @@ class RecommendationApiController extends Controller
                             'summary' => "{$p1Name} ({$p1Score}% Match) demonstrates the strongest behavioral and schedule compatibility for your household, while other matched candidates provide great alternative options.",
                             'verdict' => "{$p1Name} is your recommended primary companion.",
                         ];
+                    }
+
+                    if ($cacheKey && !empty($output['recommendations'])) {
+                        Cache::put($cacheKey, $output, now()->addHours(2));
                     }
 
                     return response()->json($output);
