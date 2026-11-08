@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://founder-ash-surely-tube.trycloudflare.com/$1",
+                         "destination":  "https://foster-lexington-solo-plugins.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],
