@@ -52,6 +52,9 @@ class AdoptionApiController extends Controller
         $suggestedOwnership = $latestApp?->home_ownership ?? null;
         $landlordName = ($suggestedOwnership === 'rented') ? $latestApp?->landlord_name : null;
         $landlordPhone = ($suggestedOwnership === 'rented') ? $latestApp?->landlord_phone : null;
+        $employmentStatus = $latestApp?->employment_status ?? $profile?->employment_status ?? 'employed';
+        $occupationOrProgram = $latestApp?->occupation_or_program ?? $profile?->occupation_or_program ?? null;
+        $employerOrSchool = $latestApp?->employer_or_school ?? $profile?->employer_or_school ?? null;
 
         $existingApp = null;
         if ($request->filled('pet_id')) {
@@ -64,16 +67,19 @@ class AdoptionApiController extends Controller
         return response()->json([
             'success' => true,
             'prefill' => [
-                'full_name'          => $user->name,
-                'email'              => $user->email,
-                'phone'              => $profile?->phone,
-                'address'            => $profile?->address,
-                'city'               => $profile?->city ?: 'Cagayan de Oro City',
-                'province'           => $profile?->province ?: 'Misamis Oriental',
-                'home_type'          => $homeType,
-                'home_ownership'     => $suggestedOwnership,
-                'landlord_name'      => $landlordName,
-                'landlord_phone'     => $landlordPhone,
+                'full_name'             => $user->name,
+                'email'                 => $user->email,
+                'phone'                 => $profile?->phone,
+                'address'               => $profile?->address,
+                'city'                  => $profile?->city ?: 'Cagayan de Oro City',
+                'province'              => $profile?->province ?: 'Misamis Oriental',
+                'home_type'             => $homeType,
+                'home_ownership'        => $suggestedOwnership,
+                'landlord_name'         => $landlordName,
+                'landlord_phone'        => $landlordPhone,
+                'employment_status'     => $employmentStatus,
+                'occupation_or_program' => $occupationOrProgram,
+                'employer_or_school'    => $employerOrSchool,
                 'living_environment' => $livingEnvironment,
                 'has_other_pets'     => $preference?->has_other_pets !== null ? (bool) $preference->has_other_pets : null,
                 'has_experience'     => $hasExperience,
@@ -130,6 +136,9 @@ class AdoptionApiController extends Controller
             'home_ownership'        => ['nullable', 'string', 'in:owned,rented'],
             'landlord_name'         => ['nullable', 'string', 'max:255'],
             'landlord_phone'        => ['nullable', 'string', 'max:50'],
+            'employment_status'     => ['nullable', 'string', 'in:employed,student,self_employed,unemployed'],
+            'occupation_or_program' => ['nullable', 'string', 'max:255'],
+            'employer_or_school'    => ['nullable', 'string', 'max:255'],
             'has_other_pets'        => ['nullable'],
             'other_pets_details'    => ['nullable', 'string'],
             'has_experience'        => ['nullable'],
@@ -289,6 +298,42 @@ class AdoptionApiController extends Controller
             $messageParts[] = "Housing Status: Owned Property";
         }
 
+        $empStatus = $request->input('employment_status', 'employed');
+        $occOrProgram = $request->input('occupation_or_program');
+        $empOrSchool = $request->input('employer_or_school');
+
+        $empStatusLabels = [
+            'student'       => 'Student',
+            'employed'      => 'Employed',
+            'self_employed' => 'Self-Employed / Freelancer',
+            'unemployed'    => 'Not Employed / Dependent',
+        ];
+        $empLabel = $empStatusLabels[$empStatus] ?? ucfirst($empStatus);
+        $messageParts[] = "Employment Status: " . $empLabel;
+        if ($empStatus === 'student') {
+            if (!empty($empOrSchool)) {
+                $messageParts[] = "School / University: " . $empOrSchool;
+            }
+            if (!empty($occOrProgram)) {
+                $messageParts[] = "Course & Year Level: " . $occOrProgram;
+            }
+        } elseif ($empStatus === 'employed') {
+            if (!empty($occOrProgram)) {
+                $messageParts[] = "Occupation / Role: " . $occOrProgram;
+            }
+            if (!empty($empOrSchool)) {
+                $messageParts[] = "Employer / Company: " . $empOrSchool;
+            }
+        } elseif ($empStatus === 'self_employed') {
+            if (!empty($occOrProgram)) {
+                $messageParts[] = "Nature of Business / Work: " . $occOrProgram;
+            }
+        } elseif ($empStatus === 'unemployed') {
+            if (!empty($occOrProgram)) {
+                $messageParts[] = "Support Source / Guarantor: " . $occOrProgram;
+            }
+        }
+
         // Retrieve lifestyle answers directly from Adopter Compatibility Quiz profile
         $quizProfile = $user ? \App\Models\AdopterCompatibilityProfile::where('user_id', $user->id)->first() : null;
         if ($hasOtherPets === null && $quizProfile) {
@@ -335,14 +380,17 @@ class AdoptionApiController extends Controller
             AdoptersProfile::updateOrCreate(
                 ['email' => $user->email],
                 [
-                    'user_id'      => $user->id,
-                    'adopter_code' => sprintf('ADP-%04d', $user->id),
-                    'full_name'    => $user->name,
-                    'phone'        => $adopterPhone ?: ($existingProf?->phone ?? null),
-                    'address'      => $adopterAddress ?: $existingProf?->address,
-                    'city'         => $existingProf?->city ?: 'Cagayan de Oro City',
-                    'province'     => $existingProf?->province ?: 'Misamis Oriental',
-                    'status'       => $profStatus,
+                    'user_id'               => $user->id,
+                    'adopter_code'          => sprintf('ADP-%04d', $user->id),
+                    'full_name'             => $user->name,
+                    'phone'                 => $adopterPhone ?: ($existingProf?->phone ?? null),
+                    'address'               => $adopterAddress ?: $existingProf?->address,
+                    'city'                  => $existingProf?->city ?: 'Cagayan de Oro City',
+                    'province'              => $existingProf?->province ?: 'Misamis Oriental',
+                    'employment_status'     => $empStatus,
+                    'occupation_or_program' => $occOrProgram,
+                    'employer_or_school'    => $empOrSchool,
+                    'status'                => $profStatus,
                 ]
             );
         }
@@ -366,7 +414,7 @@ class AdoptionApiController extends Controller
         \Illuminate\Support\Facades\DB::transaction(function () use (
             $petIds, $request, $applicantEmail, $homeOwnership, $fullMessage,
             $batchRef, $validIdPath, $barangayCertPath, $source, $scoresMap,
-            $namesMap, &$createdApps
+            $namesMap, $empStatus, $occOrProgram, $empOrSchool, &$createdApps
         ) {
             foreach ($petIds as $pid) {
                 $compScore = null;
@@ -396,6 +444,9 @@ class AdoptionApiController extends Controller
                     'home_ownership'            => $homeOwnership,
                     'landlord_name'             => ($homeOwnership === 'rented') ? $request->input('landlord_name') : null,
                     'landlord_phone'            => ($homeOwnership === 'rented') ? $request->input('landlord_phone') : null,
+                    'employment_status'         => $empStatus,
+                    'occupation_or_program'     => $occOrProgram,
+                    'employer_or_school'        => $empOrSchool,
                     'message'                   => trim($appMsg),
                     'valid_id_path'             => $validIdPath,
                     'barangay_certificate_path' => $barangayCertPath,

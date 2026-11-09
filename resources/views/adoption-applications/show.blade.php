@@ -118,9 +118,22 @@
 
                 {{-- Center: Applicant Quick Contact --}}
                 <div class="border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 pt-3 lg:pt-0 lg:pl-5 flex flex-col justify-center">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Applicant:</span>
                         <span class="text-sm font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_name }}</span>
+                        @php
+                            $empStatus = $application->employment_status ?? 'employed';
+                            $isStudent = ($empStatus === 'student') || str_contains(strtolower($application->message ?? ''), 'employment status: student') || str_contains(strtolower($application->id_type ?? ''), 'student');
+                        @endphp
+                        @if($isStudent)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">Student</span>
+                        @elseif($empStatus === 'self_employed')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">Self-Employed</span>
+                        @elseif($empStatus === 'unemployed')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Dependent</span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Employed</span>
+                        @endif
                     </div>
                     <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span>{{ $application->applicant_email }}</span>
@@ -513,6 +526,92 @@
                                 @endforeach
                             </div>
                         @endif
+
+                        {{-- Employment / Student Verification Alert or Card --}}
+
+                        @php
+
+                            $empStatus = $application->employment_status ?? 'employed';
+
+                            $isStudent = ($empStatus === 'student') || str_contains(strtolower($application->message ?? ''), 'employment status: student') || str_contains(strtolower($application->id_type ?? ''), 'student');
+
+                        @endphp
+
+
+
+                        @if($isStudent)
+
+                            <div class="bg-cyan-50/90 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 rounded-xl p-3.5 flex items-start gap-3">
+
+                                <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+
+                                </svg>
+
+                                <div class="space-y-0.5">
+
+                                    <div class="flex items-center gap-2">
+
+                                        <p class="text-xs font-bold text-cyan-900 dark:text-cyan-200">Student Applicant Verification</p>
+
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-200 border border-cyan-300 dark:border-cyan-700">Enrolled Student</span>
+
+                                    </div>
+
+                                    <p class="text-[11px] text-cyan-800 dark:text-cyan-300 leading-relaxed">
+
+                                        School / Institution: <strong>{{ $application->employer_or_school ?? 'Specified in questionnaire' }}</strong>
+
+                                        @if(!empty($application->occupation_or_program))
+
+                                            · Course / Level: <strong>{{ $application->occupation_or_program }}</strong>
+
+                                        @endif
+
+                                        <br>
+
+                                        Screening requirement: Verify active <strong>Student / School ID</strong> or registration card. If residing in a dorm or rental, also verify landlord/dorm pet permission.
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        @else
+
+                            <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+
+                                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Employment / Occupation</span>
+
+                                <div class="text-right">
+
+                                    <span class="text-xs font-bold text-slate-800 dark:text-white capitalize">
+
+                                        {{ str_replace('_', ' ', $application->employment_status ?? 'Employed') }}
+
+                                    </span>
+
+                                    @if(!empty($application->occupation_or_program) || !empty($application->employer_or_school))
+
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+
+                                            {{ $application->occupation_or_program ?? '' }}{{ (!empty($application->occupation_or_program) && !empty($application->employer_or_school)) ? ' at ' : '' }}{{ $application->employer_or_school ?? '' }}
+
+                                        </p>
+
+                                    @endif
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+
 
                         {{-- Housing Ownership / Tenant Inspection Alert --}}
                         @if(($application->home_ownership ?? '') === 'rented' || !empty($application->landlord_name))

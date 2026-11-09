@@ -398,6 +398,28 @@
         <span class="field-value-wide">{{ $adopter->address ?? '' }}</span>
     </div>
     <div class="adopter-row">
+        <table>
+            <tr>
+                <td style="width: 50%;">
+                    <span class="field-label">Occupation / School: </span>
+                    <span class="field-value" style="min-width: 170px;">
+                        @if(($application->employment_status ?? '') === 'student')
+                            Student - {{ $application->employer_or_school ?? 'School' }}
+                        @elseif(!empty($application->occupation_or_program))
+                            {{ $application->occupation_or_program }}
+                        @else
+                            {{ ucfirst(str_replace('_', ' ', $application->employment_status ?? 'N/A')) }}
+                        @endif
+                    </span>
+                </td>
+                <td style="width: 50%;">
+                    <span class="field-label">ID Presented: </span>
+                    <span class="field-value" style="min-width: 150px;">{{ $application->id_type ?? 'Valid Identification' }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="adopter-row">
         <span class="field-label">Facebook Account: </span>
         <span class="field-value-wide"></span>
     </div>
