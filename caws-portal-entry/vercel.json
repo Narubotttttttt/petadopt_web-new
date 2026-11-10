@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://hansen-drew-translation-stripes.trycloudflare.com/$1",
+                         "destination":  "https://agencies-hundred-corners-observe.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],
