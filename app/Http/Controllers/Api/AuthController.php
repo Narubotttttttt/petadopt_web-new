@@ -61,9 +61,13 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $email = strtolower(trim($request->email));
+        $user = User::whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        $pwdMatch = $user && Hash::check($request->password, $user->password);
+        \Illuminate\Support\Facades\Log::info("Mobile Login Attempt: email='{$email}', user_found=" . ($user ? "yes (role={$user->role})" : "no") . ", pwd_match=" . ($pwdMatch ? "yes" : "no"));
+
+        if (! $user || ! $pwdMatch) {
             return response()->json([
                 'message' => 'Invalid email or password.',
             ], 401);

@@ -587,6 +587,8 @@ class AdoptionApiController extends Controller
                     'homeOwnership'       => $app->home_ownership,
                     'employment_status'   => $app->employment_status,
                     'employmentStatus'    => $app->employment_status,
+                    'is_student'          => (strtolower($app->employment_status ?? '') === 'student') || str_contains(strtolower($app->id_type ?? ''), 'student') || str_contains(strtolower($app->id_type ?? ''), 'cor'),
+                    'isStudent'           => (strtolower($app->employment_status ?? '') === 'student') || str_contains(strtolower($app->id_type ?? ''), 'student') || str_contains(strtolower($app->id_type ?? ''), 'cor'),
                     'application_source'  => $app->application_source,
                     'applicationSource'   => $app->application_source,
                     'compatibility_score' => $app->compatibility_score,

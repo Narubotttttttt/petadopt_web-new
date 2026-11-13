@@ -229,7 +229,7 @@ class AdoptionApplicationController extends Controller
 
         $request->validate([
             'status'           => ['required', Rule::in(['approved', 'rejected'])],
-            'scheduled_at'     => ['nullable', 'date'],
+            'scheduled_at'     => ['nullable', 'required_if:status,approved', 'date'],
             'event_location'   => ['nullable', 'required_if:status,approved', 'string', 'max:255'],
             'event_notes'      => ['nullable', 'required_if:status,approved', 'string'],
             'rejection_reason' => ['nullable', 'required_if:status,rejected', 'string', 'max:2000'],
@@ -314,10 +314,21 @@ class AdoptionApplicationController extends Controller
             }
 
             $petName = $application->pet?->name ?? 'your pet';
+            $isStudent = (strtolower($application->employment_status ?? '') === 'student')
+                || str_contains(strtolower($application->message ?? ''), 'employment status: student')
+                || str_contains(strtolower($application->id_type ?? ''), 'student')
+                || str_contains(strtolower($application->id_type ?? ''), 'certificate of registration')
+                || str_contains(strtolower($application->id_type ?? ''), 'cor');
+            $isRenting = ($application->home_ownership === 'rented') || str_contains(strtolower($application->message ?? ''), 'housing status: rented');
+
+            $idDocName = $isStudent ? 'Student ID/COR' : 'original physical ID';
+            $residenceDocName = $isRenting ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate';
+            $idDocRequirement = "{$idDocName} and {$residenceDocName}";
+
             \App\Services\FirebaseNotificationService::sendToUser(
                 $application->applicant_email,
                 "Adoption Application Accepted for {$petName}!",
-                "Great news! Your adoption application for {$petName} was accepted for final screening by CAWS! Please open the app to review your scheduled event details and bring your original physical ID and Barangay Certificate to finalize your adoption.",
+                "Great news! Your adoption application for {$petName} was accepted for final screening by CAWS! Please open the app to review your scheduled event details and bring your {$idDocRequirement} to finalize your adoption.",
                 ['type' => 'adoption_status', 'status' => 'approved', 'pet_id' => $application->pet_id, 'requires_signature' => true]
             );
 

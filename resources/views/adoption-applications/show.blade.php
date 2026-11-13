@@ -124,6 +124,7 @@
                         @php
                             $empStatus = $application->employment_status ?? 'employed';
                             $isStudent = ($empStatus === 'student') || str_contains(strtolower($application->message ?? ''), 'employment status: student') || str_contains(strtolower($application->id_type ?? ''), 'student');
+                            $isRenting = ($application->home_ownership === 'rented') || str_contains(strtolower($application->message ?? ''), 'housing status: rented');
                         @endphp
                         @if($isStudent)
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">Student</span>
@@ -692,8 +693,8 @@
                             <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
-                                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Barangay Certificate</p>
-                                        <p class="text-xs text-slate-400 mt-0.5">Residency clearance verification</p>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">{{ $isRenting ? 'Proof of Residence (Barangay / Lease / Landlord)' : 'Barangay Certificate' }}</p>
+                                        <p class="text-xs text-slate-400 mt-0.5">{{ $isRenting ? 'Rental lease, landlord permission letter, or barangay cert' : 'Residency clearance verification' }}</p>
                                     </div>
                                     @if($application->barangay_certificate_path)
                                         <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
@@ -712,7 +713,7 @@
                                         <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">Click to Enlarge</button>
                                     </div>
                                 @else
-                                    <div class="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No Barangay Certificate uploaded</div>
+                                    <div class="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No {{ $isRenting ? 'Proof of Residence' : 'Barangay Certificate' }} uploaded</div>
                                 @endif
                             </div>
                         </div>
@@ -1091,7 +1092,7 @@
                                                 </p>
                                                 <p class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                    Original Barangay Certificate Verified
+                                                    Original {{ ($application->home_ownership === 'rented') ? 'Proof of Residence' : 'Barangay Certificate' }} Verified
                                                 </p>
                                                 <p class="text-slate-400 dark:text-slate-500 pt-0.5">
                                                     Verified by {{ $verifierName }} on {{ $application->documents_verified_at?->format('M d, Y h:i A') }}
@@ -1119,7 +1120,7 @@
                                                     <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">Pending</span>
                                                 </div>
                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                                                    Original Valid ID and Barangay Certificate must be inspected and endorsed in person before releasing the pet.
+                                                    Original {{ (strtolower($application->employment_status ?? '') === 'student') ? 'Student ID/COR' : 'Valid ID' }} and {{ ($application->home_ownership === 'rented') ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate' }} must be inspected and endorsed in person before releasing the pet.
                                                 </p>
                                             </div>
 
@@ -1143,27 +1144,23 @@
                 $dbVenues = \App\Models\AdoptionApplication::whereNotNull('event_location')
                     ->where('event_location', '!=', '')
                     ->where('event_location', '!=', $defaultVenue)
-                    ->whereNotIn('event_location', [
-                        'Centrio Mall CDO', 
-                        'SM City CDO Uptown', 
-                        'SM CDO Downtown Premier', 
-                        'Limketkai Center CDO', 
-                        'CAWS Shelter & Adoption Center'
-                    ])
                     ->distinct()
                     ->pluck('event_location')
                     ->values()
                     ->toArray();
+                $empStatus = $application->employment_status ?? 'employed';
+                $isStudent = ($empStatus === 'student') || str_contains(strtolower($application->message ?? ''), 'employment status: student') || str_contains(strtolower($application->id_type ?? ''), 'student');
                 $isRenting = ($application->home_ownership === 'rented') || str_contains(strtolower($application->message ?? ''), 'housing status: rented');
-                $defaultEventNotes = $isRenting
-                    ? "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original Valid ID, Barangay Certificate, and Landlord Permission Letter (or signed lease agreement showing pets are allowed) to the event for face-to-face verification before the pet is released."
-                    : "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original Valid ID and Barangay Certificate to the event for face-to-face verification before the pet is released.";
+                $idDocName = $isStudent ? 'Student ID / COR' : 'Valid ID';
+                $residenceDocName = $isRenting ? 'Proof of Residence (Barangay Certificate, Lease Contract, or Landlord Permission Letter)' : 'Barangay Certificate';
+                $defaultEventNotes = "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original {$idDocName} and {$residenceDocName} to the event for face-to-face verification before the pet is released.";
                 $initialEventNotes = old('event_notes', !empty($application->event_notes) ? $application->event_notes : $defaultEventNotes);
                 $initialLocation = old('event_location', $application->event_location ?? $defaultVenue);
             @endphp
             <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-5 lg:sticky lg:top-6 h-fit" 
                  x-data="{ 
                      currentStatus: '{{ old('status', in_array($application->status, ['approved', 'rejected']) ? $application->status : '') }}',
+                     scheduledAt: '{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}',
                      defaultVenue: {{ json_encode($defaultVenue) }},
                      customVenues: [],
                      presetLocation: '',
@@ -1184,7 +1181,7 @@
                              storedVenues = [];
                          }
                          const combined = Array.from(new Set([...dbVenues, ...storedVenues]))
-                             .filter(v => typeof v === 'string' && v.trim().length > 0 && v !== this.defaultVenue && !['Centrio Mall CDO', 'SM City CDO Uptown', 'SM CDO Downtown Premier', 'Limketkai Center CDO', 'CAWS Shelter & Adoption Center'].includes(v));
+                             .filter(v => typeof v === 'string' && v.trim().length > 0 && v !== this.defaultVenue);
                          this.customVenues = combined;
 
                          if (!this.eventLocation || this.eventLocation === this.defaultVenue) {
@@ -1224,7 +1221,7 @@
                      get isSaveDisabled() {
                          if (!this.currentStatus) return true;
                          if (this.currentStatus === 'approved') {
-                             return !this.eventLocation || !this.eventLocation.trim() || !this.eventNotes || !this.eventNotes.trim();
+                             return !this.scheduledAt || !this.eventLocation || !this.eventLocation.trim() || !this.eventNotes || !this.eventNotes.trim();
                          }
                          if (this.currentStatus === 'rejected') {
                              return !this.rejectionReason || !this.rejectionReason.trim();
@@ -1303,17 +1300,24 @@
 
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Decision</label>
-                        <select name="status" x-model="currentStatus" required class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                            <option value="" disabled selected hidden style="display: none;">Select Decision...</option>
-                            @if($isPetAlreadyAdopted && $application->status !== 'approved')
-                                <option value="approved" disabled>Schedule Final Screening (Disabled - Pet Already Adopted)</option>
-                            @elseif($otherScheduled && $application->status !== 'approved')
-                                <option value="approved" disabled>Schedule Final Screening (Disabled - Another Candidate Scheduled)</option>
-                            @else
-                                <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Schedule Final Screening</option>
-                            @endif
-                            <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject Application</option>
-                        </select>
+                        <div class="relative">
+                            <select name="status" x-model="currentStatus" required class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
+                                <option value="" disabled selected hidden style="display: none;">Select Decision...</option>
+                                @if($isPetAlreadyAdopted && $application->status !== 'approved')
+                                    <option value="approved" disabled>Schedule Final Screening (Disabled - Pet Already Adopted)</option>
+                                @elseif($otherScheduled && $application->status !== 'approved')
+                                    <option value="approved" disabled>Schedule Final Screening (Disabled - Another Candidate Scheduled)</option>
+                                @else
+                                    <option value="approved" {{ $application->status == 'approved' ? 'selected' : '' }}>Schedule Final Screening</option>
+                                @endif
+                                <option value="rejected" {{ $application->status == 'rejected' ? 'selected' : '' }}>Reject Application</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 dark:text-slate-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
                         @error('status')
                             <p class="text-xs text-rose-600 dark:text-rose-400 font-bold mt-1.5">{{ $message }}</p>
                         @enderror
@@ -1323,12 +1327,22 @@
                     <div x-show="currentStatus === 'approved'" x-transition class="space-y-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
                         <div class="p-3 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 border border-[#199CA4]/20 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                             <p class="font-bold text-[#199CA4] dark:text-[#41C1CB]">In-Person Screening Notice:</p>
-                            <p class="text-[11px] mt-0.5">Approving schedules the applicant for final in-person screening. The applicant will be instructed to bring physical copies of their Valid ID and Barangay Certificate.</p>
+                            <p class="text-[11px] mt-0.5">Approving schedules the applicant for final in-person screening. The applicant will be instructed to bring physical copies of their {{ $isStudent ? 'Student ID/COR' : 'Valid ID' }} and {{ $isRenting ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate' }}.</p>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Schedule Sunday Event Date</label>
-                            <input type="date" name="scheduled_at" value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                                Schedule Sunday Event Date <span class="text-rose-500 font-bold">*</span>
+                            </label>
+                            <input type="date" 
+                                   name="scheduled_at" 
+                                   x-model="scheduledAt"
+                                   :required="currentStatus === 'approved'"
+                                   value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" 
+                                   class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                            @error('scheduled_at')
+                                <p class="text-xs text-rose-600 dark:text-rose-400 font-bold mt-1.5">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="space-y-2">
@@ -1336,51 +1350,69 @@
                                 Event / Mall Location <span class="text-rose-500 font-bold">*</span>
                             </label>
 
-                            <select x-model="presetLocation" 
-                                    @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
-                                    class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="" disabled selected hidden style="display: none;">Select venue (or type custom)...</option>
-                                <option :value="defaultVenue" x-text="defaultVenue"></option>
-                                <template x-for="venue in customVenues" :key="venue">
-                                    <option :value="venue" x-text="venue"></option>
-                                </template>
-                                <option value="custom">Other / Custom Location...</option>
-                            </select>
+                            {{-- Hidden input ensuring selected or typed event location is properly submitted --}}
+                            <input type="hidden" name="event_location" :value="eventLocation" value="{{ $initialLocation }}">
 
-                            <input type="text" 
-                                   name="event_location" 
-                                   x-ref="customLocationInput"
-                                   x-model="eventLocation"
-                                   placeholder="e.g. G/F West Concourse, Event Center, Limketkai Center..." 
-                                   class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-
-                            {{-- Action to save new location preset or remove selected custom preset --}}
-                            <div class="flex items-center justify-between gap-2 pt-0.5">
-                                <div>
-                                    <template x-if="eventLocation && eventLocation.trim() && eventLocation.trim() !== defaultVenue && !customVenues.includes(eventLocation.trim())">
-                                        <button type="button" 
-                                                @click="saveCustomVenue()" 
-                                                class="inline-flex items-center gap-1 text-[11px] font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline cursor-pointer">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                            <span>Save location to preset list</span>
-                                        </button>
+                            {{-- Primary location dropdown pre-selected with default venue --}}
+                            <div class="relative">
+                                <select x-model="presetLocation" 
+                                        @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
+                                        class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
+                                    <option :value="defaultVenue" x-text="defaultVenue"></option>
+                                    <template x-for="venue in customVenues" :key="venue">
+                                        <option :value="venue" x-text="venue"></option>
                                     </template>
-                                    <template x-if="venueSaveFeedback">
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                            <span>Location saved to presets</span>
-                                        </span>
-                                    </template>
+                                    <option value="custom">Other (Specify Custom Location)...</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 dark:text-slate-300">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
+                            </div>
 
-                                <template x-if="customVenues.includes(presetLocation)">
+                            {{-- Custom input field displayed ONLY when 'Other' is selected --}}
+                            <div x-show="presetLocation === 'custom'" x-transition class="space-y-2 pt-1">
+                                <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                    Specify Event / Mall Location <span class="text-rose-500 font-bold">*</span>
+                                </label>
+                                <input type="text" 
+                                       x-ref="customLocationInput"
+                                       x-model="eventLocation"
+                                       placeholder="e.g. Centrio Mall Activity Center, SM City CDO Uptown..." 
+                                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+
+                                {{-- Action to save new location preset --}}
+                                <div class="flex items-center justify-between gap-2 pt-0.5">
+                                    <div>
+                                        <template x-if="eventLocation && eventLocation.trim() && eventLocation.trim() !== defaultVenue && !customVenues.includes(eventLocation.trim())">
+                                            <button type="button" 
+                                                    @click="saveCustomVenue()" 
+                                                    class="inline-flex items-center gap-1 text-[11px] font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                                <span>Save location to preset list</span>
+                                            </button>
+                                        </template>
+                                        <template x-if="venueSaveFeedback">
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Location saved to presets</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Delete action if a previously saved custom preset is selected in the dropdown --}}
+                            <template x-if="customVenues.includes(presetLocation)">
+                                <div class="flex justify-end pt-0.5">
                                     <button type="button" 
                                             @click="removeCustomVenue(presetLocation)" 
                                             class="text-[11px] font-medium text-rose-500 hover:text-rose-700 dark:text-rose-400 hover:underline cursor-pointer">
                                         Delete selected preset
                                     </button>
-                                </template>
-                            </div>
+                                </div>
+                            </template>
                         </div>
 
                         <div>
@@ -1413,14 +1445,21 @@
 
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Preset Reason Template</label>
-                            <select x-model="presetReason" @change="if (presetReason) { rejectionReason = presetReason; }" class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
-                                <option value="" disabled selected hidden style="display: none;">Select a common reason or type custom...</option>
-                                <option value="Incomplete or unverifiable identity and proof of residence documents.">Incomplete or Unverifiable Documents</option>
-                                <option value="Rental property lease or landlord rules do not permit keeping pets.">Landlord or Rental Pet Restrictions</option>
-                                <option value="Living space or fencing security does not meet requirements for this pet.">Inadequate Fencing or Living Environment</option>
-                                <option value="Care schedule and time commitment do not match this pet's requirements.">Schedule and Care Commitment Mismatch</option>
-                                <option value="Household has already reached the safe pet capacity limit.">Maximum Pet Capacity Reached</option>
-                            </select>
+                            <div class="relative">
+                                <select x-model="presetReason" @change="if (presetReason) { rejectionReason = presetReason; }" class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
+                                    <option value="" disabled selected hidden style="display: none;">Select a common reason or type custom...</option>
+                                    <option value="Incomplete or unverifiable identity and proof of residence documents.">Incomplete or Unverifiable Documents</option>
+                                    <option value="Rental property lease or landlord rules do not permit keeping pets.">Landlord or Rental Pet Restrictions</option>
+                                    <option value="Living space or fencing security does not meet requirements for this pet.">Inadequate Fencing or Living Environment</option>
+                                    <option value="Care schedule and time commitment do not match this pet's requirements.">Schedule and Care Commitment Mismatch</option>
+                                    <option value="Household has already reached the safe pet capacity limit.">Maximum Pet Capacity Reached</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 dark:text-slate-300">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
 
                         <div>
@@ -1519,7 +1558,7 @@
                             </label>
                             <label class="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                 <input type="checkbox" name="barangay_cert_verified" id="modalCertVerifiedCheck" value="1" {{ $application->barangay_cert_verified ? 'checked' : '' }} required class="mt-0.5 rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
-                                <span>Original <strong>Barangay Certificate of Residency</strong> physically inspected and verified.</span>
+                                <span>Original <strong>{{ ($application->home_ownership === 'rented') ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate of Residency' }}</strong> physically inspected and verified.</span>
                             </label>
                         </div>
                     </div>
