@@ -320,51 +320,20 @@
                         </div>
                     @endif
 
-                    {{-- Contact Information Overview --}}
-                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-3">
-                        <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                            <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                            <span>Applicant Contact Information</span>
-                        </h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Full Name</p>
-                                <p class="mt-0.5 text-xs font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_name }}</p>
+                    {{-- Rejection / Archival Status Notice if applicable --}}
+                    @if($application->status === 'rejected' && !empty($application->rejection_reason ?? $application->evaluation_notes))
+                        @if($application->is_archived_due_to_adoption)
+                            <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Archived Notice (Pet Adopted by Another Applicant)</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">{{ $application->rejection_reason ?? $application->evaluation_notes }}</p>
                             </div>
-                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email Address</p>
-                                <p class="mt-0.5 text-xs font-extrabold text-slate-800 dark:text-white truncate" title="{{ $application->applicant_email }}">{{ $application->applicant_email }}</p>
+                        @else
+                            <div class="bg-rose-50/80 dark:bg-rose-950/40 p-3.5 rounded-2xl border border-rose-200/80 dark:border-rose-900/60">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400">Rejection Reason Given to Adopter</p>
+                                <p class="mt-1 text-xs font-semibold text-rose-800 dark:text-rose-200 leading-relaxed">{{ $application->rejection_reason ?? $application->evaluation_notes }}</p>
                             </div>
-                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone Number</p>
-                                <p class="mt-0.5 text-xs font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_phone ?? 'N/A' }}</p>
-                            </div>
-                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800 sm:col-span-3">
-                                <div class="flex items-start gap-2.5">
-                                    <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0 mt-0.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Residential Address</p>
-                                        <p class="mt-0.5 text-xs font-extrabold text-slate-800 dark:text-white leading-relaxed">{{ $application->adopter_address ?? 'Address not specified' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        @if($application->status === 'rejected' && !empty($application->rejection_reason ?? $application->evaluation_notes))
-                            @if($application->is_archived_due_to_adoption)
-                                <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 mt-2">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Archived Notice (Pet Adopted by Another Applicant)</p>
-                                    <p class="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">{{ $application->rejection_reason ?? $application->evaluation_notes }}</p>
-                                </div>
-                            @else
-                                <div class="bg-rose-50/80 dark:bg-rose-950/40 p-3.5 rounded-xl border border-rose-200/80 dark:border-rose-900/60 mt-2">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400">Rejection Reason Given to Adopter</p>
-                                    <p class="mt-1 text-xs font-semibold text-rose-800 dark:text-rose-200 leading-relaxed">{{ $application->rejection_reason ?? $application->evaluation_notes }}</p>
-                                </div>
-                            @endif
                         @endif
-                    </div>
+                    @endif
 
                     {{-- Questionnaire & Compatibility Profile Assessment --}}
                     @php
@@ -423,101 +392,91 @@
                         </div>
 
                         @if($quizProfile)
-                            {{-- Official Compatibility Quiz Grid --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {{-- Living Environment --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Living Space</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        @php
-                                            $livingMap = [
-                                                'apartment' => 'Apartment',
-                                                'condo' => 'Condominium',
-                                                'house_with_yard' => 'House with Yard',
-                                                'house_no_yard' => 'House (No Yard)',
-                                            ];
-                                            $env = $quizProfile->living_environment;
-                                            echo $livingMap[$env] ?? ucwords(str_replace('_', ' ', $env));
-                                        @endphp
-                                    </p>
+                            {{-- Streamlined 2-Column Compatibility Assessment --}}
+                            @php
+                                $livingMap = [
+                                    'apartment'       => 'Apartment',
+                                    'condo'           => 'Condominium',
+                                    'house_with_yard' => 'House with Yard',
+                                    'house_no_yard'   => 'House (No Yard)',
+                                ];
+                                $livingSpace = $livingMap[$quizProfile->living_environment] ?? ucwords(str_replace('_', ' ', $quizProfile->living_environment ?? 'Standard'));
+
+                                $hoursMap = [
+                                    '0_3'    => '0 - 3 Hours (Frequent company)',
+                                    '4_7'    => '4 - 7 Hours (Standard workday)',
+                                    '8_plus' => '8+ Hours (Busy routine)',
+                                ];
+                                $hoursText = $hoursMap[$quizProfile->hours_alone] ?? ($quizProfile->hours_alone ?? 'Standard');
+                            @endphp
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                {{-- Group 1: Home & Environment --}}
+                                <div class="bg-slate-50/70 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                                    <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-slate-800">
+                                        <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Home & Environment</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Living Space</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">{{ $livingSpace }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Yard Security</span>
+                                            <span class="font-bold text-slate-800 dark:text-white inline-flex items-center gap-1.5">
+                                                @if($quizProfile->yard_type === 'fenced')
+                                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Fully Fenced
+                                                @elseif($quizProfile->yard_type === 'unfenced')
+                                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Unfenced
+                                                @else
+                                                    <span class="w-2 h-2 rounded-full bg-slate-400"></span> Indoor Only
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Daily Hours Alone</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">{{ $hoursText }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Housing Ownership</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">{{ $isRenting ? 'Rented / Tenant' : 'Owned Property' }}</span>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {{-- Yard Security --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Yard Security</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        @if($quizProfile->yard_type === 'fenced')
-                                            Fully Fenced Yard
-                                        @elseif($quizProfile->yard_type === 'unfenced')
-                                            Unfenced Yard
-                                        @else
-                                            No Yard / Indoor Only
-                                        @endif
-                                    </p>
-                                </div>
-
-                                {{-- Hours Alone Daily --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Daily Hours Alone</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        @if($quizProfile->hours_alone === '0_3')
-                                            0 - 3 Hours (Frequent company)
-                                        @elseif($quizProfile->hours_alone === '4_7')
-                                            4 - 7 Hours (Standard workday)
-                                        @elseif($quizProfile->hours_alone === '8_plus')
-                                            8+ Hours (Busy work routine)
-                                        @else
-                                            {{ $quizProfile->hours_alone ?? 'Standard' }}
-                                        @endif
-                                    </p>
-                                </div>
-
-                                {{-- Children in Home --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Household Children</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ $quizProfile->has_children ? 'Yes, children present in household' : 'No children in household' }}
-                                    </p>
-                                </div>
-
-                                {{-- Other Pets --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Other Pets at Home</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ $quizProfile->has_other_pets ? 'Yes, active pet owner (pets present)' : 'No other pets (First / solo pet)' }}
-                                    </p>
-                                </div>
-
-                                {{-- Pet Care Experience --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Pet Care Experience</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ ($quizProfile->pet_experience === 'experienced' || $quizProfile->has_other_pets) ? 'Experienced Pet Owner' : 'First-time Pet Owner' }}
-                                    </p>
-                                </div>
-
-                                {{-- Special Care Capacity --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Special Care Capacity</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ $quizProfile->special_care_capacity ? 'Equipped for special medical/dietary care' : 'Standard healthy companion care' }}
-                                    </p>
-                                </div>
-
-                                {{-- Activity Level --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Activity Capacity</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ ucfirst($quizProfile->activity_level ?? 'Moderate') }} Activity
-                                    </p>
-                                </div>
-
-                                {{-- Preferred Species --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Preferred Species</p>
-                                    <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                        {{ ucfirst($quizProfile->preferred_species ?? 'Any') }}
-                                    </p>
+                                {{-- Group 2: Household & Experience --}}
+                                <div class="bg-slate-50/70 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                                    <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-slate-800">
+                                        <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Household & Pet Care</span>
+                                    </div>
+                                    <div class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Children in Home</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">
+                                                {{ $quizProfile->has_children ? 'Present in Household' : 'None' }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Other Pets</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">
+                                                {{ $quizProfile->has_other_pets ? 'Active Pet Owner' : 'Solo / First Pet' }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Pet Experience</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">
+                                                {{ ($quizProfile->pet_experience === 'experienced' || $quizProfile->has_other_pets) ? 'Experienced' : 'First-time Owner' }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-1.5">
+                                            <span class="text-slate-500 dark:text-slate-400">Care & Activity</span>
+                                            <span class="font-extrabold text-slate-800 dark:text-white">
+                                                {{ ucfirst($quizProfile->activity_level ?? 'Moderate') }} · {{ $quizProfile->special_care_capacity ? 'Special Care Capable' : 'Standard' }}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -547,56 +506,30 @@
                         @endif
 
                         {{-- Employment / Student Verification Alert or Card --}}
-
                         @php
-
                             $empStatus = $application->employment_status ?? 'employed';
-
                             $isStudent = ($empStatus === 'student') || str_contains(strtolower($application->message ?? ''), 'employment status: student') || str_contains(strtolower($application->id_type ?? ''), 'student');
-
                         @endphp
 
-
-
                         @if($isStudent)
-
-                            <div class="bg-cyan-50/90 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 rounded-xl p-3.5 flex items-start gap-3">
-
-                                <svg class="w-5 h-5 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-
-                                </svg>
-
-                                <div class="space-y-0.5">
-
-                                    <div class="flex items-center gap-2">
-                                        <p class="text-xs font-bold text-cyan-900 dark:text-cyan-200">Student Applicant Verification</p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">Enrolled Student</span>
+                            <div class="bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-200/80 dark:border-cyan-800/60 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
                                     </div>
-
-                                    <p class="text-[11px] text-cyan-800 dark:text-cyan-300 leading-relaxed">
-
-                                        School / Institution: <strong>{{ $application->employer_or_school ?? 'Specified in questionnaire' }}</strong>
-
-                                        @if(!empty($application->occupation_or_program))
-
-                                            · Course / Level: <strong>{{ $application->occupation_or_program }}</strong>
-
-                                        @endif
-
-                                        <br>
-
-                                        Screening requirement: Verify active <strong>Student / School ID</strong> or registration card. If residing in a dorm or rental, also verify landlord/dorm pet permission.
-
-                                    </p>
-
+                                    <div class="text-xs">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="font-extrabold text-cyan-950 dark:text-cyan-200">Enrolled Student Verification</span>
+                                            <span class="text-slate-400 dark:text-slate-500">&bull;</span>
+                                            <span class="font-semibold text-slate-700 dark:text-slate-300">{{ $application->employer_or_school ?? 'Student' }}{{ !empty($application->occupation_or_program) ? ' (' . $application->occupation_or_program . ')' : '' }}</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Physical Student ID / COR and {{ $isRenting ? 'dorm/lease permission' : 'proof of residency' }} must be inspected on-site.</p>
+                                    </div>
                                 </div>
-
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800 shrink-0">
+                                    Student ID / COR Required
+                                </span>
                             </div>
-
                         @else
 
                             <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -629,25 +562,25 @@
 
 
 
-                        {{-- Housing Ownership / Tenant Inspection Alert --}}
+                        {{-- Housing Ownership / Tenant Inspection Alert (Only shown for renters) --}}
                         @if(($application->home_ownership ?? '') === 'rented' || !empty($application->landlord_name))
-                            <div class="bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3.5 flex items-start gap-3">
-                                <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                <div class="space-y-0.5">
-                                    <p class="text-xs font-bold text-amber-900 dark:text-amber-200">Tenant / Rental Property Application</p>
-                                    <p class="text-[11px] text-amber-800 dark:text-amber-300">
-                                        Applicant is a tenant. Landlord / Property Admin: <strong>{{ $application->landlord_name ?? 'Provided in questionnaire' }}</strong>
-                                        @if(!empty($application->landlord_phone))
-                                            (Phone: <a href="tel:{{ $application->landlord_phone }}" class="underline font-bold">{{ $application->landlord_phone }}</a>)
-                                        @endif.
-                                        Staff must inspect the physical <strong>Landlord Permission Letter</strong> during face-to-face meet-and-greet screening before pet release.
-                                    </p>
+                            <div class="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    </div>
+                                    <div class="text-xs">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="font-extrabold text-amber-950 dark:text-amber-200">Tenant / Rental Property</span>
+                                            <span class="text-slate-400 dark:text-slate-500">&bull;</span>
+                                            <span class="font-semibold text-slate-700 dark:text-slate-300">Landlord: {{ $application->landlord_name ?? 'Specified in form' }} @if(!empty($application->landlord_phone)) (<a href="tel:{{ $application->landlord_phone }}" class="underline">{{ $application->landlord_phone }}</a>) @endif</span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Physical landlord permission letter or lease agreement required at meet-and-greet.</p>
+                                    </div>
                                 </div>
-                            </div>
-                        @else
-                            <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Property Ownership</span>
-                                <span class="text-xs font-bold text-slate-800 dark:text-white">Owned Property (Owner / Family Home)</span>
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
+                                    Landlord Proof Required
+                                </span>
                             </div>
                         @endif
 
@@ -1171,6 +1104,8 @@
                 $defaultEventNotes = "On-Site Document Verification Required\nYour application passed initial screening. To complete the adoption, please bring your original {$idDocName} and {$residenceDocName} to the event for face-to-face verification before the pet is released.";
                 $initialEventNotes = old('event_notes', !empty($application->event_notes) ? $application->event_notes : $defaultEventNotes);
                 $initialLocation = old('event_location', $application->event_location ?? $defaultVenue);
+                $isAppFinalized = (bool) $application->is_finalized;
+                $isAppApproved = ($application->status === 'approved' && !$isAppFinalized);
             @endphp
             <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-5 lg:sticky lg:top-6 h-fit" 
                  x-data="{ 
@@ -1181,6 +1116,9 @@
                      presetLocation: '',
                      eventLocation: {{ json_encode($initialLocation) }},
                      venueSaveFeedback: false,
+                     showCustomNotes: {{ (old('event_notes') || (!empty($application->event_notes) && $application->event_notes !== $defaultEventNotes)) ? 'true' : 'false' }},
+                     showReschedule: false,
+                     showRejectBox: false,
                      init() {
                          const dbVenues = {{ json_encode($dbVenues) }};
                          let storedVenues = [];
@@ -1245,49 +1183,230 @@
                      }
                  }">
                 
-                <div>
-                    <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adoption Decision</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Record screening decision and Sunday schedule.</p>
-                </div>
+                @if($isAppFinalized)
+                    {{-- ======================================================= --}}
+                    {{-- STATE 1: ADOPTION FINALIZED & RELEASED                  --}}
+                    {{-- ======================================================= --}}
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Finalized
+                            </span>
+                            <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Pet Adopted</span>
+                        </div>
+                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white mt-1">Adoption Completed</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">In-person handover and agreement verified.</p>
+                    </div>
 
-                {{-- In-Person Handover Quick Action Widget --}}
-                @if(in_array($application->status, ['approved', 'adopted']))
-                    <div class="p-3.5 rounded-xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#133036] dark:to-[#17454d] border border-[#199CA4]/30 space-y-2.5">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Meet-and-Greet Handover</span>
-                            @if($application->is_finalized)
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                    Finalized
-                                </span>
-                            @else
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                                    Pending Check
-                                </span>
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#133036] dark:to-[#17454d] border border-emerald-500/30 space-y-3">
+                        <div class="text-xs space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500 dark:text-slate-400 font-medium">Adopter</span>
+                                <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500 dark:text-slate-400 font-medium">Pet Released</span>
+                                <span class="font-extrabold text-[#199CA4] dark:text-[#41C1CB]">{{ $application->pet->name ?? ('Pet #' . $application->pet_id) }}</span>
+                            </div>
+                            @if($application->documents_verified_at)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-500 dark:text-slate-400 font-medium">Verified On</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">{{ $application->documents_verified_at->format('M d, Y h:i A') }}</span>
+                                </div>
+                            @endif
+                            @if($application->staff_name || $application->staff)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-500 dark:text-slate-400 font-medium">Authorized Staff</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">{{ $application->staff_name ?: ($application->staff->name ?? 'CAWS Staff') }}</span>
+                                </div>
                             @endif
                         </div>
 
-                        <div class="text-xs text-slate-700 dark:text-slate-300">
-                            <p class="font-bold text-slate-900 dark:text-white">{{ $application->applicant_name }}</p>
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                                {{ $application->signature_path ? 'Pre-signed via mobile app' : 'Pre-signature pending' }}
-                            </p>
+                        <div class="pt-2 border-t border-[#199CA4]/20 space-y-2">
+                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span>Print Official Adoption Contract</span>
+                            </a>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <button type="button" onclick="openHandoverModal()" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white cursor-pointer underline">
+                                    View Staff Signature
+                                </button>
+                                <form action="{{ route('adoption-applications.reset-handover', $application) }}" method="POST" class="inline" onsubmit="return confirm('Reset handover verification? This will clear the staff endorsement signature, re-lock the contract, and allow you to re-verify or test again.');">
+                                    @csrf
+                                    <button type="submit" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer">
+                                        Reset Handover
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                @elseif($isAppApproved)
+                    {{-- ======================================================= --}}
+                    {{-- STATE 2: SCHEDULED / IN-PERSON HANDOVER STAGE           --}}
+                    {{-- ======================================================= --}}
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-[#13787F] dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4] animate-pulse"></span>
+                                Scheduled for Handover
+                            </span>
+                            <span class="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Step 2: On-Site Check</span>
+                        </div>
+                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white mt-1">Adoption Handover</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Physical inspection and release endorsement.</p>
+                    </div>
+
+                    {{-- Compact Scheduled Event Summary Card --}}
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#133036] dark:to-[#17454d] border border-[#199CA4]/30 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Sunday Screening Event</span>
+                            <button type="button" 
+                                    @click="showReschedule = !showReschedule" 
+                                    class="text-[11px] font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                <span x-text="showReschedule ? 'Close' : 'Reschedule'"></span>
+                            </button>
                         </div>
 
-                        @if($application->is_finalized)
-                            <div class="pt-2 border-t border-[#199CA4]/20 flex items-center justify-between">
-                                <span class="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold">Contract Unlocked</span>
-                                <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition">
-                                    Print Contract
-                                </a>
+                        <div class="text-xs space-y-1.5">
+                            <div class="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold">
+                                <svg class="w-4 h-4 text-[#199CA4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>{{ $application->scheduled_at ? $application->scheduled_at->format('l, F d, Y') : 'Date to be specified' }}</span>
                             </div>
-                        @else
-                            <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer">
-                                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span class="pointer-events-none">Verify & Finalize Handover</span>
-                            </button>
-                        @endif
+                            <div class="flex items-start gap-2 text-slate-600 dark:text-slate-300 text-[11px] font-medium">
+                                <svg class="w-4 h-4 text-[#199CA4] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <span class="line-clamp-2">{{ $application->event_location ?: $defaultVenue }}</span>
+                            </div>
+                            <div class="pt-1 border-t border-[#199CA4]/20 flex items-center justify-between text-[11px]">
+                                <span class="text-slate-500 dark:text-slate-400">Adopter Agreement:</span>
+                                <span class="font-bold {{ $application->signature_path ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' }}">
+                                    {{ $application->signature_path ? 'Pre-signed via app' : 'Pre-signature pending' }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                @endif
+
+                    {{-- Collapsible Reschedule Form (Hidden by default) --}}
+                    <div x-show="showReschedule" x-transition class="p-3.5 bg-slate-50 dark:bg-[#12272b] rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                        <form action="{{ route('adoption-applications.update', $application) }}" method="POST" @submit="saveCustomVenue()" class="space-y-3">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="status" value="approved">
+
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                    New Sunday Event Date <span class="text-rose-500 font-bold">*</span>
+                                </label>
+                                <input type="date" 
+                                       name="scheduled_at" 
+                                       x-model="scheduledAt"
+                                       required
+                                       value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" 
+                                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-semibold focus:ring-2 focus:ring-[#199CA4] transition">
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Event Location <span class="text-rose-500 font-bold">*</span>
+                                </label>
+                                <input type="hidden" name="event_location" :value="eventLocation" value="{{ $initialLocation }}">
+                                <div class="relative">
+                                    <select x-model="presetLocation" 
+                                            @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
+                                            class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3 pr-8 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-semibold focus:ring-2 focus:ring-[#199CA4] transition cursor-pointer">
+                                        <option :value="defaultVenue" x-text="defaultVenue"></option>
+                                        <template x-for="venue in customVenues" :key="venue">
+                                            <option :value="venue" x-text="venue"></option>
+                                        </template>
+                                        <option value="custom">Other (Specify Custom Location)...</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
+                                </div>
+
+                                <div x-show="presetLocation === 'custom'" x-transition class="pt-1">
+                                    <input type="text" 
+                                           x-ref="customLocationInput"
+                                           x-model="eventLocation"
+                                           placeholder="Specify custom venue..." 
+                                           class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-semibold">
+                                </div>
+                            </div>
+
+                            <div>
+                                <button type="button" 
+                                        @click="showCustomNotes = !showCustomNotes" 
+                                        class="flex items-center justify-between w-full text-left py-1 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3 h-3 text-[#199CA4] transition-transform duration-200" :class="showCustomNotes ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        <span>Event Instructions & Reminders</span>
+                                    </span>
+                                    <span class="text-[10px] text-slate-400" x-text="showCustomNotes ? 'Collapse' : 'Edit'"></span>
+                                </button>
+                                <div x-show="showCustomNotes" x-transition class="mt-1 space-y-1">
+                                    <textarea name="event_notes" 
+                                              x-model="eventNotes" 
+                                              rows="3" 
+                                              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-medium">{{ $initialEventNotes }}</textarea>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full py-2 rounded-xl bg-[#199CA4] hover:bg-[#14838B] text-white text-xs font-bold transition shadow-xs cursor-pointer">
+                                Save Updated Schedule
+                            </button>
+                        </form>
+                    </div>
+
+                    {{-- THE TWO MAIN ACTION BUTTONS: ACCEPT (HANDOVER) & REJECT --}}
+                    <div class="space-y-2 pt-1">
+                        {{-- 1. Accept / Finalize Handover Button --}}
+                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-emerald-600/20 transition cursor-pointer">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="pointer-events-none">Verify & Finalize Handover</span>
+                        </button>
+
+                        {{-- 2. Reject Button (if applicant failed in-person screening or no-show) --}}
+                        <div class="pt-1">
+                            <button type="button" 
+                                    @click="showRejectBox = !showRejectBox" 
+                                    class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <span x-text="showRejectBox ? 'Cancel Rejection' : 'Reject Application (Failed Screening)'"></span>
+                            </button>
+
+                            <div x-show="showRejectBox" x-transition class="mt-2.5 p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 space-y-2.5">
+                                <p class="text-[11px] font-bold text-rose-800 dark:text-rose-300">Decline Applicant at Meet-and-Greet</p>
+                                <form action="{{ route('adoption-applications.update', $application) }}" method="POST" class="space-y-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="rejected">
+                                    
+                                    <textarea name="rejection_reason" 
+                                              rows="2" 
+                                              required 
+                                              placeholder="Specify reason (e.g. Incomplete or invalid documents, landlord restrictions, failed in-person interview, no-show)..." 
+                                              class="w-full rounded-xl border border-rose-300 dark:border-rose-800 px-3 py-2 bg-white dark:bg-[#12272b] text-xs text-slate-800 dark:text-white font-medium placeholder-slate-400 focus:ring-2 focus:ring-rose-500 transition"></textarea>
+
+                                    <button type="submit" class="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer">
+                                        Confirm Rejection & Notify Adopter
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                @else
+                    {{-- ======================================================= --}}
+                    {{-- STATE 3: PENDING / REJECTED (INITIAL SCREENING)         --}}
+                    {{-- ======================================================= --}}
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-800 dark:text-white">Adoption Decision</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Record screening decision and Sunday schedule.</p>
+                    </div>
 
                 @php
                     $otherFinalized = isset($competingApplications) ? $competingApplications->first(function($app) {
@@ -1340,11 +1459,6 @@
 
                     {{-- Event Scheduling Details --}}
                     <div x-show="currentStatus === 'approved'" x-transition class="space-y-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
-                        <div class="p-3 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 border border-[#199CA4]/20 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                            <p class="font-bold text-[#199CA4] dark:text-[#41C1CB]">In-Person Screening Notice:</p>
-                            <p class="text-[11px] mt-0.5">Approving schedules the applicant for final in-person screening. The applicant will be instructed to bring physical copies of their {{ $isStudent ? 'Student ID/COR' : 'Valid ID' }} and {{ $isRenting ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate' }}.</p>
-                        </div>
-
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                                 Schedule Sunday Event Date <span class="text-rose-500 font-bold">*</span>
@@ -1430,22 +1544,32 @@
                             </template>
                         </div>
 
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                    Event Instructions & Reminders <span class="text-rose-500 font-bold">*</span>
-                                </label>
-                                <button type="button" 
-                                        @click="eventNotes = defaultEventNotes" 
-                                        class="text-[11px] font-semibold text-[#199CA4] hover:underline cursor-pointer">
-                                    Reset to template
-                                </button>
-                            </div>
+                        {{-- Collapsible Event Instructions & Reminders --}}
+                        <div class="pt-1">
+                            <button type="button" 
+                                    @click="showCustomNotes = !showCustomNotes" 
+                                    class="flex items-center justify-between w-full text-left py-1 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-[#199CA4] transition-transform duration-200" :class="showCustomNotes ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    <span>Customize Event Notes & Reminders</span>
+                                </span>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold" x-text="showCustomNotes ? 'Collapse' : 'Edit (Optional)'"></span>
+                            </button>
+                            <div x-show="showCustomNotes" x-transition class="mt-2 space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] text-slate-400">Sent to adopter via push and email</span>
+                                    <button type="button" 
+                                            @click="eventNotes = defaultEventNotes" 
+                                            class="text-[10px] font-semibold text-[#199CA4] hover:underline cursor-pointer">
+                                        Reset to template
+                                    </button>
+                                </div>
                             <textarea name="event_notes" 
                                       x-model="eventNotes"
                                       rows="4" 
                                       placeholder="e.g. On-Site Document Verification Required..." 
                                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ $initialEventNotes }}</textarea>
+                            </div>
                         </div>
                     </div>
 
@@ -1507,6 +1631,7 @@
                         </p>
                     </div>
                 </form>
+                @endif
 
             </div>
         </div>

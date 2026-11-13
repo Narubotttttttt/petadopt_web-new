@@ -10,7 +10,7 @@
             font-family: Arial, sans-serif;
             font-size: 11px;
             color: #000;
-            padding: 28px 32px;
+            padding: 24px 32px;
         }
 
         /*  HEADER (centered)  */
@@ -55,13 +55,13 @@
             font-size: 18px;
             font-weight: bold;
             letter-spacing: 6px;
-            margin: 10px 0 8px 0;
+            margin: 8px 0 6px 0;
         }
 
         hr.divider {
             border: 0;
             border-top: 1px solid #000;
-            margin: 6px 0;
+            margin: 5px 0;
         }
 
         /*  FIELD ROWS  */
@@ -135,7 +135,7 @@
 
         /*  SIGNATURES  */
         .sig-section {
-            margin-top: 18px;
+            margin-top: 14px;
         }
         .sig-section table {
             width: 100%;
@@ -169,10 +169,10 @@
 
         /*  ADOPTER FIELDS  */
         .adopter-fields {
-            margin-top: 12px;
+            margin-top: 10px;
         }
         .adopter-row {
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             font-size: 11px;
         }
         .adopter-row table {
@@ -186,13 +186,13 @@
 
         /*  NOTARY  */
         .notary-section {
-            margin-top: 14px;
+            margin-top: 10px;
             font-size: 10.5px;
-            line-height: 1.6;
+            line-height: 1.5;
         }
         .notary-sig {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 14px;
             float: right;
             width: 200px;
         }
@@ -243,17 +243,13 @@
 <div class="field-row">
     <table>
         <tr>
-            <td style="width: 38%;">
+            <td style="width: 50%;">
                 <span class="field-label">Date: </span>
-                <span class="field-value" style="min-width: 120px;">{{ \Carbon\Carbon::parse($application->scheduled_at ?? $application->approved_at ?? now())->format('F j, Y') }}</span>
+                <span class="field-value" style="min-width: 130px;">{{ \Carbon\Carbon::parse($application->scheduled_at ?? $application->approved_at ?? now())->format('F j, Y') }}</span>
             </td>
-            <td style="width: 42%;">
-                <span class="field-label">Pickup Location: </span>
-                <span class="field-value" style="min-width: 140px;">{{ $application->event_location ?: 'CAWS Adoption Event, CDO' }}</span>
-            </td>
-            <td style="width: 20%; text-align: right;">
+            <td style="width: 50%; text-align: right;">
                 <span class="field-label">ID Tag: </span>
-                <span class="field-value" style="min-width: 60px; text-align: center;">Pet no. {{ $pet->id }}</span>
+                <span class="field-value" style="min-width: 70px; text-align: center;">Pet no. {{ $pet->id }}</span>
             </td>
         </tr>
     </table>
