@@ -72,6 +72,7 @@ class AdoptionApplication extends Model
         'is_waitlisted_backup',
         'queue_position',
         'is_lead_candidate',
+        'adopter_address',
     ];
 
     public function getIsArchivedDueToAdoptionAttribute(): bool
@@ -239,6 +240,31 @@ class AdoptionApplication extends Model
         }
         $root = request() ? request()->getSchemeAndHttpHost() : config('app.url', 'http://localhost:8000');
         return $root . '/storage/' . ltrim($this->barangay_certificate_path, '/');
+    }
+
+    public function getAdopterAddressAttribute(): ?string
+    {
+        $profile = $this->user?->adoptersProfile;
+        if (!$profile && !empty($this->applicant_email)) {
+            $profile = AdoptersProfile::where('email', $this->applicant_email)->first();
+        }
+
+        if ($profile && !empty($profile->address)) {
+            return $profile->address;
+        }
+
+        if (!empty($this->message) && preg_match('/Address:\s*(.+)/i', $this->message, $matches)) {
+            return trim($matches[1]);
+        }
+
+        if ($profile) {
+            $parts = array_filter([$profile->city, $profile->province]);
+            if (!empty($parts)) {
+                return implode(', ', $parts);
+            }
+        }
+
+        return null;
     }
 
     public function pet()

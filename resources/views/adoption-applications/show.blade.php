@@ -140,6 +140,13 @@
                         <span>{{ $application->applicant_email }}</span>
                         <span>·</span>
                         <span>{{ $application->applicant_phone ?? 'No phone' }}</span>
+                        @if(!empty($application->adopter_address))
+                            <span>·</span>
+                            <span class="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300" title="{{ $application->adopter_address }}">
+                                <svg class="w-3.5 h-3.5 text-[#199CA4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <span class="max-w-[280px] truncate font-medium">{{ $application->adopter_address }}</span>
+                            </span>
+                        @endif
                         <span>·</span>
                         <span>Applied {{ $application->created_at ? $application->created_at->format('M d, Y') : 'N/A' }}</span>
                     </div>
@@ -331,6 +338,17 @@
                             <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone Number</p>
                                 <p class="mt-0.5 text-xs font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_phone ?? 'N/A' }}</p>
+                            </div>
+                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800 sm:col-span-3">
+                                <div class="flex items-start gap-2.5">
+                                    <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0 mt-0.5">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Residential Address</p>
+                                        <p class="mt-0.5 text-xs font-extrabold text-slate-800 dark:text-white leading-relaxed">{{ $application->adopter_address ?? 'Address not specified' }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @if($application->status === 'rejected' && !empty($application->rejection_reason ?? $application->evaluation_notes))
@@ -555,11 +573,8 @@
                                 <div class="space-y-0.5">
 
                                     <div class="flex items-center gap-2">
-
                                         <p class="text-xs font-bold text-cyan-900 dark:text-cyan-200">Student Applicant Verification</p>
-
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800 dark:bg-cyan-900/60 dark:text-cyan-200 border border-cyan-300 dark:border-cyan-700">Enrolled Student</span>
-
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">Enrolled Student</span>
                                     </div>
 
                                     <p class="text-[11px] text-cyan-800 dark:text-cyan-300 leading-relaxed">
@@ -1554,11 +1569,11 @@
                         <div class="space-y-2.5 bg-slate-50 dark:bg-[#12272b] p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
                             <label class="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                 <input type="checkbox" name="id_document_verified" id="modalIdVerifiedCheck" value="1" {{ $application->id_document_verified ? 'checked' : '' }} required class="mt-0.5 rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
-                                <span>Original <strong>Valid Government ID</strong> physically inspected and verified against application details.</span>
+                                <span>Original <strong>{{ $isStudent ? 'Student ID / COR' : 'Valid Government ID' }}</strong> physically inspected and verified against application details.</span>
                             </label>
                             <label class="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                 <input type="checkbox" name="barangay_cert_verified" id="modalCertVerifiedCheck" value="1" {{ $application->barangay_cert_verified ? 'checked' : '' }} required class="mt-0.5 rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
-                                <span>Original <strong>{{ ($application->home_ownership === 'rented') ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate of Residency' }}</strong> physically inspected and verified.</span>
+                                <span>Original <strong>{{ ($application->home_ownership === 'rented' || $isRenting) ? 'Proof of Residence (Barangay Cert, Lease, or Landlord Letter)' : 'Barangay Certificate of Residency' }}</strong> physically inspected and verified.</span>
                             </label>
                         </div>
                     </div>
@@ -1613,17 +1628,17 @@
 
                         {{-- Option B: Drawing Canvas Pad --}}
                         <div id="handoverDrawSigView" class="space-y-2 {{ Auth::user()?->digital_signature_path ? 'hidden' : '' }}">
-                            <div class="relative rounded-2xl border border-slate-300 dark:border-slate-600 bg-white p-1 overflow-hidden shadow-2xs">
-                                <canvas id="handoverSignatureCanvas" class="w-full h-36 cursor-crosshair touch-none block bg-white"></canvas>
+                            <div class="relative rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-[#0a171a] p-1 overflow-hidden shadow-2xs">
+                                <canvas id="handoverSignatureCanvas" class="w-full h-36 cursor-crosshair touch-none block bg-transparent filter dark:invert dark:brightness-200"></canvas>
                                 
                                 {{-- Watermark / Guide Line --}}
-                                <div class="absolute bottom-6 left-6 right-6 border-b border-dashed border-slate-300 pointer-events-none flex justify-between items-center text-[10px] text-slate-400">
+                                <div class="absolute bottom-6 left-6 right-6 border-b border-dashed border-slate-300 dark:border-slate-700 pointer-events-none flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500">
                                     <span>Sign on the line above</span>
                                     <span>Authorized Staff Signature</span>
                                 </div>
 
                                 {{-- Floating Clear Pad Button --}}
-                                <button type="button" onclick="clearHandoverSignature()" class="absolute top-2 right-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shadow-2xs">
+                                <button type="button" onclick="clearHandoverSignature()" class="absolute top-2 right-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border dark:border-slate-700/60 transition cursor-pointer shadow-2xs">
                                     Clear Pad
                                 </button>
                             </div>
@@ -1786,7 +1801,7 @@
             const certCheck = document.getElementById('modalCertVerifiedCheck');
             if (!idCheck || !idCheck.checked || !certCheck || !certCheck.checked) {
                 e.preventDefault();
-                alert('Please physically inspect and verify both the original Valid ID and Barangay Certificate before finalizing.');
+                alert('Please physically inspect and verify both the original identity document and proof of residence before finalizing.');
                 return false;
             }
 

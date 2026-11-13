@@ -25,7 +25,8 @@ class AdoptionApplicationController extends Controller
             'pet.adoptionApplications' => function ($q) {
                 $q->whereIn('status', ['pending', 'under_review', 'approved'])
                   ->select('id', 'pet_id', 'applicant_name', 'status', 'compatibility_score', 'created_at', 'documents_verified_at', 'staff_signature_path');
-            }
+            },
+            'user.adoptersProfile',
         ]);
 
         // Apply search if provided
@@ -553,7 +554,7 @@ class AdoptionApplicationController extends Controller
         $adopter = (object) [
             'name'         => $application->applicant_name ?? 'N/A',
             'phone_number' => $application->applicant_phone ?? 'N/A',
-            'address'      => 'N/A',
+            'address'      => $application->adopter_address ?? 'N/A',
         ];
 
         // Try to get richer data from the users table via email
@@ -565,14 +566,9 @@ class AdoptionApplicationController extends Controller
             if ($adopter->phone_number === 'N/A') {
                 $adopter->phone_number = $userRecord->phone_number ?? 'N/A';
             }
-            if (!empty($userRecord->address) && $userRecord->address !== 'N/A') {
-                $adopter->address = $userRecord->address;
+            if (empty($adopter->address) || $adopter->address === 'N/A') {
+                $adopter->address = $userRecord->adoptersProfile?->address ?? 'N/A';
             }
-        }
-
-        // Extract address from application message if not already set
-        if (($adopter->address === 'N/A' || empty($adopter->address)) && $application->message && preg_match('/Address:\s*(.+)/i', $application->message, $addrMatches)) {
-            $adopter->address = trim($addrMatches[1]);
         }
 
         // 1. Prepare Adopter Digital Signature

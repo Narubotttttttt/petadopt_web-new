@@ -502,6 +502,12 @@
                                 <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
                                 <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
                             </div>
+                            @if(!empty($application->adopter_address))
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Address</span>
+                                    <span class="font-medium text-slate-700 dark:text-slate-300 max-w-[200px] truncate" title="{{ $application->adopter_address }}">{{ $application->adopter_address }}</span>
+                                </div>
+                            @endif
                             <div class="flex items-center justify-between text-xs">
                                 <span class="text-slate-400 dark:text-slate-500 font-medium">Submitted</span>
                                 <span class="text-slate-600 dark:text-slate-400 font-medium">{{ $application->created_at ? $application->created_at->format('M d, Y · h:i A') : '—' }}</span>
@@ -606,6 +612,12 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                     <div class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</div>
                                     <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">{{ $application->applicant_phone }}</div>
+                                    @if(!empty($application->adopter_address))
+                                        <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-xs flex items-center gap-1" title="{{ $application->adopter_address }}">
+                                            <svg class="w-3 h-3 shrink-0 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <span class="truncate">{{ $application->adopter_address }}</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($application->application_source === 'recommendation')

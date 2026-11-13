@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://loved-authorities-pay-language.trycloudflare.com/$1",
+                         "destination":  "https://impose-buck-drive-lone.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

@@ -103,7 +103,7 @@
 
                 {{-- Canvas Box --}}
                 <div class="relative rounded-2xl border border-gray-300 dark:border-white/[0.15] bg-white dark:bg-[#0C0D13] shadow-xs overflow-hidden">
-                    <canvas id="staffSignatureCanvas" class="w-full h-44 cursor-crosshair touch-none block"></canvas>
+                    <canvas id="staffSignatureCanvas" class="w-full h-44 cursor-crosshair touch-none block filter dark:invert dark:brightness-200"></canvas>
                     
                     {{-- Guideline Baseline --}}
                     <div class="absolute bottom-6 left-6 right-6 border-b border-gray-300/80 dark:border-white/10 pointer-events-none flex justify-between items-center text-[10px] text-gray-400 dark:text-slate-600 select-none pb-1">
@@ -160,7 +160,7 @@
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.lineWidth = 2.5;
-            ctx.strokeStyle = document.documentElement.classList.contains('dark') ? '#41C1CB' : '#0f172a';
+            ctx.strokeStyle = '#0f172a';
         }
 
         resizeCanvas();
