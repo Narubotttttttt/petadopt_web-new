@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://manitoba-aruba-changing-collect.trycloudflare.com/$1",
+                         "destination":  "https://booking-payment-enterprises-economics.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

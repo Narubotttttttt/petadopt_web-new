@@ -17,13 +17,31 @@
                 isPolling: false,
                 refreshing: false,
                 expandedPets: {},
+                focusedPetId: null,
+                focusedPetName: '',
 
-                togglePet(petId) {
-                    this.expandedPets[petId] = !this.expandedPets[petId];
+                togglePet(petId, petName = '') {
+                    if (this.focusedPetId === petId) {
+                        this.clearFocus();
+                    } else {
+                        this.focusedPetId = petId;
+                        this.focusedPetName = petName;
+                        this.expandedPets = { [petId]: true };
+                    }
+                },
+
+                clearFocus() {
+                    this.focusedPetId = null;
+                    this.focusedPetName = '';
+                    this.expandedPets = {};
                 },
 
                 isPetExpanded(petId) {
-                    return !!this.expandedPets[petId];
+                    return this.focusedPetId === petId;
+                },
+
+                isPetVisible(petId) {
+                    return !this.focusedPetId || this.focusedPetId === petId;
                 },
 
                 initHeartbeat() {
@@ -390,6 +408,22 @@
                 </div>
             </div>
 
+            {{-- Focus Mode Banner (Shown when isolating a multi-applicant pet) --}}
+            <div x-show="focusedPetId" x-cloak
+                 class="px-4 sm:px-6 py-3 bg-[#199CA4]/10 dark:bg-[#199CA4]/15 border-b border-[#199CA4]/30 flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2 text-slate-800 dark:text-white font-extrabold">
+                    <span class="w-2 h-2 rounded-full bg-[#199CA4] animate-pulse"></span>
+                    <span>Reviewing Competing Queue for <span x-text="focusedPetName" class="text-[#199CA4] dark:text-[#41C1CB]"></span></span>
+                    <span class="text-slate-400 dark:text-slate-500 font-normal hidden sm:inline">(other pets temporarily hidden)</span>
+                </div>
+                <button type="button" 
+                        @click="clearFocus()" 
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-[#161824] border border-slate-200 dark:border-white/[0.1] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1E2030] font-extrabold text-xs transition shadow-2xs cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    <span>Show All Pets</span>
+                </button>
+            </div>
+
             @php
                 $groupedApplications = $applications->getCollection()->groupBy(function($app) {
                     return $app->pet_id ? ('pet_' . $app->pet_id) : ('app_' . $app->id);
@@ -409,7 +443,7 @@
                     @if(!$isMulti)
                         {{-- Single Applicant Pet Card --}}
                         @php $application = $firstApp; @endphp
-                        <div class="p-4 space-y-3.5">
+                        <div x-show="isPetVisible('{{ $groupKey }}')" class="p-4 space-y-3.5">
                             {{-- Top row: Pet info + status --}}
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-center gap-3 min-w-0">
@@ -550,7 +584,7 @@
                         </div>
                     @else
                         {{-- Multi-Applicant Pet Group Card (Expandable Accordion) --}}
-                        <div class="p-4 space-y-3.5 bg-slate-50/70 dark:bg-[#151722]/80">
+                        <div x-show="isPetVisible('{{ $groupKey }}')" class="p-4 space-y-3.5 bg-slate-50/70 dark:bg-[#151722]/80">
                             {{-- Top row: Pet info + Group badge --}}
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex items-center gap-3 min-w-0">
@@ -624,7 +658,7 @@
 
                             {{-- Accordion Toggle Button --}}
                             <button type="button" 
-                                    @click="togglePet('{{ $groupKey }}')"
+                                    @click="togglePet('{{ $groupKey }}', '{{ addslashes($pet && !empty($pet->name) ? $pet->name : ('Pet no. ' . $firstApp->pet_id)) }}')"
                                     class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#199CA4]/30 bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] font-extrabold text-xs transition cursor-pointer">
                                 <span x-text="isPetExpanded('{{ $groupKey }}') ? 'Hide Applicants Queue' : 'View All {{ $petApps->count() }} Applicants'">View All {{ $petApps->count() }} Applicants</span>
                                 <svg class="w-4 h-4 transition-transform duration-200" :class="isPetExpanded('{{ $groupKey }}') ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -759,7 +793,7 @@
                             @if(!$isMulti)
                                 {{-- Single Applicant Row (Standard flat row) --}}
                                 @php $application = $firstApp; @endphp
-                                <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
+                                <tr x-show="isPetVisible('{{ $groupKey }}')" class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
                                     <td class="px-3.5 py-3 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
                                         <div class="flex items-center gap-2.5">
                                             @if($petImg)
@@ -914,9 +948,10 @@
                                 </tr>
                             @else
                                 {{-- Multi-Applicant Summary Parent Row --}}
-                                <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors cursor-pointer"
+                                <tr x-show="isPetVisible('{{ $groupKey }}')"
+                                    class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors cursor-pointer"
                                     :class="isPetExpanded('{{ $groupKey }}') ? 'bg-slate-100/90 dark:bg-[#161824]' : 'bg-slate-50/40 dark:bg-[#151722]/50'"
-                                    @click="togglePet('{{ $groupKey }}')">
+                                    @click="togglePet('{{ $groupKey }}', '{{ addslashes($pet && !empty($pet->name) ? $pet->name : ('Pet no. ' . $firstApp->pet_id)) }}')">
                                     <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
                                         <div class="flex items-center gap-2.5">
                                             @if($petImg)
@@ -1007,7 +1042,7 @@
                                     </td>
                                     <td class="px-3.5 py-3.5 whitespace-nowrap text-right">
                                         <button type="button" 
-                                                @click.stop="togglePet('{{ $groupKey }}')" 
+                                                @click.stop="togglePet('{{ $groupKey }}', '{{ addslashes($pet && !empty($pet->name) ? $pet->name : ('Pet no. ' . $firstApp->pet_id)) }}')" 
                                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#199CA4]/40 bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] font-extrabold transition shadow-2xs text-xs cursor-pointer">
                                             <span x-text="isPetExpanded('{{ $groupKey }}') ? 'Collapse' : 'View {{ $petApps->count() }} Applicants'">View {{ $petApps->count() }} Applicants</span>
                                             <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="isPetExpanded('{{ $groupKey }}') ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -1021,7 +1056,7 @@
                                         class="border-b {{ $loop->last ? 'border-b-2 border-slate-300/80 dark:border-white/[0.08]' : 'border-slate-200/60 dark:border-white/[0.04]' }} transition-colors text-xs sm:text-sm {{ $index === 0 ? 'bg-emerald-500/[0.03] dark:bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] dark:hover:bg-emerald-500/[0.04]' : 'bg-slate-50/60 dark:bg-[#0E1018]/90 hover:bg-slate-100/70 dark:hover:bg-[#151722]' }}">
                                         
                                         {{-- Col 1: Hierarchy Tree Connector & Rank --}}
-                                        <td class="pl-6 sm:pl-9 pr-3.5 py-3 whitespace-nowrap border-l-4 {{ $index === 0 ? 'border-l-emerald-500' : 'border-l-[#199CA4]/40' }}">
+                                        <td class="pl-6 sm:pl-9 pr-3.5 py-3 whitespace-nowrap">
                                             <div class="flex items-center gap-2">
                                                 <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     @if($loop->last)
