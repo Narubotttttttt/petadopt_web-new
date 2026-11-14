@@ -16,6 +16,15 @@
                 pollInterval: null,
                 isPolling: false,
                 refreshing: false,
+                expandedPets: {},
+
+                togglePet(petId) {
+                    this.expandedPets[petId] = !this.expandedPets[petId];
+                },
+
+                isPetExpanded(petId) {
+                    return !!this.expandedPets[petId];
+                },
 
                 initHeartbeat() {
                     // Check every 7 seconds for new applications
@@ -381,152 +390,342 @@
                 </div>
             </div>
 
+            @php
+                $groupedApplications = $applications->getCollection()->groupBy(function($app) {
+                    return $app->pet_id ? ('pet_' . $app->pet_id) : ('app_' . $app->id);
+                });
+            @endphp
+
             {{-- Mobile Card Feed (<md) --}}
             <div class="block md:hidden divide-y divide-slate-100 dark:divide-white/[0.06]">
-                @forelse($applications as $application)
+                @forelse($groupedApplications as $groupKey => $petApps)
                     @php
-                        $pet = $application->pet;
+                        $isMulti = $petApps->count() > 1;
+                        $firstApp = $petApps->first();
+                        $pet = $firstApp->pet;
                         $petImg = $pet && $pet->photo_path ? (str_starts_with($pet->photo_path, 'http') ? $pet->photo_path : asset('storage/' . ltrim($pet->photo_path, '/'))) : null;
                     @endphp
-                    <div class="p-4 space-y-3.5">
-                        {{-- Top row: Pet info + status --}}
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-center gap-3 min-w-0">
-                                @if($petImg)
-                                    <div class="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
-                                        <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                        <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
-                                            <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+
+                    @if(!$isMulti)
+                        {{-- Single Applicant Pet Card --}}
+                        @php $application = $firstApp; @endphp
+                        <div class="p-4 space-y-3.5">
+                            {{-- Top row: Pet info + status --}}
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    @if($petImg)
+                                        <div class="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                                            <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
+                                                <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="font-extrabold text-slate-900 dark:text-white text-sm truncate">
+                                                {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $application->pet_id }}
+                                            </span>
+                                            @if($application->competing_active_count > 1)
+                                                @if($application->is_waitlisted_backup)
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                                                        Backup #{{ $application->queue_position }}
+                                                    </span>
+                                                @elseif($application->status === 'approved')
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                                                        Primary
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
+                                                        {{ $application->competing_active_count }} Queue
+                                                    </span>
+                                                @endif
+                                            @endif
+                                        </div>
+                                        <div class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+                                            Pet no. {{ $application->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
                                         </div>
                                     </div>
+                                </div>
+                                @if($application->status === 'rejected')
+                                    @if($application->is_archived_due_to_adoption)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Closed because pet was adopted by another applicant">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
+                                            Archived
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                            Rejected
+                                        </span>
+                                    @endif
+                                @elseif($application->is_waitlisted_backup)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60" title="Pet scheduled with {{ $application->scheduled_competing_application->applicant_name ?? 'another applicant' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                        Waitlisted (Backup)
+                                    </span>
+                                @elseif($application->status === 'approved')
+                                    @if($application->is_finalized || !empty($application->documents_verified_at))
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Finalized
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                            Scheduled
+                                        </span>
+                                    @endif
                                 @else
-                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
-                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0
+                                        {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
+                                        {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full
+                                            {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
+                                            {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
+                                        {{ ucfirst(str_replace('_', ' ', $application->status)) }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            {{-- Middle applicant details card --}}
+                            <div class="bg-slate-50/80 dark:bg-[#171923] p-3 rounded-xl border border-slate-100 dark:border-white/[0.04] space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Applicant</span>
+                                    <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
+                                </div>
+                                @if($application->application_source === 'recommendation')
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
+                                        <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                                            Quiz Match {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
+                                        </span>
                                     </div>
                                 @endif
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <span class="font-extrabold text-slate-900 dark:text-white text-sm truncate">
-                                            {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $application->pet_id }}
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
+                                    <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
+                                </div>
+                                @if(!empty($application->adopter_address))
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Address</span>
+                                        <span class="font-medium text-slate-700 dark:text-slate-300 max-w-[200px] truncate" title="{{ $application->adopter_address }}">{{ $application->adopter_address }}</span>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Submitted</span>
+                                    <span class="text-slate-600 dark:text-slate-400 font-medium">{{ $application->created_at ? $application->created_at->format('M d, Y · h:i A') : '—' }}</span>
+                                </div>
+                            </div>
+
+                            {{-- Action buttons --}}
+                            <div class="flex items-center gap-2 pt-1">
+                                @if(in_array($application->status, ['approved', 'adopted']))
+                                    @if($application->signature_path)
+                                        <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-xs shrink-0">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                            <span>Print</span>
+                                        </a>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0">
+                                            Unsigned
                                         </span>
-                                        @if($application->competing_active_count > 1)
-                                            @if($application->is_waitlisted_backup)
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
-                                                    Backup #{{ $application->queue_position }}
+                                    @endif
+                                @endif
+                                <a href="{{ route('adoption-applications.show', $application) }}" class="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition shadow-2xs text-xs">
+                                    View Details
+                                </a>
+                                <form action="{{ route('adoption-applications.destroy', $application) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $application->applicant_name }}?');" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
+                                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @else
+                        {{-- Multi-Applicant Pet Group Card (Expandable Accordion) --}}
+                        <div class="p-4 space-y-3.5 bg-slate-50/70 dark:bg-[#151722]/80">
+                            {{-- Top row: Pet info + Group badge --}}
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    @if($petImg)
+                                        <div class="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                                            <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
+                                                <svg class="w-5 h-5 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="font-extrabold text-slate-900 dark:text-white text-sm truncate">
+                                                {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $firstApp->pet_id }}
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                                {{ $petApps->count() }} Applicants
+                                            </span>
+                                        </div>
+                                        <div class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+                                            Pet no. {{ $firstApp->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    @php
+                                        $finalizedCount = $petApps->filter(fn($a) => $a->is_finalized || !empty($a->documents_verified_at))->count();
+                                        $scheduledCount = $petApps->filter(fn($a) => $a->status === 'approved' && !$a->is_finalized)->count();
+                                    @endphp
+                                    @if($finalizedCount > 0)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Finalized
+                                        </span>
+                                    @elseif($scheduledCount > 0)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                            Scheduled
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            In Queue
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Lead applicant summary --}}
+                            <div class="p-3 rounded-xl bg-white dark:bg-[#181A26] border border-slate-200/80 dark:border-white/[0.08] text-xs space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-slate-700 dark:text-slate-200 font-extrabold flex items-center gap-1.5 truncate">
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">#1 Lead</span>
+                                        <span class="truncate">{{ $firstApp->applicant_name }}</span>
+                                    </span>
+                                    @if($firstApp->compatibility_score !== null)
+                                        <span class="font-black text-emerald-600 dark:text-emerald-400 font-mono text-[11px] shrink-0">
+                                            {{ number_format($firstApp->compatibility_score, 0) }}% Match
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {{ $petApps->count() }} applicants in total. Compare match scores and application details below.
+                                </div>
+                            </div>
+
+                            {{-- Accordion Toggle Button --}}
+                            <button type="button" 
+                                    @click="togglePet('{{ $groupKey }}')"
+                                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#199CA4]/30 bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] font-extrabold text-xs transition cursor-pointer">
+                                <span x-text="isPetExpanded('{{ $groupKey }}') ? 'Hide Applicants Queue' : 'View All {{ $petApps->count() }} Applicants'">View All {{ $petApps->count() }} Applicants</span>
+                                <svg class="w-4 h-4 transition-transform duration-200" :class="isPetExpanded('{{ $groupKey }}') ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            {{-- Collapsible nested applicants --}}
+                            <div x-show="isPetExpanded('{{ $groupKey }}')" x-cloak class="space-y-3 pt-1">
+                                @foreach($petApps as $index => $app)
+                                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#181A26] shadow-2xs space-y-3 {{ $index === 0 ? 'ring-1 ring-emerald-500/30' : '' }}">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    @if($index === 0)
+                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">#1 Lead</span>
+                                                    @else
+                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">#{{ $index + 1 }} Backup</span>
+                                                    @endif
+                                                    <span class="font-extrabold text-slate-900 dark:text-white text-xs truncate">{{ $app->applicant_name }}</span>
+                                                </div>
+                                                <div class="text-[11px] text-slate-400 mt-0.5">
+                                                    {{ $app->applicant_phone }}
+                                                </div>
+                                            </div>
+
+                                            {{-- Applicant Status Pill --}}
+                                            @if($app->status === 'rejected')
+                                                @if($app->is_archived_due_to_adoption)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Archived
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Rejected
+                                                    </span>
+                                                @endif
+                                            @elseif($app->is_waitlisted_backup)
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Waitlisted
                                                 </span>
-                                            @elseif($application->status === 'approved')
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
-                                                    Primary
-                                                </span>
+                                            @elseif($app->status === 'approved')
+                                                @if($app->is_finalized || !empty($app->documents_verified_at))
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Finalized
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Scheduled
+                                                    </span>
+                                                @endif
                                             @else
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
-                                                    {{ $application->competing_active_count }} Queue
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border shrink-0
+                                                    {{ $app->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
+                                                    {{ $app->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
+                                                    <span class="w-1.5 h-1.5 rounded-full
+                                                        {{ $app->status === 'under_review' ? 'bg-indigo-500' : '' }}
+                                                        {{ $app->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
+                                                    {{ ucfirst(str_replace('_', ' ', $app->status)) }}
                                                 </span>
                                             @endif
-                                        @endif
-                                    </div>
-                                    <div class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 truncate">
-                                        Pet no. {{ $application->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
-                                    </div>
-                                </div>
-                            </div>
-                            @if($application->status === 'rejected')
-                                @if($application->is_archived_due_to_adoption)
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Closed because pet was adopted by another applicant">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
-                                        Archived
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                        Rejected
-                                    </span>
-                                @endif
-                            @elseif($application->is_waitlisted_backup)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60" title="Pet scheduled with {{ $application->scheduled_competing_application->applicant_name ?? 'another applicant' }}">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                                    Waitlisted (Backup)
-                                </span>
-                            @elseif($application->status === 'approved')
-                                @if($application->is_finalized || !empty($application->documents_verified_at))
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        Finalized
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                                        Scheduled
-                                    </span>
-                                @endif
-                            @else
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0
-                                    {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
-                                    {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
-                                    <span class="w-1.5 h-1.5 rounded-full
-                                        {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
-                                        {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
-                                    {{ ucfirst(str_replace('_', ' ', $application->status)) }}
-                                </span>
-                            @endif
-                        </div>
+                                        </div>
 
-                        {{-- Middle applicant details card --}}
-                        <div class="bg-slate-50/80 dark:bg-[#171923] p-3 rounded-xl border border-slate-100 dark:border-white/[0.04] space-y-2">
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-400 dark:text-slate-500 font-medium">Applicant</span>
-                                <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
-                            </div>
-                            @if($application->application_source === 'recommendation')
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
-                                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                                        Quiz Match {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
-                                    </span>
-                                </div>
-                            @endif
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
-                                <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
-                            </div>
-                            @if(!empty($application->adopter_address))
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Address</span>
-                                    <span class="font-medium text-slate-700 dark:text-slate-300 max-w-[200px] truncate" title="{{ $application->adopter_address }}">{{ $application->adopter_address }}</span>
-                                </div>
-                            @endif
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-400 dark:text-slate-500 font-medium">Submitted</span>
-                                <span class="text-slate-600 dark:text-slate-400 font-medium">{{ $application->created_at ? $application->created_at->format('M d, Y · h:i A') : '—' }}</span>
-                            </div>
-                        </div>
+                                        {{-- Metadata row --}}
+                                        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-white/[0.04]">
+                                            <span class="inline-flex items-center gap-1">
+                                                @if($app->compatibility_score !== null)
+                                                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Quiz Match {{ number_format($app->compatibility_score, 0) }}%</span>
+                                                @else
+                                                    <span>Direct Application</span>
+                                                @endif
+                                            </span>
+                                            <span class="text-[11px] text-slate-400">
+                                                {{ $app->created_at ? $app->created_at->format('M d, Y · h:i A') : '—' }}
+                                            </span>
+                                        </div>
 
-                        {{-- Action buttons --}}
-                        <div class="flex items-center gap-2 pt-1">
-                            @if(in_array($application->status, ['approved', 'adopted']))
-                                @if($application->signature_path)
-                                    <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-xs shrink-0">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                                        <span>Print</span>
-                                    </a>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0">
-                                        Unsigned
-                                    </span>
-                                @endif
-                            @endif
-                            <a href="{{ route('adoption-applications.show', $application) }}" class="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition shadow-2xs text-xs">
-                                View Details
-                            </a>
-                            <form action="{{ route('adoption-applications.destroy', $application) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $application->applicant_name }}?');" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
-                                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                </button>
-                            </form>
+                                        {{-- Action buttons for this applicant --}}
+                                        <div class="flex items-center gap-2 pt-1">
+                                            @if(in_array($app->status, ['approved', 'adopted']))
+                                                @if($app->signature_path)
+                                                    <a href="{{ route('adoption-applications.contract', $app) }}" target="_blank" class="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-[11px] shrink-0">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                                        <span>Print</span>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            <a href="{{ route('adoption-applications.show', $app) }}" class="flex-1 inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition shadow-2xs text-xs">
+                                                View Details
+                                            </a>
+                                            <form action="{{ route('adoption-applications.destroy', $app) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $app->applicant_name }}?');" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
+                                                    <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 @empty
                     <div class="p-10 text-center text-sm text-slate-400 dark:text-slate-500">
                         <svg class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -549,164 +748,416 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06]">
-                        @forelse($applications as $application)
-                            <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
-                                <td class="px-3.5 py-3 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
-                                    <div class="flex items-center gap-2.5">
-                                        @php
-                                            $pet = $application->pet;
-                                            $petImg = $pet && $pet->photo_path ? (str_starts_with($pet->photo_path, 'http') ? $pet->photo_path : asset('storage/' . ltrim($pet->photo_path, '/'))) : null;
-                                        @endphp
-                                        @if($petImg)
-                                            <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
-                                                <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
-                                                    <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                        @forelse($groupedApplications as $groupKey => $petApps)
+                            @php
+                                $isMulti = $petApps->count() > 1;
+                                $firstApp = $petApps->first();
+                                $pet = $firstApp->pet;
+                                $petImg = $pet && $pet->photo_path ? (str_starts_with($pet->photo_path, 'http') ? $pet->photo_path : asset('storage/' . ltrim($pet->photo_path, '/'))) : null;
+                            @endphp
+
+                            @if(!$isMulti)
+                                {{-- Single Applicant Row (Standard flat row) --}}
+                                @php $application = $firstApp; @endphp
+                                <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
+                                    <td class="px-3.5 py-3 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
+                                        <div class="flex items-center gap-2.5">
+                                            @if($petImg)
+                                                <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                                                    <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
+                                                        <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="font-extrabold text-slate-900 dark:text-white">
+                                                        {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $application->pet_id }}
+                                                    </span>
+                                                    @if($application->competing_active_count > 1)
+                                                        @if($application->is_waitlisted_backup)
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800" title="Screening currently scheduled with {{ $application->scheduled_competing_application->applicant_name ?? 'another applicant' }}">
+                                                                Backup #{{ $application->queue_position }}
+                                                            </span>
+                                                        @elseif($application->status === 'approved')
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                                Primary
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title="{{ $application->competing_active_count }} applicants competing for this pet">
+                                                                Queue #{{ $application->queue_position }}
+                                                            </span>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                                <div class="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                                                    Pet no. {{ $application->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
                                                 </div>
                                             </div>
-                                        @else
-                                            <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
-                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        <div class="font-extrabold text-slate-900 dark:text-white leading-tight">{{ $application->applicant_name }}</div>
+                                        <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">{{ $application->applicant_phone }}</div>
+                                        @if(!empty($application->adopter_address))
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[170px] flex items-center gap-1" title="{{ $application->adopter_address }}">
+                                                <svg class="w-3 hand-3 shrink-0 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                <span class="truncate">{{ $application->adopter_address }}</span>
                                             </div>
                                         @endif
-                                        <div>
-                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                <span class="font-extrabold text-slate-900 dark:text-white">
-                                                    {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $application->pet_id }}
+                                    </td>
+                                    <td class="px-3.5 py-3 whitespace-nowrap">
+                                        @if($application->application_source === 'recommendation')
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    Quiz Match
                                                 </span>
-                                                @if($application->competing_active_count > 1)
-                                                    @if($application->is_waitlisted_backup)
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800" title="Screening currently scheduled with {{ $application->scheduled_competing_application->applicant_name ?? 'another applicant' }}">
-                                                            Backup #{{ $application->queue_position }}
-                                                        </span>
-                                                    @elseif($application->status === 'approved')
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                                            Primary
-                                                        </span>
-                                                    @else
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title="{{ $application->competing_active_count }} applicants competing for this pet">
-                                                            Queue #{{ $application->queue_position }}
+                                                @if($application->compatibility_score !== null)
+                                                    <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                                        {{ number_format($application->compatibility_score, 0) }}%
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-slate-400 dark:text-slate-600 text-xs">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3.5 py-3 whitespace-nowrap">
+                                        <div class="flex flex-col gap-0.5">
+                                            @if($application->status === 'rejected')
+                                                @if($application->is_archived_due_to_adoption)
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Closed because pet was adopted by another applicant">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
+                                                        Archived
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                        Rejected
+                                                    </span>
+                                                @endif
+                                            @elseif($application->is_waitlisted_backup)
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60" title="Screening scheduled with {{ $application->scheduled_competing_application->applicant_name ?? 'another applicant' }}">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                                    Waitlisted
+                                                </span>
+                                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">On standby for {{ $application->scheduled_competing_application->applicant_name ?? 'primary applicant' }}</span>
+                                            @elseif($application->status === 'approved')
+                                                @if($application->is_finalized || !empty($application->documents_verified_at))
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        Finalized
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                                        Scheduled
+                                                    </span>
+                                                    @if($application->scheduled_at)
+                                                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                            {{ $application->scheduled_at->format('M d, Y') }}
                                                         </span>
                                                     @endif
                                                 @endif
-                                            </div>
-                                            <div class="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                                                Pet no. {{ $application->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-3.5 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                    <div class="font-extrabold text-slate-900 dark:text-white leading-tight">{{ $application->applicant_name }}</div>
-                                    <div class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">{{ $application->applicant_phone }}</div>
-                                    @if(!empty($application->adopter_address))
-                                        <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[170px] flex items-center gap-1" title="{{ $application->adopter_address }}">
-                                            <svg class="w-3 h-3 shrink-0 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                            <span class="truncate">{{ $application->adopter_address }}</span>
-                                        </div>
-                                    @endif
-                                </td>
-                                <td class="px-3.5 py-3 whitespace-nowrap">
-                                    @if($application->application_source === 'recommendation')
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                Quiz Match
-                                            </span>
-                                            @if($application->compatibility_score !== null)
-                                                <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                                                    {{ number_format($application->compatibility_score, 0) }}%
-                                                </span>
-                                            @endif
-                                        </div>
-                                    @else
-                                        <span class="text-slate-400 dark:text-slate-600 text-xs">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-3.5 py-3 whitespace-nowrap">
-                                    <div class="flex flex-col gap-0.5">
-                                        @if($application->status === 'rejected')
-                                            @if($application->is_archived_due_to_adoption)
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Closed because pet was adopted by another applicant">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
-                                                    Archived
-                                                </span>
                                             @else
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                                    Rejected
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit
+                                                    {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
+                                                    {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
+                                                    <span class="w-1.5 h-1.5 rounded-full
+                                                        {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
+                                                        {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
+                                                    {{ ucfirst(str_replace('_', ' ', $application->status)) }}
                                                 </span>
                                             @endif
-                                        @elseif($application->is_waitlisted_backup)
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60" title="Screening scheduled with {{ $application->scheduled_competing_application->applicant_name ?? 'another applicant' }}">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                                                Waitlisted
-                                            </span>
-                                            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">On standby for {{ $application->scheduled_competing_application->applicant_name ?? 'primary applicant' }}</span>
-                                        @elseif($application->status === 'approved')
-                                            @if($application->is_finalized || !empty($application->documents_verified_at))
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-3 whitespace-nowrap">
+                                        <div class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
+                                            {{ $application->created_at ? $application->created_at->format('M d, Y') : '—' }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight">
+                                            {{ $application->created_at ? $application->created_at->format('h:i A') : '' }}
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-3 whitespace-nowrap text-right space-x-1">
+                                        @if(in_array($application->status, ['approved', 'adopted']))
+                                            @if($application->signature_path)
+                                                <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" title="Print Contract" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-xs">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                                    </svg>
+                                                    <span>Print</span>
+                                                </a>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" title="Awaiting adopter signature">
+                                                    Unsigned
+                                                </span>
+                                            @endif
+                                        @endif
+                                        <a href="{{ route('adoption-applications.show', $application) }}" class="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition-all duration-200 shadow-2xs text-xs">View Details</a>
+                                        
+                                        {{-- Delete Application Button --}}
+                                        <form action="{{ route('adoption-applications.destroy', $application) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $application->applicant_name }}?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
+                                                <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @else
+                                {{-- Multi-Applicant Summary Parent Row --}}
+                                <tr class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors cursor-pointer"
+                                    :class="isPetExpanded('{{ $groupKey }}') ? 'bg-slate-100/90 dark:bg-[#161824]' : 'bg-slate-50/40 dark:bg-[#151722]/50'"
+                                    @click="togglePet('{{ $groupKey }}')">
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
+                                        <div class="flex items-center gap-2.5">
+                                            @if($petImg)
+                                                <div class="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                                                    <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
+                                                        <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="font-extrabold text-slate-900 dark:text-white">
+                                                        {{ $pet && !empty($pet->name) ? $pet->name : 'Pet no. ' . $firstApp->pet_id }}
+                                                    </span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                                        {{ $petApps->count() }} Applicants
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                                                    Pet no. {{ $firstApp->pet_id }} · {{ $pet->breed ?? 'Mixed Breed' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        <div x-show="!isPetExpanded('{{ $groupKey }}')">
+                                            <div class="flex items-center gap-1.5 font-extrabold text-slate-900 dark:text-white leading-tight">
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">#1 Lead</span>
+                                                <span class="truncate">{{ $firstApp->applicant_name }}</span>
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium leading-normal">
+                                                + {{ $petApps->count() - 1 }} other in queue · {{ $firstApp->applicant_phone }}
+                                            </div>
+                                        </div>
+                                        <div x-show="isPetExpanded('{{ $groupKey }}')" x-cloak class="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                                            Showing all {{ $petApps->count() }} applicants below
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap">
+                                        @if($firstApp->compatibility_score !== null)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                    Finalized
+                                                    Top Match
                                                 </span>
-                                            @else
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                                                    Scheduled
+                                                <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                                    {{ number_format($firstApp->compatibility_score, 0) }}%
                                                 </span>
-                                                @if($application->scheduled_at)
-                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                                                        {{ $application->scheduled_at->format('M d, Y') }}
+                                            </div>
+                                        @else
+                                            <span class="text-slate-400 dark:text-slate-600 text-xs">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap">
+                                        @php
+                                            $finalizedCount = $petApps->filter(fn($a) => $a->is_finalized || !empty($a->documents_verified_at))->count();
+                                            $scheduledCount = $petApps->filter(fn($a) => $a->status === 'approved' && !$a->is_finalized)->count();
+                                        @endphp
+                                        @if($finalizedCount > 0)
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                Finalized
+                                            </span>
+                                        @elseif($scheduledCount > 0)
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                                Scheduled
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                {{ $petApps->count() }} In Queue
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap">
+                                        <div class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-normal">
+                                            {{ $firstApp->created_at ? $firstApp->created_at->format('M d, Y') : '—' }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-normal mt-0.5">
+                                            Latest submitted
+                                        </div>
+                                    </td>
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-right">
+                                        <button type="button" 
+                                                @click.stop="togglePet('{{ $groupKey }}')" 
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#199CA4]/40 bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] font-extrabold transition shadow-2xs text-xs cursor-pointer">
+                                            <span x-text="isPetExpanded('{{ $groupKey }}') ? 'Collapse' : 'View {{ $petApps->count() }} Applicants'">View {{ $petApps->count() }} Applicants</span>
+                                            <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="isPetExpanded('{{ $groupKey }}') ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                {{-- Multi-Applicant Integrated Inline Child Rows --}}
+                                @foreach($petApps as $index => $app)
+                                    <tr x-show="isPetExpanded('{{ $groupKey }}')" x-cloak
+                                        class="border-b {{ $loop->last ? 'border-b-2 border-slate-300/80 dark:border-white/[0.08]' : 'border-slate-200/60 dark:border-white/[0.04]' }} transition-colors text-xs sm:text-sm {{ $index === 0 ? 'bg-emerald-500/[0.03] dark:bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] dark:hover:bg-emerald-500/[0.04]' : 'bg-slate-50/60 dark:bg-[#0E1018]/90 hover:bg-slate-100/70 dark:hover:bg-[#151722]' }}">
+                                        
+                                        {{-- Col 1: Hierarchy Tree Connector & Rank --}}
+                                        <td class="pl-6 sm:pl-9 pr-3.5 py-3 whitespace-nowrap border-l-4 {{ $index === 0 ? 'border-l-emerald-500' : 'border-l-[#199CA4]/40' }}">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    @if($loop->last)
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3v8a2 2 0 002 2h6"/>
+                                                    @else
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3v18M8 12h8"/>
+                                                    @endif
+                                                </svg>
+                                                @if($index === 0)
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                                        #1 Lead
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800">
+                                                        #{{ $index + 1 }} Backup
                                                     </span>
                                                 @endif
+                                            </div>
+                                        </td>
+
+                                        {{-- Col 2: Applicant --}}
+                                        <td class="px-3.5 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                            <div class="font-extrabold text-slate-900 dark:text-white leading-tight">
+                                                {{ $app->applicant_name }}
+                                            </div>
+                                            <div class="text-xs font-mono font-bold text-[#199CA4] dark:text-[#41C1CB] mt-0.5">
+                                                {{ $app->applicant_phone }}
+                                            </div>
+                                            @if(!empty($app->adopter_address))
+                                                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[200px]" title="{{ $app->adopter_address }}">
+                                                    {{ $app->adopter_address }}
+                                                </div>
                                             @endif
-                                        @else
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit
-                                                {{ $application->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
-                                                {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
-                                                <span class="w-1.5 h-1.5 rounded-full
-                                                    {{ $application->status === 'under_review' ? 'bg-indigo-500' : '' }}
-                                                    {{ $application->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
-                                                {{ ucfirst(str_replace('_', ' ', $application->status)) }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td class="px-3.5 py-3 whitespace-nowrap">
-                                    <div class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
-                                        {{ $application->created_at ? $application->created_at->format('M d, Y') : '—' }}
-                                    </div>
-                                    <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight">
-                                        {{ $application->created_at ? $application->created_at->format('h:i A') : '' }}
-                                    </div>
-                                </td>
-                                <td class="px-3.5 py-3 whitespace-nowrap text-right space-x-1">
-                                    @if(in_array($application->status, ['approved', 'adopted']))
-                                        @if($application->signature_path)
-                                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" title="Print Contract" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-xs">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                                </svg>
-                                                <span>Print</span>
-                                            </a>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" title="Awaiting adopter signature">
-                                                Unsigned
-                                            </span>
-                                        @endif
-                                    @endif
-                                    <a href="{{ route('adoption-applications.show', $application) }}" class="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition-all duration-200 shadow-2xs text-xs">View Details</a>
-                                    
-                                    {{-- Delete Application Button --}}
-                                    <form action="{{ route('adoption-applications.destroy', $application) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $application->applicant_name }}?');" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
-                                            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
+                                        </td>
+
+                                        {{-- Col 3: Source --}}
+                                        <td class="px-3.5 py-3 whitespace-nowrap">
+                                            @if($app->application_source === 'recommendation')
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                        Quiz Match
+                                                    </span>
+                                                    @if($app->compatibility_score !== null)
+                                                        <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                                            {{ number_format($app->compatibility_score, 0) }}%
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <span class="text-slate-400 dark:text-slate-600 text-xs">—</span>
+                                            @endif
+                                        </td>
+
+                                        {{-- Col 4: Status --}}
+                                        <td class="px-3.5 py-3 whitespace-nowrap">
+                                            <div class="flex flex-col gap-0.5">
+                                                @if($app->status === 'rejected')
+                                                    @if($app->is_archived_due_to_adoption)
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Closed because pet was adopted by another applicant">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
+                                                            Archived
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                            Rejected
+                                                        </span>
+                                                    @endif
+                                                @elseif($app->is_waitlisted_backup)
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60" title="Screening scheduled with primary applicant">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                                        Waitlisted
+                                                    </span>
+                                                @elseif($app->status === 'approved')
+                                                    @if($app->is_finalized || !empty($app->documents_verified_at))
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                            Finalized
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                                            Scheduled
+                                                        </span>
+                                                        @if($app->scheduled_at)
+                                                            <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                                {{ $app->scheduled_at->format('M d, Y') }}
+                                                            </span>
+                                                        @endif
+                                                    @endif
+                                                @else
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit
+                                                        {{ $app->status === 'under_review' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60' : '' }}
+                                                        {{ $app->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' : '' }}">
+                                                        <span class="w-1.5 h-1.5 rounded-full
+                                                            {{ $app->status === 'under_review' ? 'bg-indigo-500' : '' }}
+                                                            {{ $app->status === 'pending' ? 'bg-amber-500' : '' }}"></span>
+                                                        {{ ucfirst(str_replace('_', ' ', $app->status)) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </td>
+
+                                        {{-- Col 5: Date --}}
+                                        <td class="px-3.5 py-3 whitespace-nowrap">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
+                                                {{ $app->created_at ? $app->created_at->format('M d, Y') : '—' }}
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5">
+                                                {{ $app->created_at ? $app->created_at->format('h:i A') : '' }}
+                                            </div>
+                                        </td>
+
+                                        {{-- Col 6: Actions --}}
+                                        <td class="px-3.5 py-3 whitespace-nowrap text-right space-x-1">
+                                            @if(in_array($app->status, ['approved', 'adopted']))
+                                                @if($app->signature_path)
+                                                    <a href="{{ route('adoption-applications.contract', $app) }}" target="_blank" title="Print Contract" class="inline-flex items-center gap-1 px-2 py-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-[11px]">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                                        <span>Print</span>
+                                                    </a>
+                                                @endif
+                                            @endif
+                                            <a href="{{ route('adoption-applications.show', $app) }}" class="inline-flex items-center px-2.5 py-1 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition-all duration-200 shadow-2xs text-xs">View Details</a>
+                                            <form action="{{ route('adoption-applications.destroy', $app) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $app->applicant_name }}?');" class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="p-1 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
+                                                    <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
                         @empty
                             <tr>
                                 <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500">

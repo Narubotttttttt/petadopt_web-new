@@ -74,7 +74,13 @@ class AdoptionApplicationController extends Controller
                 break;
         }
 
-        $applications = $query->latest()->paginate(10)->withQueryString();
+        $applications = $query
+            ->orderByRaw('COALESCE((SELECT MAX(sub.created_at) FROM adoption_applications sub WHERE sub.pet_id = adoption_applications.pet_id), created_at) DESC')
+            ->orderBy('pet_id')
+            ->orderByDesc('compatibility_score')
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->withQueryString();
 
         // Count pending requests submitted today
         $countTodayPending = (clone $countQuery)
