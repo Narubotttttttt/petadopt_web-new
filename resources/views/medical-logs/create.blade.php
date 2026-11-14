@@ -471,24 +471,31 @@
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 <button 
                                     type="button" 
-                                    @click="nextDueDate = calcDueDate(6)"
+                                    @click="nextDueDate = calcDueDate(1)"
                                     class="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-[#199CA4]/10 transition shadow-2xs cursor-pointer"
                                 >
-                                    +6 Mos (Core Booster)
-                                </button>
-                                <button 
-                                    type="button" 
-                                    @click="nextDueDate = calcDueDate(12)"
-                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-[#199CA4]/10 transition shadow-2xs cursor-pointer"
-                                >
-                                    +1 Year (Annual)
+                                    +1 Mo
                                 </button>
                                 <button 
                                     type="button" 
                                     @click="nextDueDate = calcDueDate(3)"
                                     class="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-[#199CA4]/10 transition shadow-2xs cursor-pointer"
                                 >
-                                    +3 Mos (Deworming)
+                                    +3 Mos
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="nextDueDate = calcDueDate(6)"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-[#199CA4]/10 transition shadow-2xs cursor-pointer"
+                                >
+                                    +6 Mos
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="nextDueDate = calcDueDate(12)"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-[#199CA4]/10 transition shadow-2xs cursor-pointer"
+                                >
+                                    +1 Year
                                 </button>
                                 <button 
                                     type="button" 

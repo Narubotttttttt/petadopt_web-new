@@ -169,8 +169,16 @@ def _build_multi_species_feature_vector(adopter_profile, pet, feature_cols):
         else:
             energy_level = 5.0
 
-        training_level = 7.0 if 'Calm' in pet_tags else (3.5 if age_yrs < 1.0 else 5.5)
-        house_trained  = 1 if (age_yrs >= 1.0 or 'Calm' in pet_tags) else 0
+        # Detect custom behavior notes (e.g. "Leash trained", "Gentle", "Good with children")
+        all_custom_tags_lower = [str(t).lower() for t in pet.get('temperaments', [])]
+        has_trained_tag = any('train' in t or 'leash' in t for t in all_custom_tags_lower)
+        has_gentle_tag  = any('gentle' in t or 'mellow' in t or 'kid' in t or 'child' in t for t in all_custom_tags_lower)
+
+        if has_gentle_tag:
+            aggression_score = min(aggression_score, 0.5)
+
+        training_level = 8.5 if has_trained_tag else (7.0 if 'Calm' in pet_tags else (3.5 if age_yrs < 1.0 else 5.5))
+        house_trained  = 1 if (has_trained_tag or age_yrs >= 1.0 or 'Calm' in pet_tags) else 0
 
 
         size_home_mismatch = 1 if (pet_size in ['large', 'xlarge'] and 'apartment' in living and has_yard_val == 0) else 0
@@ -630,7 +638,7 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
             'color'                  : pet.get('color'),
             'photo_path'             : pet.get('photo_path'),
             'status'                 : pet.get('status'),
-            'temperaments'           : pet_tags_list,
+            'temperaments'           : pet.get('temperaments', pet_tags_list),
             'match_score'            : match_pct,
             'match_percentage'       : match_pct,
             'match_percentage_str'   : f"{match_pct}%",

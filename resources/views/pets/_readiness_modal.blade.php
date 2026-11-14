@@ -135,6 +135,7 @@
                                                 {{-- Feline Vaccines Dropdown --}}
                                                 <div x-show="petType === 'cat'">
                                                     <select x-model="vaccinePreset"
+                                                            @change="onVaccinePresetChange()"
                                                             class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                         <option value="4-in-1 (FVRCP)">4-in-1 (FVRCP) - Core Feline</option>
                                                         <option value="3-in-1 (FVRCP)">3-in-1 (FVRCP)</option>
@@ -146,6 +147,7 @@
                                                 {{-- Canine Vaccines Dropdown --}}
                                                 <div x-show="petType !== 'cat'">
                                                     <select x-model="vaccinePreset"
+                                                            @change="onVaccinePresetChange()"
                                                             class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                         <option value="5-in-1 (DHPP)">5-in-1 (DHPP) - Core Canine</option>
                                                         <option value="6-in-1 (DHLPP)">6-in-1 (DHLPP)</option>
@@ -162,10 +164,59 @@
                                                            class="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                 </div>
                                             </div>
+
+                                            {{-- Next Booster Interval Selector --}}
+                                            <div class="pt-0.5">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Booster Interval / Due In</label>
+                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold"
+                                                          x-text="vaccineIntervalMonths ? (vaccineIntervalMonths >= 12 && vaccineIntervalMonths % 12 === 0 ? (vaccineIntervalMonths / 12) + ' Year' + (vaccineIntervalMonths > 12 ? 's' : '') : vaccineIntervalMonths + ' Month' + (vaccineIntervalMonths > 1 ? 's' : '')) : 'Custom'"></span>
+                                                </div>
+                                                <div class="flex items-center gap-1.5">
+                                                    <div class="grid grid-cols-4 gap-1 flex-1">
+                                                        <button type="button" @click="setVaccineInterval(1)"
+                                                                :class="vaccineIntervalMonths === 1 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            1 Mo
+                                                        </button>
+                                                        <button type="button" @click="setVaccineInterval(3)"
+                                                                :class="vaccineIntervalMonths === 3 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            3 Mos
+                                                        </button>
+                                                        <button type="button" @click="setVaccineInterval(6)"
+                                                                :class="vaccineIntervalMonths === 6 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            6 Mos
+                                                        </button>
+                                                        <button type="button" @click="setVaccineInterval(12)"
+                                                                :class="vaccineIntervalMonths === 12 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            1 Year
+                                                        </button>
+                                                    </div>
+                                                    <select x-model.number="vaccineIntervalMonths"
+                                                            @change="calcVaccineDue()"
+                                                            class="py-1 px-2 text-[10px] bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-lg font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-[#199CA4] shrink-0"
+                                                            title="Select custom months interval">
+                                                        <option :value="1">1 mo</option>
+                                                        <option :value="2">2 mos</option>
+                                                        <option :value="3">3 mos</option>
+                                                        <option :value="4">4 mos</option>
+                                                        <option :value="6">6 mos</option>
+                                                        <option :value="9">9 mos</option>
+                                                        <option :value="12">12 mos (1 yr)</option>
+                                                        <option :value="24">24 mos (2 yrs)</option>
+                                                        <option :value="36">36 mos (3 yrs)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div>
                                                     <label class="text-[10px] font-bold text-slate-500 uppercase">Administered</label>
                                                     <input type="date" name="vaccine_date" x-model="vaccineDateInput"
+                                                           @change="calcVaccineDue()"
                                                            class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                 </div>
                                                 <div>
@@ -219,6 +270,7 @@
                                             <div>
                                                 <label class="text-[10px] font-bold text-slate-500 uppercase">Dewormer Product</label>
                                                 <select x-model="dewormerPreset"
+                                                        @change="onDewormerPresetChange()"
                                                         class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                     <option value="Pyrantel Embonate">Pyrantel Embonate</option>
                                                     <option value="Canex Puppy/Dog">Canex Puppy/Dog</option>
@@ -234,10 +286,56 @@
                                                            class="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                 </div>
                                             </div>
+
+                                            {{-- Deworming Interval Selector --}}
+                                            <div class="pt-0.5">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Deworming Interval / Due In</label>
+                                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold"
+                                                          x-text="dewormerIntervalMonths ? (dewormerIntervalMonths >= 12 && dewormerIntervalMonths % 12 === 0 ? (dewormerIntervalMonths / 12) + ' Year' + (dewormerIntervalMonths > 12 ? 's' : '') : dewormerIntervalMonths + ' Month' + (dewormerIntervalMonths > 1 ? 's' : '')) : 'Custom'"></span>
+                                                </div>
+                                                <div class="flex items-center gap-1.5">
+                                                    <div class="grid grid-cols-4 gap-1 flex-1">
+                                                        <button type="button" @click="setDewormerInterval(1)"
+                                                                :class="dewormerIntervalMonths === 1 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            1 Mo
+                                                        </button>
+                                                        <button type="button" @click="setDewormerInterval(2)"
+                                                                :class="dewormerIntervalMonths === 2 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            2 Mos
+                                                        </button>
+                                                        <button type="button" @click="setDewormerInterval(3)"
+                                                                :class="dewormerIntervalMonths === 3 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            3 Mos
+                                                        </button>
+                                                        <button type="button" @click="setDewormerInterval(6)"
+                                                                :class="dewormerIntervalMonths === 6 ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-2xs' : 'bg-white dark:bg-[#171923] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'"
+                                                                class="py-1 px-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer">
+                                                            6 Mos
+                                                        </button>
+                                                    </div>
+                                                    <select x-model.number="dewormerIntervalMonths"
+                                                            @change="calcDewormerDue()"
+                                                            class="py-1 px-2 text-[10px] bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-lg font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-[#199CA4] shrink-0"
+                                                            title="Select custom months interval">
+                                                        <option :value="1">1 mo</option>
+                                                        <option :value="2">2 mos</option>
+                                                        <option :value="3">3 mos</option>
+                                                        <option :value="4">4 mos</option>
+                                                        <option :value="6">6 mos</option>
+                                                        <option :value="12">12 mos (1 yr)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div>
                                                     <label class="text-[10px] font-bold text-slate-500 uppercase">Administered</label>
                                                     <input type="date" name="dewormer_date" x-model="dewormerDateInput"
+                                                           @change="calcDewormerDue()"
                                                            class="w-full mt-0.5 px-2.5 py-1.5 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-1 focus:ring-[#199CA4]">
                                                 </div>
                                                 <div>
@@ -267,25 +365,26 @@
                                 <span x-show="isTemperamentClear"><span x-text="selectedTags.length"></span> tag(s) selected</span>
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                            Select at least 1 behavior tag. Petfinder matches adopter compatibility quiz profiles directly against these traits.
-                        </p>
 
-                        {{-- Clickable Tag Chips --}}
-                        <div class="flex flex-wrap gap-2 pt-1">
+                        {{-- Clickable Tag Cards with Behavioral Descriptions --}}
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                             <template x-for="tag in allTags" :key="tag.id">
                                 <button type="button" 
                                         @click="toggleTag(tag.id)"
-                                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer flex items-center gap-1.5"
+                                        class="p-2.5 rounded-xl text-left transition-all border cursor-pointer flex flex-col justify-between"
                                         :class="selectedTags.includes(tag.id)
-                                            ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs'
+                                            ? 'bg-[#199CA4]/10 dark:bg-[#199CA4]/15 border-[#199CA4] text-slate-900 dark:text-white shadow-2xs'
                                             : 'bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.04]'">
-                                    <template x-if="selectedTags.includes(tag.id)">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </template>
-                                    <span x-text="tag.name"></span>
+                                    <div class="flex items-center justify-between gap-1 w-full">
+                                        <span class="font-extrabold text-xs" :class="selectedTags.includes(tag.id) ? 'text-[#199CA4] dark:text-[#41C1CB]' : ''" x-text="tag.name"></span>
+                                        <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0 transition-colors"
+                                              :class="selectedTags.includes(tag.id) ? 'bg-[#199CA4] text-white' : 'border border-slate-300 dark:border-slate-600'">
+                                            <template x-if="selectedTags.includes(tag.id)">
+                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                            </template>
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 leading-tight line-clamp-2" x-text="getTagDescription(tag.name)"></span>
                                 </button>
                             </template>
                         </div>
@@ -314,21 +413,6 @@
                                   class="w-full px-3 py-2 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] text-slate-800 dark:text-slate-100 placeholder-slate-400"></textarea>
                     </div>
 
-                </div>
-
-                {{-- Live Validation Checklist Banner --}}
-                <div x-show="!isFormValid" class="px-4 py-3 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200/80 dark:border-amber-800/40 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200 shrink-0">
-                    <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                    <div class="flex-1">
-                        <span class="font-bold">Cannot publish yet — please complete the required readiness criteria:</span>
-                        <ul class="list-disc list-inside mt-1 space-y-0.5 text-[11px] text-amber-700 dark:text-amber-300 font-medium">
-                            <template x-for="req in missingRequirements" :key="req">
-                                <li x-text="req"></li>
-                            </template>
-                        </ul>
-                    </div>
                 </div>
 
                 {{-- Modal Footer Actions --}}
@@ -391,23 +475,78 @@
             vaccinePreset: '5-in-1 (DHPP)',
             vaccineCustomInput: '',
             vaccineDateInput: new Date().toISOString().split('T')[0],
-            vaccineNextDueInput: (() => {
-                const d = new Date();
-                d.setMonth(d.getMonth() + 6);
-                return d.toISOString().split('T')[0];
-            })(),
+            vaccineIntervalMonths: 6,
+            vaccineNextDueInput: '',
             dewormerPreset: 'Pyrantel Embonate',
             dewormerCustomInput: '',
             dewormerDateInput: new Date().toISOString().split('T')[0],
-            dewormerNextDueInput: (() => {
-                const d = new Date();
-                d.setMonth(d.getMonth() + 3);
-                return d.toISOString().split('T')[0];
-            })(),
+            dewormerIntervalMonths: 3,
+            dewormerNextDueInput: '',
             selectedTags: [],
             customTemperament: '',
             description: '',
             allTags: @json($modalTemperamentTags),
+
+            setVaccineInterval(months) {
+                this.vaccineIntervalMonths = Number(months);
+                this.calcVaccineDue();
+            },
+
+            calcVaccineDue() {
+                if (!this.vaccineDateInput) return;
+                const d = new Date(this.vaccineDateInput + 'T00:00:00');
+                if (isNaN(d.getTime())) return;
+                const months = Number(this.vaccineIntervalMonths || 6);
+                d.setMonth(d.getMonth() + months);
+                this.vaccineNextDueInput = d.toISOString().split('T')[0];
+            },
+
+            setDewormerInterval(months) {
+                this.dewormerIntervalMonths = Number(months);
+                this.calcDewormerDue();
+            },
+
+            calcDewormerDue() {
+                if (!this.dewormerDateInput) return;
+                const d = new Date(this.dewormerDateInput + 'T00:00:00');
+                if (isNaN(d.getTime())) return;
+                const months = Number(this.dewormerIntervalMonths || 3);
+                d.setMonth(d.getMonth() + months);
+                this.dewormerNextDueInput = d.toISOString().split('T')[0];
+            },
+
+            onVaccinePresetChange() {
+                if (this.vaccinePreset === 'Anti-Rabies') {
+                    this.setVaccineInterval(12);
+                } else if (this.vaccinePreset.includes('Bordetella')) {
+                    this.setVaccineInterval(6);
+                } else {
+                    this.calcVaccineDue();
+                }
+            },
+
+            onDewormerPresetChange() {
+                if (this.dewormerPreset.includes('Broadline') || this.dewormerPreset.includes('Heartgard')) {
+                    this.setDewormerInterval(1);
+                } else {
+                    this.setDewormerInterval(3);
+                }
+            },
+
+            getTagDescription(name) {
+                const map = {
+                    'Affectionate': 'Leans in for pets, purrs, cuddles',
+                    'Friendly': 'Greets strangers with soft posture',
+                    'Calm': 'Low arousal, rests quietly on bed',
+                    'Playful': 'High toy drive, fetch & chase',
+                    'Energetic': 'Constantly active, needs exercise',
+                    'Independent': 'Self-sufficient, content on own',
+                    'Shy': 'Timid initially, warms up slowly',
+                    'Alert / Watchdog': 'Vigilant, vocal watchdog at door',
+                    'Protective': 'Vigilant, vocal watchdog at door'
+                };
+                return map[name] || 'Observable behavioral trait';
+            },
 
             get isVaccineValid() {
                 if (!this.logVaccine) return true;
@@ -468,8 +607,15 @@
                 this.logDeworming = false;
                 this.vaccinePreset = (this.petType === 'cat') ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
                 this.vaccineCustomInput = '';
+                this.vaccineDateInput = new Date().toISOString().split('T')[0];
+                this.vaccineIntervalMonths = 6;
+                this.calcVaccineDue();
+
                 this.dewormerPreset = (this.petType === 'cat') ? 'Broadline (Feline Spot-on)' : 'Pyrantel Embonate';
                 this.dewormerCustomInput = '';
+                this.dewormerDateInput = new Date().toISOString().split('T')[0];
+                this.dewormerIntervalMonths = (this.petType === 'cat') ? 1 : 3;
+                this.calcDewormerDue();
 
                 const allowedTagIds = this.allTags.map(t => Number(t.id));
                 this.selectedTags = Array.isArray(detail.selectedTags)

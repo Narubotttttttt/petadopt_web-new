@@ -16,6 +16,11 @@ class PetController extends Controller
 {
     protected function ensureDefaultTemperamentTags(): void
     {
+        $alertTag = TemperamentTag::where('name', 'Alert / Watchdog')->first();
+        if ($alertTag) {
+            $alertTag->update(['name' => 'Protective']);
+        }
+
         if (TemperamentTag::count() === 0) {
             $defaultTags = [
                 'Affectionate',
