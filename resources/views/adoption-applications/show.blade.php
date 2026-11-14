@@ -79,25 +79,25 @@
         </div>
 
         {{-- Compact Unified Pet & Applicant Summary Header Card --}}
-        <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-4 sm:p-5 mb-5">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-4 sm:p-5 mb-5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                 {{-- Left: Pet Information --}}
-                <div class="flex items-center gap-3.5">
+                <div class="flex items-center gap-3.5 shrink-0">
                     @if($application->pet && $application->pet->photo_path)
-                        <div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs relative bg-[#F0FBFB] dark:bg-[#122b30]">
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
                             <img src="{{ str_starts_with($application->pet->photo_path, 'http') ? $application->pet->photo_path : asset('storage/' . ltrim($application->pet->photo_path, '/')) }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div class="hidden w-full h-full bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] items-center justify-center">
-                                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 10.5C3.67 10.5 3 11.17 3 12s.67 1.5 1.5 1.5S6 12.83 6 12s-.67-1.5-1.5-1.5zm15 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm-11-4C7.67 6.5 7 7.17 7 8s.67 1.5 1.5 1.5S10 8.83 10 8s-.67-1.5-1.5-1.5zm7 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 11.5c-2.48 0-4.5 2.02-4.5 4.5 0 2.48 2.02 4.5 4.5 4.5s4.5-2.02 4.5-4.5c0-2.48-2.02-4.5-4.5-4.5z"/></svg>
+                            <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
+                                <svg class="w-7 h-7 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                             </div>
                         </div>
                     @else
-                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6] dark:from-[#133036] dark:to-[#17454d] text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0">
-                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M4.5 10.5C3.67 10.5 3 11.17 3 12s.67 1.5 1.5 1.5S6 12.83 6 12s-.67-1.5-1.5-1.5zm15 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm-11-4C7.67 6.5 7 7.17 7 8s.67 1.5 1.5 1.5S10 8.83 10 8s-.67-1.5-1.5-1.5zm7 0c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zM12 11.5c-2.48 0-4.5 2.02-4.5 4.5 0 2.48 2.02 4.5 4.5 4.5s4.5-2.02 4.5-4.5c0-2.48-2.02-4.5-4.5-4.5z"/></svg>
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                         </div>
                     @endif
                     <div>
                         <div class="flex items-center gap-2">
-                            <h2 class="text-base font-extrabold text-slate-800 dark:text-white">
+                            <h2 class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-white">
                                 {{ $application->pet && !empty($application->pet->name) ? $application->pet->name : ('Pet no. ' . $application->pet_id) }}
                             </h2>
                             @if($application->pet && !empty($application->pet->name))
@@ -108,7 +108,7 @@
                             {{ ucfirst($application->pet->type ?? 'Pet') }} · {{ $application->pet->breed ?? 'Mixed Breed' }} · {{ $application->pet->age ?? 'N/A' }}
                         </p>
                         @if($application->pet)
-                            <a href="{{ route('pets.show', $application->pet) }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline inline-flex items-center gap-1 mt-0.5">
+                            <a href="{{ route('pets.show', $application->pet) }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline inline-flex items-center gap-1 mt-1">
                                 <span>View Pet Profile</span>
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </a>
@@ -116,11 +116,11 @@
                     </div>
                 </div>
 
-                {{-- Center: Applicant Quick Contact --}}
-                <div class="border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 pt-3 lg:pt-0 lg:pl-5 flex flex-col justify-center">
-                    <div class="flex items-center gap-2 flex-wrap">
+                {{-- Center: Applicant Structured Contact --}}
+                <div class="border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-white/[0.06] pt-3 lg:pt-0 lg:pl-6 flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap mb-1.5">
                         <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Applicant:</span>
-                        <span class="text-sm font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_name }}</span>
+                        <span class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-white">{{ $application->applicant_name }}</span>
                         @php
                             $empStatus = $application->employment_status ?? 'employed';
                             $isStudent = ($empStatus === 'student') || str_contains(strtolower($application->message ?? ''), 'employment status: student') || str_contains(strtolower($application->id_type ?? ''), 'student');
@@ -135,52 +135,57 @@
                         @else
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Employed</span>
                         @endif
+                        <span class="text-[11px] text-slate-400 dark:text-slate-500">· Applied {{ $application->created_at ? $application->created_at->format('M d, Y') : 'N/A' }}</span>
                     </div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <span>{{ $application->applicant_email }}</span>
-                        <span>·</span>
-                        <span>{{ $application->applicant_phone ?? 'No phone' }}</span>
+
+                    {{-- Contact Detail Chips --}}
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] font-medium">
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            <span>{{ $application->applicant_email }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] font-mono font-bold text-[#199CA4] dark:text-[#41C1CB]">
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            <span>{{ $application->applicant_phone ?? 'No phone' }}</span>
+                        </span>
                         @if(!empty($application->adopter_address))
-                            <span>·</span>
-                            <span class="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300" title="{{ $application->adopter_address }}">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] text-slate-500 dark:text-slate-400 max-w-sm truncate" title="{{ $application->adopter_address }}">
                                 <svg class="w-3.5 h-3.5 text-[#199CA4] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                <span class="max-w-[280px] truncate font-medium">{{ $application->adopter_address }}</span>
+                                <span class="truncate">{{ $application->adopter_address }}</span>
                             </span>
                         @endif
-                        <span>·</span>
-                        <span>Applied {{ $application->created_at ? $application->created_at->format('M d, Y') : 'N/A' }}</span>
                     </div>
                 </div>
 
-                {{-- Right: Status & Key Indicators --}}
-                <div class="border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-slate-800 pt-3 lg:pt-0 lg:pl-5 flex flex-wrap items-center gap-2">
+                {{-- Right: Status & Match Badges --}}
+                <div class="border-t lg:border-t-0 lg:border-l border-slate-100 dark:border-white/[0.06] pt-3 lg:pt-0 lg:pl-6 flex flex-row lg:flex-col items-start lg:items-end justify-between lg:justify-center gap-2 shrink-0">
                     {{-- Status Badge --}}
                     @if($application->status === 'rejected')
                         @if($application->is_archived_due_to_adoption)
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Application closed because this pet was adopted by another applicant">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700" title="Application closed because this pet was adopted by another applicant">
                                 <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></span>
                                 Archived
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800">
                                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                 Rejected
                             </span>
                         @endif
                     @elseif($application->status === 'approved')
                         @if($application->is_finalized || !empty($application->documents_verified_at))
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                 Finalized
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" title="Scheduled for on-site screening and document verification">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" title="Scheduled for on-site screening and document verification">
                                 <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                                 Scheduled
                             </span>
                         @endif
                     @else
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border
                             {{ $application->status === 'under_review' ? 'bg-[#199CA4]/10 dark:bg-[#199CA4]/25 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/20 dark:border-[#41C1CB]/30' : '' }}
                             {{ $application->status === 'pending' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' : '' }}">
                             <span class="w-1.5 h-1.5 rounded-full
@@ -192,7 +197,7 @@
 
                     {{-- Machine Learning Match Pill --}}
                     @if($application->application_source === 'recommendation')
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                             <span>{{ $application->compatibility_score !== null ? number_format($application->compatibility_score, 0) . '% Match' : 'ML Match' }}</span>
                         </span>
@@ -200,7 +205,7 @@
 
                     {{-- Competing Queue Pill --}}
                     @if(isset($competingApplications) && $competingApplications->isNotEmpty())
-                        <button type="button" @click="activeTab = 'queue'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 transition cursor-pointer" title="View competing applications queue">
+                        <button type="button" @click="activeTab = 'queue'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20 transition cursor-pointer" title="View competing applications queue">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                             <span>{{ $competingApplications->count() + 1 }} Applicants</span>
                         </button>
@@ -216,14 +221,14 @@
             <div class="lg:col-span-2 space-y-4">
 
                 {{-- Segmented Tab Navigation Bar --}}
-                <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/90 dark:bg-[#12272b] rounded-2xl border border-slate-200/80 dark:border-slate-800 text-xs font-bold overflow-x-auto scrollbar-none">
+                <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/90 dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] text-xs font-bold overflow-x-auto scrollbar-none">
                     
                     {{-- Tab 1: Questionnaire --}}
                     <button type="button" 
                             @click="activeTab = 'questionnaire'"
                             :class="activeTab === 'questionnaire' 
-                                ? 'bg-white dark:bg-[#0e1d20] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-slate-700' 
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/40 border border-transparent'"
+                                ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
+                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
                             class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <span>Questionnaire</span>
@@ -233,8 +238,8 @@
                     <button type="button" 
                             @click="activeTab = 'documents'"
                             :class="activeTab === 'documents' 
-                                ? 'bg-white dark:bg-[#0e1d20] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-slate-700' 
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/40 border border-transparent'"
+                                ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
+                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
                             class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
                         <span>Documents</span>
@@ -247,8 +252,8 @@
                     <button type="button" 
                             @click="activeTab = 'medical'"
                             :class="activeTab === 'medical' 
-                                ? 'bg-white dark:bg-[#0e1d20] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-slate-700' 
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/40 border border-transparent'"
+                                ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
+                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
                             class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
                         <span>Pet Medical</span>
@@ -258,8 +263,8 @@
                     <button type="button" 
                             @click="activeTab = 'queue'"
                             :class="activeTab === 'queue' 
-                                ? 'bg-white dark:bg-[#0e1d20] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-slate-700' 
-                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/40 border border-transparent'"
+                                ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
+                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
                             class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span>Match & Queue</span>
@@ -275,9 +280,9 @@
                         <button type="button" 
                                 @click="activeTab = 'handover'"
                                 :class="activeTab === 'handover' 
-                                    ? 'bg-white dark:bg-[#0e1d20] text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30' 
-                                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/40 border border-transparent'"
-                                class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
+                                    ? 'bg-white dark:bg-[#161824] text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30' 
+                                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
+                            class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                             <span>Handover & Contract</span>
                             @if($application->is_finalized)
@@ -294,28 +299,25 @@
                 <div x-show="activeTab === 'questionnaire'" x-transition class="space-y-4">
                     
                     @if(isset($siblingApplications) && $siblingApplications->isNotEmpty())
-                        <div class="bg-cyan-50/70 dark:bg-cyan-950/30 rounded-2xl border border-cyan-200 dark:border-cyan-800/50 p-4 mb-4">
-                            <div class="flex items-start gap-3">
-                                <div class="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-900/50 text-[#199CA4] dark:text-[#41C1CB] shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        <div class="bg-slate-50/80 dark:bg-[#161824] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0 font-bold text-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                                 </div>
-                                <div class="flex-1">
-                                    <p class="text-xs font-extrabold text-cyan-950 dark:text-cyan-100">
-                                        Multi-Companion Applicant ({{ $siblingApplications->count() + 1 }} Pets in Application Batch)
-                                    </p>
-                                    <p class="text-xs text-cyan-800/90 dark:text-cyan-300/90 mt-0.5 leading-relaxed">
-                                        This applicant also submitted companion applications for:
-                                    </p>
-                                    <div class="flex flex-wrap gap-2 mt-2">
-                                        @foreach($siblingApplications as $sib)
-                                            <a href="{{ route('adoption-applications.show', $sib->id) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#12272b] border border-cyan-200 dark:border-cyan-800 text-xs font-bold text-slate-800 dark:text-slate-100 hover:border-[#199CA4] transition-colors shadow-xs">
-                                                <span>{{ $sib->pet?->name ?? ('Pet #' . $sib->pet_id) }}</span>
-                                                <span class="text-[10px] font-semibold text-slate-400">({{ ucfirst($sib->pet?->type ?? 'Pet') }} &bull; {{ $sib->compatibility_score ? number_format($sib->compatibility_score, 1) . '%' : 'Review' }})</span>
-                                                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $sib->status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ ucfirst($sib->status) }}</span>
-                                            </a>
-                                        @endforeach
-                                    </div>
+                                <div class="text-xs">
+                                    <span class="font-extrabold text-slate-800 dark:text-white">Batch Application</span>
+                                    <span class="text-slate-400 mx-1.5">&bull;</span>
+                                    <span class="text-slate-500 dark:text-slate-400">{{ $siblingApplications->count() + 1 }} companion pets requested together</span>
                                 </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                @foreach($siblingApplications as $sib)
+                                    <a href="{{ route('adoption-applications.show', $sib->id) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200 dark:border-white/[0.08] hover:border-[#199CA4] dark:hover:border-[#199CA4] text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors shadow-2xs">
+                                        <span>{{ $sib->pet?->name ?? ('Pet #' . $sib->pet_id) }}</span>
+                                        <span class="text-[10px] text-slate-400 font-medium">({{ ucfirst($sib->pet?->type ?? 'Pet') }})</span>
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $sib->status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20' }}">{{ ucfirst($sib->status) }}</span>
+                                    </a>
+                                @endforeach
                             </div>
                         </div>
                     @endif
@@ -323,7 +325,7 @@
                     {{-- Rejection / Archival Status Notice if applicable --}}
                     @if($application->status === 'rejected' && !empty($application->rejection_reason ?? $application->evaluation_notes))
                         @if($application->is_archived_due_to_adoption)
-                            <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                            <div class="bg-slate-50 dark:bg-[#161824] p-3.5 rounded-2xl border border-slate-200 dark:border-white/[0.08]">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Archived Notice (Pet Adopted by Another Applicant)</p>
                                 <p class="mt-1 text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">{{ $application->rejection_reason ?? $application->evaluation_notes }}</p>
                             </div>
@@ -373,8 +375,8 @@
                         }
                     @endphp
 
-                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-5">
-                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                    <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3">
                             <div>
                                 <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
                                     <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -412,12 +414,12 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                 {{-- Group 1: Home & Environment --}}
-                                <div class="bg-slate-50/70 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-2.5">
-                                    <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-slate-800">
+                                <div class="bg-slate-50/70 dark:bg-[#161824] p-4 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] space-y-2.5">
+                                    <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
                                         <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                                         <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Home & Environment</span>
                                     </div>
-                                    <div class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                                    <div class="divide-y divide-slate-100 dark:divide-white/[0.04] text-xs">
                                         <div class="flex items-center justify-between py-1.5">
                                             <span class="text-slate-500 dark:text-slate-400">Living Space</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">{{ $livingSpace }}</span>
@@ -446,12 +448,12 @@
                                 </div>
 
                                 {{-- Group 2: Household & Experience --}}
-                                <div class="bg-slate-50/70 dark:bg-[#12272b] p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-2.5">
-                                    <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-slate-800">
+                                <div class="bg-slate-50/70 dark:bg-[#161824] p-4 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] space-y-2.5">
+                                    <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
                                         <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                         <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Household & Pet Care</span>
                                     </div>
-                                    <div class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
+                                    <div class="divide-y divide-slate-100 dark:divide-white/[0.04] text-xs">
                                         <div class="flex items-center justify-between py-1.5">
                                             <span class="text-slate-500 dark:text-slate-400">Children in Home</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">
@@ -473,7 +475,7 @@
                                         <div class="flex items-center justify-between py-1.5">
                                             <span class="text-slate-500 dark:text-slate-400">Care & Activity</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">
-                                                {{ ucfirst($quizProfile->activity_level ?? 'Moderate') }} · {{ $quizProfile->special_care_capacity ? 'Special Care Capable' : 'Standard' }}
+                                                {{ ucfirst($quizProfile->activity_level ?? 'Moderate') }} &bull; {{ $quizProfile->special_care_capacity ? 'Special Care Capable' : 'Standard' }}
                                             </span>
                                         </div>
                                     </div>
@@ -481,11 +483,11 @@
                             </div>
 
                             @if(!empty($quizProfile->desired_temperaments) && is_array($quizProfile->desired_temperaments))
-                                <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                                <div class="p-3.5 bg-slate-50/80 dark:bg-[#161824] rounded-xl border border-slate-200/60 dark:border-white/[0.08] space-y-1.5">
                                     <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Sought Pet Temperaments</p>
                                     <div class="flex flex-wrap gap-1.5 pt-0.5">
                                         @foreach($quizProfile->desired_temperaments as $tag)
-                                            <span class="px-2 py-0.5 text-[11px] font-semibold bg-white dark:bg-[#163035] text-slate-700 dark:text-slate-300 rounded-md border border-slate-200/80 dark:border-slate-700">
+                                            <span class="px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200/80 dark:border-white/[0.08]">
                                                 {{ ucfirst($tag) }}
                                             </span>
                                         @endforeach
@@ -497,9 +499,9 @@
                             {{-- Fallback: Questionnaire Answers from Message --}}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 @foreach($questionnaire as $key => $val)
-                                    <div class="bg-slate-50/80 dark:bg-[#12272b] p-3 rounded-xl border border-slate-100 dark:border-slate-800 {{ str_contains(strtolower($key), 'address') || str_contains(strtolower($key), 'other pets') ? 'sm:col-span-2' : '' }}">
+                                    <div class="bg-slate-50/80 dark:bg-[#161824] p-3 rounded-xl border border-slate-200/60 dark:border-white/[0.08] {{ str_contains(strtolower($key), 'address') || str_contains(strtolower($key), 'other pets') ? 'sm:col-span-2' : '' }}">
                                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">{{ is_string($key) ? $key : 'Detail' }}</p>
-                                        <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200 leading-relaxed">{{ $val }}</p>
+                                        <p class="mt-0.5 text-xs font-bold text-slate-800 dark:text-white leading-relaxed">{{ $val }}</p>
                                     </div>
                                 @endforeach
                             </div>
@@ -512,7 +514,7 @@
                         @endphp
 
                         @if($isStudent)
-                            <div class="bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-200/80 dark:border-cyan-800/60 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2.5">
+                            <div class="bg-cyan-50/70 dark:bg-cyan-950/20 border border-cyan-200/80 dark:border-cyan-800/40 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2.5">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 flex items-center justify-center shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>
@@ -526,13 +528,13 @@
                                         <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Physical Student ID / COR and {{ $isRenting ? 'dorm/lease permission' : 'proof of residency' }} must be inspected on-site.</p>
                                     </div>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800 shrink-0">
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-cyan-100 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800/60 shrink-0">
                                     Student ID / COR Required
                                 </span>
                             </div>
                         @else
 
-                            <div class="p-3 bg-slate-50/80 dark:bg-[#12272b] rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="p-3 bg-slate-50/80 dark:bg-[#161824] rounded-xl border border-slate-200/60 dark:border-white/[0.08] flex items-center justify-between">
 
                                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Employment / Occupation</span>
 
@@ -564,7 +566,7 @@
 
                         {{-- Housing Ownership / Tenant Inspection Alert (Only shown for renters) --}}
                         @if(($application->home_ownership ?? '') === 'rented' || !empty($application->landlord_name))
-                            <div class="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2.5">
+                            <div class="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2.5">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -578,16 +580,16 @@
                                         <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Physical landlord permission letter or lease agreement required at meet-and-greet.</p>
                                     </div>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60 shrink-0">
                                     Landlord Proof Required
                                 </span>
                             </div>
                         @endif
 
                         @if(!empty($reasonText))
-                            <div class="bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6]/50 dark:from-[#133036] dark:to-[#17454d]/50 p-4 rounded-xl border border-[#199CA4]/20 dark:border-[#41C1CB]/30 space-y-1">
+                            <div class="bg-gradient-to-br from-[#F0FBFB] to-[#D6F4F6]/50 dark:from-[#161824] dark:to-[#171923] p-4 rounded-xl border border-[#199CA4]/20 dark:border-[#199CA4]/30 space-y-1">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Adoption Details / Notes</p>
-                                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line">{{ $reasonText }}</p>
+                                <p class="text-xs font-semibold text-slate-800 dark:text-white leading-relaxed whitespace-pre-line">{{ $reasonText }}</p>
                             </div>
                         @endif
                     </div>
@@ -596,8 +598,8 @@
 
                                 {{-- PANEL 2: Verification Documents --}}
                 <div x-show="activeTab === 'documents'" x-transition class="space-y-4">
-                    <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                    <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3">
                             <div>
                                 <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
                                     <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
@@ -610,7 +612,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {{-- Valid Government ID --}}
-                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                            <div class="bg-slate-50/80 dark:bg-[#161824] p-4 rounded-xl border border-slate-200/60 dark:border-white/[0.08] flex flex-col justify-between space-y-3">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
                                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Valid Government ID</p>
@@ -628,17 +630,17 @@
                                     @endif
                                 </div>
                                 @if($application->valid_id_path)
-                                    <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
+                                    <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0E1018]">
                                         <img src="{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}" class="w-full h-44 object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" alt="Valid Government ID" />
                                         <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->valid_id_path, '/')) }}', 'Valid Government ID')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">Click to Enlarge</button>
                                     </div>
                                 @else
-                                    <div class="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No Valid ID uploaded</div>
+                                    <div class="p-8 rounded-xl border border-dashed border-slate-200 dark:border-white/[0.08] text-center text-xs text-slate-400">No Valid ID uploaded</div>
                                 @endif
                             </div>
 
                             {{-- Barangay Certificate --}}
-                            <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                            <div class="bg-slate-50/80 dark:bg-[#161824] p-4 rounded-xl border border-slate-200/60 dark:border-white/[0.08] flex flex-col justify-between space-y-3">
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
                                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">{{ $isRenting ? 'Proof of Residence (Barangay / Lease / Landlord)' : 'Barangay Certificate' }}</p>
@@ -656,12 +658,12 @@
                                     @endif
                                 </div>
                                 @if($application->barangay_certificate_path)
-                                    <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0a171a]">
+                                    <div class="group relative rounded-xl overflow-hidden border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0E1018]">
                                         <img src="{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}" class="w-full h-44 object-cover cursor-pointer hover:scale-105 transition-transform duration-300" onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" alt="Barangay Certificate" />
                                         <button onclick="openDocModal('{{ asset('storage/' . ltrim($application->barangay_certificate_path, '/')) }}', 'Barangay Certificate')" class="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity cursor-pointer">Click to Enlarge</button>
                                     </div>
                                 @else
-                                    <div class="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">No {{ $isRenting ? 'Proof of Residence' : 'Barangay Certificate' }} uploaded</div>
+                                    <div class="p-8 rounded-xl border border-dashed border-slate-200 dark:border-white/[0.08] text-center text-xs text-slate-400">No {{ $isRenting ? 'Proof of Residence' : 'Barangay Certificate' }} uploaded</div>
                                 @endif
                             </div>
                         </div>
@@ -681,8 +683,8 @@
                             $isVacDueSoon = $vacDue && !$isVacOverdue && $vacDue->lte($nowDay->copy()->addDays(30)->endOfDay());
                             $hasVaccine = (bool) $latestVaccine;
                         @endphp
-                        <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                        <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-bold text-xs">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
@@ -738,7 +740,7 @@
                                 </div>
 
                                 {{-- Deworming Status Item --}}
-                                <div class="p-3.5 rounded-xl border bg-slate-50/80 dark:bg-[#12272b] border-slate-200/60 dark:border-slate-800">
+                                <div class="p-3.5 rounded-xl border bg-slate-50/80 dark:bg-[#161824] border-slate-200/60 dark:border-white/[0.08]">
                                     <div class="flex items-center justify-between">
                                         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deworming Status</p>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $latestDeworming ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
@@ -773,7 +775,7 @@
                     
                     {{-- Origin & Compatibility --}}
                     @if($application->application_source === 'recommendation')
-                        <div class="bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-[#0e1d20] rounded-2xl border border-emerald-200/90 dark:border-emerald-800/60 shadow-card p-5 space-y-4">
+                        <div class="bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-white dark:from-[#161824] dark:via-[#161824] dark:to-[#12141C] rounded-2xl border border-emerald-200/90 dark:border-emerald-800/40 shadow-card p-5 space-y-4">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold shrink-0">
@@ -813,7 +815,7 @@
                                 </div>
                             @endif
 
-                            <div class="p-3.5 rounded-xl bg-white/80 dark:bg-[#12272b] border border-emerald-100 dark:border-emerald-900/40 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <div class="p-3.5 rounded-xl bg-white/80 dark:bg-[#12141C] border border-emerald-100 dark:border-white/[0.08] text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                                 <span class="font-bold text-slate-800 dark:text-white">Recommendation Details:</span>
                                 The applicant answered the adopter compatibility questionnaire on mobile. The recommendation model evaluated available shelter animals and suggested this pet as a suitable match.
                             </div>
@@ -826,8 +828,8 @@
                             $otherScheduled = $competingApplications->firstWhere('status', 'approved');
                             $isCurrentScheduled = $application->status === 'approved';
                         @endphp
-                        <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-4">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                        <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-white/[0.06] pb-3">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -860,7 +862,7 @@
                                     </div>
                                 </div>
                             @else
-                                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#12272b] border border-slate-200/80 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                                <div class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#161824] border border-slate-200/80 dark:border-white/[0.08] text-xs text-slate-600 dark:text-slate-300">
                                     <svg class="w-4 h-4 shrink-0 text-[#199CA4] mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     <div>
                                         <span class="font-bold">Comparative Evaluation:</span> Compare ML compatibility scores and responses to choose the candidate to schedule.
@@ -869,7 +871,7 @@
                             @endif
 
                             {{-- Competing Applicants List --}}
-                            <div class="divide-y divide-slate-100 dark:divide-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-slate-50/50 dark:bg-[#0a171a]/50">
+                            <div class="divide-y divide-slate-100 dark:divide-white/[0.04] rounded-xl border border-slate-200/80 dark:border-white/[0.08] overflow-hidden bg-slate-50/50 dark:bg-[#0E1018]/50">
                                 {{-- Active/Viewing Applicant Row --}}
                                 <div class="p-3 bg-[#199CA4]/5 dark:bg-[#199CA4]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-l-4 border-[#199CA4]">
                                     <div class="flex items-center gap-3">
@@ -907,7 +909,7 @@
 
                                 {{-- Other Applicants Rows --}}
                                 @foreach($competingApplications as $compApp)
-                                    <div class="p-3 hover:bg-white dark:hover:bg-[#12272b] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
+                                    <div class="p-3 hover:bg-white dark:hover:bg-[#161824] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition">
                                         <div class="flex items-center gap-3">
                                             <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-bold text-xs shrink-0">
                                                 {{ strtoupper(substr($compApp->applicant_name, 0, 1)) }}
@@ -925,8 +927,8 @@
                                             @endif
                                             @if($compApp->status === 'rejected')
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold {{ $compApp->is_archived_due_to_adoption ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200' : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200' }}">
-                                                    {{ $compApp->is_archived_due_to_adoption ? 'Archived' : 'Rejected' }}
-                                                </span>
+                                                {{ $compApp->is_archived_due_to_adoption ? 'Archived' : 'Rejected' }}
+                                            </span>
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold
                                                     {{ $compApp->status === 'approved' ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200' : '' }}
@@ -951,8 +953,8 @@
                 {{-- PANEL 5: Contract & Handover (For Approved / Adopted) --}}
                 @if(in_array($application->status, ['approved', 'adopted']))
                     <div x-show="activeTab === 'handover'" x-transition class="space-y-4">
-                        <div id="in-person-handover-card" class="bg-white dark:bg-[#0e1d20] rounded-2xl border-2 border-emerald-500/40 dark:border-emerald-500/30 dark:border-slate-800 shadow-card p-5 space-y-4">
-                            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                        <div id="in-person-handover-card" class="bg-white dark:bg-[#12141C] rounded-2xl border-2 border-emerald-500/40 dark:border-emerald-500/30 shadow-card p-5 space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3">
                                 <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
                                     <svg class="w-5 h-5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                                     <span>Adoption Contract & In-Person Verification</span>
@@ -967,7 +969,7 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {{-- 1. Adopter Signature Box --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="bg-slate-50/80 dark:bg-[#161824] p-4 rounded-xl border border-slate-200/60 dark:border-white/[0.08] flex flex-col justify-between space-y-3">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Adopter Agreement</span>
                                         @if($application->signature_path)
@@ -984,7 +986,7 @@
                                     </div>
 
                                     @if($application->signature_path)
-                                        <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center flex items-center justify-center min-h-[56px]">
+                                        <div class="bg-white dark:bg-[#0E1018] p-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-center flex items-center justify-center min-h-[56px]">
                                             <img src="{{ $application->signature_url }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer filter dark:invert dark:brightness-200 transition-all hover:scale-105" onclick="openDocModal('{{ $application->signature_url }}', 'Adopter Digital Signature')" alt="Adopter Signature" />
                                         </div>
                                         <div class="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1001,7 +1003,7 @@
                                 </div>
 
                                 {{-- 2. Physical Document Verification & Staff Endorsement Box --}}
-                                <div class="bg-slate-50/80 dark:bg-[#12272b] p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                                <div class="bg-slate-50/80 dark:bg-[#161824] p-4 rounded-xl border border-slate-200/60 dark:border-white/[0.08] flex flex-col justify-between space-y-3">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. Venue Verification & Endorsement</span>
                                         @if($application->is_finalized)
@@ -1027,13 +1029,13 @@
                                                 : ($staffSigner?->staffProfile?->position_title ?? 'CAWS Authorized Representative');
                                             $verifierName = $application->documentVerifier?->name ?? $staffRepName;
                                         @endphp
-                                        <div class="bg-white dark:bg-[#0a171a] p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-center flex items-center justify-center min-h-[56px]">
+                                        <div class="bg-white dark:bg-[#0E1018] p-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-center flex items-center justify-center min-h-[56px]">
                                             <img src="{{ $staffSigSrc }}" class="h-12 max-w-full mx-auto object-contain cursor-pointer filter dark:invert dark:brightness-200 transition-all hover:scale-105" onclick="openDocModal('{{ $staffSigSrc }}', 'Staff Digital Signature')" alt="Staff Signature" />
                                         </div>
                                         <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
                                             <p class="font-bold text-slate-800 dark:text-white">{{ $staffRepName }}</p>
                                             <p class="text-[10px] text-[#199CA4] dark:text-[#41C1CB] font-semibold">{{ $signerRoleTitle }}</p>
-                                            <div class="pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] space-y-0.5">
+                                            <div class="pt-1 border-t border-slate-200/60 dark:border-white/[0.06] text-[10px] space-y-0.5">
                                                 <p class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                     Original Valid ID Physically Verified
@@ -1046,8 +1048,8 @@
                                                     Verified by {{ $verifierName }} on {{ $application->documents_verified_at?->format('M d, Y h:i A') }}
                                                 </p>
                                             </div>
-                                            <div class="pt-2 flex items-center gap-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                                                <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="flex-1 py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                                            <div class="pt-2 flex items-center gap-2 border-t border-slate-200/60 dark:border-white/[0.06]">
+                                                <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="flex-1 py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-[#161824] text-slate-700 dark:text-slate-200 text-[11px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
                                                     <svg class="w-3.5 h-3.5 text-[#199CA4] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                                     <span class="pointer-events-none">Update / Re-Sign</span>
                                                 </button>
@@ -1062,7 +1064,7 @@
                                         </div>
                                     @else
                                         <div class="space-y-3">
-                                            <div class="space-y-1.5 bg-white dark:bg-[#0a171a] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                                            <div class="space-y-1.5 bg-white dark:bg-[#0E1018] p-3 rounded-xl border border-slate-200 dark:border-white/[0.08]">
                                                 <div class="flex items-center justify-between">
                                                     <p class="text-[11px] font-bold text-slate-700 dark:text-slate-200">Physical Inspection</p>
                                                     <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">Pending</span>
@@ -1107,9 +1109,10 @@
                 $isAppFinalized = (bool) $application->is_finalized;
                 $isAppApproved = ($application->status === 'approved' && !$isAppFinalized);
             @endphp
-            <div class="bg-white dark:bg-[#0e1d20] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card p-5 space-y-5 lg:sticky lg:top-6 h-fit" 
+            {{-- Adoption Decision Sidebar --}}
+            <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-5 lg:sticky lg:top-6 h-fit" 
                  x-data="{ 
-                     currentStatus: '{{ old('status', in_array($application->status, ['approved', 'rejected']) ? $application->status : '') }}',
+                         currentStatus: '{{ old('status', in_array($application->status, ['approved', 'rejected']) ? $application->status : '') }}',
                      scheduledAt: '{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}',
                      defaultVenue: {{ json_encode($defaultVenue) }},
                      customVenues: [],
@@ -1199,7 +1202,7 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">In-person handover and agreement verified.</p>
                     </div>
 
-                    <div class="p-4 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#133036] dark:to-[#17454d] border border-emerald-500/30 space-y-3">
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#161824] dark:to-[#171923] border border-emerald-500/30 space-y-3">
                         <div class="text-xs space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <span class="text-slate-500 dark:text-slate-400 font-medium">Adopter</span>
@@ -1260,7 +1263,7 @@
                     </div>
 
                     {{-- Compact Scheduled Event Summary Card --}}
-                    <div class="p-3.5 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#133036] dark:to-[#17454d] border border-[#199CA4]/30 space-y-2.5">
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#161824] dark:to-[#171923] border border-[#199CA4]/30 space-y-2.5">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Sunday Screening Event</span>
                             <button type="button" 
@@ -1290,7 +1293,7 @@
                     </div>
 
                     {{-- Collapsible Reschedule Form (Hidden by default) --}}
-                    <div x-show="showReschedule" x-transition class="p-3.5 bg-slate-50 dark:bg-[#12272b] rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div x-show="showReschedule" x-transition class="p-3.5 bg-slate-50 dark:bg-[#161824] rounded-2xl border border-slate-200 dark:border-white/[0.08] space-y-3">
                         <form action="{{ route('adoption-applications.update', $application) }}" method="POST" @submit="saveCustomVenue()" class="space-y-3">
                             @csrf
                             @method('PATCH')
@@ -1305,7 +1308,7 @@
                                        x-model="scheduledAt"
                                        required
                                        value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" 
-                                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-semibold focus:ring-2 focus:ring-[#199CA4] transition">
+                                       class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3 py-1.5 bg-white dark:bg-[#12141C] text-xs text-slate-800 dark:text-white font-semibold focus:ring-2 focus:ring-[#199CA4] transition">
                             </div>
 
                             <div class="space-y-1.5">
@@ -1316,7 +1319,7 @@
                                 <div class="relative">
                                     <select x-model="presetLocation" 
                                             @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
-                                            class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3 pr-8 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-semibold focus:ring-2 focus:ring-[#199CA4] transition cursor-pointer">
+                                            class="w-full appearance-none rounded-xl border border-slate-200 dark:border-white/[0.08] pl-3 pr-8 py-1.5 bg-white dark:bg-[#12141C] text-xs text-slate-800 dark:text-white font-semibold focus:ring-2 focus:ring-[#199CA4] transition cursor-pointer">
                                         <option :value="defaultVenue" x-text="defaultVenue"></option>
                                         <template x-for="venue in customVenues" :key="venue">
                                             <option :value="venue" x-text="venue"></option>
@@ -1333,7 +1336,7 @@
                                            x-ref="customLocationInput"
                                            x-model="eventLocation"
                                            placeholder="Specify custom venue..." 
-                                           class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-semibold">
+                                           class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3 py-1.5 bg-white dark:bg-[#12141C] text-xs text-slate-800 dark:text-white font-semibold">
                                 </div>
                             </div>
 
@@ -1351,7 +1354,7 @@
                                     <textarea name="event_notes" 
                                               x-model="eventNotes" 
                                               rows="3" 
-                                              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-[#0e1d20] text-xs text-slate-800 dark:text-white font-medium">{{ $initialEventNotes }}</textarea>
+                                              class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3 py-1.5 bg-white dark:bg-[#12141C] text-xs text-slate-800 dark:text-white font-medium">{{ $initialEventNotes }}</textarea>
                                 </div>
                             </div>
 
@@ -1389,7 +1392,7 @@
                                               rows="2" 
                                               required 
                                               placeholder="Specify reason (e.g. Incomplete or invalid documents, landlord restrictions, failed in-person interview, no-show)..." 
-                                              class="w-full rounded-xl border border-rose-300 dark:border-rose-800 px-3 py-2 bg-white dark:bg-[#12272b] text-xs text-slate-800 dark:text-white font-medium placeholder-slate-400 focus:ring-2 focus:ring-rose-500 transition"></textarea>
+                                              class="w-full rounded-xl border border-rose-300 dark:border-rose-800 px-3 py-2 bg-white dark:bg-[#161824] text-xs text-slate-800 dark:text-white font-medium placeholder-slate-400 focus:ring-2 focus:ring-rose-500 transition"></textarea>
 
                                     <button type="submit" class="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer">
                                         Confirm Rejection & Notify Adopter
@@ -1435,7 +1438,7 @@
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Decision</label>
                         <div class="relative">
-                            <select name="status" x-model="currentStatus" required class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
+                            <select name="status" x-model="currentStatus" required class="w-full appearance-none rounded-xl border border-slate-200 dark:border-white/[0.08] pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
                                 <option value="" disabled selected hidden style="display: none;">Select Decision...</option>
                                 @if($isPetAlreadyAdopted && $application->status !== 'approved')
                                     <option value="approved" disabled>Schedule Final Screening (Disabled - Pet Already Adopted)</option>
@@ -1458,7 +1461,7 @@
                     </div>
 
                     {{-- Event Scheduling Details --}}
-                    <div x-show="currentStatus === 'approved'" x-transition class="space-y-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
+                    <div x-show="currentStatus === 'approved'" x-transition class="space-y-3.5 pt-3.5 border-t border-slate-100 dark:border-white/[0.06]">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
                                 Schedule Sunday Event Date <span class="text-rose-500 font-bold">*</span>
@@ -1468,7 +1471,7 @@
                                    x-model="scheduledAt"
                                    :required="currentStatus === 'approved'"
                                    value="{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}" 
-                                   class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                                   class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3.5 py-2 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
                             @error('scheduled_at')
                                 <p class="text-xs text-rose-600 dark:text-rose-400 font-bold mt-1.5">{{ $message }}</p>
                             @enderror
@@ -1486,7 +1489,7 @@
                             <div class="relative">
                                 <select x-model="presetLocation" 
                                         @change="if (presetLocation && presetLocation !== 'custom') { eventLocation = presetLocation; } else if (presetLocation === 'custom') { if (eventLocation === defaultVenue || customVenues.includes(eventLocation)) { eventLocation = ''; } $nextTick(() => $refs.customLocationInput.focus()); }" 
-                                        class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
+                                        class="w-full appearance-none rounded-xl border border-slate-200 dark:border-white/[0.08] pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
                                     <option :value="defaultVenue" x-text="defaultVenue"></option>
                                     <template x-for="venue in customVenues" :key="venue">
                                         <option :value="venue" x-text="venue"></option>
@@ -1509,7 +1512,7 @@
                                        x-ref="customLocationInput"
                                        x-model="eventLocation"
                                        placeholder="e.g. Centrio Mall Activity Center, SM City CDO Uptown..." 
-                                       class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
+                                       class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3.5 py-2 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">
 
                                 {{-- Action to save new location preset --}}
                                 <div class="flex items-center justify-between gap-2 pt-0.5">
@@ -1568,13 +1571,13 @@
                                       x-model="eventNotes"
                                       rows="4" 
                                       placeholder="e.g. On-Site Document Verification Required..." 
-                                      class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ $initialEventNotes }}</textarea>
+                                      class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3.5 py-2 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition">{{ $initialEventNotes }}</textarea>
                             </div>
                         </div>
                     </div>
 
                     {{-- Rejection Details & Reason for Adopter --}}
-                    <div x-show="currentStatus === 'rejected'" x-transition class="space-y-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800">
+                    <div x-show="currentStatus === 'rejected'" x-transition class="space-y-3.5 pt-3.5 border-t border-slate-100 dark:border-white/[0.06]">
                         <div class="p-3 rounded-xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60">
                             <p class="text-xs font-bold text-rose-800 dark:text-rose-300">Feedback for Adopter</p>
                             <p class="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
@@ -1585,7 +1588,7 @@
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Preset Reason Template</label>
                             <div class="relative">
-                                <select x-model="presetReason" @change="if (presetReason) { rejectionReason = presetReason; }" class="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-700 pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
+                                <select x-model="presetReason" @change="if (presetReason) { rejectionReason = presetReason; }" class="w-full appearance-none rounded-xl border border-slate-200 dark:border-white/[0.08] pl-3.5 pr-10 py-2.5 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-semibold focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition cursor-pointer">
                                     <option value="" disabled selected hidden style="display: none;">Select a common reason or type custom...</option>
                                     <option value="Incomplete or unverifiable identity and proof of residence documents.">Incomplete or Unverifiable Documents</option>
                                     <option value="Rental property lease or landlord rules do not permit keeping pets.">Landlord or Rental Pet Restrictions</option>
@@ -1611,7 +1614,7 @@
                                 :required="currentStatus === 'rejected'" 
                                 rows="3" 
                                 placeholder="Explain specifically what needs improvement or why the application was declined..." 
-                                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3.5 py-2 bg-white dark:bg-[#12272b] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition"></textarea>
+                                class="w-full rounded-xl border border-slate-200 dark:border-white/[0.08] px-3.5 py-2 bg-white dark:bg-[#161824] text-xs sm:text-sm text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-[#199CA4]/15 focus:border-[#199CA4] shadow-2xs transition"></textarea>
                         </div>
                     </div>
 
@@ -1635,14 +1638,13 @@
 
             </div>
         </div>
-    </div>
 
     {{-- Document Modal Previewer --}}
     <div id="docModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeDocModal()">
-        <div class="relative max-w-4xl w-full bg-white dark:bg-[#0e1d20] border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 px-2">
+        <div class="relative max-w-4xl w-full bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl p-4" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.08] px-2">
                 <h3 id="docModalTitle" class="text-sm font-extrabold text-slate-800 dark:text-white">Document Preview</h3>
-                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer" aria-label="Close">
+                <button onclick="closeDocModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer" aria-label="Close">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -1660,11 +1662,11 @@
          onclick="if (event.target === this) closeHandoverModal()">
         
         <div class="min-h-full flex items-center justify-center pointer-events-none py-6">
-            <div class="relative w-full max-w-xl bg-white dark:bg-[#0e1d20] border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl transition-all pointer-events-auto"
+            <div class="relative w-full max-w-xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl transition-all pointer-events-auto"
                  onclick="event.stopPropagation()">
                 
                 {{-- Modal Header --}}
-                <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between p-5 border-b border-slate-100 dark:border-white/[0.08]">
                     <div>
                         <h3 class="text-base font-extrabold text-slate-800 dark:text-white">
                             Adoption Handover & Staff Endorsement
@@ -1674,7 +1676,7 @@
                             Adopter: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ $application->applicant_name }}</span>
                         </p>
                     </div>
-                    <button type="button" onclick="closeHandoverModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer" aria-label="Close">
+                    <button type="button" onclick="closeHandoverModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold transition cursor-pointer" aria-label="Close">
                         <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -1691,7 +1693,7 @@
                             <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Step 1: Physical Inspection Checklist</span>
                             <span class="text-[10px] font-bold text-slate-400">Required</span>
                         </div>
-                        <div class="space-y-2.5 bg-slate-50 dark:bg-[#12272b] p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div class="space-y-2.5 bg-slate-50 dark:bg-[#161824] p-3.5 rounded-2xl border border-slate-100 dark:border-white/[0.08]">
                             <label class="flex items-start gap-3 text-xs text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                 <input type="checkbox" name="id_document_verified" id="modalIdVerifiedCheck" value="1" {{ $application->id_document_verified ? 'checked' : '' }} required class="mt-0.5 rounded border-slate-300 text-[#199CA4] focus:ring-[#199CA4]">
                                 <span>Original <strong>{{ $isStudent ? 'Student ID / COR' : 'Valid Government ID' }}</strong> physically inspected and verified against application details.</span>
@@ -1710,7 +1712,7 @@
                             
                             {{-- Toggle between Saved and Draw if user has saved signature --}}
                             @if(Auth::user()?->digital_signature_path)
-                                <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 text-[11px] font-bold">
+                                <div class="inline-flex rounded-xl bg-slate-100 dark:bg-white/[0.06] p-0.5 text-[11px] font-bold">
                                     <button type="button" 
                                             id="tabSavedSigBtn"
                                             onclick="switchHandoverSigMode('saved')"
@@ -1730,8 +1732,8 @@
                         {{-- Option A: Saved Signature View --}}
                         @if(Auth::user()?->digital_signature_path)
                             <div id="handoverSavedSigView" class="space-y-2">
-                                <div class="p-3.5 bg-slate-50 dark:bg-[#12272b] rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
-                                    <div class="w-32 h-16 bg-white dark:bg-[#0a171a] rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1.5 shrink-0">
+                                <div class="p-3.5 bg-slate-50 dark:bg-[#161824] rounded-2xl border border-slate-100 dark:border-white/[0.08] flex items-center gap-4">
+                                    <div class="w-32 h-16 bg-white dark:bg-[#0E1018] rounded-xl border border-slate-200 dark:border-white/[0.08] flex items-center justify-center p-1.5 shrink-0">
                                         @if(Auth::user()?->digital_signature_url)
                                             <img src="{{ Auth::user()->digital_signature_url }}" alt="Saved Signature" class="max-h-full max-w-full object-contain filter dark:invert dark:brightness-200">
                                         @endif
@@ -1753,7 +1755,7 @@
 
                         {{-- Option B: Drawing Canvas Pad --}}
                         <div id="handoverDrawSigView" class="space-y-2 {{ Auth::user()?->digital_signature_path ? 'hidden' : '' }}">
-                            <div class="relative rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-[#0a171a] p-1 overflow-hidden shadow-2xs">
+                            <div class="relative rounded-2xl border border-slate-300 dark:border-white/[0.08] bg-white dark:bg-[#0E1018] p-1 overflow-hidden shadow-2xs">
                                 <canvas id="handoverSignatureCanvas" class="w-full h-36 cursor-crosshair touch-none block bg-transparent filter dark:invert dark:brightness-200"></canvas>
                                 
                                 {{-- Watermark / Guide Line --}}
@@ -1763,7 +1765,7 @@
                                 </div>
 
                                 {{-- Floating Clear Pad Button --}}
-                                <button type="button" onclick="clearHandoverSignature()" class="absolute top-2 right-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border dark:border-slate-700/60 transition cursor-pointer shadow-2xs">
+                                <button type="button" onclick="clearHandoverSignature()" class="absolute top-2 right-2 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:border dark:border-white/[0.08] transition cursor-pointer shadow-2xs">
                                     Clear Pad
                                 </button>
                             </div>
@@ -1778,8 +1780,8 @@
                     </div>
 
                     {{-- Modal Footer Actions --}}
-                    <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
-                        <button type="button" onclick="closeHandoverModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
+                    <div class="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end gap-3">
+                        <button type="button" onclick="closeHandoverModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition cursor-pointer">
                             Cancel
                         </button>
                         <button type="submit" id="handoverSubmitBtn" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 cursor-pointer">
