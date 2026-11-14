@@ -1251,13 +1251,18 @@ class AdoptionApplicationTest extends TestCase
             'status' => 'rejected',
         ]);
 
-        // Default 'all' view shows all applications
-        $responseAll = $this->actingAs($staff)->get(route('adoption-applications.index'));
-        $responseAll->assertStatus(200);
-        $appsAll = $responseAll->viewData('applications');
-        $this->assertTrue($appsAll->contains('applicant_name', 'Pending Adopter'));
-        $this->assertTrue($appsAll->contains('applicant_name', 'Scheduled Adopter'));
-        $this->assertTrue($appsAll->contains('applicant_name', 'Rejected Adopter'));
+        // Default view opens 'pending' tab
+        $responseDefault = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $responseDefault->assertStatus(200);
+        $this->assertEquals('pending', $responseDefault->viewData('activeTab'));
+        $appsDefault = $responseDefault->viewData('applications');
+        $this->assertTrue($appsDefault->contains('applicant_name', 'Pending Adopter'));
+        $this->assertFalse($appsDefault->contains('applicant_name', 'Scheduled Adopter'));
+        $this->assertFalse($appsDefault->contains('applicant_name', 'Rejected Adopter'));
+
+        // 'all' query param automatically redirects to 'pending' tab
+        $responseAll = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'all']));
+        $responseAll->assertRedirect(route('adoption-applications.index', ['status' => 'pending']));
 
         // 'pending' filter
         $responsePending = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'pending']));
@@ -1284,7 +1289,7 @@ class AdoptionApplicationTest extends TestCase
         $this->assertTrue($appsRejected->contains('applicant_name', 'Rejected Adopter'));
 
         // Tab counts check
-        $counts = $responseAll->viewData('counts');
+        $counts = $responsePending->viewData('counts');
         $this->assertEquals(3, $counts['all']);
         $this->assertEquals(1, $counts['pending']);
         $this->assertEquals(1, $counts['scheduled']);
@@ -1321,8 +1326,8 @@ class AdoptionApplicationTest extends TestCase
             'created_at' => now(),
         ]);
 
-        // 1. Visiting default 'all' view shows unseen pending indicator (red dot & badge)
-        $response1 = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        // 1. Visiting non-pending view (e.g. scheduled) shows unseen pending indicator (red dot & badge)
+        $response1 = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'scheduled']));
         $response1->assertStatus(200);
         $this->assertTrue($response1->viewData('hasUnseenPending'));
         $this->assertEquals(1, $response1->viewData('newBadgeCount'));
@@ -1332,8 +1337,8 @@ class AdoptionApplicationTest extends TestCase
         $response2->assertStatus(200);
         $this->assertFalse($response2->viewData('hasUnseenPending'));
 
-        // 3. Returning to 'all' view keeps indicator removed because it was already viewed
-        $response3 = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        // 3. Returning to non-pending view keeps indicator removed because it was already viewed
+        $response3 = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'scheduled']));
         $response3->assertStatus(200);
         $this->assertFalse($response3->viewData('hasUnseenPending'));
 
@@ -1346,7 +1351,7 @@ class AdoptionApplicationTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $response4 = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $response4 = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'scheduled']));
         $response4->assertStatus(200);
         $this->assertTrue($response4->viewData('hasUnseenPending'));
         $this->assertEquals(2, $response4->viewData('newBadgeCount'));
@@ -1441,12 +1446,15 @@ class AdoptionApplicationTest extends TestCase
         $this->assertTrue($app2->fresh()->is_waitlisted_backup);
         $this->assertEquals('Waitlisted', $app2->fresh()->display_status);
 
-        // Verify index view renders Primary Candidate for App 1 and Waitlisted (Backup) for App 2
-        $response = $this->actingAs($staff)->get(route('adoption-applications.index'));
-        $response->assertStatus(200);
-        $response->assertSee('Primary Candidate');
-        $response->assertSee('Waitlisted (Backup)');
-        $response->assertSee('Backup · Queue #2');
+        // Verify index view renders Primary Candidate for App 1 on scheduled tab and Waitlisted (Backup) for App 2 on pending tab
+        $responseScheduled = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'scheduled']));
+        $responseScheduled->assertStatus(200);
+        $responseScheduled->assertSee('Primary Candidate');
+
+        $responsePending = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'pending']));
+        $responsePending->assertStatus(200);
+        $responsePending->assertSee('Waitlisted (Backup)');
+        $responsePending->assertSee('Backup · Queue #2');
     }
 
     public function test_realtime_check_endpoint_detects_new_applications_and_returns_counts(): void

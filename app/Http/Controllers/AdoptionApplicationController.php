@@ -13,11 +13,16 @@ use Illuminate\Support\Facades\Auth;
 
 class AdoptionApplicationController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         AdminNotificationService::markAdoptionRequestsViewed();
 
-        $activeTab = $request->query('status', 'all');
+        $activeTab = $request->query('status', 'pending');
+        if ($activeTab === 'all') {
+            $queryParams = $request->query();
+            $queryParams['status'] = 'pending';
+            return redirect()->route('adoption-applications.index', $queryParams);
+        }
         $search = trim($request->query('search', ''));
 
         // Base query with relations
@@ -53,9 +58,6 @@ class AdoptionApplicationController extends Controller
         // Apply status filter based on active tab
         $query = clone $baseQuery;
         switch ($activeTab) {
-            case 'pending':
-                $query->whereIn('status', ['pending', 'under_review']);
-                break;
             case 'scheduled':
                 $query->where('status', 'approved')->whereNull('documents_verified_at');
                 break;
@@ -65,9 +67,10 @@ class AdoptionApplicationController extends Controller
             case 'rejected':
                 $query->where('status', 'rejected');
                 break;
-            case 'all':
+            case 'pending':
             default:
-                $activeTab = 'all';
+                $activeTab = 'pending';
+                $query->whereIn('status', ['pending', 'under_review']);
                 break;
         }
 

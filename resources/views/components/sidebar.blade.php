@@ -70,7 +70,7 @@
 				@endif
 
 				{{-- Adoption Requests --}}
-				<a href="{{ route('adoption-applications.index') }}" title="Adoption Requests"
+				<a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" title="Adoption Requests"
 					@click="hasNewAdoption = false; try { fetch('{{ route('adoption-applications.mark-viewed') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }) } catch(e){}"
 					class="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ request()->routeIs('adoption-applications.*') ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
 					@if(request()->routeIs('adoption-applications.*'))
@@ -282,7 +282,7 @@
                 @endif
 
                 {{-- Adoption Requests --}}
-                <a href="{{ route('adoption-applications.index') }}" @click="mobileNavOpen = false; hasNewAdoption = false; try { fetch('{{ route('adoption-applications.mark-viewed') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }) } catch(e){}" title="Adoption Requests"
+                <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" @click="mobileNavOpen = false; hasNewAdoption = false; try { fetch('{{ route('adoption-applications.mark-viewed') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }) } catch(e){}" title="Adoption Requests"
                     class="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ request()->routeIs('adoption-applications.*') ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
                     @if(request()->routeIs('adoption-applications.*'))
                         <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-teal-200 dark:bg-[#199CA4]"></span>

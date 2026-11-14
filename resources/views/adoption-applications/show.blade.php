@@ -30,7 +30,7 @@
         <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('adoption-applications.index') }}" class="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition flex items-center gap-1">
+                    <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         <span>Adoption Applications</span>
                     </a>
@@ -74,7 +74,7 @@
                         @endif
                     @endif
                 @endif
-                <a href="{{ route('adoption-applications.index') }}" class="inline-flex items-center px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
+                <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="inline-flex items-center px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
             </div>
         </div>
 

@@ -141,7 +141,7 @@
                         </div>
                         <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Recent Requests</h2>
                     </div>
-                    <a href="{{ route('adoption-applications.index') }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] dark:hover:underline transition-colors">
+                    <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] dark:hover:underline transition-colors">
                         View All
                     </a>
                 </div>

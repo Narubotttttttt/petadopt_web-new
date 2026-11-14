@@ -231,20 +231,7 @@
 
         {{-- Status Filter Tabs Bar --}}
         <div class="flex items-center gap-2 overflow-x-auto pt-3.5 pb-1 scrollbar-none">
-            {{-- Tab 1: All Requests --}}
-            <a href="{{ route('adoption-applications.index', ['status' => 'all', 'search' => $search]) }}" 
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
-               {{ $activeTab === 'all' 
-                   ? 'bg-[#199CA4] text-white border-[#199CA4] shadow-xs' 
-                   : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#181A24] border-slate-200/80 dark:border-white/[0.07]' }}">
-                <span>All Requests</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300' }}"
-                      x-text="counts.all">
-                    {{ $counts['all'] }}
-                </span>
-            </a>
-
-            {{-- Tab 2: Pending (Pending & Under Review) --}}
+            {{-- Tab 1: Pending (Pending & Under Review) --}}
             <a href="{{ route('adoption-applications.index', ['status' => 'pending', 'search' => $search]) }}" 
                @click="onPendingTabClick()"
                class="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
@@ -278,7 +265,7 @@
                 </span>
             </a>
 
-            {{-- Tab 3: Scheduled / Approved --}}
+            {{-- Tab 2: Scheduled / Approved --}}
             <a href="{{ route('adoption-applications.index', ['status' => 'scheduled', 'search' => $search]) }}" 
                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
                {{ $activeTab === 'scheduled' 
@@ -291,7 +278,7 @@
                 </span>
             </a>
 
-            {{-- Tab 4: Finalized / Adopted --}}
+            {{-- Tab 3: Finalized / Adopted --}}
             <a href="{{ route('adoption-applications.index', ['status' => 'finalized', 'search' => $search]) }}" 
                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
                {{ $activeTab === 'finalized' 
@@ -304,7 +291,7 @@
                 </span>
             </a>
 
-            {{-- Tab 5: Archived / Rejected --}}
+            {{-- Tab 4: Archived / Rejected --}}
             <a href="{{ route('adoption-applications.index', ['status' => 'rejected', 'search' => $search]) }}" 
                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 border
                {{ $activeTab === 'rejected' 
@@ -368,7 +355,7 @@
                             @elseif($activeTab === 'scheduled') Scheduled Screening Applications
                             @elseif($activeTab === 'finalized') Finalized Adoption Records
                             @elseif($activeTab === 'rejected') Archived & Declined Applications
-                            @else All Adoption Applications
+                            @else Pending Applications
                             @endif
                         </h2>
                         @if(!empty($search))
