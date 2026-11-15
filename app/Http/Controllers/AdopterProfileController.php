@@ -19,7 +19,7 @@ class AdopterProfileController extends Controller
     public function index(Request $request): View
     {
         $search = trim($request->query('search', ''));
-        $filter = $request->query('filter', 'all');
+        $filter = $request->query('filter', 'active');
 
         $query = AdoptionApplication::with([
                 'pet.medicalLogs' => function($q) {
@@ -214,15 +214,17 @@ class AdopterProfileController extends Controller
         $totalApprovedApplications = AdoptionApplication::where('status', 'approved')->count();
 
         $totalMonthlyReports = PetHealthUpdate::count();
+        $totalVetLogsCount = MedicalLog::where('is_external', true)->count();
+        $pendingVetLogsCount = MedicalLog::where('is_external', true)->where('verification_status', 'pending')->count();
 
-        // Apply active filter
-        $filteredAdopters = $allGroupedAdopters;
-        if ($filter === 'active') {
-            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['active', 'active_new']));
-        } elseif ($filter === 'inactive') {
+        // Apply active filter (defaults to active compliant adopters)
+        if ($filter === 'inactive' || $filter === 'overdue') {
             $filteredAdopters = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'inactive');
         } elseif ($filter === 'blacklisted' || $filter === 'restricted') {
             $filteredAdopters = $allGroupedAdopters->filter(fn($a) => $a->status_code === 'blacklisted');
+        } else {
+            $filter = 'active';
+            $filteredAdopters = $allGroupedAdopters->filter(fn($a) => in_array($a->status_code, ['active', 'active_new']));
         }
 
         $page = (int) $request->query('page', 1);
@@ -245,7 +247,9 @@ class AdopterProfileController extends Controller
             'inactiveCount',
             'blacklistedCount',
             'restrictedCount',
-            'totalMonthlyReports'
+            'totalMonthlyReports',
+            'totalVetLogsCount',
+            'pendingVetLogsCount'
         ));
     }
 

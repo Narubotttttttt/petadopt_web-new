@@ -155,41 +155,34 @@
             </div>
         @endif
 
-        {{-- Section Navigation Tabs --}}
-        <div class="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-3 flex-wrap">
-            <div class="flex items-center gap-2 flex-wrap">
+        {{-- Section Navigation Tabs (Compact) --}}
+        <div class="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-2.5 flex-wrap">
+            <div class="flex items-center gap-1.5 flex-wrap">
                 <a href="{{ route('adopters.index') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                     <span>Adopter Profiles</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">{{ $totalApprovedAdopters }}</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">{{ $totalApprovedAdopters }}</span>
                 </a>
 
                 <a href="{{ route('adopters.reports', ['tab' => 'monthly_updates']) }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-[#199CA4] text-white' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
-                    <svg class="w-4 h-4 {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                    <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     <span>Monthly Pet Updates</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalReports }}</span>
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalReports }}</span>
                 </a>
 
                 <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-[#199CA4] text-white' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
-                    <svg class="w-4 h-4 {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'text-white' : 'text-[#199CA4]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    <span>Vet Clinic Proofs</span>
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                    <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'text-white' : 'text-[#199CA4]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    <span>Vaccination updates</span>
                     @if($pendingVetLogsCount > 0)
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
                     @else
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
                     @endif
                 </a>
             </div>
-
-            {{-- Shortcut Button to Medical Logs --}}
-            <a href="{{ route('medical-logs.index') }}" 
-               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] bg-white dark:bg-[#12141C] hover:bg-[#199CA4]/10 dark:hover:bg-[#199CA4]/15 border border-slate-200 dark:border-white/[0.08] transition shadow-2xs">
-                <span>Go to Medical Logs Registry</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </a>
         </div>
 
 @if(($tab ?? 'monthly_updates') === 'vet_proofs')
@@ -199,14 +192,14 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <div class="flex items-center gap-3 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Veterinary Clinic Proofs</h1>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Vaccination updates</h1>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
-                    {{ $totalVetLogsCount }} Records
+                    {{ $totalVetLogsCount }} {{ Str::plural('Record', $totalVetLogsCount) }}
                 </span>
                 @if($pendingVetLogsCount > 0)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        {{ $pendingVetLogsCount }} Awaiting Staff Verification
+                        {{ $pendingVetLogsCount }} Pending Review
                     </span>
                 @endif
             </div>
@@ -223,116 +216,62 @@
         </div>
     </div>
 
-    {{-- Metric Overview Cards for Vet Proofs --}}
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {{-- 1. Total Submissions --}}
-        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'all']) }}"
-           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? 'all') === 'all' ? 'bg-[#199CA4]/10 border-[#199CA4] dark:bg-[#199CA4]/15 dark:border-[#41C1CB] ring-2 ring-[#199CA4]/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Submissions</span>
-                <div class="w-7 h-7 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                </div>
-            </div>
-            <div class="flex items-baseline gap-1.5">
-                <span class="text-2xl font-black text-slate-900 dark:text-white">{{ $totalVetLogsCount }}</span>
-                <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-500">all external</span>
-            </div>
-        </a>
-
-        {{-- 2. Awaiting Verification --}}
-        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'pending']) }}"
-           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? '') === 'pending' ? 'bg-amber-50 border-amber-500 dark:bg-amber-950/30 dark:border-amber-500 ring-2 ring-amber-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pending Review</span>
-                <div class="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-            </div>
-            <div class="flex items-baseline gap-1.5">
-                <span class="text-2xl font-black text-amber-700 dark:text-amber-400">{{ $pendingVetLogsCount }}</span>
-                <span class="text-[11px] font-semibold text-amber-600/70 dark:text-amber-500/70">awaiting check</span>
-            </div>
-        </a>
-
-        {{-- 3. Verified & Active --}}
-        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'verified']) }}"
-           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? '') === 'verified' ? 'bg-emerald-50 border-emerald-500 dark:bg-emerald-950/30 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Verified</span>
-                <div class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </div>
-            </div>
-            <div class="flex items-baseline gap-1.5">
-                <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">{{ $verifiedVetLogsCount }}</span>
-                <span class="text-[11px] font-semibold text-emerald-600/70 dark:text-emerald-500/70">approved</span>
-            </div>
-        </a>
-
-        {{-- 4. Rejected --}}
-        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'rejected']) }}"
-           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? '') === 'rejected' ? 'bg-rose-50 border-rose-500 dark:bg-rose-950/30 dark:border-rose-500 ring-2 ring-rose-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">Rejected</span>
-                <div class="w-7 h-7 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </div>
-            </div>
-            <div class="flex items-baseline gap-1.5">
-                <span class="text-2xl font-black text-rose-700 dark:text-rose-400">{{ $rejectedVetLogsCount }}</span>
-                <span class="text-[11px] font-semibold text-rose-600/70 dark:text-rose-500/70">declined</span>
-            </div>
-        </a>
-    </div>
-
     {{-- Search & Filter Toolbar for Vet Proofs --}}
-    <div class="bg-white dark:bg-[#12141C] p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">
-        <form method="GET" action="{{ route('adopters.reports') }}" class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
-            <input type="hidden" name="tab" value="vet_proofs">
-            
-            <div class="flex items-center gap-2.5 flex-wrap">
-                <select name="vet_status" onchange="this.form.submit()"
-                        class="bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] focus:outline-none transition cursor-pointer">
-                    <option value="all" {{ ($vetStatus ?? 'all') === 'all' ? 'selected' : '' }}>All Verification Statuses</option>
-                    <option value="pending" {{ ($vetStatus ?? '') === 'pending' ? 'selected' : '' }}>Pending Verification</option>
-                    <option value="verified" {{ ($vetStatus ?? '') === 'verified' ? 'selected' : '' }}>Verified Records</option>
-                    <option value="rejected" {{ ($vetStatus ?? '') === 'rejected' ? 'selected' : '' }}>Rejected Submissions</option>
-                </select>
-
-                @if(($vetStatus ?? 'all') !== 'all' || !empty($search))
-                    <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" class="text-xs font-bold text-[#199CA4] hover:underline ml-1 cursor-pointer">
-                        Reset Filters
-                    </a>
-                @endif
+    <div class="bg-white dark:bg-[#12141C] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {{-- Quick Filter Pills --}}
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'all'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($vetStatus ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
+                    All ({{ $totalVetLogsCount }})
+                </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'pending'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($vetStatus ?? '') === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
+                    @if($pendingVetLogsCount > 0)
+                        <span class="w-2 h-2 rounded-full {{ ($vetStatus ?? '') === 'pending' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
+                    @endif
+                    <span>Pending ({{ $pendingVetLogsCount }})</span>
+                </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'verified'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($vetStatus ?? '') === 'verified' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
+                    Verified ({{ $verifiedVetLogsCount }})
+                </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'rejected'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($vetStatus ?? '') === 'rejected' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
+                    Rejected ({{ $rejectedVetLogsCount }})
+                </a>
             </div>
 
-            <div class="flex items-center gap-2 w-full lg:w-auto">
-                <div class="relative flex-1 lg:w-80">
+            {{-- Search Input --}}
+            <form method="GET" action="{{ route('adopters.reports') }}" class="flex items-center gap-2 w-full md:w-auto">
+                <input type="hidden" name="tab" value="vet_proofs">
+                @if(($vetStatus ?? 'all') !== 'all')
+                    <input type="hidden" name="vet_status" value="{{ $vetStatus }}">
+                @endif
+                <div class="relative flex-1 md:w-80">
                     <input type="text" 
                            name="search" 
                            value="{{ $search }}"
-                           placeholder="Search pet, vaccine, clinic, vet, adopter..." 
-                           class="w-full pl-10 pr-8 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
-                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           placeholder="Search pet, clinic, vaccine, adopter..." 
+                           class="w-full pl-9 {{ !empty($search) ? 'pr-8' : 'pr-3' }} py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-slate-100 rounded-xl focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     @if(!empty($search))
-                        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => $vetStatus]) }}" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold">
+                        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => $vetStatus]) }}" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold" title="Clear search">
                             &times;
                         </a>
                     @endif
                 </div>
-                <button type="submit" class="px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <span>Search</span>
+                <button type="submit" class="px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs shrink-0 cursor-pointer">
+                    Search
                 </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     {{-- External Vet Proofs Grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
         @forelse($vetLogs as $log)
             @php
                 $pet = $log->pet;
@@ -372,111 +311,121 @@
                 ];
             @endphp
 
-            <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.07] shadow-sm dark:shadow-xl dark:shadow-black/40 overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col justify-between">
-                <div>
-                    {{-- Card Header: Pet & Adopter --}}
-                    <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            @if($pet?->photo_path)
-                                <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">
-                            @else
-                                <div class="w-10 h-10 rounded-2xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-xs shrink-0">
-                                    #{{ $log->pet_id }}
-                                </div>
-                            @endif
-                            <div class="min-w-0">
-                                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white truncate">{{ $petName }}</h3>
-                                <p class="text-[11px] text-slate-400 truncate">{{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}</p>
+            <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.07] shadow-sm dark:shadow-xl dark:shadow-black/40 overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col sm:flex-row">
+                {{-- Left: Proof Thumbnail Container (Compact 140px on sm+) --}}
+                <div class="relative sm:w-36 md:w-44 shrink-0 h-44 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer"
+                     @click='openVerifyModal(@json($logPayload))'
+                     title="Click to inspect proof photo">
+                    @if($photoUrl)
+                        <img src="{{ $photoUrl }}" alt="Vet Card Proof" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1.5">
+                            <div class="w-9 h-9 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                                <svg class="w-4 h-4 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
                             </div>
-                        </div>
-
-                        {{-- Status Pill --}}
-                        @if($isPending)
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                Pending
+                            <span class="text-[10px] font-bold text-white bg-black/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full shadow-xs">
+                                Inspect Proof
                             </span>
-                        @elseif($isVerified)
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
-                                Verified
-                            </span>
-                        @else
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
-                                Rejected
-                            </span>
-                        @endif
-                    </div>
-
-                    {{-- Proof Photo Container --}}
-                    <div class="relative w-full h-48 bg-slate-900 flex items-center justify-center overflow-hidden group cursor-pointer"
-                         @click='openVerifyModal(@json($logPayload))'>
-                        @if($photoUrl)
-                            <img src="{{ $photoUrl }}" alt="Vet Card Proof" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                            <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                <span class="px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1.5 shadow-lg">
-                                    <svg class="w-4 h-4 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <span>Review Proof</span>
-                                </span>
-                            </div>
-                        @else
-                            <div class="text-center text-slate-500 text-xs">No Photo Attached</div>
-                        @endif
-
-                        {{-- Category Tag Badge --}}
-                        <div class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold border border-white/15">
-                            {{ ucfirst(str_replace('_', ' ', $log->category)) }}
                         </div>
-
-                        {{-- Date Given --}}
-                        <div class="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold border border-white/15">
-                            {{ $log->date?->format('M d, Y') }}
+                    @else
+                        <div class="w-full h-full min-h-[140px] flex flex-col items-center justify-center text-slate-500 text-xs p-3 text-center">
+                            <svg class="w-6 h-6 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>No Photo</span>
                         </div>
-                    </div>
-
-                    {{-- Clinical Info Block --}}
-                    <div class="p-4 sm:p-5 space-y-3">
-                        <div class="space-y-1">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Vaccine / Medication</span>
-                            <p class="text-sm font-extrabold text-slate-800 dark:text-white">
-                                {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Core Vaccine' : 'Routine Deworming') }}
-                            </p>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2 text-[11px] p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.04]">
-                            <div>
-                                <span class="text-slate-400 block text-[10px]">Private Clinic:</span>
-                                <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $log->clinic_name ?: 'Private Clinic' }}</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 block text-[10px]">Adopter:</span>
-                                <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $adopterName }}</span>
-                            </div>
-                        </div>
-
-                        {{-- Booster Schedule Status --}}
-                        <div class="flex items-center justify-between text-xs pt-1">
-                            <span class="text-slate-500 dark:text-slate-400 font-medium">Next Booster:</span>
-                            @if($log->next_due_date)
-                                <span class="font-bold text-[#199CA4] dark:text-[#41C1CB]">{{ $log->next_due_date->format('M d, Y') }}</span>
-                            @else
-                                <span class="text-slate-400 italic text-[11px]">Pending verification</span>
-                            @endif
-                        </div>
+                    @endif
+                    <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider">
+                        {{ ucfirst(str_replace('_', ' ', $log->category)) }}
                     </div>
                 </div>
 
-                {{-- Action Button Footer --}}
-                <div class="p-4 sm:p-5 pt-0">
-                    <button type="button" 
-                            @click='openVerifyModal(@json($logPayload))'
-                            class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-2 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
-                        @if($isPending)
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span>Review & Verify Proof</span>
-                        @else
-                            <span>View Submission Details</span>
-                        @endif
-                    </button>
+                {{-- Right: Content & Information --}}
+                <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3 min-w-0">
+                    <div>
+                        {{-- Top Header Row: Pet Identity & Status --}}
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                @if($pet?->photo_path)
+                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-9 h-9 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">
+                                @else
+                                    <div class="w-9 h-9 rounded-xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-xs shrink-0">
+                                        #{{ $log->pet_id }}
+                                    </div>
+                                @endif
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5">
+                                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white truncate">{{ $petName }}</h3>
+                                        <span class="text-[10px] text-slate-400 font-mono">#{{ $log->pet_id }}</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 truncate">{{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}</p>
+                                </div>
+                            </div>
+
+                            {{-- Status Pill --}}
+                            @if($isPending)
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    Pending
+                                </span>
+                            @elseif($isVerified)
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                    Verified
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                    Rejected
+                                </span>
+                            @endif
+                        </div>
+
+                        {{-- Clinical Details --}}
+                        <div class="mt-2.5 space-y-2">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vaccine / Treatment</span>
+                                <p class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white truncate">
+                                    {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Core Vaccine' : 'Routine Deworming') }}
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-[11px] p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.04]">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] font-medium">Clinic:</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $log->clinic_name ?: 'Private Clinic' }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] font-medium">Adopter:</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $adopterName }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between text-[11px] pt-0.5">
+                                <div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                    <span>Given:</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-300">{{ $log->date?->format('M d, Y') }}</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-slate-400">Next Booster:</span>
+                                    @if($log->next_due_date)
+                                        <span class="font-bold text-[#199CA4] dark:text-[#41C1CB]">{{ $log->next_due_date->format('M d, Y') }}</span>
+                                    @else
+                                        <span class="text-amber-600 dark:text-amber-400 font-semibold text-[10px]">Pending review</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Action Row --}}
+                    <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06]">
+                        <button type="button" 
+                                @click='openVerifyModal(@json($logPayload))'
+                                class="w-full py-2 px-3.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
+                            @if($isPending)
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>Inspect Proof & Verify</span>
+                            @else
+                                <span>View Submission Details</span>
+                            @endif
+                        </button>
+                    </div>
                 </div>
             </div>
         @empty
@@ -484,7 +433,7 @@
                 <div class="w-14 h-14 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center mx-auto mb-3">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 </div>
-                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">No Veterinary Clinic Proofs Found</h3>
+                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">No Vaccination Updates Found</h3>
                 <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
                     When adopters upload vaccination booklet stickers or clinic receipts from their private veterinary visits, they will appear here for staff verification.
                 </p>
