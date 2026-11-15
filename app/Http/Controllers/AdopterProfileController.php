@@ -168,15 +168,15 @@ class AdopterProfileController extends Controller
                 $badgeTheme = 'rose';
             } elseif ($hasOverdueReport) {
                 $statusCode = 'inactive';
-                $statusLabel = "Inactive (Overdue {$maxOverdueDays}d)";
+                $statusLabel = 'Reports Overdue';
                 $badgeTheme = 'rose';
             } elseif ($hasNewAdoption) {
                 $statusCode = 'active_new';
-                $statusLabel = "Active (New · Due in {$minDueDays}d)";
+                $statusLabel = 'Active';
                 $badgeTheme = 'emerald';
             } else {
                 $statusCode = 'active';
-                $statusLabel = 'Active (Up to Date)';
+                $statusLabel = 'Active';
                 $badgeTheme = 'emerald';
             }
 

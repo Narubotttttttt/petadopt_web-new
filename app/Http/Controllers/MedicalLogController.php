@@ -250,23 +250,51 @@ class MedicalLogController extends Controller
         $itemDetail = !empty($log->vaccine_name) ? " ({$log->vaccine_name})" : '';
         $isDeworming = ($category === 'deworming');
 
-        $title = $isDeworming
-            ? "Deworming Scheduled for {$petName}!"
-            : "Vaccination Scheduled for {$petName}!";
-
         $dueDateStr = $log->next_due_date ? $log->next_due_date->format('M d, Y') : null;
-        if ($dueDateStr) {
-            $body = $isDeworming
-                ? "{$petName}'s Deworming{$itemDetail} record was updated. Next deworming dose due: {$dueDateStr}. Check CAWS app for details!"
-                : "{$petName}'s Vaccination{$itemDetail} record was updated. Next booster due: {$dueDateStr}. Check CAWS app for details!";
+
+        if ($log->is_external) {
+            $title = $isDeworming
+                ? "Deworming Verified for {$petName}!"
+                : "Vaccination Verified for {$petName}!";
+
+            if ($dueDateStr) {
+                $body = $isDeworming
+                    ? "Your clinic record for {$petName}{$itemDetail} has been verified by shelter staff. Next deworming dose due: {$dueDateStr}."
+                    : "Your clinic record for {$petName}{$itemDetail} has been verified by shelter staff. Next vaccination booster due: {$dueDateStr}.";
+            } else {
+                $body = "Your clinic record for {$petName}{$itemDetail} has been verified by shelter staff.";
+            }
         } else {
-            $body = "A new {$categoryLabel}{$itemDetail} record has been added for {$petName}. Check the CAWS app for details.";
+            $title = $isDeworming
+                ? "Deworming Scheduled for {$petName}!"
+                : "Vaccination Scheduled for {$petName}!";
+
+            if ($dueDateStr) {
+                $body = $isDeworming
+                    ? "{$petName}'s Deworming{$itemDetail} record was updated. Next deworming dose due: {$dueDateStr}. Check CAWS app for details!"
+                    : "{$petName}'s Vaccination{$itemDetail} record was updated. Next booster due: {$dueDateStr}. Check CAWS app for details!";
+            } else {
+                $body = "A new {$categoryLabel}{$itemDetail} record has been added for {$petName}. Check the CAWS app for details.";
+            }
         }
 
         // Find verified applicants or adopters for this pet
         $adopterEmails = \App\Models\AdoptionApplication::where('pet_id', $log->pet_id)
-            ->pluck('applicant_email')
-            ->unique();
+            ->pluck('applicant_email');
+
+        if ($log->creator && !empty($log->creator->email)) {
+            $adopterEmails->push($log->creator->email);
+        }
+
+        $appUserIds = \App\Models\AdoptionApplication::where('pet_id', $log->pet_id)
+            ->whereNotNull('user_id')
+            ->pluck('user_id');
+        if ($appUserIds->isNotEmpty()) {
+            $userEmails = \App\Models\User::whereIn('id', $appUserIds)->pluck('email');
+            $adopterEmails = $adopterEmails->merge($userEmails);
+        }
+
+        $adopterEmails = $adopterEmails->filter()->unique();
 
         foreach ($adopterEmails as $email) {
             \App\Services\FirebaseNotificationService::sendToUser(
@@ -308,6 +336,7 @@ class MedicalLogController extends Controller
                 'verified_by'         => Auth::id(),
                 'verified_at'         => now(),
             ]);
+            $medicalLog->refresh();
 
             // Fulfill prior open booster schedules for this pet & category completed by this dose
             MedicalLog::where('pet_id', $medicalLog->pet_id)

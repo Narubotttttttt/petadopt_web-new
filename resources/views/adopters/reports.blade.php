@@ -1202,7 +1202,7 @@
                                     <div class="flex items-center justify-between">
                                         <label class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
                                             <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                            <span>Next Due Date</span>
+                                            <span>Next Vaccination / Due Date</span>
                                         </label>
                                         <span class="text-[10px] font-bold text-[#199CA4] dark:text-[#41C1CB]">CAWS Auto-Rule</span>
                                     </div>
@@ -1238,7 +1238,7 @@
                                         </div>
                                     </div>
                                     <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                                        Calculated from date administered. If the vet card states a different return date, adjust the date input above before approving.
+                                        Calculated from date administered. If the vet card states a different return date, adjust the date above. When approved, a push notification will automatically notify the adopter of their next vaccination date.
                                     </p>
                                 </div>
 
@@ -1266,7 +1266,7 @@
                                             <button type="submit" 
                                                     class="w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                                <span>Approve & Activate Schedule</span>
+                                                <span>Verify Record & Set Next Date</span>
                                             </button>
                                         </form>
 
