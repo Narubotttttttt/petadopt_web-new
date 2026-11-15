@@ -18,6 +18,29 @@
              reviewCurrentDecision: 'cleared_accidental',
              reviewCurrentRemarks: '',
 
+             // Side-by-Side Vet Verification Modal State
+             showVerifyModal: false,
+             verifyLogId: null,
+             verifyPetName: '',
+             verifyPetBreed: '',
+             verifyPetId: '',
+             verifyPetPhoto: '',
+             verifyAdopterName: '',
+             verifyAdopterPhone: '',
+             verifyCategory: '',
+             verifyVaccineName: '',
+             verifyDate: '',
+             verifyClinicName: '',
+             verifyVeterinarian: '',
+             verifyProofPhotoUrl: '',
+             verifyNextDueDate: '',
+             verifyActionUrl: '',
+             verifyStatus: '',
+             showRejectInput: false,
+             rejectionReason: '',
+             imgRotation: 0,
+             imgZoom: 1,
+
              openReviewModal(id, petName, adopterName, date, notes, decision, remarks) {
                  this.reviewReportId = id;
                  this.reviewPetName = petName || 'Companion';
@@ -52,6 +75,70 @@
                  this.photoModalStatus = target.getAttribute('data-status') || '';
                  this.photoModalNotes = target.getAttribute('data-notes') || '';
                  this.showPhotoModal = true;
+             },
+
+             openVerifyModal(log) {
+                 if (!log) return;
+                 this.verifyLogId = log.id;
+                 this.verifyPetName = log.pet?.name || ('Pet no. ' + log.pet_id);
+                 this.verifyPetBreed = (log.pet?.type ? (log.pet.type.charAt(0).toUpperCase() + log.pet.type.slice(1)) : 'Pet') + ' • ' + (log.pet?.breed || 'Mixed');
+                 this.verifyPetId = log.pet_id;
+                 this.verifyPetPhoto = log.pet?.photo_url || (log.pet?.photo_path ? ('/storage/' + log.pet.photo_path.replace(/^\//, '')) : '');
+                 this.verifyAdopterName = log.creator?.name || 'Authorized Adopter';
+                 this.verifyAdopterPhone = log.creator?.adopters_profile?.phone || 'N/A';
+                 this.verifyCategory = log.category || 'vaccination';
+                 this.verifyVaccineName = log.vaccine_name || (log.category === 'vaccination' ? 'Core Vaccine' : 'Routine Deworming');
+                 this.verifyDate = log.date ? (typeof log.date === 'string' ? log.date.split('T')[0] : log.date) : '';
+                 this.verifyClinicName = log.clinic_name || 'Private Veterinary Clinic';
+                 this.verifyVeterinarian = log.administered_by || '';
+                 this.verifyProofPhotoUrl = log.proof_photo_url || '';
+                 this.verifyActionUrl = '/medical-logs/' + log.id + '/verify';
+                 this.verifyStatus = log.verification_status || 'pending';
+                 this.showRejectInput = false;
+                 this.rejectionReason = '';
+                 this.imgRotation = 0;
+                 this.imgZoom = 1;
+
+                 if (log.next_due_date) {
+                     this.verifyNextDueDate = typeof log.next_due_date === 'string' ? log.next_due_date.split('T')[0] : log.next_due_date;
+                 } else if (log.category === 'deworming') {
+                     this.verifyNextDueDate = this.calcDueDateMonths(3, this.verifyDate);
+                 } else {
+                     this.verifyNextDueDate = this.calcDueDateMonths(12, this.verifyDate);
+                 }
+
+                 this.showVerifyModal = true;
+             },
+
+             calcDueDateMonths(months, baseDate) {
+                 const d = baseDate ? new Date(baseDate) : new Date();
+                 if (isNaN(d.getTime())) return '';
+                 d.setMonth(d.getMonth() + months);
+                 const y = d.getFullYear();
+                 const m = String(d.getMonth() + 1).padStart(2, '0');
+                 const day = String(d.getDate()).padStart(2, '0');
+                 return y + '-' + m + '-' + day;
+             },
+
+             setDueMonths(months) {
+                 this.verifyNextDueDate = this.calcDueDateMonths(months, this.verifyDate);
+             },
+
+             rotateImage() {
+                 this.imgRotation = (this.imgRotation + 90) % 360;
+             },
+
+             zoomIn() {
+                 this.imgZoom = Math.min(this.imgZoom + 0.25, 3);
+             },
+
+             zoomOut() {
+                 this.imgZoom = Math.max(this.imgZoom - 0.25, 0.75);
+             },
+
+             resetImg() {
+                 this.imgRotation = 0;
+                 this.imgZoom = 1;
              }
          }">
 
@@ -69,43 +156,380 @@
         @endif
 
         {{-- Section Navigation Tabs --}}
-        <div class="flex items-center gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-3">
-            <a href="{{ route('adopters.index') }}" 
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
-                <span>Adopter Profiles</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">{{ $totalApprovedAdopters }}</span>
-            </a>
-
-            <a href="{{ route('adopters.reports') }}" 
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs bg-[#199CA4] text-white">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span>Monthly Pet Updates</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">{{ $totalReports }}</span>
-            </a>
-        </div>
-
-        {{-- Page Header --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <div class="flex items-center gap-3 flex-wrap">
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Monthly Pet Updates Report</h1>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
-                        {{ $totalReports }} Check-in Reports
-                    </span>
-                </div>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Official post-adoption health reports, condition photos, and recorded weights submitted monthly by adopters via the mobile application.</p>
-            </div>
-            
-            {{-- Header Actions --}}
-            <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+        <div class="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-3 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
                 <a href="{{ route('adopters.index') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                     <span>Adopter Profiles</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">{{ $totalApprovedAdopters }}</span>
+                </a>
+
+                <a href="{{ route('adopters.reports', ['tab' => 'monthly_updates']) }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-[#199CA4] text-white' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                    <svg class="w-4 h-4 {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Monthly Pet Updates</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalReports }}</span>
+                </a>
+
+                <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition shadow-xs {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-[#199CA4] text-white' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                    <svg class="w-4 h-4 {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'text-white' : 'text-[#199CA4]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    <span>Vet Clinic Proofs</span>
+                    @if($pendingVetLogsCount > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
+                    @else
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
+                    @endif
                 </a>
             </div>
+
+            {{-- Shortcut Button to Medical Logs --}}
+            <a href="{{ route('medical-logs.index') }}" 
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] bg-white dark:bg-[#12141C] hover:bg-[#199CA4]/10 dark:hover:bg-[#199CA4]/15 border border-slate-200 dark:border-white/[0.08] transition shadow-2xs">
+                <span>Go to Medical Logs Registry</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
         </div>
+
+@if(($tab ?? 'monthly_updates') === 'vet_proofs')
+    {{-- ==================== VET CLINIC PROOFS TAB ==================== --}}
+    
+    {{-- Page Header --}}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Veterinary Clinic Proofs</h1>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                    {{ $totalVetLogsCount }} Records
+                </span>
+                @if($pendingVetLogsCount > 0)
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        {{ $pendingVetLogsCount }} Awaiting Staff Verification
+                    </span>
+                @endif
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Private veterinary clinic vaccination booklet stickers and receipts uploaded by adopters. Verify the proof photo to auto-calculate and activate the next booster schedule.</p>
+        </div>
+        
+        {{-- Header Actions --}}
+        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <a href="{{ route('medical-logs.index') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
+                <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                <span>Medical Logs Registry</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Metric Overview Cards for Vet Proofs --}}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {{-- 1. Total Submissions --}}
+        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'all']) }}"
+           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? 'all') === 'all' ? 'bg-[#199CA4]/10 border-[#199CA4] dark:bg-[#199CA4]/15 dark:border-[#41C1CB] ring-2 ring-[#199CA4]/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Submissions</span>
+                <div class="w-7 h-7 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black text-slate-900 dark:text-white">{{ $totalVetLogsCount }}</span>
+                <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-500">all external</span>
+            </div>
+        </a>
+
+        {{-- 2. Awaiting Verification --}}
+        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'pending']) }}"
+           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? '') === 'pending' ? 'bg-amber-50 border-amber-500 dark:bg-amber-950/30 dark:border-amber-500 ring-2 ring-amber-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Pending Review</span>
+                <div class="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black text-amber-700 dark:text-amber-400">{{ $pendingVetLogsCount }}</span>
+                <span class="text-[11px] font-semibold text-amber-600/70 dark:text-amber-500/70">awaiting check</span>
+            </div>
+        </a>
+
+        {{-- 3. Verified & Active --}}
+        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'verified']) }}"
+           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? '') === 'verified' ? 'bg-emerald-50 border-emerald-500 dark:bg-emerald-950/30 dark:border-emerald-500 ring-2 ring-emerald-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Verified</span>
+                <div class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">{{ $verifiedVetLogsCount }}</span>
+                <span class="text-[11px] font-semibold text-emerald-600/70 dark:text-emerald-500/70">approved</span>
+            </div>
+        </a>
+
+        {{-- 4. Rejected --}}
+        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'rejected']) }}"
+           class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between {{ ($vetStatus ?? '') === 'rejected' ? 'bg-rose-50 border-rose-500 dark:bg-rose-950/30 dark:border-rose-500 ring-2 ring-rose-500/20' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">Rejected</span>
+                <div class="w-7 h-7 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black text-rose-700 dark:text-rose-400">{{ $rejectedVetLogsCount }}</span>
+                <span class="text-[11px] font-semibold text-rose-600/70 dark:text-rose-500/70">declined</span>
+            </div>
+        </a>
+    </div>
+
+    {{-- Search & Filter Toolbar for Vet Proofs --}}
+    <div class="bg-white dark:bg-[#12141C] p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">
+        <form method="GET" action="{{ route('adopters.reports') }}" class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+            <input type="hidden" name="tab" value="vet_proofs">
+            
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <select name="vet_status" onchange="this.form.submit()"
+                        class="bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] focus:outline-none transition cursor-pointer">
+                    <option value="all" {{ ($vetStatus ?? 'all') === 'all' ? 'selected' : '' }}>All Verification Statuses</option>
+                    <option value="pending" {{ ($vetStatus ?? '') === 'pending' ? 'selected' : '' }}>Pending Verification</option>
+                    <option value="verified" {{ ($vetStatus ?? '') === 'verified' ? 'selected' : '' }}>Verified Records</option>
+                    <option value="rejected" {{ ($vetStatus ?? '') === 'rejected' ? 'selected' : '' }}>Rejected Submissions</option>
+                </select>
+
+                @if(($vetStatus ?? 'all') !== 'all' || !empty($search))
+                    <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" class="text-xs font-bold text-[#199CA4] hover:underline ml-1 cursor-pointer">
+                        Reset Filters
+                    </a>
+                @endif
+            </div>
+
+            <div class="flex items-center gap-2 w-full lg:w-auto">
+                <div class="relative flex-1 lg:w-80">
+                    <input type="text" 
+                           name="search" 
+                           value="{{ $search }}"
+                           placeholder="Search pet, vaccine, clinic, vet, adopter..." 
+                           class="w-full pl-10 pr-8 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    @if(!empty($search))
+                        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => $vetStatus]) }}" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold">
+                            &times;
+                        </a>
+                    @endif
+                </div>
+                <button type="submit" class="px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-extrabold rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span>Search</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- External Vet Proofs Grid --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        @forelse($vetLogs as $log)
+            @php
+                $pet = $log->pet;
+                $petName = $pet && $pet->name ? $pet->name : ('Pet #' . $log->pet_id);
+                $adopter = $log->creator?->adoptersProfile;
+                $adopterName = $adopter?->full_name ?: ($log->creator?->name ?: 'Adopter');
+                $photoUrl = $log->proof_photo_url;
+                $isPending = ($log->verification_status === 'pending');
+                $isVerified = ($log->verification_status === 'verified');
+
+                $logPayload = [
+                    'id'                  => $log->id,
+                    'pet_id'              => $log->pet_id,
+                    'date'                => $log->date?->format('Y-m-d'),
+                    'category'            => $log->category,
+                    'vaccine_name'        => $log->vaccine_name,
+                    'clinic_name'         => $log->clinic_name,
+                    'administered_by'     => $log->administered_by,
+                    'next_due_date'       => $log->next_due_date?->format('Y-m-d'),
+                    'proof_photo_url'     => $log->proof_photo_url,
+                    'verification_status' => $log->verification_status,
+                    'pet' => [
+                        'id'         => $pet?->id,
+                        'name'       => $petName,
+                        'type'       => $pet?->type,
+                        'breed'      => $pet?->breed,
+                        'photo_url'  => $pet?->photo_url,
+                        'photo_path' => $pet?->photo_path,
+                    ],
+                    'creator' => [
+                        'name'             => $adopterName,
+                        'email'            => $log->creator?->email,
+                        'adopters_profile' => [
+                            'phone' => $adopter?->phone,
+                        ],
+                    ],
+                ];
+            @endphp
+
+            <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.07] shadow-sm dark:shadow-xl dark:shadow-black/40 overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col justify-between">
+                <div>
+                    {{-- Card Header: Pet & Adopter --}}
+                    <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            @if($pet?->photo_path)
+                                <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-10 h-10 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">
+                            @else
+                                <div class="w-10 h-10 rounded-2xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-xs shrink-0">
+                                    #{{ $log->pet_id }}
+                                </div>
+                            @endif
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white truncate">{{ $petName }}</h3>
+                                <p class="text-[11px] text-slate-400 truncate">{{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Status Pill --}}
+                        @if($isPending)
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                Pending
+                            </span>
+                        @elseif($isVerified)
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                Verified
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                Rejected
+                            </span>
+                        @endif
+                    </div>
+
+                    {{-- Proof Photo Container --}}
+                    <div class="relative w-full h-48 bg-slate-900 flex items-center justify-center overflow-hidden group cursor-pointer"
+                         @click='openVerifyModal(@json($logPayload))'>
+                        @if($photoUrl)
+                            <img src="{{ $photoUrl }}" alt="Vet Card Proof" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <span class="px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                                    <svg class="w-4 h-4 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>Review Proof</span>
+                                </span>
+                            </div>
+                        @else
+                            <div class="text-center text-slate-500 text-xs">No Photo Attached</div>
+                        @endif
+
+                        {{-- Category Tag Badge --}}
+                        <div class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold border border-white/15">
+                            {{ ucfirst(str_replace('_', ' ', $log->category)) }}
+                        </div>
+
+                        {{-- Date Given --}}
+                        <div class="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white text-[11px] font-bold border border-white/15">
+                            {{ $log->date?->format('M d, Y') }}
+                        </div>
+                    </div>
+
+                    {{-- Clinical Info Block --}}
+                    <div class="p-4 sm:p-5 space-y-3">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Vaccine / Medication</span>
+                            <p class="text-sm font-extrabold text-slate-800 dark:text-white">
+                                {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Core Vaccine' : 'Routine Deworming') }}
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-[11px] p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.04]">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Private Clinic:</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $log->clinic_name ?: 'Private Clinic' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Adopter:</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $adopterName }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Booster Schedule Status --}}
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Next Booster:</span>
+                            @if($log->next_due_date)
+                                <span class="font-bold text-[#199CA4] dark:text-[#41C1CB]">{{ $log->next_due_date->format('M d, Y') }}</span>
+                            @else
+                                <span class="text-slate-400 italic text-[11px]">Pending verification</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Action Button Footer --}}
+                <div class="p-4 sm:p-5 pt-0">
+                    <button type="button" 
+                            @click='openVerifyModal(@json($logPayload))'
+                            class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-2 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
+                        @if($isPending)
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Review & Verify Proof</span>
+                        @else
+                            <span>View Submission Details</span>
+                        @endif
+                    </button>
+                </div>
+            </div>
+        @empty
+            <div class="col-span-full py-16 text-center bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] p-8">
+                <div class="w-14 h-14 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">No Veterinary Clinic Proofs Found</h3>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                    When adopters upload vaccination booklet stickers or clinic receipts from their private veterinary visits, they will appear here for staff verification.
+                </p>
+                @if(!empty($search) || ($vetStatus ?? 'all') !== 'all')
+                    <div class="mt-4">
+                        <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" class="inline-flex items-center px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 text-xs font-bold text-slate-700 dark:text-slate-200 transition">
+                            Clear Filters & Search
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endforelse
+    </div>
+
+    {{-- Pagination for Vet Proofs --}}
+    @if($vetLogs->hasPages())
+        <div class="p-4 bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-xs">
+            {{ $vetLogs->links() }}
+        </div>
+    @endif
+
+@else
+    {{-- ==================== MONTHLY PET UPDATES TAB ==================== --}}
+
+    {{-- Page Header --}}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Monthly Pet Updates Report</h1>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                    {{ $totalReports }} Check-in Reports
+                </span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Official post-adoption health reports, condition photos, and recorded weights submitted monthly by adopters via the mobile application.</p>
+        </div>
+        
+        {{-- Header Actions --}}
+        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <a href="{{ route('adopters.index') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <span>Adopter Profiles</span>
+            </a>
+        </div>
+    </div>
 
         {{-- Metric Overview Cards --}}
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -510,6 +934,7 @@
                 {{ $reports->links() }}
             </div>
         @endif
+@endif
 
         {{-- Photo Zoom Modal --}}
         <div x-show="showPhotoModal" 
@@ -703,6 +1128,232 @@
                             </button>
                         </div>
                     </form>
+
+                </div>
+            </div>
+        </div>
+
+        {{-- Side-by-Side Vet Clinic Proof Verification Modal --}}
+        <div x-show="showVerifyModal" 
+             x-cloak 
+             class="fixed inset-0 z-[80] overflow-y-auto" 
+             aria-labelledby="verify-modal-title" 
+             role="dialog" 
+             aria-modal="true"
+             @keydown.escape.window="showVerifyModal = false">
+            <div class="flex items-center justify-center min-h-screen px-3 sm:px-4 py-6 text-center">
+                <div class="fixed inset-0 transition-opacity bg-black/85 backdrop-blur-sm" 
+                     @click="showVerifyModal = false"
+                     x-show="showVerifyModal"
+                     x-transition:enter="ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-150"></div>
+
+                <div class="relative inline-block w-full max-w-5xl my-4 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] shadow-2xl rounded-3xl border border-slate-200 dark:border-white/[0.1] z-10"
+                     x-show="showVerifyModal"
+                     x-transition:enter="ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="ease-in duration-150"
+                     @click.outside="showVerifyModal = false">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-white/[0.08]">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white" id="verify-modal-title">
+                                    Veterinary Proof Verification
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Pet: <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyPetName"></span> &bull; Adopter: <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyAdopterName"></span>
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="showVerifyModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer">&times;</button>
+                    </div>
+
+                    {{-- Modal Body: 2-Column Side-by-Side Layout --}}
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-white/[0.08]">
+                        
+                        {{-- Left Column: 7 cols - Proof Photo Viewer with Zoom/Rotate --}}
+                        <div class="lg:col-span-7 p-4 sm:p-5 flex flex-col justify-between bg-slate-50/50 dark:bg-[#0E1018]">
+                            {{-- Image Controls Toolbar --}}
+                            <div class="flex items-center justify-between pb-3 gap-2 flex-wrap">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Proof Document Preview</span>
+                                <div class="flex items-center gap-1.5 bg-white dark:bg-[#161824] p-1 rounded-xl border border-slate-200 dark:border-white/[0.08] shadow-2xs">
+                                    <button type="button" @click="rotateImage()" title="Rotate 90 degrees" class="px-2 py-1 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition flex items-center gap-1 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        <span>Rotate</span>
+                                    </button>
+                                    <button type="button" @click="zoomIn()" title="Zoom In" class="px-2 py-1 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition cursor-pointer">+</button>
+                                    <button type="button" @click="zoomOut()" title="Zoom Out" class="px-2 py-1 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition cursor-pointer">-</button>
+                                    <button type="button" @click="resetImg()" title="Reset Zoom & Rotation" class="px-2 py-1 text-[11px] font-bold rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer">Reset</button>
+                                    <template x-if="verifyProofPhotoUrl">
+                                        <a :href="verifyProofPhotoUrl" target="_blank" title="Open full size" class="px-2 py-1 text-xs font-bold rounded-lg text-[#199CA4] hover:bg-[#199CA4]/10 transition flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        </a>
+                                    </template>
+                                </div>
+                            </div>
+
+                            {{-- Image Canvas --}}
+                            <div class="relative w-full h-[400px] sm:h-[460px] rounded-2xl bg-slate-900/90 dark:bg-black/90 flex items-center justify-center overflow-hidden border border-slate-200/60 dark:border-white/[0.08]">
+                                <template x-if="verifyProofPhotoUrl">
+                                    <img :src="verifyProofPhotoUrl" 
+                                         alt="Proof Photo" 
+                                         :style="'transform: rotate(' + imgRotation + 'deg) scale(' + imgZoom + '); transform-origin: center center; transition: transform 0.2s ease-out;'"
+                                         class="max-w-full max-h-full object-contain pointer-events-none select-none">
+                                </template>
+                                <template x-if="!verifyProofPhotoUrl">
+                                    <div class="text-slate-400 text-xs">No proof photo available for this submission.</div>
+                                </template>
+                            </div>
+
+                            <p class="text-[11px] text-slate-400 dark:text-slate-500 text-center mt-2 font-medium">
+                                Inspect clinic stamp, veterinarian signature, administered date, and vaccine lot/sticker.
+                            </p>
+                        </div>
+
+                        {{-- Right Column: 5 cols - Verification Form & Due Date Calculator --}}
+                        <div class="lg:col-span-5 p-5 sm:p-6 space-y-4 flex flex-col justify-between">
+                            <div class="space-y-4">
+                                {{-- Submission Summary Box --}}
+                                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#161824] border border-slate-200/80 dark:border-white/[0.08] space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Treatment</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] uppercase" x-text="verifyCategory"></span>
+                                    </div>
+                                    <p class="text-sm font-extrabold text-slate-900 dark:text-white" x-text="verifyVaccineName"></p>
+                                    
+                                    <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60 dark:border-white/[0.06]">
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 block font-medium">Date Administered:</span>
+                                            <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyDate"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 block font-medium">Private Clinic:</span>
+                                            <span class="font-bold text-slate-800 dark:text-slate-200 truncate block" x-text="verifyClinicName"></span>
+                                        </div>
+                                    </div>
+
+                                    <template x-if="verifyVeterinarian">
+                                        <div class="text-xs pt-1 text-slate-500 dark:text-slate-400">
+                                            <span>Attending Vet: </span>
+                                            <span class="font-bold text-slate-700 dark:text-slate-300" x-text="verifyVeterinarian"></span>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                {{-- Auto-Calculated Next Due Date Box --}}
+                                <div class="p-4 rounded-2xl bg-[#199CA4]/[0.06] dark:bg-[#199CA4]/10 border border-[#199CA4]/25 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
+                                            <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <span>Next Due Date</span>
+                                        </label>
+                                        <span class="text-[10px] font-bold text-[#199CA4] dark:text-[#41C1CB]">CAWS Auto-Rule</span>
+                                    </div>
+
+                                    <input type="date" 
+                                           x-model="verifyNextDueDate" 
+                                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-xs sm:text-sm font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] shadow-2xs">
+
+                                    {{-- Preset Interval Quick Chips --}}
+                                    <div>
+                                        <span class="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">Quick Intervals:</span>
+                                        <div class="grid grid-cols-4 gap-1.5">
+                                            <button type="button" 
+                                                    @click="setDueMonths(1)" 
+                                                    class="px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#161824] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer">
+                                                +1M (Puppy)
+                                            </button>
+                                            <button type="button" 
+                                                    @click="setDueMonths(3)" 
+                                                    class="px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#161824] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer">
+                                                +3M (Deworm)
+                                            </button>
+                                            <button type="button" 
+                                                    @click="setDueMonths(6)" 
+                                                    class="px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#161824] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 transition cursor-pointer">
+                                                +6M
+                                            </button>
+                                            <button type="button" 
+                                                    @click="setDueMonths(12)" 
+                                                    class="px-2 py-1.5 rounded-lg text-[10px] font-extrabold border border-[#199CA4]/40 bg-[#199CA4]/10 hover:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] transition cursor-pointer">
+                                                +1Y (Annual)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                                        Calculated from date administered. If the vet card states a different return date, adjust the date input above before approving.
+                                    </p>
+                                </div>
+
+                                {{-- Rejection Input Box (Collapsible) --}}
+                                <div x-show="showRejectInput" x-transition class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 space-y-2">
+                                    <label class="block text-xs font-bold text-rose-800 dark:text-rose-300">
+                                        Reason for Declining / Re-upload Request:
+                                    </label>
+                                    <textarea x-model="rejectionReason"
+                                              rows="2"
+                                              placeholder="e.g. Photo of vaccine sticker is blurry. Please re-upload a clear shot..."
+                                              class="w-full text-xs rounded-xl border border-rose-200 dark:border-rose-800/60 bg-white dark:bg-[#12141C] text-slate-800 dark:text-slate-200 p-2.5 focus:ring-2 focus:ring-rose-400"></textarea>
+                                </div>
+                            </div>
+
+                            {{-- Decision Buttons --}}
+                            <div class="pt-4 border-t border-slate-100 dark:border-white/[0.08] space-y-2">
+                                <template x-if="!showRejectInput">
+                                    <div class="space-y-2">
+                                        <form :action="verifyActionUrl" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="verified">
+                                            <input type="hidden" name="next_due_date" :value="verifyNextDueDate">
+                                            <button type="submit" 
+                                                    class="w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Approve & Activate Schedule</span>
+                                            </button>
+                                        </form>
+
+                                        <button type="button" 
+                                                @click="showRejectInput = true" 
+                                                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-900/50 transition cursor-pointer">
+                                            Reject / Request Clearer Proof
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <template x-if="showRejectInput">
+                                    <div class="space-y-2">
+                                        <form :action="verifyActionUrl" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="rejected">
+                                            <input type="hidden" name="rejection_reason" :value="rejectionReason">
+                                            <button type="submit" 
+                                                    class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                                                <span>Confirm Rejection & Notify Adopter</span>
+                                            </button>
+                                        </form>
+
+                                        <button type="button" 
+                                                @click="showRejectInput = false" 
+                                                class="w-full py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition cursor-pointer">
+                                            Back to Approval
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+
+                        </div>
+
+                    </div>
 
                 </div>
             </div>

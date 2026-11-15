@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AdoptersProfile;
 use App\Models\AdoptionApplication;
+use App\Models\MedicalLog;
 use App\Models\PetHealthUpdate;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -278,10 +279,12 @@ class AdopterProfileController extends Controller
      */
     public function monthlyReports(Request $request): View
     {
+        $tab      = $request->query('tab', 'monthly_updates'); // 'monthly_updates' or 'vet_proofs'
         $search   = trim((string) $request->query('search', ''));
         $status   = $request->query('status', 'all'); // all, healthy, minor_issue, under_treatment
         $species  = $request->query('species', 'all'); // all, dog, cat
         $period   = $request->query('period', 'all');  // all, this_month, last_month, last_3_months
+        $vetStatus = $request->query('vet_status', 'all'); // all, pending, verified, rejected
 
         $query = PetHealthUpdate::with([
             'pet',
@@ -327,6 +330,41 @@ class AdopterProfileController extends Controller
 
         $reports = $query->latest('check_in_date')->latest('created_at')->paginate(12)->withQueryString();
 
+        // Veterinary External Proofs Submissions
+        $vetQuery = MedicalLog::where('is_external', true)->with([
+            'pet',
+            'creator.adoptersProfile',
+            'verifier'
+        ]);
+
+        if (!empty($search)) {
+            $vetQuery->where(function ($q) use ($search) {
+                $q->where('vaccine_name', 'like', "%{$search}%")
+                    ->orWhere('clinic_name', 'like', "%{$search}%")
+                    ->orWhere('administered_by', 'like', "%{$search}%")
+                    ->orWhereHas('pet', function ($petQ) use ($search) {
+                        $petQ->where('name', 'like', "%{$search}%")
+                            ->orWhere('breed', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('creator', function ($userQ) use ($search) {
+                        $userQ->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($vetStatus !== 'all') {
+            $vetQuery->where('verification_status', $vetStatus);
+        }
+
+        $vetLogs = $vetQuery->latest('created_at')->paginate(12, ['*'], 'vet_page')->withQueryString();
+
+        // Vet Proofs KPI counts
+        $totalVetLogsCount     = MedicalLog::where('is_external', true)->count();
+        $pendingVetLogsCount   = MedicalLog::where('is_external', true)->where('verification_status', 'pending')->count();
+        $verifiedVetLogsCount  = MedicalLog::where('is_external', true)->where('verification_status', 'verified')->count();
+        $rejectedVetLogsCount  = MedicalLog::where('is_external', true)->where('verification_status', 'rejected')->count();
+
         // Summary KPI statistics
         $totalReports     = PetHealthUpdate::count();
         $thisMonthReports = PetHealthUpdate::whereBetween('check_in_date', [now()->startOfMonth(), now()->endOfMonth()])->count();
@@ -343,11 +381,14 @@ class AdopterProfileController extends Controller
         $neglectDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'neglect_confirmed')->count();
 
         return view('adopters.reports', compact(
+            'tab',
             'reports',
+            'vetLogs',
             'search',
             'status',
             'species',
             'period',
+            'vetStatus',
             'totalReports',
             'thisMonthReports',
             'healthyReports',
@@ -356,7 +397,11 @@ class AdopterProfileController extends Controller
             'pendingDeceasedCount',
             'clearedDeceasedCount',
             'neglectDeceasedCount',
-            'totalApprovedAdopters'
+            'totalApprovedAdopters',
+            'totalVetLogsCount',
+            'pendingVetLogsCount',
+            'verifiedVetLogsCount',
+            'rejectedVetLogsCount'
         ));
     }
 

@@ -38,6 +38,9 @@ class MedicalLogController extends Controller
         $totalLogsCount = MedicalLog::count();
         $vaccineCount = MedicalLog::where('category', 'vaccination')->count();
         $dewormingCount = MedicalLog::where('category', 'deworming')->count();
+        $pendingVetProofsCount = MedicalLog::where('is_external', true)
+            ->where('verification_status', 'pending')
+            ->count();
 
         if ($filter === 'vaccination') {
             $query->where('category', 'vaccination');
@@ -59,6 +62,7 @@ class MedicalLogController extends Controller
             'totalLogsCount' => $totalLogsCount,
             'vaccineCount' => $vaccineCount,
             'dewormingCount' => $dewormingCount,
+            'pendingVetProofsCount' => $pendingVetProofsCount,
         ]);
     }
 
@@ -287,15 +291,63 @@ class MedicalLogController extends Controller
             $status = 'verified';
         }
 
-        $medicalLog->update([
-            'verification_status' => $status,
-            'verified_by' => Auth::id(),
-            'verified_at' => now(),
-        ]);
+        $pet = $medicalLog->pet;
+        $petName = $pet?->name ?? ('Pet no. ' . $medicalLog->pet_id);
+        $category = $medicalLog->category;
 
-        $petName = $medicalLog->pet->name ?? ('Pet no. ' . $medicalLog->pet_id);
-        $statusLabel = ucfirst($status);
-        session()->flash('success', "External medical log for {$petName} was {$statusLabel}.");
+        if ($status === 'verified') {
+            $dateStr = $medicalLog->date ? $medicalLog->date->format('Y-m-d') : now()->format('Y-m-d');
+            $nextDueDate = $request->input('next_due_date');
+            if (empty($nextDueDate)) {
+                $nextDueDate = $this->calculateNextDueDate($category, $dateStr, null);
+            }
+
+            $medicalLog->update([
+                'verification_status' => 'verified',
+                'next_due_date'       => $nextDueDate,
+                'verified_by'         => Auth::id(),
+                'verified_at'         => now(),
+            ]);
+
+            // Fulfill prior open booster schedules for this pet & category completed by this dose
+            MedicalLog::where('pet_id', $medicalLog->pet_id)
+                ->where('category', $category)
+                ->where('id', '!=', $medicalLog->id)
+                ->whereNotNull('next_due_date')
+                ->whereDate('next_due_date', '<=', $medicalLog->date)
+                ->update(['next_due_date' => null]);
+
+            $this->notifyAdoptersOfMedicalLog($medicalLog, $category);
+
+            $dueFormatted = $medicalLog->next_due_date ? ' Next booster scheduled for ' . $medicalLog->next_due_date->format('M d, Y') . '.' : '';
+            session()->flash('success', "External {$category} record for {$petName} was verified.{$dueFormatted}");
+        } else {
+            $reason = trim($request->input('rejection_reason', 'The uploaded photo was unclear or missing clinic verification.'));
+            
+            $medicalLog->update([
+                'verification_status' => 'rejected',
+                'verified_by'         => Auth::id(),
+                'verified_at'         => now(),
+            ]);
+
+            $adopterEmail = $medicalLog->creator?->email 
+                ?? \App\Models\AdoptionApplication::where('pet_id', $medicalLog->pet_id)->value('applicant_email');
+
+            if ($adopterEmail) {
+                \App\Services\FirebaseNotificationService::sendToUser(
+                    $adopterEmail,
+                    "Veterinary Record Update for {$petName}",
+                    "Your {$category} submission could not be verified: {$reason}. Please check the app to review and re-upload.",
+                    [
+                        'type'   => 'vet_log_rejected',
+                        'pet_id' => (string) $medicalLog->pet_id,
+                        'log_id' => (string) $medicalLog->id,
+                    ]
+                );
+            }
+
+            session()->flash('success', "External {$category} record for {$petName} was rejected. Adopter has been notified.");
+        }
 
         return redirect()->back();
     }

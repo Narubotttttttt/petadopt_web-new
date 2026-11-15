@@ -27,12 +27,33 @@
                     </div>
                     <button type="submit" class="px-4 sm:px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs sm:text-sm border border-slate-200 dark:border-white/[0.08] shadow-2xs transition-colors cursor-pointer shrink-0">Search</button>
                 </form>
+                <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" class="relative inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50 text-xs sm:text-sm font-bold shadow-2xs transition-all duration-200 shrink-0">
+                    <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Adopter Vet Proofs</span>
+                    @if(($pendingVetProofsCount ?? 0) > 0)
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white leading-none">
+                            {{ $pendingVetProofsCount }}
+                        </span>
+                    @endif
+                </a>
                 <a href="{{ route('medical-logs.create') }}" class="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-bold shadow-xs transition-all duration-200 shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                     <span>Record Medical Log</span>
                 </a>
             </div>
         </div>
+
+        @if(($pendingVetProofsCount ?? 0) > 0)
+            <div class="px-4 py-3 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-2xl flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold shadow-2xs">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span>{{ $pendingVetProofsCount }} external vet vaccination & deworming {{ Str::plural('proof', $pendingVetProofsCount) }} awaiting shelter verification.</span>
+                </div>
+                <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'vet_status' => 'pending']) }}" class="px-3 py-1.5 rounded-xl bg-amber-500 text-white font-bold text-xs hover:bg-amber-600 transition shrink-0 shadow-2xs">
+                    Review Queue &rarr;
+                </a>
+            </div>
+        @endif
 
         @if(session('success'))
             <div class="px-4 py-3 bg-[#199CA4]/10 dark:bg-[#199CA4]/15 border border-[#199CA4]/25 text-[#146970] dark:text-[#41C1CB] rounded-2xl flex items-center gap-2 text-sm font-semibold shadow-2xs">
@@ -201,14 +222,9 @@
                         {{-- Touch-Friendly Actions Row --}}
                         <div class="flex items-center gap-2 pt-1">
                             @if($log->is_external && $log->verification_status === 'pending')
-                                <form action="{{ route('medical-logs.verify', $log) }}" method="POST" class="flex-1">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="verified">
-                                    <button type="submit" class="w-full py-2 text-center rounded-xl bg-[#199CA4] text-white font-bold text-xs shadow-2xs cursor-pointer">
-                                        Verify
-                                    </button>
-                                </form>
+                                <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'q' => $log->pet->name ?? $log->pet_id]) }}" class="flex-1 py-2 text-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-2xs">
+                                    Review Proof
+                                </a>
                             @endif
                             <a href="{{ route('medical-logs.edit', $log) }}"
                                 class="flex-1 py-2 text-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold text-xs transition shadow-2xs">
@@ -354,14 +370,9 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         @if($log->is_external && $log->verification_status === 'pending')
-                                            <form action="{{ route('medical-logs.verify', $log) }}" method="POST" class="inline-block">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="verified">
-                                                <button type="submit" class="px-3 py-1.5 text-center rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-bold transition text-xs shadow-2xs cursor-pointer">
-                                                    Verify
-                                                </button>
-                                            </form>
+                                            <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'q' => $log->pet->name ?? $log->pet_id]) }}" class="px-3 py-1.5 text-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition text-xs shadow-2xs">
+                                                Review Proof
+                                            </a>
                                         @endif
                                         <a href="{{ route('medical-logs.edit', $log) }}" 
                                             class="px-3.5 py-1.5 text-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs inline-block">

@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://booking-payment-enterprises-economics.trycloudflare.com/$1",
+                         "destination":  "https://entry-pathology-relevant-characteristics.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

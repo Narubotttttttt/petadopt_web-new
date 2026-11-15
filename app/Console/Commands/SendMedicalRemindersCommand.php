@@ -45,6 +45,10 @@ class SendMedicalRemindersCommand extends Command
             $targetDate = $today->copy()->addDays($daysAhead)->format('Y-m-d');
 
             $logs = MedicalLog::with('pet')
+                ->where(function ($q) {
+                    $q->where('is_external', false)
+                      ->orWhere('verification_status', 'verified');
+                })
                 ->whereDate('next_due_date', $targetDate)
                 ->get();
 

@@ -7,6 +7,7 @@ use App\Models\AdoptionApplication;
 use App\Models\AdopterCompatibilityProfile;
 use App\Models\AdopterPreference;
 use App\Models\AdoptersProfile;
+use App\Models\MedicalLog;
 use App\Models\Pet;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -755,6 +756,10 @@ class AdoptionApiController extends Controller
 
         $reminders = \App\Models\MedicalLog::with('pet')
             ->whereIn('pet_id', $petIds)
+            ->where(function ($q) {
+                $q->where('is_external', false)
+                  ->orWhere('verification_status', 'verified');
+            })
             ->whereNotNull('next_due_date')
             ->whereDate('next_due_date', '>=', $today)
             ->orderBy('next_due_date')
@@ -928,8 +933,11 @@ class AdoptionApiController extends Controller
         $today = now()->startOfDay();
         $thirtyDaysAhead = $today->copy()->addDays(30)->endOfDay();
         $logs = $pet->medicalLogs->sortByDesc('date');
-        $latestVaccine = $logs->where('category', 'vaccination')->first();
-        $latestDeworming = $logs->where('category', 'deworming')->first();
+        $verifiedLogs = $logs->filter(function ($l) {
+            return !$l->is_external || $l->verification_status === 'verified';
+        });
+        $latestVaccine = $verifiedLogs->where('category', 'vaccination')->first();
+        $latestDeworming = $verifiedLogs->where('category', 'deworming')->first();
 
         $vacDue = $latestVaccine?->next_due_date ? $latestVaccine->next_due_date->copy()->startOfDay() : null;
         $isVacOverdue = $vacDue && $vacDue->lt($today);
@@ -1145,13 +1153,16 @@ class AdoptionApiController extends Controller
             $administeredBy .= " ({$vetName})";
         }
 
-        // Calculate next due date if not manually provided
-        $nextDueDate = $request->input('next_due_date');
-        if (empty($nextDueDate)) {
-            if ($request->category === 'vaccination') {
-                $nextDueDate = \Illuminate\Support\Carbon::parse($request->date)->addYear()->toDateString();
-            } elseif ($request->category === 'deworming') {
-                $nextDueDate = \Illuminate\Support\Carbon::parse($request->date)->addMonths(3)->toDateString();
+        // Next due date: set immediately if recorded by shelter staff; for adopter external submissions, staff sets/schedules the booster upon verification.
+        $nextDueDate = null;
+        if ($isStaff) {
+            $nextDueDate = $request->input('next_due_date');
+            if (empty($nextDueDate)) {
+                if ($request->category === 'vaccination') {
+                    $nextDueDate = \Illuminate\Support\Carbon::parse($request->date)->addYear()->toDateString();
+                } elseif ($request->category === 'deworming') {
+                    $nextDueDate = \Illuminate\Support\Carbon::parse($request->date)->addMonths(3)->toDateString();
+                }
             }
         }
 
@@ -1159,6 +1170,8 @@ class AdoptionApiController extends Controller
         if (empty($vaccineName)) {
             $vaccineName = ucfirst($request->category);
         }
+
+        $verificationStatus = $isStaff ? 'verified' : 'pending';
 
         $log = MedicalLog::create([
             'pet_id'              => $pet->id,
@@ -1170,15 +1183,21 @@ class AdoptionApiController extends Controller
             'next_due_date'       => $nextDueDate,
             'is_external'         => true,
             'proof_photo_path'    => $proofPath,
-            'verification_status' => 'verified',
+            'verification_status' => $verificationStatus,
+            'verified_by'         => $isStaff ? $user->id : null,
+            'verified_at'         => $isStaff ? now() : null,
             'created_by'          => $user->id,
         ]);
 
         \App\Services\AdminNotificationService::clearCache();
 
+        $message = $isStaff 
+            ? 'Veterinary record saved and verified successfully.' 
+            : 'Veterinary vaccination record submitted for verification. Staff will review the proof and activate the next booster schedule.';
+
         return response()->json([
             'success' => true,
-            'message' => 'Veterinary vaccination record submitted successfully. CAWS records and pet health card have been updated.',
+            'message' => $message,
             'data'    => [
                 'id'                  => $log->id,
                 'category'            => $log->category,
