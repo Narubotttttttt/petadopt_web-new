@@ -460,22 +460,29 @@
                 {{-- Right: Content & Information --}}
                 <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2 min-w-0">
                     <div>
-                        {{-- Top Header Row: Pet Identity & Status --}}
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2 min-w-0">
+                        {{-- Top Header Row: Adopter Identity & Status --}}
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
                                 @if($pet?->photo_path)
-                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-7 h-7 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0">
+                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs" title="Companion: {{ $petName }}">
                                 @else
-                                    <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-[10px] shrink-0">
+                                    <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-[11px] shrink-0" title="Companion: {{ $petName }}">
                                         #{{ $log->pet_id }}
                                     </div>
                                 @endif
                                 <div class="min-w-0">
-                                    <div class="flex items-center gap-1">
-                                        <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">{{ $petName }}</h3>
-                                        <span class="text-[9px] text-slate-400 font-mono">#{{ $log->pet_id }}</span>
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight" title="Adopter: {{ $adopterName }}">
+                                            {{ $adopterName }}
+                                        </h3>
+                                        @if($adopter?->adopter_code)
+                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopter->adopter_code }}</span>
+                                        @endif
                                     </div>
-                                    <p class="text-[10px] text-slate-400 truncate leading-tight">{{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed' }}</p>
+                                    <p class="text-[10px] text-slate-400 truncate leading-tight mt-0.5">
+                                        Pet: <strong class="text-slate-700 dark:text-slate-200 font-bold">{{ $petName }}</strong>
+                                        <span class="text-slate-400 font-normal">&bull; {{ ucfirst($pet?->type ?? 'Pet') }} ({{ $pet?->breed ?? 'Mixed' }})</span>
+                                    </p>
                                 </div>
                             </div>
 
@@ -497,19 +504,21 @@
                         </div>
 
                         {{-- Clinical Details --}}
-                        <div class="mt-2 space-y-1.5">
+                        <div class="mt-2 space-y-1">
                             <div class="flex items-center gap-1.5 min-w-0">
                                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
                                     {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Vaccine' : 'Deworming') }}
                                 </span>
-                                <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
+                                <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate" title="{{ $log->clinic_name ?: 'Private Clinic' }}">
                                     {{ $log->clinic_name ?: 'Private Clinic' }}
                                 </span>
                             </div>
 
                             <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
-                                <span class="truncate">Adopter: <strong class="text-slate-700 dark:text-slate-300 font-semibold">{{ $adopterName }}</strong></span>
-                                <span class="shrink-0 font-medium">Given: <strong class="text-slate-700 dark:text-slate-300">{{ $log->date?->format('M d, Y') }}</strong></span>
+                                <span class="truncate">Given: <strong class="text-slate-700 dark:text-slate-300 font-medium">{{ $log->date?->format('M d, Y') }}</strong></span>
+                                @if($log->administered_by)
+                                    <span class="truncate text-[9px] text-slate-400 dark:text-slate-500">by {{ $log->administered_by }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -1226,7 +1235,7 @@
                                     Veterinary Proof Verification
                                 </h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">
-                                    Pet: <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyPetName"></span> &bull; Adopter: <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyAdopterName"></span>
+                                    Adopter: <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyAdopterName"></span> &bull; Pet: <span class="font-bold text-slate-800 dark:text-slate-200" x-text="verifyPetName"></span>
                                 </p>
                             </div>
                         </div>
