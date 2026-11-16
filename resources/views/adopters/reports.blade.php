@@ -40,6 +40,12 @@
              rejectionReason: '',
              imgRotation: 0,
              imgZoom: 1,
+             imgPanX: 0,
+             imgPanY: 0,
+             isPanning: false,
+             panStartX: 0,
+             panStartY: 0,
+             touchDistance: 0,
 
              openReviewModal(id, petName, adopterName, date, notes, decision, remarks) {
                  this.reviewReportId = id;
@@ -79,6 +85,9 @@
 
              openVerifyModal(log) {
                  if (!log) return;
+                 if (typeof log === 'string') {
+                     try { log = JSON.parse(log); } catch(e) { return; }
+                 }
                  this.verifyLogId = log.id;
                  this.verifyPetName = log.pet?.name || ('Pet no. ' + log.pet_id);
                  this.verifyPetBreed = (log.pet?.type ? (log.pet.type.charAt(0).toUpperCase() + log.pet.type.slice(1)) : 'Pet') + ' • ' + (log.pet?.breed || 'Mixed');
@@ -98,6 +107,10 @@
                  this.rejectionReason = '';
                  this.imgRotation = 0;
                  this.imgZoom = 1;
+                 this.imgPanX = 0;
+                 this.imgPanY = 0;
+                 this.isPanning = false;
+                 this.touchDistance = 0;
 
                  if (log.next_due_date) {
                      this.verifyNextDueDate = typeof log.next_due_date === 'string' ? log.next_due_date.split('T')[0] : log.next_due_date;
@@ -108,6 +121,18 @@
                  }
 
                  this.showVerifyModal = true;
+             },
+
+             openVerifyFromEl(el) {
+                 if (!el) return;
+                 const raw = el.getAttribute('data-log') || el.closest('[data-log]')?.getAttribute('data-log');
+                 if (!raw) return;
+                 try {
+                     const log = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                     this.openVerifyModal(log);
+                 } catch (e) {
+                     console.error('Failed to parse log payload', e);
+                 }
              },
 
              calcDueDateMonths(months, baseDate) {
@@ -129,16 +154,119 @@
              },
 
              zoomIn() {
-                 this.imgZoom = Math.min(this.imgZoom + 0.25, 3);
+                 this.imgZoom = Math.min(Math.round((this.imgZoom + 0.25) * 100) / 100, 5);
              },
 
              zoomOut() {
-                 this.imgZoom = Math.max(this.imgZoom - 0.25, 0.75);
+                 const next = Math.max(Math.round((this.imgZoom - 0.25) * 100) / 100, 0.5);
+                 this.imgZoom = next;
+                 if (this.imgZoom <= 1) {
+                     this.imgPanX = 0;
+                     this.imgPanY = 0;
+                 }
              },
 
              resetImg() {
                  this.imgRotation = 0;
                  this.imgZoom = 1;
+                 this.imgPanX = 0;
+                 this.imgPanY = 0;
+                 this.isPanning = false;
+                 this.touchDistance = 0;
+             },
+
+             toggleZoom() {
+                 if (this.imgZoom > 1) {
+                     this.resetImg();
+                 } else {
+                     this.imgZoom = 2;
+                 }
+             },
+
+             handleWheel(e) {
+                 if (e.cancelable) {
+                     e.preventDefault();
+                 }
+                 let zoomDelta = 0;
+                 if (e.ctrlKey) {
+                     // Laptop trackpad pinch gesture
+                     zoomDelta = -e.deltaY * 0.015;
+                 } else {
+                     // Mouse scroll wheel
+                     const factor = Math.abs(e.deltaY) > 50 ? 0.2 : 0.08;
+                     zoomDelta = (e.deltaY < 0 ? 1 : -1) * factor;
+                 }
+                 const nextZoom = Math.min(Math.max(this.imgZoom + zoomDelta, 0.5), 5);
+                 this.imgZoom = Math.round(nextZoom * 100) / 100;
+                 if (this.imgZoom <= 1) {
+                     this.imgPanX = 0;
+                     this.imgPanY = 0;
+                 }
+             },
+
+             startPan(e) {
+                 if (this.imgZoom <= 1 && e.type === 'mousedown') return;
+                 this.isPanning = true;
+                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                 this.panStartX = clientX - this.imgPanX;
+                 this.panStartY = clientY - this.imgPanY;
+             },
+
+             doPan(e) {
+                 if (!this.isPanning) return;
+                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                 this.imgPanX = clientX - this.panStartX;
+                 this.imgPanY = clientY - this.panStartY;
+             },
+
+             endPan() {
+                 this.isPanning = false;
+             },
+
+             startTouch(e) {
+                 if (e.touches && e.touches.length === 2) {
+                     this.isPanning = false;
+                     this.touchDistance = Math.hypot(
+                         e.touches[0].clientX - e.touches[1].clientX,
+                         e.touches[0].clientY - e.touches[1].clientY
+                     );
+                 } else if (e.touches && e.touches.length === 1) {
+                     this.startPan(e);
+                 }
+             },
+
+             doTouch(e) {
+                 if (e.touches && e.touches.length === 2) {
+                     const dist = Math.hypot(
+                         e.touches[0].clientX - e.touches[1].clientX,
+                         e.touches[0].clientY - e.touches[1].clientY
+                     );
+                     if (this.touchDistance > 0) {
+                         const factor = dist / this.touchDistance;
+                         const nextZoom = Math.min(Math.max(this.imgZoom * factor, 0.5), 5);
+                         this.imgZoom = Math.round(nextZoom * 100) / 100;
+                         this.touchDistance = dist;
+                         if (this.imgZoom <= 1) {
+                             this.imgPanX = 0;
+                             this.imgPanY = 0;
+                         }
+                     }
+                 } else if (e.touches && e.touches.length === 1) {
+                     this.doPan(e);
+                 }
+             },
+
+             endTouch(e) {
+                 if (!e.touches || e.touches.length === 0) {
+                     this.isPanning = false;
+                     this.touchDistance = 0;
+                     if (this.imgZoom <= 1) {
+                         this.imgPanX = 0;
+                         this.imgPanY = 0;
+                     }
+                 }
              }
          }">
 
@@ -205,15 +333,6 @@
             </div>
             <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Private veterinary clinic vaccination booklet stickers and receipts uploaded by adopters. Verify the proof photo to auto-calculate and activate the next booster schedule.</p>
         </div>
-        
-        {{-- Header Actions --}}
-        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <a href="{{ route('medical-logs.index') }}" 
-               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
-                <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-                <span>Medical Logs Registry</span>
-            </a>
-        </div>
     </div>
 
     {{-- Search & Filter Toolbar for Vet Proofs --}}
@@ -270,8 +389,8 @@
         </div>
     </div>
 
-    {{-- External Vet Proofs Grid --}}
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
+    {{-- External Vet Proofs Grid (Compact 3-column dashboard grid) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
         @forelse($vetLogs as $log)
             @php
                 $pet = $log->pet;
@@ -311,118 +430,109 @@
                 ];
             @endphp
 
-            <div class="bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.07] shadow-sm dark:shadow-xl dark:shadow-black/40 overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col sm:flex-row">
-                {{-- Left: Proof Thumbnail Container (Compact 140px on sm+) --}}
-                <div class="relative sm:w-36 md:w-44 shrink-0 h-44 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer"
-                     @click='openVerifyModal(@json($logPayload))'
+            <div class="bg-white dark:bg-[#12141C] rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-2xs overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col sm:flex-row"
+                 data-log="{{ json_encode($logPayload) }}">
+                {{-- Left: Proof Thumbnail Container (Compact 110px on sm+) --}}
+                <div class="relative w-full sm:w-28 md:w-32 shrink-0 h-32 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer flex items-center justify-center"
+                     @click="openVerifyFromEl($el)"
                      title="Click to inspect proof photo">
                     @if($photoUrl)
                         <img src="{{ $photoUrl }}" alt="Vet Card Proof" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1.5">
-                            <div class="w-9 h-9 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
-                                <svg class="w-4 h-4 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
+                            <div class="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-2xs group-hover:scale-110 transition-transform">
+                                <svg class="w-3.5 h-3.5 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
                             </div>
-                            <span class="text-[10px] font-bold text-white bg-black/70 backdrop-blur-xs px-2.5 py-0.5 rounded-full shadow-xs">
-                                Inspect Proof
+                            <span class="text-[9px] font-bold text-white bg-black/70 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs">
+                                Inspect
                             </span>
                         </div>
                     @else
-                        <div class="w-full h-full min-h-[140px] flex flex-col items-center justify-center text-slate-500 text-xs p-3 text-center">
-                            <svg class="w-6 h-6 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span>No Photo</span>
+                        <div class="w-full h-full min-h-[110px] flex flex-col items-center justify-center text-slate-500 text-xs p-2 text-center">
+                            <svg class="w-5 h-5 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span class="text-[10px]">No Photo</span>
                         </div>
                     @endif
-                    <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-xs text-white text-[9px] font-black uppercase tracking-wider">
+                    <div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-white text-[8px] font-black uppercase tracking-wider">
                         {{ ucfirst(str_replace('_', ' ', $log->category)) }}
                     </div>
                 </div>
 
                 {{-- Right: Content & Information --}}
-                <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3 min-w-0">
+                <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2 min-w-0">
                     <div>
                         {{-- Top Header Row: Pet Identity & Status --}}
                         <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="flex items-center gap-2 min-w-0">
                                 @if($pet?->photo_path)
-                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-9 h-9 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">
+                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-7 h-7 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0">
                                 @else
-                                    <div class="w-9 h-9 rounded-xl bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-xs shrink-0">
+                                    <div class="w-7 h-7 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-[10px] shrink-0">
                                         #{{ $log->pet_id }}
                                     </div>
                                 @endif
                                 <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5">
-                                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white truncate">{{ $petName }}</h3>
-                                        <span class="text-[10px] text-slate-400 font-mono">#{{ $log->pet_id }}</span>
+                                    <div class="flex items-center gap-1">
+                                        <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">{{ $petName }}</h3>
+                                        <span class="text-[9px] text-slate-400 font-mono">#{{ $log->pet_id }}</span>
                                     </div>
-                                    <p class="text-[11px] text-slate-400 truncate">{{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}</p>
+                                    <p class="text-[10px] text-slate-400 truncate leading-tight">{{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed' }}</p>
                                 </div>
                             </div>
 
                             {{-- Status Pill --}}
                             @if($isPending)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                     Pending
                                 </span>
                             @elseif($isVerified)
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
                                     Verified
                                 </span>
                             @else
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
                                     Rejected
                                 </span>
                             @endif
                         </div>
 
                         {{-- Clinical Details --}}
-                        <div class="mt-2.5 space-y-2">
-                            <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Vaccine / Treatment</span>
-                                <p class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white truncate">
-                                    {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Core Vaccine' : 'Routine Deworming') }}
-                                </p>
+                        <div class="mt-2 space-y-1.5">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                                    {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Vaccine' : 'Deworming') }}
+                                </span>
+                                <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
+                                    {{ $log->clinic_name ?: 'Private Clinic' }}
+                                </span>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2 text-[11px] p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.04]">
-                                <div>
-                                    <span class="text-slate-400 block text-[10px] font-medium">Clinic:</span>
-                                    <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $log->clinic_name ?: 'Private Clinic' }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-400 block text-[10px] font-medium">Adopter:</span>
-                                    <span class="font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $adopterName }}</span>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-between text-[11px] pt-0.5">
-                                <div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                                    <span>Given:</span>
-                                    <span class="font-bold text-slate-700 dark:text-slate-300">{{ $log->date?->format('M d, Y') }}</span>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="text-slate-400">Next Booster:</span>
-                                    @if($log->next_due_date)
-                                        <span class="font-bold text-[#199CA4] dark:text-[#41C1CB]">{{ $log->next_due_date->format('M d, Y') }}</span>
-                                    @else
-                                        <span class="text-amber-600 dark:text-amber-400 font-semibold text-[10px]">Pending review</span>
-                                    @endif
-                                </div>
+                            <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                <span class="truncate">Adopter: <strong class="text-slate-700 dark:text-slate-300 font-semibold">{{ $adopterName }}</strong></span>
+                                <span class="shrink-0 font-medium">Given: <strong class="text-slate-700 dark:text-slate-300">{{ $log->date?->format('M d, Y') }}</strong></span>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Action Row --}}
-                    <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06]">
+                    {{-- Action Row & Next Due Date --}}
+                    <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
+                        <div class="min-w-0 text-[10px]">
+                            <span class="text-slate-400 block text-[9px] leading-tight">Next Booster:</span>
+                            @if($log->next_due_date)
+                                <span class="font-bold text-[#199CA4] dark:text-[#41C1CB] truncate block leading-tight">{{ $log->next_due_date->format('M d, Y') }}</span>
+                            @else
+                                <span class="text-amber-600 dark:text-amber-400 font-semibold text-[10px] truncate block leading-tight">Pending review</span>
+                            @endif
+                        </div>
+
                         <button type="button" 
-                                @click='openVerifyModal(@json($logPayload))'
-                                class="w-full py-2 px-3.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
+                                @click="openVerifyFromEl($el)"
+                                class="h-7 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
                             @if($isPending)
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Inspect Proof & Verify</span>
+                                <span>Inspect & Verify</span>
                             @else
-                                <span>View Submission Details</span>
+                                <span>Details</span>
                             @endif
                         </button>
                     </div>
@@ -959,8 +1069,6 @@
             </div>
         </div>
 
-    </div>
-
         {{-- Deceased Life Event Review Modal --}}
         <div x-show="showReviewModal" 
              x-cloak 
@@ -1139,6 +1247,7 @@
                                         <span>Rotate</span>
                                     </button>
                                     <button type="button" @click="zoomIn()" title="Zoom In" class="px-2 py-1 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition cursor-pointer">+</button>
+                                    <span x-text="Math.round(imgZoom * 100) + '%'" class="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1 select-none min-w-[36px] text-center" title="Current zoom level"></span>
                                     <button type="button" @click="zoomOut()" title="Zoom Out" class="px-2 py-1 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition cursor-pointer">-</button>
                                     <button type="button" @click="resetImg()" title="Reset Zoom & Rotation" class="px-2 py-1 text-[11px] font-bold rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer">Reset</button>
                                     <template x-if="verifyProofPhotoUrl">
@@ -1150,20 +1259,44 @@
                             </div>
 
                             {{-- Image Canvas --}}
-                            <div class="relative w-full h-[400px] sm:h-[460px] rounded-2xl bg-slate-900/90 dark:bg-black/90 flex items-center justify-center overflow-hidden border border-slate-200/60 dark:border-white/[0.08]">
+                            <div class="relative w-full h-[400px] sm:h-[460px] rounded-2xl bg-slate-900/90 dark:bg-black/90 flex items-center justify-center overflow-hidden border border-slate-200/60 dark:border-white/[0.08] select-none touch-none"
+                                 :class="imgZoom > 1 ? (isPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'"
+                                 @wheel.prevent="handleWheel($event)"
+                                 @mousedown="startPan($event)"
+                                 @mousemove="doPan($event)"
+                                 @mouseup="endPan()"
+                                 @mouseup.window="endPan()"
+                                 @mouseleave="endPan()"
+                                 @touchstart="startTouch($event)"
+                                 @touchmove="doTouch($event)"
+                                 @touchend="endTouch($event)"
+                                 @dblclick="toggleZoom()">
                                 <template x-if="verifyProofPhotoUrl">
                                     <img :src="verifyProofPhotoUrl" 
                                          alt="Proof Photo" 
-                                         :style="'transform: rotate(' + imgRotation + 'deg) scale(' + imgZoom + '); transform-origin: center center; transition: transform 0.2s ease-out;'"
+                                         :style="'transform: translate(' + imgPanX + 'px, ' + imgPanY + 'px) rotate(' + imgRotation + 'deg) scale(' + imgZoom + '); transform-origin: center center; transition: ' + (isPanning ? 'none' : 'transform 0.15s ease-out') + ';'"
                                          class="max-w-full max-h-full object-contain pointer-events-none select-none">
                                 </template>
                                 <template x-if="!verifyProofPhotoUrl">
                                     <div class="text-slate-400 text-xs">No proof photo available for this submission.</div>
                                 </template>
+
+                                {{-- Quick Zoom Helper Hint Overlay (fades out when interacting or zoomed) --}}
+                                <div x-show="imgZoom === 1 && !isPanning" 
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-100 translate-y-0"
+                                     x-transition:leave-end="opacity-0 translate-y-1"
+                                     class="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs text-[10px] text-white/70 pointer-events-none select-none flex items-center gap-1.5 shadow-sm">
+                                    <svg class="w-3 h-3 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                    <span>Scroll or pinch to zoom &bull; Drag to pan</span>
+                                </div>
                             </div>
 
                             <p class="text-[11px] text-slate-400 dark:text-slate-500 text-center mt-2 font-medium">
-                                Inspect clinic stamp, veterinarian signature, administered date, and vaccine lot/sticker.
+                                Inspect clinic stamp, veterinarian signature, administered date, and vaccine lot/sticker. Double-click to toggle 2x zoom.
                             </p>
                         </div>
 
@@ -1307,5 +1440,7 @@
                 </div>
             </div>
         </div>
+
+    </div>
 
 </x-app-layout>

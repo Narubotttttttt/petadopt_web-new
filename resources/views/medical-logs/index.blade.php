@@ -212,7 +212,7 @@
 
                         @if($log->is_external)
                             <div class="px-2.5 py-1.5 text-[11px] bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-between">
-                                <span class="text-slate-600 dark:text-slate-300 font-medium">Vet: {{ $log->clinic_name ?: 'Private Clinic' }}</span>
+                                <span class="text-slate-600 dark:text-slate-300 font-medium">Vet: {{ $log->clinic_name ?: 'Private Clinic' }} (Verified)</span>
                                 @if($log->proof_photo_url)
                                     <a href="{{ $log->proof_photo_url }}" target="_blank" class="font-bold text-[#199CA4] hover:underline text-[10px]">View Proof &rarr;</a>
                                 @endif
@@ -221,11 +221,6 @@
 
                         {{-- Touch-Friendly Actions Row --}}
                         <div class="flex items-center gap-2 pt-1">
-                            @if($log->is_external && $log->verification_status === 'pending')
-                                <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'q' => $log->pet->name ?? $log->pet_id]) }}" class="flex-1 py-2 text-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-2xs">
-                                    Review Proof
-                                </a>
-                            @endif
                             <a href="{{ route('medical-logs.edit', $log) }}"
                                 class="flex-1 py-2 text-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold text-xs transition shadow-2xs">
                                 Edit
@@ -324,10 +319,8 @@
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
                                                     {{ $log->clinic_name ? 'Vet: '.$log->clinic_name : 'External Vet' }}
                                                 </span>
-                                            @endif
-                                            @if($log->is_external && $log->verification_status === 'pending')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
-                                                    Pending
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                                                    Verified
                                                 </span>
                                             @endif
                                         </div>
@@ -369,11 +362,6 @@
                                 {{-- 5. Actions --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        @if($log->is_external && $log->verification_status === 'pending')
-                                            <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs', 'q' => $log->pet->name ?? $log->pet_id]) }}" class="px-3 py-1.5 text-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition text-xs shadow-2xs">
-                                                Review Proof
-                                            </a>
-                                        @endif
                                         <a href="{{ route('medical-logs.edit', $log) }}" 
                                             class="px-3.5 py-1.5 text-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition text-xs shadow-2xs inline-block">
                                             Edit

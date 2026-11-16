@@ -294,9 +294,11 @@
                                 $petNameStr = $pet && $pet->name ? $pet->name : 'Pet no. '.$app->pet_id;
                                 $adoptedDate = $app->approved_at ?? $app->signed_at ?? $app->updated_at ?? $app->created_at;
 
-                                // Medical logs & vaccination status
-                                $latestLog = $pet ? $pet->medicalLogs->first() : null;
-                                $vaccineLogs = $pet ? $pet->medicalLogs->where('category', 'vaccination') : collect();
+                                // Medical logs & vaccination status (Official verified records only)
+                                $verifiedMedicalLogs = $pet ? $pet->medicalLogs->filter(fn($m) => !$m->is_external || $m->verification_status === 'verified') : collect();
+                                $pendingExternalLog = $pet ? $pet->medicalLogs->firstWhere('verification_status', 'pending') : null;
+                                $latestLog = $verifiedMedicalLogs->first();
+                                $vaccineLogs = $verifiedMedicalLogs->where('category', 'vaccination');
                                 $latestVaccine = $vaccineLogs->first();
 
                                 // Monthly health updates
@@ -444,6 +446,16 @@
                                                     @else
                                                         {{ $dueLabel }}: <span class="font-semibold text-emerald-600 dark:text-emerald-400">Up to date</span>
                                                     @endif
+                                                </div>
+                                            @elseif($pendingExternalLog)
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                                                        Pending Verification
+                                                    </span>
+                                                    <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate">{{ $pendingExternalLog->vaccine_name ?: 'Vaccination Proof' }}</span>
+                                                </div>
+                                                <div class="text-[11px] text-amber-600 dark:text-amber-400 font-medium mt-0.5 truncate">
+                                                    Booster: Awaiting staff review
                                                 </div>
                                             @else
                                                 <div class="flex items-center gap-1.5">

@@ -18,13 +18,24 @@ class MedicalLogController extends Controller
         $q = request()->input('q');
         $filter = request()->input('filter', 'all');
 
+        // Official Clinical Registry query: Only include internal shelter logs or verified external records
         $query = MedicalLog::with(['pet.medicalLogs' => function ($q) {
             $q->latest('date');
-        }, 'creator']);
+        }, 'creator'])
+        ->where(function ($w) {
+            $w->where('is_external', false)
+              ->orWhereNull('is_external')
+              ->orWhere(function ($ext) {
+                  $ext->where('is_external', true)
+                      ->where('verification_status', 'verified');
+              });
+        });
 
         if ($q) {
             $query->where(function ($b) use ($q) {
                 $b->where('administered_by', 'like', "%{$q}%")
+                    ->orWhere('clinic_name', 'like', "%{$q}%")
+                    ->orWhere('vaccine_name', 'like', "%{$q}%")
                     ->orWhereHas('pet', function ($sub) use ($q) {
                         $sub->where('breed', 'like', "%{$q}%")
                             ->orWhere('color', 'like', "%{$q}%")
@@ -35,9 +46,25 @@ class MedicalLogController extends Controller
             });
         }
 
-        $totalLogsCount = MedicalLog::count();
-        $vaccineCount = MedicalLog::where('category', 'vaccination')->count();
-        $dewormingCount = MedicalLog::where('category', 'deworming')->count();
+        // Official counts (internal shelter records or verified external records only)
+        $officialLogsCount = function (?string $category = null) {
+            $q = MedicalLog::where(function ($w) {
+                $w->where('is_external', false)
+                  ->orWhereNull('is_external')
+                  ->orWhere(function ($ext) {
+                      $ext->where('is_external', true)
+                          ->where('verification_status', 'verified');
+                  });
+            });
+            if ($category) {
+                $q->where('category', $category);
+            }
+            return $q->count();
+        };
+
+        $totalLogsCount = $officialLogsCount();
+        $vaccineCount = $officialLogsCount('vaccination');
+        $dewormingCount = $officialLogsCount('deworming');
         $pendingVetProofsCount = MedicalLog::where('is_external', true)
             ->where('verification_status', 'pending')
             ->count();
