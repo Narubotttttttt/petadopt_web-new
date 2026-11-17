@@ -262,37 +262,31 @@
                             </button>
                         </div>
 
-                        {{-- Filter Tabs (Compact Single Row - No Horizontal Sliding) --}}
-                        <div class="shrink-0 px-2.5 py-1.5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-1 overflow-x-hidden bg-white dark:bg-[#12141C]">
+                        {{-- Filter Tabs (All, Unread, Updates, Requests - Overdue combined into All) --}}
+                        <div class="shrink-0 px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-1 bg-white dark:bg-[#12141C]">
                             <button type="button" 
                                 @click="activeTab = 'all'; showAllEarlier = false"
                                 :class="activeTab === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 All (<span x-text="counts.all"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'unread'; showAllEarlier = false"
                                 :class="activeTab === 'unread' ? 'bg-blue-600 text-white shadow-2xs' : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30'"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1">
+                                class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1.5">
                                 <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="activeTab === 'unread' ? 'bg-white' : 'bg-blue-600'"></span>
                                 <span>Unread (<span x-text="unreadCount"></span>)</span>
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'checkin'; showAllEarlier = false"
                                 :class="activeTab === 'checkin' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Updates (<span x-text="counts.checkins"></span>)
-                            </button>
-                            <button type="button" 
-                                @click="activeTab = 'overdue'; showAllEarlier = false"
-                                :class="activeTab === 'overdue' ? 'bg-rose-600 text-white shadow-2xs' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold transition whitespace-nowrap cursor-pointer">
-                                Overdue (<span x-text="counts.overdue"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'request'; showAllEarlier = false"
                                 :class="activeTab === 'request' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
-                                class="px-2 py-1 rounded-full text-[11px] font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-2.5 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Requests (<span x-text="counts.requests"></span>)
                             </button>
                         </div>
