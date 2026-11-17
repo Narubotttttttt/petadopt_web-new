@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://impose-covers-perform-anna.trycloudflare.com/$1",
+                         "destination":  "https://aug-mill-potentially-bathrooms.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

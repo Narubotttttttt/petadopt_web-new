@@ -228,7 +228,7 @@
                                 @click="activeTab = 'checkin'"
                                 :class="activeTab === 'checkin' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
                                 class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
-                                Check-ins (<span x-text="counts.checkins"></span>)
+                                Pet Updates (<span x-text="counts.checkins"></span>)
                             </button>
                             <button type="button" 
                                 @click="activeTab = 'overdue'"
@@ -256,7 +256,7 @@
                                         </svg>
                                     </div>
                                     <p class="text-xs font-bold text-slate-700 dark:text-slate-300">No notifications in this tab</p>
-                                    <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">You're all caught up with monthly check-ins and adoption requests.</p>
+                                    <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">You're all caught up with monthly pet updates and adoption requests.</p>
                                 </div>
                             </template>
 
@@ -292,11 +292,16 @@
 
                                         {{-- Title & Pet Count Pill --}}
                                         <div class="flex items-center justify-between gap-2">
-                                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-400 truncate" x-text="item.title"></span>
+                                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" x-text="item.title"></span>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
                                                 <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet' : ' Pets')"></span>
                                             </span>
                                         </div>
+
+                                        {{-- Explanatory Notification Body / Message --}}
+                                        <template x-if="item.message || item.body">
+                                            <p class="text-xs text-slate-600 dark:text-slate-300 font-normal leading-relaxed" x-text="item.message || item.body"></p>
+                                        </template>
 
                                         {{-- Multi-Pet Breakdown Chips --}}
                                         <div class="space-y-1.5 pt-1">
@@ -307,12 +312,12 @@
                                                     </div>
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
                                                         :class="{
-                                                            'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800': pet.status_type === 'submitted',
-                                                            'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue',
-                                                            'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon',
-                                                            'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
-                                                            'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]': pet.status_type === 'pending_first'
-                                                        }"
+                                                             'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800': pet.status_type === 'submitted',
+                                                             'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue' || pet.status_type === 'deceased',
+                                                             'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon' || pet.status_type === 'vaccination_pending',
+                                                             'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
+                                                             'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]': pet.status_type === 'pending_first'
+                                                         }"
                                                         x-text="pet.status_label">
                                                     </span>
                                                 </div>
@@ -322,7 +327,7 @@
                                         {{-- Click Action Hint --}}
                                         <div class="pt-0.5 text-right">
                                             <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline"
-                                                x-text="item.action_hint || (item.category === 'request' ? 'Review submitted application & applicant details' : 'View adopter profile & check-in history')">
+                                                x-text="item.action_hint || (item.category === 'request' ? 'Review submitted application & applicant details' : 'View adopter profile & pet updates')">
                                             </span>
                                         </div>
 

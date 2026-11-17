@@ -93,7 +93,7 @@ class AdminNotificationService
                         $petDetails[] = [
                             'pet_name' => $petName,
                             'status_type' => 'deceased',
-                            'status_label' => 'Passed Away / Deceased',
+                            'status_label' => 'Passed Away',
                             'is_alert' => true,
                             'time' => $latestUpdate->created_at ? $latestUpdate->created_at->diffForHumans() : '',
                         ];
@@ -169,7 +169,7 @@ class AdminNotificationService
                 $category = $hasOverdue ? 'overdue' : 'checkin';
                 $severity = $hasDeceased ? 'danger' : ($hasOverdue ? 'danger' : 'success');
                 $title = $hasDeceased 
-                    ? 'Pet Life Event: Deceased Notification' 
+                    ? 'Pet Life Event: Passing Notification' 
                     : ($hasOverdue ? '30-Day Check-in Overdue' : 'Monthly Health Check-in');
                 
                 $adopterNameParts = preg_split('/\s+/', trim($adopterName));
@@ -181,6 +181,19 @@ class AdminNotificationService
                     ? url('/adopters/reports') . '?status=deceased&search=' . urlencode($adopterName)
                     : url('/adopters') . '?search=' . urlencode($adopterName);
 
+                $firstPetName = $petDetails[0]['pet_name'] ?? 'their pet';
+                if ($hasDeceased) {
+                    $deceasedPet = collect($petDetails)->firstWhere('status_type', 'deceased');
+                    $deceasedPetName = $deceasedPet['pet_name'] ?? $firstPetName;
+                    $message = "{$adopterName} reported that {$deceasedPetName} has passed away. Memorial record and adopter notes logged for shelter review.";
+                } elseif ($hasOverdue) {
+                    $overduePet = collect($petDetails)->firstWhere('status_type', 'overdue');
+                    $overduePetName = $overduePet['pet_name'] ?? $firstPetName;
+                    $message = "{$adopterName} has an overdue monthly update for {$overduePetName}.";
+                } else {
+                    $message = "{$adopterName} submitted a monthly health and photo update for {$firstPetName}.";
+                }
+
                 $notifications[] = [
                     'id' => $id,
                     'category' => $category,
@@ -191,13 +204,15 @@ class AdminNotificationService
                     'avatar' => $user->avatar_url ?? null,
                     'initials' => $adopterInitials,
                     'title' => $title,
+                    'message' => $message,
+                    'body' => $message,
                     'pets_count' => count($apps),
                     'pet_details' => $petDetails,
                     'time' => $latestTimestamp ? Carbon::createFromTimestamp($latestTimestamp)->diffForHumans() : 'Recently',
                     'is_read' => false,
                     'url' => $targetUrl,
                     'action_url' => $targetUrl,
-                    'action_hint' => $hasDeceased ? 'View memorial report & circumstances' : 'View adopter profile & check-in history',
+                    'action_hint' => $hasDeceased ? 'View Memorial Report' : 'View adopter profile & check-in history',
                     'created_at' => $latestTimestamp ?: now()->timestamp,
                 ];
             }
@@ -214,6 +229,8 @@ class AdminNotificationService
                 ? strtoupper(mb_substr($applicantParts[0], 0, 1) . mb_substr(end($applicantParts), 0, 1))
                 : strtoupper(mb_substr($pApp->applicant_name, 0, 1));
 
+            $message = "{$pApp->applicant_name} submitted an adoption application for {$petName}.";
+
             $notifications[] = [
                 'id' => $id,
                 'category' => 'request',
@@ -224,6 +241,8 @@ class AdminNotificationService
                 'avatar' => null,
                 'initials' => $applicantInitials,
                 'title' => "New Adoption Application",
+                'message' => $message,
+                'body' => $message,
                 'pets_count' => 1,
                 'pet_details' => [
                     [
@@ -240,6 +259,62 @@ class AdminNotificationService
                 'action_url' => url('/adoption-applications/' . $pApp->id),
                 'action_hint' => 'Review submitted application & applicant details',
                 'created_at' => $pApp->created_at ? $pApp->created_at->timestamp : 0,
+            ];
+        }
+
+        // 3. Pending External Veterinary Vaccination Records
+        $pendingVaccinations = \App\Models\MedicalLog::with(['pet', 'creator'])
+            ->where('is_external', true)
+            ->where('verification_status', 'pending')
+            ->latest('created_at')
+            ->take(15)
+            ->get();
+
+        foreach ($pendingVaccinations as $vLog) {
+            $petName = $vLog->pet ? ($vLog->pet->name ?: 'Pet no. ' . $vLog->pet_id) : 'Pet no. ' . $vLog->pet_id;
+            $adopter = $vLog->creator;
+            $adopterName = $adopter ? $adopter->name : 'Adopter';
+            $adopterIdCode = $adopter ? sprintf('ADP-%04d', $adopter->id) : 'ADP';
+            $id = 'med_log_' . $vLog->id;
+
+            $adopterParts = preg_split('/\s+/', trim($adopterName));
+            $adopterInitials = count($adopterParts) >= 2 
+                ? strtoupper(mb_substr($adopterParts[0], 0, 1) . mb_substr(end($adopterParts), 0, 1))
+                : strtoupper(mb_substr($adopterName, 0, 1));
+
+            $vaccineDetail = !empty($vLog->vaccine_name) ? $vLog->vaccine_name : ucfirst($vLog->category);
+
+            $actionUrl = url('/adopters/reports') . '?tab=vet_proofs&verify_log_id=' . $vLog->id;
+            $message = "{$adopterName} uploaded an external vaccination record for {$petName} ({$vaccineDetail}). Verification needed.";
+
+            $notifications[] = [
+                'id'              => $id,
+                'category'        => 'checkin',
+                'severity'        => 'warning',
+                'type'            => 'vaccination_proof_pending',
+                'adopter_name'    => $adopterName,
+                'adopter_id_code' => $adopterIdCode,
+                'avatar'          => $adopter?->avatar_url,
+                'initials'        => $adopterInitials,
+                'title'           => 'New Vaccination Record Submitted',
+                'message'         => $message,
+                'body'            => $message,
+                'pets_count'      => 1,
+                'pet_details'     => [
+                    [
+                        'pet_name'     => $petName,
+                        'status_type'  => 'vaccination_pending',
+                        'status_label' => "{$vaccineDetail} Proof Verification",
+                        'is_alert'     => true,
+                        'time'         => $vLog->created_at ? $vLog->created_at->diffForHumans() : 'Recently',
+                    ]
+                ],
+                'time'            => $vLog->created_at ? $vLog->created_at->diffForHumans() : 'Recently',
+                'is_read'         => false,
+                'url'             => $actionUrl,
+                'action_url'      => $actionUrl,
+                'action_hint'     => 'Review Proof',
+                'created_at'      => $vLog->created_at ? $vLog->created_at->timestamp : now()->timestamp,
             ];
         }
 

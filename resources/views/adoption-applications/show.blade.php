@@ -178,7 +178,7 @@
                     @if($application->application_source === 'recommendation')
                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>{{ $application->compatibility_score !== null ? number_format($application->compatibility_score, 0) . '% Match' : 'ML Match' }}</span>
+                            <span>{{ $application->compatibility_score !== null ? $application->formatted_compatibility_score . '% Match' : 'ML Match' }}</span>
                         </span>
                     @endif
 
@@ -774,7 +774,7 @@
                                 </div>
                                 @if($application->compatibility_score !== null)
                                     <div class="text-left sm:text-right shrink-0">
-                                        <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{{ number_format($application->compatibility_score, 0) }}%</span>
+                                        <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{{ $application->formatted_compatibility_score }}%</span>
                                         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Match Score</p>
                                     </div>
                                 @endif
@@ -868,7 +868,7 @@
                                     <div class="flex items-center gap-3 self-end sm:self-center">
                                         @if($application->compatibility_score !== null)
                                             <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
-                                                {{ number_format($application->compatibility_score, 0) }}% Match
+                                                {{ $application->formatted_compatibility_score }}% Match
                                             </span>
                                         @endif
                                         @if($application->status === 'rejected')
@@ -901,7 +901,7 @@
                                         <div class="flex items-center gap-3 self-end sm:self-center">
                                             @if($compApp->compatibility_score !== null)
                                                 <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
-                                                    {{ number_format($compApp->compatibility_score, 0) }}% Match
+                                                    {{ $compApp->formatted_compatibility_score }}% Match
                                                 </span>
                                             @endif
                                             @if($compApp->status === 'rejected')

@@ -427,6 +427,20 @@
             @php
                 $groupedApplications = $applications->getCollection()->groupBy(function($app) {
                     return $app->pet_id ? ('pet_' . $app->pet_id) : ('app_' . $app->id);
+                })->map(function ($group) {
+                    return $group->sort(function ($a, $b) {
+                        $scoreA = $a->compatibility_score ?? 0;
+                        $scoreB = $b->compatibility_score ?? 0;
+                        if ($scoreA != $scoreB) {
+                            return $scoreB <=> $scoreA;
+                        }
+                        $timeA = $a->created_at ? $a->created_at->timestamp : 0;
+                        $timeB = $b->created_at ? $b->created_at->timestamp : 0;
+                        if ($timeA != $timeB) {
+                            return $timeA <=> $timeB;
+                        }
+                        return $a->id <=> $b->id;
+                    })->values();
                 });
             @endphp
 
@@ -536,7 +550,7 @@
                                     <div class="flex items-center justify-between text-xs">
                                         <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
                                         <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                                            Quiz Match {{ $application->compatibility_score !== null ? '(' . number_format($application->compatibility_score, 0) . '%)' : '' }}
+                                            Quiz Match {{ $application->compatibility_score !== null ? '(' . $application->formatted_compatibility_score . '%)' : '' }}
                                         </span>
                                     </div>
                                 @endif
@@ -642,12 +656,12 @@
                             <div class="p-3 rounded-xl bg-white dark:bg-[#181A26] border border-slate-200/80 dark:border-white/[0.08] text-xs space-y-1.5">
                                 <div class="flex items-center justify-between">
                                     <span class="text-slate-700 dark:text-slate-200 font-extrabold flex items-center gap-1.5 truncate">
-                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">#1 Lead</span>
+                                        <span class="font-bold font-mono text-xs text-slate-500 dark:text-slate-400 shrink-0">#1</span>
                                         <span class="truncate">{{ $firstApp->applicant_name }}</span>
                                     </span>
                                     @if($firstApp->compatibility_score !== null)
                                         <span class="font-black text-emerald-600 dark:text-emerald-400 font-mono text-[11px] shrink-0">
-                                            {{ number_format($firstApp->compatibility_score, 0) }}% Match
+                                            {{ $firstApp->formatted_compatibility_score }}% Match
                                         </span>
                                     @endif
                                 </div>
@@ -667,15 +681,11 @@
                             {{-- Collapsible nested applicants --}}
                             <div x-show="isPetExpanded('{{ $groupKey }}')" x-cloak class="space-y-3 pt-1">
                                 @foreach($petApps as $index => $app)
-                                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#181A26] shadow-2xs space-y-3 {{ $index === 0 ? 'ring-1 ring-emerald-500/30' : '' }}">
+                                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#181A26] shadow-2xs space-y-3">
                                         <div class="flex items-start justify-between gap-2">
                                             <div class="min-w-0">
                                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                                    @if($index === 0)
-                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">#1 Lead</span>
-                                                    @else
-                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">#{{ $index + 1 }} Backup</span>
-                                                    @endif
+                                                    <span class="font-bold font-mono text-xs text-slate-500 dark:text-slate-400">#{{ $index + 1 }}</span>
                                                     <span class="font-extrabold text-slate-900 dark:text-white text-xs truncate">{{ $app->applicant_name }}</span>
                                                 </div>
                                                 <div class="text-[11px] text-slate-400 mt-0.5">
@@ -724,7 +734,7 @@
                                         <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-white/[0.04]">
                                             <span class="inline-flex items-center gap-1">
                                                 @if($app->compatibility_score !== null)
-                                                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Quiz Match {{ number_format($app->compatibility_score, 0) }}%</span>
+                                                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Quiz Match {{ $app->formatted_compatibility_score }}%</span>
                                                 @else
                                                     <span>Direct Application</span>
                                                 @endif
@@ -854,7 +864,7 @@
                                                 </span>
                                                 @if($application->compatibility_score !== null)
                                                     <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                                                        {{ number_format($application->compatibility_score, 0) }}%
+                                                        {{ $application->formatted_compatibility_score }}%
                                                     </span>
                                                 @endif
                                             </div>
@@ -984,7 +994,7 @@
                                     <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                         <div x-show="!isPetExpanded('{{ $groupKey }}')">
                                             <div class="flex items-center gap-1.5 font-extrabold text-slate-900 dark:text-white leading-tight">
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">#1 Lead</span>
+                                                <span class="font-bold font-mono text-xs text-slate-500 dark:text-slate-400">#1</span>
                                                 <span class="truncate">{{ $firstApp->applicant_name }}</span>
                                             </div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium leading-normal">
@@ -1003,7 +1013,7 @@
                                                     Top Match
                                                 </span>
                                                 <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                                                    {{ number_format($firstApp->compatibility_score, 0) }}%
+                                                    {{ $firstApp->formatted_compatibility_score }}%
                                                 </span>
                                             </div>
                                         @else
@@ -1037,7 +1047,7 @@
                                             {{ $firstApp->created_at ? $firstApp->created_at->format('M d, Y') : '—' }}
                                         </div>
                                         <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-normal mt-0.5">
-                                            Latest submitted
+                                            Date applied
                                         </div>
                                     </td>
                                     <td class="px-3.5 py-3.5 whitespace-nowrap text-right">
@@ -1053,28 +1063,13 @@
                                 {{-- Multi-Applicant Integrated Inline Child Rows --}}
                                 @foreach($petApps as $index => $app)
                                     <tr x-show="isPetExpanded('{{ $groupKey }}')" x-cloak
-                                        class="border-b {{ $loop->last ? 'border-b-2 border-slate-300/80 dark:border-white/[0.08]' : 'border-slate-200/60 dark:border-white/[0.04]' }} transition-colors text-xs sm:text-sm {{ $index === 0 ? 'bg-emerald-500/[0.03] dark:bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] dark:hover:bg-emerald-500/[0.04]' : 'bg-slate-50/60 dark:bg-[#0E1018]/90 hover:bg-slate-100/70 dark:hover:bg-[#151722]' }}">
+                                        class="border-b {{ $loop->last ? 'border-b-2 border-slate-300/80 dark:border-white/[0.08]' : 'border-slate-200/60 dark:border-white/[0.04]' }} transition-colors text-xs sm:text-sm bg-slate-50/60 dark:bg-[#0E1018]/90 hover:bg-slate-100/70 dark:hover:bg-[#151722]">
                                         
-                                        {{-- Col 1: Hierarchy Tree Connector & Rank --}}
+                                        {{-- Col 1: Rank --}}
                                         <td class="pl-6 sm:pl-9 pr-3.5 py-3 whitespace-nowrap">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    @if($loop->last)
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3v8a2 2 0 002 2h6"/>
-                                                    @else
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3v18M8 12h8"/>
-                                                    @endif
-                                                </svg>
-                                                @if($index === 0)
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                                                        #1 Lead
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800">
-                                                        #{{ $index + 1 }} Backup
-                                                    </span>
-                                                @endif
-                                            </div>
+                                            <span class="font-bold font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                                                #{{ $index + 1 }}
+                                            </span>
                                         </td>
 
                                         {{-- Col 2: Applicant --}}
@@ -1102,7 +1097,7 @@
                                                     </span>
                                                     @if($app->compatibility_score !== null)
                                                         <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                                                            {{ number_format($app->compatibility_score, 0) }}%
+                                                            {{ $app->formatted_compatibility_score }}%
                                                         </span>
                                                     @endif
                                                 </div>

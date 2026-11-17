@@ -504,5 +504,81 @@ class MedicalLogTest extends TestCase
         $dewormResponse->assertSee('Canex Dewormer');
         $dewormResponse->assertDontSee('Anti-Rabies');
     }
+
+    public function test_external_vaccination_submission_generates_admin_notification(): void
+    {
+        $adopter = User::factory()->create(['role' => 'adopter', 'name' => 'Maria Santos']);
+        $pet = Pet::create(['name' => 'Luna', 'type' => 'cat', 'status' => 'adopted']);
+
+        MedicalLog::create([
+            'pet_id'              => $pet->id,
+            'date'                => now()->toDateString(),
+            'category'            => 'vaccination',
+            'vaccine_name'        => 'Rabies Vaccine',
+            'administered_by'     => 'PetVet Clinic',
+            'is_external'         => true,
+            'verification_status' => 'pending',
+            'created_by'          => $adopter->id,
+        ]);
+
+        \App\Services\AdminNotificationService::clearCache();
+        $notifs = \App\Services\AdminNotificationService::getNotifications();
+
+        $vaccineNotif = collect($notifs['notifications'])->firstWhere('type', 'vaccination_proof_pending');
+        $this->assertNotNull($vaccineNotif);
+        $this->assertEquals('New Vaccination Record Submitted', $vaccineNotif['title']);
+        $this->assertEquals('Maria Santos', $vaccineNotif['adopter_name']);
+        $this->assertEquals('Review Proof', $vaccineNotif['action_hint']);
+        $this->assertEquals('Rabies Vaccine Proof Verification', $vaccineNotif['pet_details'][0]['status_label']);
+        $this->assertEquals('Maria Santos uploaded an external vaccination record for Luna (Rabies Vaccine). Verification needed.', $vaccineNotif['message']);
+        $this->assertStringContainsString('/adopters/reports?tab=vet_proofs&verify_log_id=', $vaccineNotif['action_url']);
+        $this->assertStringContainsString('/adopters/reports?tab=vet_proofs&verify_log_id=', $vaccineNotif['url']);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $reportPageResponse = $this->actingAs($admin)->get($vaccineNotif['action_url']);
+        $reportPageResponse->assertStatus(200);
+        $reportPageResponse->assertSeeText('Vaccination updates');
+        $reportPageResponse->assertSee('Veterinary Proof Verification');
+    }
+
+    public function test_deceased_pet_update_generates_admin_notification(): void
+    {
+        $adopter = User::factory()->create(['role' => 'adopter', 'name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']);
+        $pet = Pet::create(['name' => 'Rocky', 'type' => 'dog', 'status' => 'adopted']);
+
+        $application = \App\Models\AdoptionApplication::create([
+            'pet_id'          => $pet->id,
+            'user_id'         => $adopter->id,
+            'applicant_name'  => 'Juan Dela Cruz',
+            'applicant_email' => 'juan@example.com',
+            'applicant_phone' => '09123456789',
+            'status'          => 'approved',
+        ]);
+
+        \App\Models\PetHealthUpdate::create([
+            'adoption_application_id' => $application->id,
+            'pet_id'                  => $pet->id,
+            'user_id'                 => $adopter->id,
+            'photo_path'              => 'health_updates/default.jpg',
+            'health_status'           => 'deceased',
+            'notes'                   => 'Rocky passed away peacefully from old age.',
+            'check_in_date'           => now()->toDateString(),
+            'status'                  => 'memorial_recorded',
+            'review_decision'         => 'pending',
+        ]);
+
+        \App\Services\AdminNotificationService::clearCache();
+        $notifs = \App\Services\AdminNotificationService::getNotifications();
+
+        $deceasedNotif = collect($notifs['notifications'])->first(function ($n) {
+            return ($n['pet_details'][0]['status_type'] ?? '') === 'deceased';
+        });
+
+        $this->assertNotNull($deceasedNotif);
+        $this->assertEquals('Pet Life Event: Passing Notification', $deceasedNotif['title']);
+        $this->assertEquals('Juan Dela Cruz reported that Rocky has passed away. Memorial record and adopter notes logged for shelter review.', $deceasedNotif['message']);
+        $this->assertEquals('Passed Away', $deceasedNotif['pet_details'][0]['status_label']);
+        $this->assertEquals('View Memorial Report', $deceasedNotif['action_hint']);
+    }
 }
 

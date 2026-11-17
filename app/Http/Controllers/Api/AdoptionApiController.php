@@ -842,6 +842,18 @@ class AdoptionApiController extends Controller
 
         if ($isDeceased) {
             $application->pet?->update(['status' => 'deceased']);
+
+            $petName = $application->pet?->name ?: 'your companion';
+            \App\Services\FirebaseNotificationService::sendToUser(
+                $user->email,
+                'With Deep Sympathy from CAWS',
+                "We are deeply saddened to hear about the loss of {$petName}. Thank you for providing them a loving home. Your memorial record has been respectfully updated.",
+                [
+                    'type'           => 'pet_deceased_confirmed',
+                    'pet_id'         => (string) $application->pet_id,
+                    'application_id' => (string) $application->id,
+                ]
+            );
         }
 
         \App\Services\AdminNotificationService::clearCache();
@@ -1190,6 +1202,20 @@ class AdoptionApiController extends Controller
         ]);
 
         \App\Services\AdminNotificationService::clearCache();
+
+        if (!$isStaff) {
+            $petName = $pet->name ?: 'your companion';
+            \App\Services\FirebaseNotificationService::sendToUser(
+                $user->email,
+                'Vaccination Proof Received',
+                "We received your vaccination update for {$petName}. Our shelter team will review the veterinary proof and activate the booster schedule.",
+                [
+                    'type'           => 'vaccination_submitted',
+                    'medical_log_id' => (string) $log->id,
+                    'pet_id'         => (string) $pet->id,
+                ]
+            );
+        }
 
         $message = $isStaff 
             ? 'Veterinary record saved and verified successfully.' 

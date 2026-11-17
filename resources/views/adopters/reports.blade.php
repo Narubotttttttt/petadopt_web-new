@@ -47,6 +47,23 @@
              panStartY: 0,
              touchDistance: 0,
 
+             init() {
+                 @if(!empty($autoVerifyLogPayload))
+                     this.$nextTick(() => {
+                         this.openVerifyModal(@js($autoVerifyLogPayload));
+                         try {
+                             const url = new URL(window.location.href);
+                             if (url.searchParams.has('verify_log_id')) {
+                                 url.searchParams.delete('verify_log_id');
+                                 window.history.replaceState({}, document.title, url.toString());
+                             }
+                         } catch (e) {
+                             // Ignore url cleanup if unsupported
+                         }
+                     });
+                 @endif
+             },
+
              openReviewModal(id, petName, adopterName, date, notes, decision, remarks) {
                  this.reviewReportId = id;
                  this.reviewPetName = petName || 'Companion';

@@ -29,7 +29,10 @@ class AdoptionApplicationController extends Controller
         $baseQuery = AdoptionApplication::with([
             'pet.adoptionApplications' => function ($q) {
                 $q->whereIn('status', ['pending', 'under_review', 'approved'])
-                  ->select('id', 'pet_id', 'applicant_name', 'status', 'compatibility_score', 'created_at', 'documents_verified_at', 'staff_signature_path');
+                  ->select('id', 'pet_id', 'applicant_name', 'status', 'compatibility_score', 'created_at', 'documents_verified_at', 'staff_signature_path')
+                  ->orderByRaw('COALESCE(compatibility_score, 0) DESC')
+                  ->orderBy('created_at', 'asc')
+                  ->orderBy('id', 'asc');
             },
             'user.adoptersProfile',
         ]);
@@ -77,8 +80,9 @@ class AdoptionApplicationController extends Controller
         $applications = $query
             ->orderByRaw('COALESCE((SELECT MAX(sub.created_at) FROM adoption_applications sub WHERE sub.pet_id = adoption_applications.pet_id), created_at) DESC')
             ->orderBy('pet_id')
-            ->orderByDesc('compatibility_score')
-            ->orderByDesc('created_at')
+            ->orderByRaw('COALESCE(compatibility_score, 0) DESC')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->paginate(20)
             ->withQueryString();
 
@@ -201,8 +205,9 @@ class AdoptionApplicationController extends Controller
         $competingApplications = AdoptionApplication::where('pet_id', $application->pet_id)
             ->where('id', '!=', $application->id)
             ->orderByRaw("CASE WHEN status = 'approved' THEN 1 WHEN status IN ('pending', 'under_review') THEN 2 ELSE 3 END")
-            ->orderByDesc('compatibility_score')
-            ->latest('created_at')
+            ->orderByRaw('COALESCE(compatibility_score, 0) DESC')
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         $siblingApplications = AdoptionApplication::where('applicant_email', $application->applicant_email)

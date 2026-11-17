@@ -283,12 +283,55 @@ class AdopterProfileController extends Controller
      */
     public function monthlyReports(Request $request): View
     {
-        $tab      = $request->query('tab', 'monthly_updates'); // 'monthly_updates' or 'vet_proofs'
+        $tab      = $request->query('tab', $request->filled('verify_log_id') ? 'vet_proofs' : 'monthly_updates'); // 'monthly_updates' or 'vet_proofs'
         $search   = trim((string) $request->query('search', ''));
         $status   = $request->query('status', 'all'); // all, healthy, minor_issue, under_treatment
         $species  = $request->query('species', 'all'); // all, dog, cat
         $period   = $request->query('period', 'all');  // all, this_month, last_month, last_3_months
         $vetStatus = $request->query('vet_status', 'all'); // all, pending, verified, rejected
+
+        $autoVerifyLogPayload = null;
+        if ($request->filled('verify_log_id')) {
+            $tab = 'vet_proofs';
+            $autoVerifyLog = MedicalLog::where('is_external', true)
+                ->with(['pet', 'creator.adoptersProfile', 'verifier'])
+                ->find($request->query('verify_log_id'));
+
+            if ($autoVerifyLog) {
+                $vPet = $autoVerifyLog->pet;
+                $vPetName = $vPet?->name ?? ('Pet no. ' . $autoVerifyLog->pet_id);
+                $vAdopter = $autoVerifyLog->creator?->adoptersProfile;
+                $vAdopterName = $vAdopter?->full_name ?? ($autoVerifyLog->creator?->name ?? 'Adopter');
+
+                $autoVerifyLogPayload = [
+                    'id'                  => $autoVerifyLog->id,
+                    'pet_id'              => $autoVerifyLog->pet_id,
+                    'category'            => $autoVerifyLog->category,
+                    'vaccine_name'        => $autoVerifyLog->vaccine_name,
+                    'date'                => $autoVerifyLog->date ? (is_string($autoVerifyLog->date) ? substr($autoVerifyLog->date, 0, 10) : $autoVerifyLog->date->format('Y-m-d')) : null,
+                    'clinic_name'         => $autoVerifyLog->clinic_name,
+                    'administered_by'     => $autoVerifyLog->administered_by,
+                    'next_due_date'       => $autoVerifyLog->next_due_date ? (is_string($autoVerifyLog->next_due_date) ? substr($autoVerifyLog->next_due_date, 0, 10) : $autoVerifyLog->next_due_date->format('Y-m-d')) : null,
+                    'proof_photo_url'     => $autoVerifyLog->proof_photo_url,
+                    'verification_status' => $autoVerifyLog->verification_status,
+                    'pet' => [
+                        'id'         => $vPet?->id,
+                        'name'       => $vPetName,
+                        'type'       => $vPet?->type,
+                        'breed'      => $vPet?->breed,
+                        'photo_url'  => $vPet?->photo_url,
+                        'photo_path' => $vPet?->photo_path,
+                    ],
+                    'creator' => [
+                        'name'             => $vAdopterName,
+                        'email'            => $autoVerifyLog->creator?->email,
+                        'adopters_profile' => [
+                            'phone' => $vAdopter?->phone,
+                        ],
+                    ],
+                ];
+            }
+        }
 
         $query = PetHealthUpdate::with([
             'pet',
@@ -393,6 +436,7 @@ class AdopterProfileController extends Controller
             'species',
             'period',
             'vetStatus',
+            'autoVerifyLogPayload',
             'totalReports',
             'thisMonthReports',
             'healthyReports',
@@ -451,6 +495,8 @@ class AdopterProfileController extends Controller
             'reviewed_at'     => now(),
             'status'          => $validated['decision'] === 'cleared_accidental' ? 'memorial_cleared' : 'memorial_neglect',
         ]);
+
+        \App\Services\AdminNotificationService::clearCache();
 
         $petName = $report->pet?->name ?? 'companion';
 

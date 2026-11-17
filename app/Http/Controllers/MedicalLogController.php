@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MedicalLog;
 use App\Models\Pet;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -375,6 +376,7 @@ class MedicalLogController extends Controller
 
             $this->notifyAdoptersOfMedicalLog($medicalLog, $category);
 
+            \App\Services\AdminNotificationService::clearCache();
             $dueFormatted = $medicalLog->next_due_date ? ' Next booster scheduled for ' . $medicalLog->next_due_date->format('M d, Y') . '.' : '';
             session()->flash('success', "External {$category} record for {$petName} was verified.{$dueFormatted}");
         } else {
@@ -385,6 +387,8 @@ class MedicalLogController extends Controller
                 'verified_by'         => Auth::id(),
                 'verified_at'         => now(),
             ]);
+
+            \App\Services\AdminNotificationService::clearCache();
 
             $adopterEmail = $medicalLog->creator?->email 
                 ?? \App\Models\AdoptionApplication::where('pet_id', $medicalLog->pet_id)->value('applicant_email');

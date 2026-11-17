@@ -1537,5 +1537,86 @@ class AdoptionApplicationTest extends TestCase
         ]);
         $this->assertEquals($app->id, session('last_viewed_pending_id'));
     }
+
+    public function test_adoption_request_ranking_prioritizes_match_score_with_first_come_first_served_tie_breaker(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff', 'email_verified_at' => now()]);
+        $pet = Pet::create(['name' => 'Charlie', 'type' => 'dog', 'status' => 'available']);
+
+        // App A: 75% match, submitted 3 days ago
+        $appA = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Applicant A (75% match, 3d ago)',
+            'applicant_email' => 'a@example.com',
+            'applicant_phone' => '09111111111',
+            'status' => 'pending',
+            'compatibility_score' => 75.0,
+        ]);
+        $appA->created_at = now()->subDays(3);
+        $appA->save();
+
+        // App B: 95.4% match, submitted 1 day ago (most recent, but highest match with decimal)
+        $appB = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Applicant B (95.4% match, 1d ago)',
+            'applicant_email' => 'b@example.com',
+            'applicant_phone' => '09222222222',
+            'status' => 'pending',
+            'compatibility_score' => 95.4,
+        ]);
+        $appB->created_at = now()->subDays(1);
+        $appB->save();
+
+        // App C: 85% match, submitted 2 days ago (same score as D, but later)
+        $appC = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Applicant C (85% match, 2d ago)',
+            'applicant_email' => 'c@example.com',
+            'applicant_phone' => '09333333333',
+            'status' => 'pending',
+            'compatibility_score' => 85.0,
+        ]);
+        $appC->created_at = now()->subDays(2);
+        $appC->save();
+
+        // App D: 85% match, submitted 4 days ago (same score as C, but earlier -> first-come, first-served)
+        $appD = AdoptionApplication::create([
+            'pet_id' => $pet->id,
+            'applicant_name' => 'Applicant D (85% match, 4d ago)',
+            'applicant_email' => 'd@example.com',
+            'applicant_phone' => '09444444444',
+            'status' => 'pending',
+            'compatibility_score' => 85.0,
+        ]);
+        $appD->created_at = now()->subDays(4);
+        $appD->save();
+
+        // Check queue positions via model attribute
+        $this->assertEquals(1, $appB->fresh()->queue_position);
+        $this->assertEquals(2, $appD->fresh()->queue_position);
+        $this->assertEquals(3, $appC->fresh()->queue_position);
+        $this->assertEquals(4, $appA->fresh()->queue_position);
+
+        // Check controller show page competing applications order
+        $responseShow = $this->actingAs($staff)->get(route('adoption-applications.show', $appB));
+        $responseShow->assertStatus(200);
+
+        /** @var \Illuminate\Database\Eloquent\Collection $competing */
+        $competing = $responseShow->viewData('competingApplications');
+        $this->assertCount(3, $competing);
+        $this->assertEquals($appD->id, $competing->values()[0]->id);
+        $this->assertEquals($appC->id, $competing->values()[1]->id);
+        $this->assertEquals($appA->id, $competing->values()[2]->id);
+
+        // Check formatted compatibility score accessor
+        $this->assertEquals('95.4', $appB->fresh()->formatted_compatibility_score);
+        $this->assertEquals('85', $appC->fresh()->formatted_compatibility_score);
+
+        // Check index page groups and displays App B as #1 Lead with decimal
+        $responseIndex = $this->actingAs($staff)->get(route('adoption-applications.index'));
+        $responseIndex->assertStatus(200);
+        $responseIndex->assertSee('Applicant B (95.4% match, 1d ago)');
+        $responseIndex->assertSee('95.4% Match');
+    }
 }
 

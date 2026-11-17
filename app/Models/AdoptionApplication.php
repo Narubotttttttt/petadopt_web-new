@@ -169,6 +169,13 @@ class AdoptionApplication extends Model
             if ($scoreA != $scoreB) {
                 return $scoreB <=> $scoreA;
             }
+
+            $timeA = $a->created_at ? $a->created_at->timestamp : 0;
+            $timeB = $b->created_at ? $b->created_at->timestamp : 0;
+            if ($timeA != $timeB) {
+                return $timeA <=> $timeB;
+            }
+
             return $a->id <=> $b->id;
         })->values();
 
@@ -184,6 +191,25 @@ class AdoptionApplication extends Model
     public function getIsFinalizedAttribute(): bool
     {
         return !empty($this->staff_signature_path) && !empty($this->documents_verified_at);
+    }
+
+    public function getFormattedCompatibilityScoreAttribute(): ?string
+    {
+        return static::formatCompatibilityScore($this->compatibility_score);
+    }
+
+    public static function formatCompatibilityScore(mixed $score): ?string
+    {
+        if ($score === null || $score === '') {
+            return null;
+        }
+
+        $val = (float) $score;
+        if (floor($val) == $val) {
+            return (string) (int) $val;
+        }
+
+        return rtrim(rtrim(number_format($val, 2), '0'), '.');
     }
 
     public function getContractUnlockedAttribute(): bool
