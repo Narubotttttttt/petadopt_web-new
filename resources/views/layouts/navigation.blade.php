@@ -24,7 +24,7 @@
             </div>
                 
             {{-- Right Header Actions --}}
-            <div class="flex items-center gap-2 sm:gap-3 ms-auto shrink-0">
+            <div class="h-full self-stretch flex items-center gap-2 sm:gap-3 ms-auto shrink-0 relative">
                 
                 {{-- Light & Dark Theme Segmented Pill Switch --}}
                 <div x-data="{
@@ -100,7 +100,7 @@
                         'counts' => ['all' => 0, 'checkins' => 0, 'overdue' => 0, 'requests' => 0]
                     ];
                 @endphp
-                <div class="relative" 
+                <div class="relative sm:static" 
                     x-data="{
                         openNotif: false,
                         activeTab: 'all',
@@ -108,7 +108,7 @@
                         notifications: @js($notifData['notifications'] ?? []),
                         counts: @js($notifData['counts'] ?? ['all' => 0, 'checkins' => 0, 'overdue' => 0, 'requests' => 0]),
                         showAllEarlier: false,
-                        earlierLimit: 4,
+                        earlierLimit: 2,
 
                         isToday(item) {
                             if (!item) return false;
@@ -245,10 +245,10 @@
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                         x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                        class="absolute right-0 mt-2 w-[420px] max-w-[92vw] bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl shadow-black/50 border border-slate-200 dark:border-white/[0.08] overflow-hidden z-50">
+                        class="absolute right-0 top-full mt-2 w-[360px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-5.5rem)] flex flex-col bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl shadow-black/50 border border-slate-200 dark:border-white/[0.08] overflow-hidden z-50">
                         
                         {{-- Dropdown Header --}}
-                        <div class="px-5 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/70 dark:bg-[#171923]">
+                        <div class="shrink-0 px-4 py-3 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between bg-slate-50/70 dark:bg-[#171923]">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Notifications</h3>
                                 <template x-if="unreadCount > 0">
@@ -263,7 +263,7 @@
                         </div>
 
                         {{-- Filter Tabs --}}
-                        <div class="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-white dark:bg-[#12141C]">
+                        <div class="shrink-0 px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-white dark:bg-[#12141C]">
                             <button type="button" 
                                 @click="activeTab = 'all'; showAllEarlier = false"
                                 :class="activeTab === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
@@ -298,7 +298,7 @@
                         </div>
 
                         {{-- Notifications List with Today and Earlier Sections --}}
-                        <div class="max-h-[460px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.06] scrollbar-thin">
+                        <div class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.06] scrollbar-thin overscroll-contain">
                             
                             {{-- Empty State --}}
                             <template x-if="totalVisible === 0">
@@ -325,37 +325,18 @@
                                             <a :href="item.action_url || item.url || '#'" 
                                                 @click="markItem(item.id)"
                                                 :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-blue-50/40 dark:bg-blue-950/25 hover:bg-blue-50/70 dark:hover:bg-blue-950/40'"
-                                                class="p-4 flex gap-3.5 transition block cursor-pointer group relative">
+                                                class="p-3.5 flex gap-3 transition block cursor-pointer group relative">
                                                 
-                                                {{-- Adopter Avatar / Initials with Mini Category Icon Badge --}}
-                                                <div class="relative shrink-0 pt-0.5">
+                                                {{-- Adopter Avatar / Initials --}}
+                                                <div class="shrink-0 pt-0.5">
                                                     <template x-if="item.avatar">
-                                                        <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                                                        <img :src="item.avatar" alt="Adopter" class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                                                     </template>
                                                     <template x-if="!item.avatar">
-                                                        <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
+                                                        <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
                                                             x-text="item.initials">
                                                         </div>
                                                     </template>
-                                                    <span class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#12141C] text-[10px] font-black shadow-xs"
-                                                        :class="{
-                                                            'bg-[#199CA4] text-white': item.type === 'vaccination_proof_pending' || (item.category === 'checkin' && item.severity !== 'danger'),
-                                                            'bg-rose-600 text-white': item.category === 'overdue' || item.severity === 'danger',
-                                                            'bg-sky-600 text-white': item.category === 'request'
-                                                        }">
-                                                        <template x-if="item.type === 'vaccination_proof_pending'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4"/></svg>
-                                                        </template>
-                                                        <template x-if="item.type !== 'vaccination_proof_pending' && item.category === 'checkin' && item.severity !== 'danger'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                        </template>
-                                                        <template x-if="item.severity === 'danger' || item.category === 'overdue'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                                        </template>
-                                                        <template x-if="item.category === 'request'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                        </template>
-                                                    </span>
                                                 </div>
 
                                                 {{-- Grouped Details --}}
@@ -442,37 +423,18 @@
                                             <a :href="item.action_url || item.url || '#'" 
                                                 @click="markItem(item.id)"
                                                 :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-blue-50/40 dark:bg-blue-950/25 hover:bg-blue-50/70 dark:hover:bg-blue-950/40'"
-                                                class="p-4 flex gap-3.5 transition block cursor-pointer group relative">
+                                                class="p-3.5 flex gap-3 transition block cursor-pointer group relative">
                                                 
-                                                {{-- Adopter Avatar / Initials with Mini Category Icon Badge --}}
-                                                <div class="relative shrink-0 pt-0.5">
+                                                {{-- Adopter Avatar / Initials --}}
+                                                <div class="shrink-0 pt-0.5">
                                                     <template x-if="item.avatar">
-                                                        <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                                                        <img :src="item.avatar" alt="Adopter" class="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
                                                     </template>
                                                     <template x-if="!item.avatar">
-                                                        <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
+                                                        <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
                                                             x-text="item.initials">
                                                         </div>
                                                     </template>
-                                                    <span class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#12141C] text-[10px] font-black shadow-xs"
-                                                        :class="{
-                                                            'bg-[#199CA4] text-white': item.type === 'vaccination_proof_pending' || (item.category === 'checkin' && item.severity !== 'danger'),
-                                                            'bg-rose-600 text-white': item.category === 'overdue' || item.severity === 'danger',
-                                                            'bg-sky-600 text-white': item.category === 'request'
-                                                        }">
-                                                        <template x-if="item.type === 'vaccination_proof_pending'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4"/></svg>
-                                                        </template>
-                                                        <template x-if="item.type !== 'vaccination_proof_pending' && item.category === 'checkin' && item.severity !== 'danger'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                        </template>
-                                                        <template x-if="item.severity === 'danger' || item.category === 'overdue'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                                        </template>
-                                                        <template x-if="item.category === 'request'">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                        </template>
-                                                    </span>
                                                 </div>
 
                                                 {{-- Grouped Details --}}
@@ -558,7 +520,7 @@
                         </div>
 
                         {{-- Dropdown Footer --}}
-                        <div class="p-3 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#171923] text-center">
+                        <div class="shrink-0 p-3 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#171923] text-center">
                             <a href="{{ route('adopters.index') }}" class="text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:underline">
                                 Open Full Adopter Profiles Directory
                             </a>
