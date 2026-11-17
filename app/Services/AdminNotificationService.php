@@ -214,6 +214,7 @@ class AdminNotificationService
                     'action_url' => $targetUrl,
                     'action_hint' => $hasDeceased ? 'View Memorial Report' : 'View adopter profile & check-in history',
                     'created_at' => $latestTimestamp ?: now()->timestamp,
+                    'is_today' => $latestTimestamp ? ((now()->timestamp - $latestTimestamp) < 86400) : true,
                 ];
             }
         }
@@ -259,6 +260,7 @@ class AdminNotificationService
                 'action_url' => url('/adoption-applications/' . $pApp->id),
                 'action_hint' => 'Review submitted application & applicant details',
                 'created_at' => $pApp->created_at ? $pApp->created_at->timestamp : 0,
+                'is_today' => $pApp->created_at ? ((now()->timestamp - $pApp->created_at->timestamp) < 86400) : false,
             ];
         }
 
@@ -315,6 +317,7 @@ class AdminNotificationService
                 'action_url'      => $actionUrl,
                 'action_hint'     => 'Review Proof',
                 'created_at'      => $vLog->created_at ? $vLog->created_at->timestamp : now()->timestamp,
+                'is_today'        => $vLog->created_at ? ((now()->timestamp - $vLog->created_at->timestamp) < 86400) : true,
             ];
         }
 

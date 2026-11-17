@@ -107,8 +107,30 @@
                         unreadCount: {{ (int)($notifData['unread_count'] ?? 0) }},
                         notifications: @js($notifData['notifications'] ?? []),
                         counts: @js($notifData['counts'] ?? ['all' => 0, 'checkins' => 0, 'overdue' => 0, 'requests' => 0]),
-                        get list() {
-                            if (this.activeTab === 'checkin') {
+                        showAllEarlier: false,
+                        earlierLimit: 4,
+
+                        isToday(item) {
+                            if (!item) return false;
+                            if (typeof item.is_today === 'boolean') {
+                                return item.is_today;
+                            }
+                            const ts = item.created_at;
+                            if (!ts || ts === 0) return false;
+                            const notifDate = new Date(ts * 1000);
+                            const now = new Date();
+                            const sameDay = notifDate.getFullYear() === now.getFullYear() &&
+                                            notifDate.getMonth() === now.getMonth() &&
+                                            notifDate.getDate() === now.getDate();
+                            const diffMs = now.getTime() - notifDate.getTime();
+                            const within24h = diffMs >= 0 && diffMs < (24 * 60 * 60 * 1000);
+                            return sameDay || within24h;
+                        },
+
+                        get filteredList() {
+                            if (this.activeTab === 'unread') {
+                                return this.notifications.filter(n => !n.is_read);
+                            } else if (this.activeTab === 'checkin') {
                                 return this.notifications.filter(n => n.category === 'checkin');
                             } else if (this.activeTab === 'overdue') {
                                 return this.notifications.filter(n => n.category === 'overdue');
@@ -117,6 +139,30 @@
                             }
                             return this.notifications;
                         },
+
+                        get todayList() {
+                            return this.filteredList.filter(n => this.isToday(n));
+                        },
+
+                        get fullEarlierList() {
+                            return this.filteredList.filter(n => !this.isToday(n));
+                        },
+
+                        get earlierList() {
+                            if (this.showAllEarlier) {
+                                return this.fullEarlierList;
+                            }
+                            return this.fullEarlierList.slice(0, this.earlierLimit);
+                        },
+
+                        get hasMoreEarlier() {
+                            return !this.showAllEarlier && this.fullEarlierList.length > this.earlierLimit;
+                        },
+
+                        get totalVisible() {
+                            return this.filteredList.length;
+                        },
+
                         async refresh() {
                             if (document.hidden) return;
                             const controller = new AbortController();
@@ -217,38 +263,45 @@
                         </div>
 
                         {{-- Filter Tabs --}}
-                        <div class="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1 overflow-x-auto scrollbar-none bg-white dark:bg-[#12141C]">
+                        <div class="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-white dark:bg-[#12141C]">
                             <button type="button" 
-                                @click="activeTab = 'all'"
+                                @click="activeTab = 'all'; showAllEarlier = false"
                                 :class="activeTab === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 All (<span x-text="counts.all"></span>)
                             </button>
                             <button type="button" 
-                                @click="activeTab = 'checkin'"
+                                @click="activeTab = 'unread'; showAllEarlier = false"
+                                :class="activeTab === 'unread' ? 'bg-blue-600 text-white shadow-xs' : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30'"
+                                class="px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full" :class="activeTab === 'unread' ? 'bg-white' : 'bg-blue-600'"></span>
+                                <span>Unread (<span x-text="unreadCount"></span>)</span>
+                            </button>
+                            <button type="button" 
+                                @click="activeTab = 'checkin'; showAllEarlier = false"
                                 :class="activeTab === 'checkin' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Pet Updates (<span x-text="counts.checkins"></span>)
                             </button>
                             <button type="button" 
-                                @click="activeTab = 'overdue'"
+                                @click="activeTab = 'overdue'; showAllEarlier = false"
                                 :class="activeTab === 'overdue' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Overdue (<span x-text="counts.overdue"></span>)
                             </button>
                             <button type="button" 
-                                @click="activeTab = 'request'"
+                                @click="activeTab = 'request'; showAllEarlier = false"
                                 :class="activeTab === 'request' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'"
-                                class="px-3 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer">
+                                class="px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer">
                                 Requests (<span x-text="counts.requests"></span>)
                             </button>
                         </div>
 
-                        {{-- Notifications List --}}
-                        <div class="max-h-[420px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.06]">
+                        {{-- Notifications List with Today and Earlier Sections --}}
+                        <div class="max-h-[460px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.06] scrollbar-thin">
                             
                             {{-- Empty State --}}
-                            <template x-if="list.length === 0">
+                            <template x-if="totalVisible === 0">
                                 <div class="py-12 px-4 text-center">
                                     <div class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-400 flex items-center justify-center mx-auto mb-2 font-bold">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,80 +313,246 @@
                                 </div>
                             </template>
 
-                            <template x-for="item in list" :key="item.id">
-                                <a :href="item.action_url || item.url || '#'" 
-                                    @click="markItem(item.id)"
-                                    :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-slate-50 dark:bg-[#171923] hover:bg-slate-100 dark:hover:bg-[#1D1F2C]'"
-                                    class="p-4 flex gap-3.5 transition block cursor-pointer group">
-                                    
-                                    {{-- Adopter Avatar / Initials --}}
-                                    <div class="shrink-0 pt-0.5">
-                                        <template x-if="item.avatar">
-                                            <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
-                                        </template>
-                                        <template x-if="!item.avatar">
-                                            <div class="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
-                                                x-text="item.initials">
-                                            </div>
-                                        </template>
+                            {{-- Today Section --}}
+                            <template x-if="todayList.length > 0">
+                                <div>
+                                    <div class="px-4 py-2 bg-slate-50/90 dark:bg-[#161824] border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between sticky top-0 z-10 backdrop-blur-xs">
+                                        <span class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Today</span>
+                                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500" x-text="todayList.length + (todayList.length === 1 ? ' update' : ' updates')"></span>
                                     </div>
-
-                                    {{-- Grouped Details --}}
-                                    <div class="min-w-0 flex-1 space-y-2">
-                                        
-                                        {{-- Adopter Header Line --}}
-                                        <div class="flex items-center justify-between gap-1">
-                                            <div class="flex items-center gap-1.5 min-w-0">
-                                                <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition truncate" x-text="item.adopter_name"></span>
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]" x-text="item.adopter_id_code"></span>
-                                            </div>
-                                            <span class="text-[10px] font-semibold text-slate-400 whitespace-nowrap" x-text="item.time"></span>
-                                        </div>
-
-                                        {{-- Title & Pet Count Pill --}}
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" x-text="item.title"></span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
-                                                <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet' : ' Pets')"></span>
-                                            </span>
-                                        </div>
-
-                                        {{-- Explanatory Notification Body / Message --}}
-                                        <template x-if="item.message || item.body">
-                                            <p class="text-xs text-slate-600 dark:text-slate-300 font-normal leading-relaxed" x-text="item.message || item.body"></p>
-                                        </template>
-
-                                        {{-- Multi-Pet Breakdown Chips --}}
-                                        <div class="space-y-1.5 pt-1">
-                                            <template x-for="(pet, idx) in item.pet_details" :key="idx">
-                                                <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] group-hover:bg-white dark:group-hover:bg-[#1D1F2C] group-hover:border-slate-200 dark:group-hover:border-white/[0.12] transition">
-                                                    <div class="flex items-center gap-1.5 min-w-0">
-                                                        <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="pet.pet_name"></span>
-                                                    </div>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+                                    <div class="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                                        <template x-for="item in todayList" :key="item.id">
+                                            <a :href="item.action_url || item.url || '#'" 
+                                                @click="markItem(item.id)"
+                                                :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-blue-50/40 dark:bg-blue-950/25 hover:bg-blue-50/70 dark:hover:bg-blue-950/40'"
+                                                class="p-4 flex gap-3.5 transition block cursor-pointer group relative">
+                                                
+                                                {{-- Adopter Avatar / Initials with Mini Category Icon Badge --}}
+                                                <div class="relative shrink-0 pt-0.5">
+                                                    <template x-if="item.avatar">
+                                                        <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                                                    </template>
+                                                    <template x-if="!item.avatar">
+                                                        <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
+                                                            x-text="item.initials">
+                                                        </div>
+                                                    </template>
+                                                    <span class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#12141C] text-[10px] font-black shadow-xs"
                                                         :class="{
-                                                             'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800': pet.status_type === 'submitted',
-                                                             'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue' || pet.status_type === 'deceased',
-                                                             'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon' || pet.status_type === 'vaccination_pending',
-                                                             'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
-                                                             'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]': pet.status_type === 'pending_first'
-                                                         }"
-                                                        x-text="pet.status_label">
+                                                            'bg-[#199CA4] text-white': item.type === 'vaccination_proof_pending' || (item.category === 'checkin' && item.severity !== 'danger'),
+                                                            'bg-rose-600 text-white': item.category === 'overdue' || item.severity === 'danger',
+                                                            'bg-sky-600 text-white': item.category === 'request'
+                                                        }">
+                                                        <template x-if="item.type === 'vaccination_proof_pending'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4"/></svg>
+                                                        </template>
+                                                        <template x-if="item.type !== 'vaccination_proof_pending' && item.category === 'checkin' && item.severity !== 'danger'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                        </template>
+                                                        <template x-if="item.severity === 'danger' || item.category === 'overdue'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                        </template>
+                                                        <template x-if="item.category === 'request'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                        </template>
                                                     </span>
                                                 </div>
-                                            </template>
-                                        </div>
 
-                                        {{-- Click Action Hint --}}
-                                        <div class="pt-0.5 text-right">
-                                            <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline"
-                                                x-text="item.action_hint || (item.category === 'request' ? 'Review submitted application & applicant details' : 'View adopter profile & pet updates')">
-                                            </span>
-                                        </div>
+                                                {{-- Grouped Details --}}
+                                                <div class="min-w-0 flex-1 space-y-1.5">
+                                                    
+                                                    {{-- Adopter Header Line --}}
+                                                    <div class="flex items-center justify-between gap-1">
+                                                        <div class="flex items-center gap-1.5 min-w-0">
+                                                            <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition truncate" x-text="item.adopter_name"></span>
+                                                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]" x-text="item.adopter_id_code"></span>
+                                                        </div>
+                                                        <span class="text-[10px] font-semibold text-slate-400 whitespace-nowrap" x-text="item.time"></span>
+                                                    </div>
 
+                                                    {{-- Title & Pet Count Pill --}}
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" x-text="item.title"></span>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
+                                                            <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet' : ' Pets')"></span>
+                                                        </span>
+                                                    </div>
+
+                                                    {{-- Explanatory Notification Body / Message --}}
+                                                    <template x-if="item.message || item.body">
+                                                        <p class="text-xs text-slate-600 dark:text-slate-300 font-normal leading-relaxed" x-text="item.message || item.body"></p>
+                                                    </template>
+
+                                                    {{-- Multi-Pet Breakdown Chips --}}
+                                                    <div class="space-y-1.5 pt-0.5">
+                                                        <template x-for="(pet, idx) in item.pet_details" :key="idx">
+                                                            <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] group-hover:bg-white dark:group-hover:bg-[#1D1F2C] group-hover:border-slate-200 dark:group-hover:border-white/[0.12] transition">
+                                                                <div class="flex items-center gap-1.5 min-w-0">
+                                                                    <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="pet.pet_name"></span>
+                                                                </div>
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+                                                                    :class="{
+                                                                         'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800': pet.status_type === 'submitted',
+                                                                         'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue' || pet.status_type === 'deceased',
+                                                                         'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon' || pet.status_type === 'vaccination_pending',
+                                                                         'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
+                                                                         'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]': pet.status_type === 'pending_first'
+                                                                     }"
+                                                                    x-text="pet.status_label">
+                                                                </span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    {{-- Click Action Hint --}}
+                                                    <div class="pt-0.5 text-right">
+                                                        <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline"
+                                                            x-text="item.action_hint || (item.category === 'request' ? 'Review submitted application & applicant details' : 'View adopter profile & pet updates')">
+                                                        </span>
+                                                    </div>
+
+                                                </div>
+
+                                                {{-- Facebook-style Blue Unread Dot Indicator on Right Edge --}}
+                                                <template x-if="!item.is_read">
+                                                    <div class="shrink-0 flex items-center justify-center self-center pl-1">
+                                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 shadow-xs" title="Unread notification"></span>
+                                                    </div>
+                                                </template>
+
+                                            </a>
+                                        </template>
                                     </div>
+                                </div>
+                            </template>
 
-                                </a>
+                            {{-- Earlier Section --}}
+                            <template x-if="earlierList.length > 0">
+                                <div>
+                                    <div class="px-4 py-2 bg-slate-50/90 dark:bg-[#161824] border-y border-slate-100 dark:border-white/[0.06] flex items-center justify-between sticky top-0 z-10 backdrop-blur-xs">
+                                        <span class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Earlier</span>
+                                        <template x-if="hasMoreEarlier">
+                                            <button type="button" @click="showAllEarlier = true" class="text-[11px] font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer">
+                                                See all
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <div class="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                                        <template x-for="item in earlierList" :key="item.id">
+                                            <a :href="item.action_url || item.url || '#'" 
+                                                @click="markItem(item.id)"
+                                                :class="item.is_read ? 'bg-white dark:bg-[#12141C] hover:bg-slate-50 dark:hover:bg-white/[0.04]' : 'bg-blue-50/40 dark:bg-blue-950/25 hover:bg-blue-50/70 dark:hover:bg-blue-950/40'"
+                                                class="p-4 flex gap-3.5 transition block cursor-pointer group relative">
+                                                
+                                                {{-- Adopter Avatar / Initials with Mini Category Icon Badge --}}
+                                                <div class="relative shrink-0 pt-0.5">
+                                                    <template x-if="item.avatar">
+                                                        <img :src="item.avatar" alt="Adopter" class="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-white/[0.08] shadow-xs">
+                                                    </template>
+                                                    <template x-if="!item.avatar">
+                                                        <div class="w-11 h-11 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 flex items-center justify-center font-extrabold text-xs border border-slate-200 dark:border-white/[0.08] shadow-xs"
+                                                            x-text="item.initials">
+                                                        </div>
+                                                    </template>
+                                                    <span class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#12141C] text-[10px] font-black shadow-xs"
+                                                        :class="{
+                                                            'bg-[#199CA4] text-white': item.type === 'vaccination_proof_pending' || (item.category === 'checkin' && item.severity !== 'danger'),
+                                                            'bg-rose-600 text-white': item.category === 'overdue' || item.severity === 'danger',
+                                                            'bg-sky-600 text-white': item.category === 'request'
+                                                        }">
+                                                        <template x-if="item.type === 'vaccination_proof_pending'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4"/></svg>
+                                                        </template>
+                                                        <template x-if="item.type !== 'vaccination_proof_pending' && item.category === 'checkin' && item.severity !== 'danger'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                        </template>
+                                                        <template x-if="item.severity === 'danger' || item.category === 'overdue'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                        </template>
+                                                        <template x-if="item.category === 'request'">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                        </template>
+                                                    </span>
+                                                </div>
+
+                                                {{-- Grouped Details --}}
+                                                <div class="min-w-0 flex-1 space-y-1.5">
+                                                    
+                                                    {{-- Adopter Header Line --}}
+                                                    <div class="flex items-center justify-between gap-1">
+                                                        <div class="flex items-center gap-1.5 min-w-0">
+                                                            <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-[#199CA4] dark:group-hover:text-[#41C1CB] transition truncate" x-text="item.adopter_name"></span>
+                                                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]" x-text="item.adopter_id_code"></span>
+                                                        </div>
+                                                        <span class="text-[10px] font-semibold text-slate-400 whitespace-nowrap" x-text="item.time"></span>
+                                                    </div>
+
+                                                    {{-- Title & Pet Count Pill --}}
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" x-text="item.title"></span>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
+                                                            <span x-text="item.pets_count + (item.pets_count === 1 ? ' Pet' : ' Pets')"></span>
+                                                        </span>
+                                                    </div>
+
+                                                    {{-- Explanatory Notification Body / Message --}}
+                                                    <template x-if="item.message || item.body">
+                                                        <p class="text-xs text-slate-600 dark:text-slate-300 font-normal leading-relaxed" x-text="item.message || item.body"></p>
+                                                    </template>
+
+                                                    {{-- Multi-Pet Breakdown Chips --}}
+                                                    <div class="space-y-1.5 pt-0.5">
+                                                        <template x-for="(pet, idx) in item.pet_details" :key="idx">
+                                                            <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] group-hover:bg-white dark:group-hover:bg-[#1D1F2C] group-hover:border-slate-200 dark:group-hover:border-white/[0.12] transition">
+                                                                <div class="flex items-center gap-1.5 min-w-0">
+                                                                    <span class="text-xs font-bold text-slate-900 dark:text-slate-200 truncate" x-text="pet.pet_name"></span>
+                                                                </div>
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold"
+                                                                    :class="{
+                                                                         'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800': pet.status_type === 'submitted',
+                                                                         'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800': pet.status_type === 'overdue' || pet.status_type === 'deceased',
+                                                                         'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800': pet.status_type === 'due_soon' || pet.status_type === 'vaccination_pending',
+                                                                         'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800': pet.status_type === 'pending_request',
+                                                                         'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08]': pet.status_type === 'pending_first'
+                                                                     }"
+                                                                    x-text="pet.status_label">
+                                                                </span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    {{-- Click Action Hint --}}
+                                                    <div class="pt-0.5 text-right">
+                                                        <span class="text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white group-hover:underline"
+                                                            x-text="item.action_hint || (item.category === 'request' ? 'Review submitted application & applicant details' : 'View adopter profile & pet updates')">
+                                                        </span>
+                                                    </div>
+
+                                                </div>
+
+                                                {{-- Facebook-style Blue Unread Dot Indicator on Right Edge --}}
+                                                <template x-if="!item.is_read">
+                                                    <div class="shrink-0 flex items-center justify-center self-center pl-1">
+                                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 shadow-xs" title="Unread notification"></span>
+                                                    </div>
+                                                </template>
+
+                                            </a>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            {{-- Facebook-style See Previous Notifications Button --}}
+                            <template x-if="hasMoreEarlier">
+                                <div class="p-3 bg-slate-50/60 dark:bg-[#171923] border-t border-slate-100 dark:border-white/[0.06]">
+                                    <button type="button" 
+                                            @click="showAllEarlier = true"
+                                            class="w-full py-2.5 px-4 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-xs font-extrabold text-slate-800 dark:text-white transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5">
+                                        <span>See previous notifications</span>
+                                        <span class="text-[10px] font-normal text-slate-500 dark:text-slate-400" x-text="'(' + (fullEarlierList.length - earlierLimit) + ' more)'"></span>
+                                    </button>
+                                </div>
                             </template>
 
                         </div>
