@@ -1064,26 +1064,30 @@
                                     <tr x-show="isPetExpanded('{{ $groupKey }}')" x-cloak
                                         class="border-b {{ $loop->last ? 'border-b-2 border-slate-300/80 dark:border-white/[0.08]' : 'border-slate-200/60 dark:border-white/[0.04]' }} transition-colors text-xs sm:text-sm bg-slate-50/60 dark:bg-[#0E1018]/90 hover:bg-slate-100/70 dark:hover:bg-[#151722]">
                                         
-                                        {{-- Col 1: Rank --}}
+                                        {{-- Col 1: Indented Space under Pet --}}
                                         <td class="pl-6 sm:pl-9 pr-3.5 py-3 whitespace-nowrap">
-                                            <span class="font-bold font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                                                #{{ $index + 1 }}
-                                            </span>
                                         </td>
 
-                                        {{-- Col 2: Applicant --}}
+                                        {{-- Col 2: Applicant with Numbering (1., 2.) --}}
                                         <td class="px-3.5 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                            <div class="font-extrabold text-slate-900 dark:text-white leading-tight">
-                                                {{ $app->applicant_name }}
-                                            </div>
-                                            <div class="text-xs font-mono font-bold text-[#199CA4] dark:text-[#41C1CB] mt-0.5">
-                                                {{ $app->applicant_phone }}
-                                            </div>
-                                            @if(!empty($app->adopter_address))
-                                                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[200px]" title="{{ $app->adopter_address }}">
-                                                    {{ $app->adopter_address }}
+                                            <div class="flex items-start gap-2">
+                                                <span class="font-bold font-mono text-xs sm:text-sm text-slate-400 dark:text-slate-500 pt-px shrink-0 select-none">
+                                                    {{ $index + 1 }}.
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <div class="font-extrabold text-slate-900 dark:text-white leading-tight">
+                                                        {{ $app->applicant_name }}
+                                                    </div>
+                                                    <div class="text-xs font-mono font-bold text-[#199CA4] dark:text-[#41C1CB] mt-0.5">
+                                                        {{ $app->applicant_phone }}
+                                                    </div>
+                                                    @if(!empty($app->adopter_address))
+                                                        <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[200px]" title="{{ $app->adopter_address }}">
+                                                            {{ $app->adopter_address }}
+                                                        </div>
+                                                    @endif
                                                 </div>
-                                            @endif
+                                            </div>
                                         </td>
 
                                         {{-- Col 3: Source --}}

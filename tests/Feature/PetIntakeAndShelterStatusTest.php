@@ -107,7 +107,22 @@ class PetIntakeAndShelterStatusTest extends TestCase
 
         $this->assertSame('in_shelter', $pet->status);
 
-        $response = $this->actingAs($staff)->post(route('pets.mark-available', $pet));
+        // Validation fails if clinical clearance is missing
+        $failResponse = $this->actingAs($staff)->post(route('pets.mark-available', $pet), [
+            'custom_temperament' => 'Playful',
+        ]);
+        $failResponse->assertSessionHasErrors(['log_vaccine']);
+
+        // Succeeds when vaccination, deworming, and temperament are provided
+        $response = $this->actingAs($staff)->post(route('pets.mark-available', $pet), [
+            'custom_temperament' => 'Playful',
+            'log_vaccine'        => 1,
+            'vaccine_name'       => '4-in-1 (FVRCP)',
+            'vaccine_date'       => now()->toDateString(),
+            'log_deworming'      => 1,
+            'dewormer_name'      => 'Broadline (Feline Spot-on)',
+            'dewormer_date'      => now()->toDateString(),
+        ]);
         $response->assertSessionHas('success');
 
         $pet->refresh();
@@ -145,7 +160,7 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $response->assertDontSee('Secret Rescued Dog');
     }
 
-    public function test_pets_index_renders_registration_modal_options_for_staff(): void
+    public function test_pets_index_renders_add_new_pet_linking_to_in_shelter_intake_for_staff(): void
     {
         $staff = User::factory()->create([
             'role' => 'staff',
@@ -154,11 +169,8 @@ class PetIntakeAndShelterStatusTest extends TestCase
 
         $response = $this->actingAs($staff)->get(route('pets.index'));
         $response->assertOk();
-        $response->assertSee('Select Registration Type');
-        $response->assertSee('Newly Rescued Pet');
-        $response->assertSee('Ready for Adoption');
         $response->assertSee(route('pets.create', ['status' => 'in_shelter']));
-        $response->assertSee(route('pets.create', ['status' => 'available']));
+        $response->assertDontSee('Select Registration Type');
     }
 
     public function test_create_pet_screen_preselects_in_shelter_mode(): void
@@ -168,27 +180,10 @@ class PetIntakeAndShelterStatusTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        $response = $this->actingAs($staff)->get(route('pets.create', ['status' => 'in_shelter']));
+        $response = $this->actingAs($staff)->get(route('pets.create'));
         $response->assertOk();
-        $response->assertSee('Shelter Pet Intake Registration');
-        $response->assertSee('Streamlined 2-step intake triage');
+        $response->assertSee('Newly Rescued Pet Intake Registration');
         $response->assertSee("status: 'in_shelter'", false);
-        $response->assertSee('type="hidden" name="status"', false);
-        $response->assertDontSee('Pet Status / Intake Stage');
-    }
-
-    public function test_create_pet_screen_preselects_available_mode(): void
-    {
-        $staff = User::factory()->create([
-            'role' => 'staff',
-            'email_verified_at' => now(),
-        ]);
-
-        $response = $this->actingAs($staff)->get(route('pets.create', ['status' => 'available']));
-        $response->assertOk();
-        $response->assertSee('Ready for Adoption Registration');
-        $response->assertSee('Full 3-step listing profile');
-        $response->assertSee("status: 'available'", false);
         $response->assertSee('type="hidden" name="status"', false);
         $response->assertDontSee('Pet Status / Intake Stage');
     }
@@ -363,7 +358,7 @@ class PetIntakeAndShelterStatusTest extends TestCase
         $response->assertStatus(422);
         $response->assertJson([
             'success' => false,
-            'message' => 'This pet is currently in shelter care or not ready for adoption.',
+            'message' => "{$inShelterPet->name} is currently in shelter care or not ready for adoption.",
         ]);
     }
 }

@@ -352,12 +352,14 @@
     vaccineOther: '{{ addslashes($initialVaccineOther) }}',
     vaccineDate: '{{ addslashes($initialVaccineDate) }}',
     vaccineNextDue: '{{ addslashes($initialVaccineNextDue) }}',
+    vaccineOffsetMonths: null,
 
     isDewormed: {{ $hasDewormedInitial ? 'true' : 'false' }},
     dewormerSelect: '{{ addslashes(in_array($initialDewormerName, ['Heartgard Plus', 'Pyrantel Embonate', 'Drontal Plus', 'NexGard Spectra', 'Broadline (Feline)', 'Revolution Plus']) ? $initialDewormerName : (empty($initialDewormerName) ? 'Heartgard Plus' : 'Other')) }}',
     dewormerOther: '{{ addslashes(!in_array($initialDewormerName, ['Heartgard Plus', 'Pyrantel Embonate', 'Drontal Plus', 'NexGard Spectra', 'Broadline (Feline)', 'Revolution Plus']) ? $initialDewormerName : '') }}',
     dewormerDate: '{{ addslashes($initialDewormerDate) }}',
     dewormerNextDue: '{{ addslashes($initialDewormerNextDue) }}',
+    dewormerOffsetMonths: null,
 
     isSpayedNeutered: {{ $hasSpayedNeuteredInitial ? 'true' : 'false' }},
 
@@ -403,13 +405,13 @@
     get sizeOptions() {
         return this.type === 'cat'
             ? [
-                { value: 'small', label: 'Small (Under 4 kg / Kitten & Petite)' },
-                { value: 'medium', label: 'Medium (4 - 10 kg / Standard Cat)' }
+                { value: 'small', label: 'Small (Under 4 kg)' },
+                { value: 'medium', label: 'Medium (4 - 10 kg)' }
               ]
             : [
-                { value: 'small', label: 'Small (Under 10 kg / Lap & Toy)' },
-                { value: 'medium', label: 'Medium (10 - 25 kg / Standard Aspin)' },
-                { value: 'large', label: 'Large (25+ kg / Large Breed)' }
+                { value: 'small', label: 'Small (Under 10 kg)' },
+                { value: 'medium', label: 'Medium (10 - 25 kg)' },
+                { value: 'large', label: 'Large (25+ kg)' }
               ];
     },
     get disabilityValue() {
@@ -455,11 +457,31 @@
             if (parts.length !== 3) d = new Date();
             else d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
         }
+        const targetDay = d.getDate();
+        d.setDate(1);
         d.setMonth(d.getMonth() + months);
+        const lastDayOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        d.setDate(Math.min(targetDay, lastDayOfMonth));
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
         return `${yyyy}-${mm}-${dd}`;
+    },
+    setVaccineOffset(months) {
+        this.vaccineOffsetMonths = months;
+        this.vaccineNextDue = this.calcDateOffset(this.vaccineDate, months);
+    },
+    clearVaccineDue() {
+        this.vaccineOffsetMonths = null;
+        this.vaccineNextDue = '';
+    },
+    setDewormerOffset(months) {
+        this.dewormerOffsetMonths = months;
+        this.dewormerNextDue = this.calcDateOffset(this.dewormerDate, months);
+    },
+    clearDewormerDue() {
+        this.dewormerOffsetMonths = null;
+        this.dewormerNextDue = '';
     },
 
     init() {
@@ -488,6 +510,18 @@
                 if (catOnly.includes(this.vaccineSelect)) {
                     this.vaccineSelect = '5-in-1 (DHPP)';
                 }
+            }
+        });
+
+        this.$watch('vaccineDate', (val) => {
+            if (this.vaccineOffsetMonths && val) {
+                this.vaccineNextDue = this.calcDateOffset(val, this.vaccineOffsetMonths);
+            }
+        });
+
+        this.$watch('dewormerDate', (val) => {
+            if (this.dewormerOffsetMonths && val) {
+                this.dewormerNextDue = this.calcDateOffset(val, this.dewormerOffsetMonths);
             }
         });
     },
@@ -794,7 +828,7 @@
 @keydown.enter="if (isWizard && step < totalSteps && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); nextStep(step); } else if (isWizard && step === totalSteps && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); submitFromKey(); }">
 
     {{-- Stepper Progress Header (Only visible in Wizard Mode) --}}
-    <div class="mb-8" x-show="isWizard" x-cloak>
+    <div class="mb-5 sm:mb-6" x-show="isWizard" x-cloak>
         {{-- Desktop Stepper --}}
         <div class="hidden sm:flex items-center justify-between relative px-2">
             <div class="absolute left-10 right-10 top-5 h-1 bg-gray-200 dark:bg-white/[0.08] z-0"></div>
@@ -919,7 +953,7 @@
          x-transition:enter-start="opacity-0 translate-y-2"
          x-transition:enter-end="opacity-100 translate-y-0">
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-5">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Type</label>
                 <select name="type" x-model="type" @change="breed = (type === 'cat' ? 'Puspin (Mixed Breed)' : (type === 'dog' ? 'Aspin (Mixed Breed)' : '')); if (type === 'cat' && size === 'large') { size = 'medium'; } age = ''; colorSelect = ''; colorOther = ''; errorMessage = ''"
@@ -953,7 +987,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 mb-5">
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Color</label>
                 <input type="hidden" name="color" :value="color" value="{{ $currentColor }}">
@@ -1073,15 +1107,15 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-2"
-             class="mb-8 p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-3.5">
+             class="mb-5 p-4 sm:p-5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 space-y-3">
             <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300 flex items-center justify-center">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </div>
-                <h3 class="text-xs font-extrabold uppercase tracking-wider text-sky-900 dark:text-sky-200">Rescue & Intake Details</h3>
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-sky-900 dark:text-sky-200">Rescue & Intake Origin</h3>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Rescue / Intake Date</label>
                     <input type="date" name="rescue_date" 
@@ -1090,14 +1124,14 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
-                        Rescue Barangay / Origin
+                        Rescue Origin / Barangay
                     </label>
                     {{-- Hidden input submitted with form carrying the combined standardized value --}}
                     <input type="hidden" name="rescue_location" :value="computedRescueLocation">
 
                     <select x-model="rescueBarangay"
                             class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
-                        <option value="" disabled {{ empty($initialRescueBarangay) ? 'selected' : '' }} hidden style="display: none;">Select rescue barangay / origin</option>
+                        <option value="" disabled {{ empty($initialRescueBarangay) ? 'selected' : '' }} hidden style="display: none;">Select barangay / origin</option>
                         <option value="City Pound (CDO City Vet)" {{ $initialRescueBarangay === 'City Pound (CDO City Vet)' ? 'selected' : '' }}>
                             City Pound (CDO City Vet)
                         </option>
@@ -1110,31 +1144,26 @@
                         @endforeach
                     </select>
                 </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+                        <span x-show="rescueBarangay !== 'Outside CDO / Other Area'">Street / Landmark (Optional)</span>
+                        <span x-show="rescueBarangay === 'Outside CDO / Other Area'">Specify Area / Municipality</span>
+                    </label>
+                    <input type="text" x-model="rescueLandmark" 
+                           :disabled="rescueBarangay === 'City Pound (CDO City Vet)'"
+                           :placeholder="rescueBarangay === 'Outside CDO / Other Area' ? 'e.g. Tagoloan, Opol...' : (rescueBarangay === 'City Pound (CDO City Vet)' ? 'Not applicable for City Pound' : 'e.g. Near Public Market, Purok 3...')" 
+                           class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed">
+                </div>
             </div>
-
-            {{-- Optional Specific Street / Landmark (Shown when a barangay or outside CDO is selected) --}}
-            <div x-show="rescueBarangay && rescueBarangay !== 'City Pound (CDO City Vet)'" 
-                 x-transition:enter="transition ease-out duration-150"
-                 x-transition:enter-start="opacity-0 -translate-y-1"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 class="space-y-1">
-                <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    <span x-show="rescueBarangay !== 'Outside CDO / Other Area'">Specific Street / Landmark (Optional)</span>
-                    <span x-show="rescueBarangay === 'Outside CDO / Other Area'">Specify Municipality / Area Location</span>
-                </label>
-                <input type="text" x-model="rescueLandmark" 
-                       :placeholder="rescueBarangay === 'Outside CDO / Other Area' ? 'e.g. Tagoloan, Opol, El Salvador...' : 'e.g. Near Public Market, Purok 3, Riverbank...'" 
-                       class="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] text-xs font-semibold text-gray-800 dark:text-white placeholder-slate-400 outline-none focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/10 transition shadow-2xs">
-                <p class="text-[10px] text-slate-400 dark:text-slate-500" x-show="computedRescueLocation">
-                    Recorded location: <span class="font-semibold text-[#199CA4]" x-text="computedRescueLocation"></span>
-                </p>
-            </div>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 pt-0.5" x-show="computedRescueLocation">
+                Recorded origin: <span class="font-semibold text-[#199CA4]" x-text="computedRescueLocation"></span>
+            </p>
         </div>
 
         {{-- Step 1 Navigation Buttons (Wizard Mode Only) --}}
-        <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
+        <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-4 mt-5">
             <a href="{{ route('pets.index') }}"
-                class="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition">
+                class="px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition">
                 Cancel
             </a>
             <div class="flex items-center gap-2.5 sm:gap-3">
@@ -1142,15 +1171,15 @@
                     <button type="button" @click="submitWizard($event)"
                         :disabled="submitting"
                         :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
-                        class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl border border-[#199CA4] text-[#199CA4] dark:text-[#41C1CB] hover:bg-[#199CA4]/10 text-xs sm:text-sm font-semibold transition cursor-pointer">
+                        class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl border border-[#199CA4] text-[#199CA4] dark:text-[#41C1CB] hover:bg-[#199CA4]/10 text-xs sm:text-sm font-semibold transition cursor-pointer">
                         <svg x-show="submitting" class="animate-spin h-3.5 w-3.5 text-[#199CA4]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         <span x-text="submitting ? 'Updating...' : 'Save & Update'">Save & Update</span>
                     </button>
                 @endif
                 <button type="button" @click="nextStep(1)"
-                    class="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-[#199CA4] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
+                    class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 bg-[#199CA4] text-white text-xs sm:text-sm font-bold rounded-xl hover:bg-[#13787F] shadow-xs transition cursor-pointer">
                     <span x-text="status === 'in_shelter' ? 'Next: Intake Health & Photo' : 'Next: Health & Traits'">Next: Health & Traits</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
             </div>
         </div>
@@ -1163,13 +1192,12 @@
          x-transition:enter-end="opacity-100 translate-y-0"
          x-cloak>
         
-        <div class="mb-8">
+        <div class="mb-5">
             <div class="flex items-center justify-between mb-1.5">
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400"
                        x-text="status === 'in_shelter' ? 'Shelter Intake Health Assessment' : 'Medical Background & Clinical Intake'">
                     Medical Background & Clinical Intake
                 </label>
-                <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Auto-logged to Medical History</span>
             </div>
             <p x-show="status === 'in_shelter'" class="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-3.5">Record immediate physical needs and upload an intake photo. Clinical treatments are optional (leave unchecked if awaiting veterinary examination).</p>
             <p x-show="status !== 'in_shelter'" class="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-3.5">Select treatments administered to this pet. Selecting Vaccinated or Dewormed automatically creates clinical ledger records with booster dates.</p>
@@ -1177,17 +1205,14 @@
             <div class="rounded-2xl border border-gray-200 dark:border-white/[0.08] p-4 bg-gray-50/50 dark:bg-white/[0.02] space-y-4">
                 
                 {{-- 4 Primary Option Cards --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     
                     {{-- 1. Vaccinated Card --}}
                     <label class="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] p-3 text-sm cursor-pointer hover:border-[#199CA4]/50 transition shadow-2xs"
                            :class="{ 'border-[#199CA4] ring-2 ring-[#199CA4]/20 bg-[#199CA4]/5 dark:bg-[#199CA4]/10': isVaccinated }">
                         <input type="checkbox" x-model="isVaccinated" class="mt-0.5 rounded border-gray-300 text-[#199CA4] focus:ring-[#199CA4]">
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-gray-900 dark:text-white text-sm">Vaccinated</span>
-                                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">Auto-records</span>
-                            </div>
+                            <span class="font-bold text-gray-900 dark:text-white text-sm block">Vaccinated</span>
                             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Specify vaccine name & date administered.</p>
                         </div>
                     </label>
@@ -1197,10 +1222,7 @@
                            :class="{ 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20': isDewormed }">
                         <input type="checkbox" x-model="isDewormed" class="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-gray-900 dark:text-white text-sm">Dewormed</span>
-                                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">Auto-records</span>
-                            </div>
+                            <span class="font-bold text-gray-900 dark:text-white text-sm block">Dewormed</span>
                             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Specify dewormer brand & date administered.</p>
                         </div>
                     </label>
@@ -1259,7 +1281,6 @@
                             </div>
                             <span class="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-200">Vaccination Clinical Details</span>
                         </div>
-                        <span class="text-[11px] font-semibold text-blue-700 dark:text-blue-300">Will auto-record in Medical Logs</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1296,22 +1317,28 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Date Given *</label>
-                                <button type="button" @click="vaccineDate = '{{ date('Y-m-d') }}'" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">Today</button>
+                                <button type="button" @click="vaccineDate = '{{ date('Y-m-d') }}'; if (vaccineOffsetMonths) vaccineNextDue = calcDateOffset(vaccineDate, vaccineOffsetMonths);" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">Today</button>
                             </div>
                             <input type="date" x-model="vaccineDate"
+                                @input="if (vaccineOffsetMonths) vaccineNextDue = calcDateOffset(vaccineDate, vaccineOffsetMonths)"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
                         </div>
 
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Next Booster Due</label>
-                                <div class="flex items-center gap-1">
-                                    <button type="button" @click="vaccineNextDue = calcDateOffset(vaccineDate, 6)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+6M</button>
-                                    <button type="button" @click="vaccineNextDue = calcDateOffset(vaccineDate, 12)" class="text-[10px] text-[#199CA4] hover:underline font-bold cursor-pointer">+1Y</button>
-                                    <button type="button" @click="vaccineNextDue = ''" x-show="vaccineNextDue" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" @click="setVaccineOffset(6)"
+                                        :class="vaccineOffsetMonths === 6 ? 'bg-[#199CA4] text-white px-1.5 py-0.5 rounded shadow-2xs font-extrabold' : 'text-[#199CA4] hover:underline font-bold'"
+                                        class="text-[10px] cursor-pointer transition-all">+6M</button>
+                                    <button type="button" @click="setVaccineOffset(12)"
+                                        :class="vaccineOffsetMonths === 12 ? 'bg-[#199CA4] text-white px-1.5 py-0.5 rounded shadow-2xs font-extrabold' : 'text-[#199CA4] hover:underline font-bold'"
+                                        class="text-[10px] cursor-pointer transition-all">+1Y</button>
+                                    <button type="button" @click="clearVaccineDue()" x-show="vaccineNextDue" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
                                 </div>
                             </div>
                             <input type="date" x-model="vaccineNextDue"
+                                @input="vaccineOffsetMonths = null"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
                         </div>
                     </div>
@@ -1340,7 +1367,6 @@
                             </div>
                             <span class="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200">Deworming Clinical Details</span>
                         </div>
-                        <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">Will auto-record in Medical Logs</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1362,22 +1388,28 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Date Given *</label>
-                                <button type="button" @click="dewormerDate = '{{ date('Y-m-d') }}'" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">Today</button>
+                                <button type="button" @click="dewormerDate = '{{ date('Y-m-d') }}'; if (dewormerOffsetMonths) dewormerNextDue = calcDateOffset(dewormerDate, dewormerOffsetMonths);" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">Today</button>
                             </div>
                             <input type="date" x-model="dewormerDate"
+                                @input="if (dewormerOffsetMonths) dewormerNextDue = calcDateOffset(dewormerDate, dewormerOffsetMonths)"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
                         </div>
 
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Next Due Date</label>
-                                <div class="flex items-center gap-1">
-                                    <button type="button" @click="dewormerNextDue = calcDateOffset(dewormerDate, 1)" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">+1M</button>
-                                    <button type="button" @click="dewormerNextDue = calcDateOffset(dewormerDate, 3)" class="text-[10px] text-emerald-600 hover:underline font-bold cursor-pointer">+3M</button>
-                                    <button type="button" @click="dewormerNextDue = ''" x-show="dewormerNextDue" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" @click="setDewormerOffset(1)"
+                                        :class="dewormerOffsetMonths === 1 ? 'bg-emerald-600 text-white px-1.5 py-0.5 rounded shadow-2xs font-extrabold' : 'text-emerald-600 hover:underline font-bold'"
+                                        class="text-[10px] cursor-pointer transition-all">+1M</button>
+                                    <button type="button" @click="setDewormerOffset(3)"
+                                        :class="dewormerOffsetMonths === 3 ? 'bg-emerald-600 text-white px-1.5 py-0.5 rounded shadow-2xs font-extrabold' : 'text-emerald-600 hover:underline font-bold'"
+                                        class="text-[10px] cursor-pointer transition-all">+3M</button>
+                                    <button type="button" @click="clearDewormerDue()" x-show="dewormerNextDue" class="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">Clear</button>
                                 </div>
                             </div>
                             <input type="date" x-model="dewormerNextDue"
+                                @input="dewormerOffsetMonths = null"
                                 class="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition outline-none text-gray-800 dark:text-white text-xs font-medium">
                         </div>
                     </div>
@@ -1426,21 +1458,12 @@
             </div>
         </div>
 
-        {{-- Behavioral Status (Choice B for In-Shelter: Under Behavioral Observation badge; Normal tags for Available) --}}
-        <div x-show="status === 'in_shelter'" class="mb-8 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-2">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60">
-                    Under Behavioral Observation
-                </span>
-                <span class="text-xs font-bold text-amber-900 dark:text-amber-200">Automatic Intake Status</span>
-            </div>
-            <p class="text-xs text-amber-800/90 dark:text-amber-300/80 leading-relaxed">
-                Because this pet is newly rescued, temperament traits cannot be assessed on day 1. The pet is placed under shelter observation and will be monitored during quarantine before adoption release.
-            </p>
+        {{-- Auto-assign Under Behavioral Observation tag for In-Shelter intake --}}
+        <template x-if="status === 'in_shelter'">
             <input type="hidden" name="temperament_tags[]" :value="observationTagId">
-        </div>
+        </template>
 
-        <div x-show="status !== 'in_shelter'" class="mb-8">
+        <div x-show="status !== 'in_shelter'" class="mb-5">
             <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Temperament <span class="text-rose-500">*</span></label>
                 <span class="text-[11px] font-semibold text-[#199CA4] dark:text-[#41C1CB]">Select at least 1</span>
@@ -1461,7 +1484,7 @@
         </div>
 
         {{-- Pet Intake Photo (Rendered in Step 2 for In Shelter Fast Intake) --}}
-        <div x-show="status === 'in_shelter'" class="mb-8">
+        <div x-show="status === 'in_shelter'" class="mb-5">
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-1.5">
                 Pet Intake Photo <span class="text-rose-500">*</span>
             </label>
@@ -1469,7 +1492,7 @@
             
             <div class="border-2 border-dashed border-gray-200 dark:border-white/[0.1] hover:border-[#199CA4] rounded-2xl p-5 transition bg-gray-50/50 dark:bg-white/[0.02]">
                 <div x-show="previewUrl" class="flex flex-col items-center justify-center text-center py-2 space-y-3">
-                    <div class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800 mx-auto">
+                    <div class="relative w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800 mx-auto">
                         <img :src="previewUrl" alt="Pet preview" class="w-full h-full object-cover">
                         <span x-show="isNew" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#199CA4] text-white text-[10px] font-extrabold shadow-sm">
                             New Photo
@@ -1515,9 +1538,9 @@
         </div>
 
         {{-- Step 2 Navigation Buttons (Wizard Mode Only) --}}
-        <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
+        <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-4 mt-5">
             <button type="button" @click="prevStep(2)"
-                class="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
+                class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span>Back to General Details</span>
             </button>
@@ -1526,7 +1549,7 @@
                     <button type="button" x-show="status !== 'in_shelter'" @click="submitWizard($event)"
                         :disabled="submitting"
                         :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
-                        class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl border border-[#199CA4] text-[#199CA4] dark:text-[#41C1CB] hover:bg-[#199CA4]/10 text-xs sm:text-sm font-semibold transition cursor-pointer">
+                        class="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl border border-[#199CA4] text-[#199CA4] dark:text-[#41C1CB] hover:bg-[#199CA4]/10 text-xs sm:text-sm font-semibold transition cursor-pointer">
                         <svg x-show="submitting" class="animate-spin h-3.5 w-3.5 text-[#199CA4]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         <span x-text="submitting ? 'Updating...' : 'Save & Update'">Save & Update</span>
                     </button>
@@ -1534,16 +1557,11 @@
                 <button type="button" @click="nextStep(2)"
                     :disabled="submitting"
                     :class="{ 'opacity-60 cursor-not-allowed pointer-events-none': submitting }"
-                    class="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-[#199CA4] text-white text-xs sm:text-sm font-semibold rounded-xl hover:bg-[#13787F] shadow-md shadow-[#199CA4]/10 transition cursor-pointer">
+                    class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 bg-[#199CA4] text-white text-xs sm:text-sm font-bold rounded-xl hover:bg-[#13787F] shadow-xs transition cursor-pointer">
                     <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span x-text="status === 'in_shelter' ? (submitting ? '{{ optional($pet)->id ? 'Updating Pet Profile...' : 'Saving to Shelter...' }}' : '{{ optional($pet)->id ? 'Update Pet Profile' : 'Save to Shelter Intake' }}') : 'Next: Photo & Bio'">Next: Photo & Bio</span>
-                    <svg x-show="!submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <template x-if="status === 'in_shelter'">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                        </template>
-                        <template x-if="status !== 'in_shelter'">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                        </template>
+                    <span x-text="status === 'in_shelter' ? (submitting ? '{{ optional($pet)->id ? 'Updating Pet Profile...' : 'Saving & Registering...' }}' : '{{ optional($pet)->id ? 'Update Pet Profile' : 'Save & Register' }}') : 'Next: Photo & Bio'">Next: Photo & Bio</span>
+                    <svg x-show="!submitting && status !== 'in_shelter'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                     </svg>
                 </button>
             </div>
@@ -1558,14 +1576,14 @@
          x-cloak>
         
         {{-- Pet Photo Upload --}}
-        <div class="mb-8">
+        <div class="mb-5">
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Photo</label>
             
             <div class="border-2 border-dashed border-gray-200 dark:border-white/[0.1] hover:border-[#199CA4] rounded-2xl p-5 transition bg-gray-50/50 dark:bg-white/[0.02]">
                 
                 {{-- When an image is present (preview or current) --}}
                 <div x-show="previewUrl" class="flex flex-col items-center justify-center text-center py-2 space-y-3">
-                    <div class="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800 mx-auto">
+                    <div class="relative w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/[0.12] shadow-md shrink-0 bg-slate-100 dark:bg-slate-800 mx-auto">
                         <img :src="previewUrl" alt="Pet preview" class="w-full h-full object-cover">
                         <span x-show="isNew" class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[#199CA4] text-white text-[10px] font-extrabold shadow-sm">
                             New Photo
@@ -1613,7 +1631,7 @@
         </div>
 
         {{-- Description Textarea --}}
-        <div class="mb-8">
+        <div class="mb-5">
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-2">Pet Description</label>
             <textarea name="description" rows="4" x-model="description"
                 class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C0D13] focus:border-[#199CA4] focus:ring-4 focus:ring-[#199CA4]/10 transition outline-none shadow-sm text-gray-800 dark:text-white"
@@ -1621,7 +1639,7 @@
         </div>
 
         {{-- Profile Review Summary Card (Wizard Mode Only) --}}
-        <div x-show="isWizard" class="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-gray-50/70 dark:bg-white/[0.02] p-5 mb-8">
+        <div x-show="isWizard" class="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-gray-50/70 dark:bg-white/[0.02] p-5 mb-5">
             <div class="flex items-center justify-between mb-3 border-b border-gray-200/60 dark:border-white/[0.05] pb-2.5">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold uppercase tracking-wider text-[#199CA4]">Profile Summary</span>
@@ -1668,7 +1686,7 @@
         </div>
 
         {{-- Step 3 Navigation & Save Buttons (Wizard Mode Only) --}}
-        <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-6 mt-8">
+        <div x-show="isWizard" class="flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06] pt-4 mt-5">
             <button type="button" @click="prevStep(3)"
                 class="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>

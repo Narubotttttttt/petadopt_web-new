@@ -51,9 +51,6 @@
                             <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white" id="readiness-modal-title">
                                 Adoption Readiness & Clearance
                             </h3>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                                Step to Publish
-                            </span>
                         </div>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                             Review clinical records and assign temperament tags for <strong class="text-slate-700 dark:text-slate-200" x-text="petName"></strong>.
@@ -87,18 +84,30 @@
                         <div class="flex items-center justify-between">
                             <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
                                 <span>1. Clinical Clearance Check</span>
+                                <span class="text-rose-500 font-bold">*</span>
                             </h4>
-                            <span class="text-[11px] text-slate-400 dark:text-slate-500">Core vaccinations & deworming (Optional)</span>
+                            <span class="text-[11px] font-bold"
+                                  :class="(isVaccineValid && isDewormingValid) ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-rose-500 dark:text-rose-400'">
+                                <span x-show="isVaccineValid && isDewormingValid">Clearance Verified</span>
+                                <span x-show="!isVaccineValid || !isDewormingValid">Required (Vaccination & Deworming)</span>
+                            </span>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             
                             {{-- Core Vaccination Card --}}
                             <div class="p-4 rounded-2xl border transition-all"
-                                 :class="hasVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40' : (logVaccine ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.08]')">
+                                 :class="hasVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40' : (logVaccine ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-rose-50/30 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50')">
                                 <div class="flex items-start justify-between gap-2">
-                                    <div>
-                                        <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Core Vaccination</span>
+                                    <div class="w-full">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">
+                                                Core Vaccination <span class="text-rose-500 font-bold">*</span>
+                                            </span>
+                                            <template x-if="!hasVaccine">
+                                                <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wide">Required</span>
+                                            </template>
+                                        </div>
                                         <div class="mt-1 flex items-center gap-1.5">
                                             <template x-if="hasVaccine">
                                                 <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
@@ -108,7 +117,7 @@
                                             </template>
                                             <template x-if="!hasVaccine">
                                                 <div>
-                                                    <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                    <div class="text-xs font-semibold text-rose-500 dark:text-rose-400">
                                                         No vaccination recorded yet
                                                     </div>
                                                 </div>
@@ -119,12 +128,12 @@
 
                                 {{-- Quick-Log Vaccine Option if not on file --}}
                                 <template x-if="!hasVaccine">
-                                    <div class="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-900/40">
+                                    <div class="mt-3 pt-3 border-t border-slate-200/80 dark:border-white/[0.08]">
                                         <label class="flex items-center gap-2 cursor-pointer select-none">
                                             <input type="checkbox" name="log_vaccine" value="1" x-model="logVaccine"
                                                    class="rounded text-[#199CA4] focus:ring-[#199CA4] h-4 w-4 border-slate-300">
                                             <span class="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                                Administer & log core vaccine now
+                                                Administer & log core vaccine now <span class="text-rose-500 font-bold">*</span>
                                             </span>
                                         </label>
 
@@ -232,10 +241,17 @@
 
                             {{-- Deworming Card --}}
                             <div class="p-4 rounded-2xl border transition-all"
-                                 :class="hasDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200/80 dark:border-purple-800/40' : (logDeworming ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.08]')">
+                                 :class="hasDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200/80 dark:border-purple-800/40' : (logDeworming ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-rose-50/30 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50')">
                                 <div class="flex items-start justify-between gap-2">
-                                    <div>
-                                        <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Deworming</span>
+                                    <div class="w-full">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">
+                                                Deworming <span class="text-rose-500 font-bold">*</span>
+                                            </span>
+                                            <template x-if="!hasDeworming">
+                                                <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wide">Required</span>
+                                            </template>
+                                        </div>
                                         <div class="mt-1 flex items-center gap-1.5">
                                             <template x-if="hasDeworming">
                                                 <div class="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-300">
@@ -245,7 +261,7 @@
                                             </template>
                                             <template x-if="!hasDeworming">
                                                 <div>
-                                                    <div class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                    <div class="text-xs font-semibold text-rose-500 dark:text-rose-400">
                                                         No deworming recorded yet
                                                     </div>
                                                 </div>
@@ -256,12 +272,12 @@
 
                                 {{-- Quick-Log Deworming Option if not on file --}}
                                 <template x-if="!hasDeworming">
-                                    <div class="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-900/40">
+                                    <div class="mt-3 pt-3 border-t border-slate-200/80 dark:border-white/[0.08]">
                                         <label class="flex items-center gap-2 cursor-pointer select-none">
                                             <input type="checkbox" name="log_deworming" value="1" x-model="logDeworming"
                                                    class="rounded text-[#199CA4] focus:ring-[#199CA4] h-4 w-4 border-slate-300">
                                             <span class="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                                Administer & log deworming now
+                                                Administer & log deworming now <span class="text-rose-500 font-bold">*</span>
                                             </span>
                                         </label>
 
@@ -356,7 +372,7 @@
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white flex items-center gap-1.5">
-                                <span>2. Behavioral Assessment (Petfinder Compatibility)</span>
+                                <span>2. Behavioral Assessment</span>
                                 <span class="text-rose-500 font-bold">*</span>
                             </h4>
                             <span class="text-[11px] font-bold"
@@ -388,29 +404,6 @@
                                 </button>
                             </template>
                         </div>
-
-                        {{-- Custom Temperament Note --}}
-                        <div class="pt-2">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Additional Behavior Notes</label>
-                            <input type="text" 
-                                   name="custom_temperament" 
-                                   x-model="customTemperament"
-                                   placeholder="e.g. Good with small children, Leash trained, Gentle" 
-                                   class="w-full mt-1 px-3 py-2 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] text-slate-800 dark:text-slate-100 placeholder-slate-400">
-                        </div>
-                    </div>
-
-                    {{-- Section 3: Public Bio / Description (Optional) --}}
-                    <div class="space-y-1.5">
-                        <label class="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white block">
-                            3. Public Adoption Profile Bio
-                        </label>
-                        <p class="text-[11px] text-slate-400">Brief summary displayed to prospective adopters browsing the mobile app.</p>
-                        <textarea name="description" 
-                                  x-model="description" 
-                                  rows="2" 
-                                  placeholder="Provide an overview of the pet's story, personality, and adoption highlights..."
-                                  class="w-full px-3 py-2 text-xs bg-white dark:bg-[#171923] border border-slate-200 dark:border-white/[0.08] rounded-xl font-medium focus:ring-2 focus:ring-[#199CA4]/20 focus:border-[#199CA4] text-slate-800 dark:text-slate-100 placeholder-slate-400"></textarea>
                     </div>
 
                 </div>
@@ -422,6 +415,12 @@
                             <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                 All readiness requirements satisfied
+                            </span>
+                        </template>
+                        <template x-if="!isFormValid">
+                            <span class="text-xs font-semibold text-rose-500 dark:text-rose-400 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <span x-text="missingRequirements[0] || 'Complete all requirements above'"></span>
                             </span>
                         </template>
                     </div>
@@ -483,8 +482,6 @@
             dewormerIntervalMonths: 3,
             dewormerNextDueInput: '',
             selectedTags: [],
-            customTemperament: '',
-            description: '',
             allTags: @json($modalTemperamentTags),
 
             setVaccineInterval(months) {
@@ -549,21 +546,23 @@
             },
 
             get isVaccineValid() {
-                if (!this.logVaccine) return true;
+                if (this.hasVaccine) return true;
+                if (!this.logVaccine) return false;
                 if (this.vaccinePreset === 'Other' && !this.vaccineCustomInput.trim()) return false;
                 if (!this.vaccineDateInput) return false;
                 return true;
             },
 
             get isDewormingValid() {
-                if (!this.logDeworming) return true;
+                if (this.hasDeworming) return true;
+                if (!this.logDeworming) return false;
                 if (this.dewormerPreset === 'Other' && !this.dewormerCustomInput.trim()) return false;
                 if (!this.dewormerDateInput) return false;
                 return true;
             },
 
             get isTemperamentClear() {
-                return (this.selectedTags && this.selectedTags.length >= 1) || (this.customTemperament && this.customTemperament.trim().length > 0);
+                return this.selectedTags && this.selectedTags.length >= 1;
             },
 
             get isFormValid() {
@@ -572,24 +571,14 @@
 
             get missingRequirements() {
                 const missing = [];
+                if (!this.isVaccineValid) {
+                    missing.push('Core vaccination is required (record on file or administer now)');
+                }
+                if (!this.isDewormingValid) {
+                    missing.push('Deworming clearance is required (record on file or administer now)');
+                }
                 if (!this.isTemperamentClear) {
-                    missing.push('Select at least 1 verified temperament tag (Basis of ML recommendations)');
-                }
-                if (this.logVaccine) {
-                    if (this.vaccinePreset === 'Other' && !this.vaccineCustomInput.trim()) {
-                        missing.push('Specify custom vaccine name');
-                    }
-                    if (!this.vaccineDateInput) {
-                        missing.push('Provide vaccine administration date');
-                    }
-                }
-                if (this.logDeworming) {
-                    if (this.dewormerPreset === 'Other' && !this.dewormerCustomInput.trim()) {
-                        missing.push('Specify custom dewormer brand');
-                    }
-                    if (!this.dewormerDateInput) {
-                        missing.push('Provide deworming administration date');
-                    }
+                    missing.push('Select at least 1 verified temperament tag');
                 }
                 return missing;
             },
@@ -603,8 +592,8 @@
                 this.vaccineName = detail.vaccineName || '';
                 this.hasDeworming = !!detail.hasDeworming;
                 this.dewormingName = detail.dewormingName || '';
-                this.logVaccine = false;
-                this.logDeworming = false;
+                this.logVaccine = !this.hasVaccine;
+                this.logDeworming = !this.hasDeworming;
                 this.vaccinePreset = (this.petType === 'cat') ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
                 this.vaccineCustomInput = '';
                 this.vaccineDateInput = new Date().toISOString().split('T')[0];
@@ -622,8 +611,6 @@
                     ? detail.selectedTags.map(Number).filter(id => allowedTagIds.includes(id))
                     : [];
 
-                this.customTemperament = '';
-                this.description = detail.description || '';
                 this.isSubmitting = false;
                 this.isOpen = true;
                 document.body.classList.add('overflow-hidden');

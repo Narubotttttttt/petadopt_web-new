@@ -44,11 +44,7 @@ class PetController extends Controller
         $temperamentTags = TemperamentTag::orderBy('name')->get();
 
         $pet = new Pet();
-        $status = $request->query('status', 'in_shelter');
-        if (!in_array($status, ['in_shelter', 'available'])) {
-            $status = 'in_shelter';
-        }
-        $pet->status = $status;
+        $pet->status = 'in_shelter';
 
         return view('pets.create', [
             'pet' => $pet,
@@ -501,6 +497,21 @@ class PetController extends Controller
             ]);
         }
 
+        // Enforce required clinical clearance (core vaccination & deworming)
+        $hasVaccine = $pet->medicalLogs()->where('category', 'vaccination')->exists() || $request->boolean('log_vaccine');
+        if (!$hasVaccine) {
+            return redirect()->back()->withErrors([
+                'log_vaccine' => 'Core vaccination is required before marking this pet ready for adoption.'
+            ]);
+        }
+
+        $hasDeworming = $pet->medicalLogs()->where('category', 'deworming')->exists() || $request->boolean('log_deworming');
+        if (!$hasDeworming) {
+            return redirect()->back()->withErrors([
+                'log_deworming' => 'Deworming clearance is required before marking this pet ready for adoption.'
+            ]);
+        }
+
 
 
         $user = Auth::user();
@@ -541,8 +552,8 @@ class PetController extends Controller
             if ($request->boolean('log_vaccine')) {
                 $defaultVax = $pet->type === 'cat' ? '4-in-1 (FVRCP)' : '5-in-1 (DHPP)';
                 $vaxName = trim((string) ($data['vaccine_name'] ?? '')) ?: $defaultVax;
-                $vaxDate = $data['vaccine_date'] ?: now()->toDateString();
-                $vaxNextDue = $data['vaccine_next_due'] ?: Carbon::parse($vaxDate)->addMonths(6)->toDateString();
+                $vaxDate = ($data['vaccine_date'] ?? null) ?: now()->toDateString();
+                $vaxNextDue = ($data['vaccine_next_due'] ?? null) ?: Carbon::parse($vaxDate)->addMonths(6)->toDateString();
 
                 MedicalLog::create([
                     'pet_id'          => $pet->id,
@@ -557,8 +568,8 @@ class PetController extends Controller
 
             if ($request->boolean('log_deworming')) {
                 $dewormName = trim((string) ($data['dewormer_name'] ?? '')) ?: 'Anthelmintic Dewormer';
-                $dewormDate = $data['dewormer_date'] ?: now()->toDateString();
-                $dewormNextDue = $data['dewormer_next_due'] ?: Carbon::parse($dewormDate)->addMonths(3)->toDateString();
+                $dewormDate = ($data['dewormer_date'] ?? null) ?: now()->toDateString();
+                $dewormNextDue = ($data['dewormer_next_due'] ?? null) ?: Carbon::parse($dewormDate)->addMonths(3)->toDateString();
 
                 MedicalLog::create([
                     'pet_id'          => $pet->id,

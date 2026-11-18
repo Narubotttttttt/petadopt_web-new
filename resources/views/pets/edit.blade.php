@@ -1,11 +1,11 @@
 <x-app-layout>
-    <div class="max-w-4xl mx-auto py-10 px-4 animate-fade-in">
-        <div class="bg-white dark:bg-[#12141C] p-8 rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-gray-100 dark:border-white/[0.07]">
+    <div class="max-w-5xl mx-auto py-5 sm:py-6 px-4 animate-fade-in">
+        <div class="bg-white dark:bg-[#12141C] p-6 sm:p-8 rounded-2xl shadow-sm dark:shadow-xl dark:shadow-black/40 border border-gray-100 dark:border-white/[0.07]">
             
-            <div class="flex items-center justify-between mb-8 border-b-2 border-[#199CA4] pb-4">
+            <div class="flex items-center justify-between mb-5 border-b-2 border-[#199CA4] pb-4">
                 <div>
-                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Edit Pet Profile</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Edit Pet Profile</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                         Update pet records, clinical history, or profile details step by step.
                     </p>
                 </div>
@@ -16,19 +16,17 @@
             </div>
 
             @if(session('success'))
-                <div class="mb-6 px-4 py-3 bg-green-50 dark:bg-emerald-950/40 border border-green-200 dark:border-emerald-800/60 text-green-700 dark:text-emerald-300 rounded-xl flex items-center gap-2">
-                    
+                <div class="mb-5 px-4 py-3 bg-green-50 dark:bg-emerald-950/40 border border-green-200 dark:border-emerald-800/60 text-green-700 dark:text-emerald-300 rounded-xl flex items-center gap-2 text-xs sm:text-sm">
                     <span class="font-medium">{{ session('success') }}</span>
                 </div>
             @endif
 
             @if($errors->any())
-                <div class="mb-6 px-4 py-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-800/60 text-red-700 dark:text-rose-300 rounded-xl">
-                    <div class="flex items-center gap-2 mb-2 font-semibold">
-                        
+                <div class="mb-5 px-4 py-3 bg-red-50 dark:bg-rose-950/40 border border-red-200 dark:border-rose-800/60 text-red-700 dark:text-rose-300 rounded-xl text-xs sm:text-sm">
+                    <div class="flex items-center gap-2 mb-1.5 font-semibold">
                         <span>Please fix the following errors:</span>
                     </div>
-                    <ul class="list-disc pl-5 text-sm space-y-1">
+                    <ul class="list-disc pl-5 text-xs sm:text-sm space-y-0.5">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
