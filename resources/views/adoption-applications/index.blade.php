@@ -993,9 +993,8 @@
                                     </td>
                                     <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
                                         <div x-show="!isPetExpanded('{{ $groupKey }}')">
-                                            <div class="flex items-center gap-1.5 font-extrabold text-slate-900 dark:text-white leading-tight">
-                                                <span class="font-bold font-mono text-xs text-slate-500 dark:text-slate-400">#1</span>
-                                                <span class="truncate">{{ $firstApp->applicant_name }}</span>
+                                            <div class="font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+                                                {{ $firstApp->applicant_name }}
                                             </div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium leading-normal">
                                                 + {{ $petApps->count() - 1 }} other in queue · {{ $firstApp->applicant_phone }}
