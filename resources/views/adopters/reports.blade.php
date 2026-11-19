@@ -407,190 +407,243 @@
     </div>
 
     {{-- External Vet Proofs Grid (Compact dashboard grid) --}}
+    @php
+        $groupedVetLogs = $vetLogs->getCollection()->groupBy(function($log) {
+            return $log->created_by ? ('user_' . $log->created_by) : ('log_' . $log->id);
+        });
+    @endphp
+
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
-        @forelse($vetLogs as $log)
+        @forelse($groupedVetLogs as $groupKey => $group)
             @php
-                $pet = $log->pet;
-                $petName = $pet && $pet->name ? $pet->name : ('Pet #' . $log->pet_id);
-                $adopter = $log->creator?->adoptersProfile;
-                $adopterName = $adopter?->full_name ?: ($log->creator?->name ?: 'Adopter');
+                $firstLog = $group->first();
+                $adopter = $firstLog->creator?->adoptersProfile;
+                $adopterName = $adopter?->full_name ?: ($firstLog->creator?->name ?: 'Adopter');
                 $adopterAvatar = $adopter?->avatar_url;
                 $adopterInitials = $adopter?->initials ?: strtoupper(substr($adopterName, 0, 2));
-                $adopterCode = $adopter?->adopter_code ?: ($log->creator ? sprintf('ADP-%04d', $log->creator->id) : null);
-                $adopterContact = $adopter?->phone ?: ($log->creator?->email ?: null);
-                $photoUrl = $log->proof_photo_url;
-                $isPending = ($log->verification_status === 'pending');
-                $isVerified = ($log->verification_status === 'verified');
-
-                $logPayload = [
-                    'id'                  => $log->id,
-                    'pet_id'              => $log->pet_id,
-                    'date'                => $log->date?->format('Y-m-d'),
-                    'category'            => $log->category,
-                    'vaccine_name'        => $log->vaccine_name,
-                    'clinic_name'         => $log->clinic_name,
-                    'administered_by'     => $log->administered_by,
-                    'next_due_date'       => $log->next_due_date?->format('Y-m-d'),
-                    'proof_photo_url'     => $log->proof_photo_url,
-                    'verification_status' => $log->verification_status,
-                    'pet' => [
-                        'id'         => $pet?->id,
-                        'name'       => $petName,
-                        'type'       => $pet?->type,
-                        'breed'      => $pet?->breed,
-                        'photo_url'  => $pet?->photo_url,
-                        'photo_path' => $pet?->photo_path,
-                    ],
-                    'creator' => [
-                        'name'             => $adopterName,
-                        'email'            => $log->creator?->email,
-                        'adopters_profile' => [
-                            'phone' => $adopter?->phone,
-                        ],
-                    ],
-                ];
+                $adopterCode = $adopter?->adopter_code ?: ($firstLog->creator ? sprintf('ADP-%04d', $firstLog->creator->id) : null);
+                $adopterContact = $adopter?->phone ?: ($firstLog->creator?->email ?: null);
+                $totalPetsInGroup = $group->count();
             @endphp
 
-            <div class="bg-white dark:bg-[#12141C] rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-2xs overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col sm:flex-row"
-                 data-log="{{ json_encode($logPayload) }}">
-                {{-- Left: Proof Thumbnail Container (Compact 110px on sm+) --}}
-                <div class="relative w-full sm:w-28 md:w-32 shrink-0 h-32 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer flex items-center justify-center"
-                     @click="openVerifyFromEl($el)"
-                     title="Click to inspect proof photo">
-                    @if($photoUrl)
-                        <img src="{{ $photoUrl }}" alt="Vet Card Proof" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
-                            <div class="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-2xs group-hover:scale-110 transition-transform">
-                                <svg class="w-3.5 h-3.5 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+            <div class="bg-white dark:bg-[#12141C] rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-2xs overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col"
+                 x-data="{ activeIndex: 0 }">
+                
+                {{-- Adopter Top Header (Full Width) --}}
+                <div class="p-3 sm:p-3.5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2.5 bg-slate-50/60 dark:bg-white/[0.02]">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        {{-- Adopter Avatar / Initials --}}
+                        <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
+                            @if($adopterAvatar)
+                                <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                            @else
+                                <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
+                                    {{ $adopterInitials }}
+                                </div>
+                            @endif
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight" title="Adopter: {{ $adopterName }}">
+                                @if($adopterCode)
+                                    <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
+                                @else
+                                    {{ $adopterName }}
+                                @endif
+                            </h3>
+                            <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                                @if($adopterCode)
+                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
+                                @endif
+                                <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
                             </div>
-                            <span class="text-[9px] font-bold text-white bg-black/70 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs">
-                                Inspect
-                            </span>
                         </div>
-                    @else
-                        <div class="w-full h-full min-h-[110px] flex flex-col items-center justify-center text-slate-500 text-xs p-2 text-center">
-                            <svg class="w-5 h-5 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span class="text-[10px]">No Photo</span>
-                        </div>
-                    @endif
-                    <div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-white text-[8px] font-black uppercase tracking-wider">
-                        {{ ucfirst(str_replace('_', ' ', $log->category)) }}
                     </div>
+
+                    @if($totalPetsInGroup > 1)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/25 shrink-0" title="{{ $totalPetsInGroup }} pets in this household">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                            <span>{{ $totalPetsInGroup }} Pets</span>
+                        </span>
+                    @endif
                 </div>
 
-                {{-- Right: Content & Information --}}
-                <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2 min-w-0">
-                    <div>
-                        {{-- Top Header Row: Adopter Identity First & Status --}}
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                {{-- Adopter Avatar / Initials --}}
-                                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
-                                    @if($adopterAvatar)
-                                        <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                {{-- Multi-Pet Switcher Tabs (Only shown if adopter has > 1 pet submission) --}}
+                @if($totalPetsInGroup > 1)
+                    <div class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.03] border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-0.5">Pet:</span>
+                        @foreach($group->values() as $idx => $logItem)
+                            @php
+                                $tabPet = $logItem->pet;
+                                $tabPetName = $tabPet && $tabPet->name ? $tabPet->name : ('Pet #' . $logItem->pet_id);
+                                $tabPetType = ucfirst($tabPet?->type ?? 'Pet');
+                                $tabIsPending = ($logItem->verification_status === 'pending');
+                            @endphp
+                            <button type="button"
+                                    @click="activeIndex = {{ $idx }}"
+                                    :class="activeIndex === {{ $idx }} ? 'bg-[#199CA4] text-white shadow-xs font-bold' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/[0.08] font-medium'"
+                                    class="px-2.5 py-1 rounded-lg text-[10px] transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                                <span>{{ $tabPetName }}</span>
+                                <span class="text-[9px] opacity-75">({{ $tabPetType }})</span>
+                                @if($tabIsPending)
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="Verification Pending"></span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Pet Update Details (One per pet in the group) --}}
+                @foreach($group->values() as $idx => $log)
+                    @php
+                        $pet = $log->pet;
+                        $petName = $pet && $pet->name ? $pet->name : ('Pet #' . $log->pet_id);
+                        $photoUrl = $log->proof_photo_url;
+                        $isPending = ($log->verification_status === 'pending');
+                        $isVerified = ($log->verification_status === 'verified');
+
+                        $logPayload = [
+                            'id'                  => $log->id,
+                            'pet_id'              => $log->pet_id,
+                            'date'                => $log->date?->format('Y-m-d'),
+                            'category'            => $log->category,
+                            'vaccine_name'        => $log->vaccine_name,
+                            'clinic_name'         => $log->clinic_name,
+                            'administered_by'     => $log->administered_by,
+                            'next_due_date'       => $log->next_due_date?->format('Y-m-d'),
+                            'proof_photo_url'     => $log->proof_photo_url,
+                            'verification_status' => $log->verification_status,
+                            'pet' => [
+                                'id'         => $pet?->id,
+                                'name'       => $petName,
+                                'type'       => $pet?->type,
+                                'breed'      => $pet?->breed,
+                                'photo_url'  => $pet?->photo_url,
+                                'photo_path' => $pet?->photo_path,
+                            ],
+                            'creator' => [
+                                'name'             => $adopterName,
+                                'email'            => $log->creator?->email,
+                                'adopters_profile' => [
+                                    'phone' => $adopter?->phone,
+                                ],
+                            ],
+                        ];
+                    @endphp
+
+                    <div x-show="activeIndex === {{ $idx }}"
+                         @if($idx > 0) x-cloak style="display: none;" @endif
+                         class="flex-1 flex flex-col sm:flex-row min-w-0"
+                         data-log="{{ json_encode($logPayload) }}">
+                        {{-- Left: Proof Thumbnail Container (Compact 110-128px on sm+) --}}
+                        <div class="relative w-full sm:w-28 md:w-32 shrink-0 h-36 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer flex items-center justify-center"
+                             @click="openVerifyFromEl($el)"
+                             title="Click to inspect proof photo">
+                            @if($photoUrl)
+                                <img src="{{ $photoUrl }}" alt="Vet Card Proof" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
+                                    <div class="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-2xs group-hover:scale-110 transition-transform">
+                                        <svg class="w-3.5 h-3.5 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                    </div>
+                                    <span class="text-[9px] font-bold text-white bg-black/70 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs">
+                                        Inspect
+                                    </span>
+                                </div>
+                            @else
+                                <div class="w-full h-full min-h-[110px] flex flex-col items-center justify-center text-slate-500 text-xs p-2 text-center">
+                                    <svg class="w-5 h-5 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span class="text-[10px]">No Photo</span>
+                                </div>
+                            @endif
+                            <div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-white text-[8px] font-black uppercase tracking-wider">
+                                {{ ucfirst(str_replace('_', ' ', $log->category)) }}
+                            </div>
+                        </div>
+
+                        {{-- Right: Content & Information --}}
+                        <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2 min-w-0">
+                            <div>
+                                {{-- Top Row: Category / Clinic & Status Pill --}}
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
+                                            {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Vaccine' : 'Deworming') }}
+                                        </span>
+                                        <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate" title="{{ $log->clinic_name ?: 'Private Clinic' }}">
+                                            {{ $log->clinic_name ?: 'Private Clinic' }}
+                                        </span>
+                                    </div>
+
+                                    {{-- Status Pill --}}
+                                    @if($isPending)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Pending
+                                        </span>
+                                    @elseif($isVerified)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                            Verified
+                                        </span>
                                     @else
-                                        <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
-                                            {{ $adopterInitials }}
-                                        </div>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                            Rejected
+                                        </span>
                                     @endif
                                 </div>
-                                <div class="min-w-0 flex-1">
-                                    <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight" title="Adopter: {{ $adopterName }}">
-                                        @if($adopterCode)
-                                            <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
-                                        @else
-                                            {{ $adopterName }}
-                                        @endif
-                                    </h3>
-                                    <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
-                                        @if($adopterCode)
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
-                                        @endif
-                                        <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
+
+                                {{-- Center: Adopted Pet Details --}}
+                                <div class="my-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 min-w-0">
+                                    @if($pet?->photo_url || $pet?->photo_path)
+                                        <img src="{{ $pet->photo_url ?: asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs">
+                                    @else
+                                        <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0">
+                                            #{{ $log->pet_id }}
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">Adopted Pet:</span>
+                                            <strong class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate">{{ $petName }}</strong>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+                                            {{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
 
-                            {{-- Status Pill --}}
-                            @if($isPending)
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                    Pending
-                                </span>
-                            @elseif($isVerified)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
-                                    Verified
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
-                                    Rejected
-                                </span>
-                            @endif
-                        </div>
-
-                        {{-- Center: Pet Details --}}
-                        <div class="my-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 min-w-0">
-                            @if($pet?->photo_url || $pet?->photo_path)
-                                <img src="{{ $pet->photo_url ?: asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs">
-                            @else
-                                <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0">
-                                    #{{ $log->pet_id }}
+                                {{-- Clinical Details --}}
+                                <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                                    <span class="truncate">Given: <strong class="text-slate-700 dark:text-slate-300 font-medium">{{ $log->date?->format('M d, Y') }}</strong></span>
+                                    @if($log->administered_by)
+                                        <span class="truncate text-[9px] text-slate-400 dark:text-slate-500">by {{ $log->administered_by }}</span>
+                                    @endif
                                 </div>
-                            @endif
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5 min-w-0">
-                                    <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">Adopted Pet:</span>
-                                    <strong class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate">{{ $petName }}</strong>
+                            </div>
+
+                            {{-- Action Row & Next Due Date --}}
+                            <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
+                                <div class="min-w-0 text-[10px]">
+                                    <span class="text-slate-400 block text-[9px] leading-tight">Next Booster:</span>
+                                    @if($log->next_due_date)
+                                        <span class="font-bold text-[#199CA4] dark:text-[#41C1CB] truncate block leading-tight">{{ $log->next_due_date->format('M d, Y') }}</span>
+                                    @else
+                                        <span class="text-amber-600 dark:text-amber-400 font-semibold text-[10px] truncate block leading-tight">Pending review</span>
+                                    @endif
                                 </div>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
-                                    {{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}
-                                </p>
-                            </div>
-                        </div>
 
-                        {{-- Clinical Details --}}
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-1.5 min-w-0">
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
-                                    {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Vaccine' : 'Deworming') }}
-                                </span>
-                                <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate" title="{{ $log->clinic_name ?: 'Private Clinic' }}">
-                                    {{ $log->clinic_name ?: 'Private Clinic' }}
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
-                                <span class="truncate">Given: <strong class="text-slate-700 dark:text-slate-300 font-medium">{{ $log->date?->format('M d, Y') }}</strong></span>
-                                @if($log->administered_by)
-                                    <span class="truncate text-[9px] text-slate-400 dark:text-slate-500">by {{ $log->administered_by }}</span>
-                                @endif
+                                <button type="button" 
+                                        @click="openVerifyFromEl($el)"
+                                        class="h-7 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
+                                    @if($isPending)
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Inspect & Verify</span>
+                                    @else
+                                        <span>Details</span>
+                                    @endif
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    {{-- Action Row & Next Due Date --}}
-                    <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
-                        <div class="min-w-0 text-[10px]">
-                            <span class="text-slate-400 block text-[9px] leading-tight">Next Booster:</span>
-                            @if($log->next_due_date)
-                                <span class="font-bold text-[#199CA4] dark:text-[#41C1CB] truncate block leading-tight">{{ $log->next_due_date->format('M d, Y') }}</span>
-                            @else
-                                <span class="text-amber-600 dark:text-amber-400 font-semibold text-[10px] truncate block leading-tight">Pending review</span>
-                            @endif
-                        </div>
-
-                        <button type="button" 
-                                @click="openVerifyFromEl($el)"
-                                class="h-7 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 {{ $isPending ? 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' : 'bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200' }}">
-                            @if($isPending)
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Inspect & Verify</span>
-                            @else
-                                <span>Details</span>
-                            @endif
-                        </button>
-                    </div>
-                </div>
+                @endforeach
             </div>
         @empty
             <div class="col-span-full py-16 text-center bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] p-8">
@@ -708,215 +761,273 @@
     </div>
 
     {{-- Monthly Updates Grid (Compact dashboard grid matching Vaccination updates) --}}
+    @php
+        $groupedReports = $reports->getCollection()->groupBy(function($report) {
+            return $report->user_id ? ('user_' . $report->user_id) : ('report_' . $report->id);
+        });
+    @endphp
+
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
-        @forelse($reports as $report)
+        @forelse($groupedReports as $groupKey => $group)
             @php
-                $pet = $report->pet;
-                $petName = $pet && $pet->name ? $pet->name : 'Pet no. ' . $report->pet_id;
-                $adopter = $report->user?->adoptersProfile;
-                $adopterName = $adopter?->full_name ?: ($report->user?->name ?: 'Adopter');
+                $firstReport = $group->first();
+                $adopter = $firstReport->user?->adoptersProfile;
+                $adopterName = $adopter?->full_name ?: ($firstReport->user?->name ?: 'Adopter');
                 $adopterAvatar = $adopter?->avatar_url;
                 $adopterInitials = $adopter?->initials ?: strtoupper(substr($adopterName, 0, 2));
-                $adopterCode = $adopter?->adopter_code ?: ($report->user ? sprintf('ADP-%04d', $report->user->id) : 'ADP');
-                $adopterContact = $adopter?->phone ?: ($report->user?->email ?: null);
-                $photoUrl = $report->photo_url;
-                $checkInDateStr = $report->check_in_date ? $report->check_in_date->format('M d, Y') : $report->created_at->format('M d, Y');
-                $weightStr = $report->weight ? number_format($report->weight, 1) . ' kg' : null;
-                $isHealthy = ($report->health_status === 'healthy');
-                $isAttention = in_array($report->health_status, ['minor_issue', 'under_treatment']);
-                $isDeceased = ($report->health_status === 'deceased');
+                $adopterCode = $adopter?->adopter_code ?: ($firstReport->user ? sprintf('ADP-%04d', $firstReport->user->id) : 'ADP');
+                $adopterContact = $adopter?->phone ?: ($firstReport->user?->email ?: null);
+                $totalPetsInGroup = $group->count();
             @endphp
 
-            <div class="bg-white dark:bg-[#12141C] rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-2xs overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col sm:flex-row">
-                {{-- Left: Proof / Check-in Photo Thumbnail Container (Compact 110-128px on sm+) --}}
-                <div class="relative w-full sm:w-28 md:w-32 shrink-0 h-32 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer flex items-center justify-center"
-                     @if($photoUrl)
-                     data-photo="{{ $photoUrl }}"
-                     data-title="{{ $adopterName }} - {{ $petName }} Monthly Check-in"
-                     data-date="{{ $checkInDateStr }}"
-                     data-weight="{{ $weightStr ?? 'Not recorded' }}"
-                     data-status="{{ $report->health_status }}"
-                     data-notes="{{ $report->notes }}"
-                     @click="openFromCard($event)"
-                     @endif
-                     title="Click to inspect photo">
-                    @if($photoUrl)
-                        <img src="{{ $photoUrl }}" alt="{{ $adopterName }} - {{ $petName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
-                            <div class="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-2xs group-hover:scale-110 transition-transform">
-                                <svg class="w-3.5 h-3.5 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+            <div class="bg-white dark:bg-[#12141C] rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-2xs overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col"
+                 x-data="{ activeIndex: 0 }">
+                
+                {{-- Adopter Top Header (Full Width) --}}
+                <div class="p-3 sm:p-3.5 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2.5 bg-slate-50/60 dark:bg-white/[0.02]">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        {{-- Adopter Avatar / Initials --}}
+                        <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
+                            @if($adopterAvatar)
+                                <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                            @else
+                                <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
+                                    {{ $adopterInitials }}
+                                </div>
+                            @endif
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight" title="Adopter: {{ $adopterName }}">
+                                @if($adopterCode)
+                                    <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
+                                @else
+                                    {{ $adopterName }}
+                                @endif
+                            </h3>
+                            <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                                @if($adopterCode)
+                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
+                                @endif
+                                <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
                             </div>
-                            <span class="text-[9px] font-bold text-white bg-black/70 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs">
-                                Inspect
-                            </span>
                         </div>
-                    @else
-                        <div class="w-full h-full min-h-[110px] flex flex-col items-center justify-center text-slate-500 text-xs p-2 text-center">
-                            <svg class="w-5 h-5 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <span class="text-[10px]">No Photo</span>
-                        </div>
-                    @endif
-                    <div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-white text-[8px] font-black uppercase tracking-wider">
-                        {{ $weightStr ?? 'Monthly' }}
                     </div>
+
+                    @if($totalPetsInGroup > 1)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/25 shrink-0" title="{{ $totalPetsInGroup }} pets in this household">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                            <span>{{ $totalPetsInGroup }} Pets</span>
+                        </span>
+                    @endif
                 </div>
 
-                {{-- Right: Content & Information --}}
-                <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 min-w-0">
-                    <div>
-                        {{-- Top Header Row: Adopter Identity First & Status --}}
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                                {{-- Adopter Avatar / Initials --}}
-                                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
-                                    @if($adopterAvatar)
-                                        <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                {{-- Multi-Pet Switcher Tabs (Only shown if adopter has > 1 pet submission) --}}
+                @if($totalPetsInGroup > 1)
+                    <div class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.03] border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-0.5">Pet:</span>
+                        @foreach($group->values() as $idx => $reportItem)
+                            @php
+                                $tabPet = $reportItem->pet;
+                                $tabPetName = $tabPet && $tabPet->name ? $tabPet->name : ('Pet no. ' . $reportItem->pet_id);
+                                $tabPetType = ucfirst($tabPet?->type ?? 'Pet');
+                                $tabNeedsAttention = in_array($reportItem->health_status, ['minor_issue', 'under_treatment']) || ($reportItem->health_status === 'deceased' && (empty($reportItem->review_decision) || $reportItem->review_decision === 'pending'));
+                            @endphp
+                            <button type="button"
+                                    @click="activeIndex = {{ $idx }}"
+                                    :class="activeIndex === {{ $idx }} ? 'bg-[#199CA4] text-white shadow-xs font-bold' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/[0.08] font-medium'"
+                                    class="px-2.5 py-1 rounded-lg text-[10px] transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                                <span>{{ $tabPetName }}</span>
+                                <span class="text-[9px] opacity-75">({{ $tabPetType }})</span>
+                                @if($tabNeedsAttention)
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="Needs Attention / Review"></span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Pet Update Details (One per pet in the group) --}}
+                @foreach($group->values() as $idx => $report)
+                    @php
+                        $pet = $report->pet;
+                        $petName = $pet && $pet->name ? $pet->name : 'Pet no. ' . $report->pet_id;
+                        $photoUrl = $report->photo_url;
+                        $checkInDateStr = $report->check_in_date ? $report->check_in_date->format('M d, Y') : $report->created_at->format('M d, Y');
+                        $weightStr = $report->weight ? number_format($report->weight, 1) . ' kg' : null;
+                        $isHealthy = ($report->health_status === 'healthy');
+                        $isAttention = in_array($report->health_status, ['minor_issue', 'under_treatment']);
+                        $isDeceased = ($report->health_status === 'deceased');
+                    @endphp
+
+                    <div x-show="activeIndex === {{ $idx }}"
+                         @if($idx > 0) x-cloak style="display: none;" @endif
+                         class="flex-1 flex flex-col sm:flex-row min-w-0">
+                        {{-- Left: Proof / Check-in Photo Thumbnail Container (Compact 110-128px on sm+) --}}
+                        <div class="relative w-full sm:w-28 md:w-32 shrink-0 h-36 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer flex items-center justify-center"
+                             @if($photoUrl)
+                             data-photo="{{ $photoUrl }}"
+                             data-title="{{ $adopterName }} - {{ $petName }} Monthly Check-in"
+                             data-date="{{ $checkInDateStr }}"
+                             data-weight="{{ $weightStr ?? 'Not recorded' }}"
+                             data-status="{{ $report->health_status }}"
+                             data-notes="{{ $report->notes }}"
+                             @click="openFromCard($event)"
+                             @endif
+                             title="Click to inspect photo">
+                            @if($photoUrl)
+                                <img src="{{ $photoUrl }}" alt="{{ $adopterName }} - {{ $petName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
+                                    <div class="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-2xs group-hover:scale-110 transition-transform">
+                                        <svg class="w-3.5 h-3.5 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                    </div>
+                                    <span class="text-[9px] font-bold text-white bg-black/70 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs">
+                                        Inspect
+                                    </span>
+                                </div>
+                            @else
+                                <div class="w-full h-full min-h-[110px] flex flex-col items-center justify-center text-slate-500 text-xs p-2 text-center">
+                                    <svg class="w-5 h-5 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span class="text-[10px]">No Photo</span>
+                                </div>
+                            @endif
+                            <div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-white text-[8px] font-black uppercase tracking-wider">
+                                {{ $weightStr ?? 'Monthly' }}
+                            </div>
+                        </div>
+
+                        {{-- Right: Content & Information --}}
+                        <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 min-w-0">
+                            <div>
+                                {{-- Top Row: Check-in Time & Health Status Pill --}}
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                        <span>Check-in: <strong class="text-slate-700 dark:text-slate-300 font-medium">{{ $checkInDateStr }}</strong></span>
+                                    </div>
+
+                                    {{-- Health Status Pill --}}
+                                    @if($isHealthy)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                            Healthy &amp; Active
+                                        </span>
+                                    @elseif($report->health_status === 'minor_issue')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                            Minor Issue
+                                        </span>
+                                    @elseif($report->health_status === 'under_treatment')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                            Under Treatment
+                                        </span>
+                                    @elseif($isDeceased)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-900 text-white dark:bg-slate-800 border border-slate-700 shrink-0">
+                                            Passed Away
+                                        </span>
                                     @else
-                                        <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
-                                            {{ $adopterInitials }}
-                                        </div>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
+                                            {{ ucfirst($report->health_status ?? 'Submitted') }}
+                                        </span>
                                     @endif
                                 </div>
-                                <div class="min-w-0 flex-1">
-                                    <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight" title="Adopter: {{ $adopterName }}">
-                                        @if($adopterCode)
-                                            <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
-                                        @else
-                                            {{ $adopterName }}
-                                        @endif
-                                    </h3>
-                                    <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
-                                        @if($adopterCode)
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
-                                        @endif
-                                        <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
+
+                                {{-- Center: Adopted Pet Details --}}
+                                <div class="my-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 min-w-0">
+                                    @if($pet?->photo_url || $pet?->photo_path)
+                                        <img src="{{ $pet->photo_url ?: asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs">
+                                    @else
+                                        <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0">
+                                            #{{ $report->pet_id }}
+                                        </div>
+                                    @endif
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">Adopted Pet:</span>
+                                            <strong class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate">{{ $petName }}</strong>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+                                            {{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {{-- Life Event Status Bar (if deceased) --}}
+                                @if($isDeceased)
+                                    <div class="mb-2 p-1.5 rounded-lg {{ $report->review_decision === 'cleared_accidental' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : ($report->review_decision === 'neglect_confirmed' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400') }} border text-[10px] font-bold flex items-center justify-between gap-1">
+                                        <span class="truncate">
+                                            @if($report->review_decision === 'cleared_accidental')
+                                                Passing Verified: Natural / Accidental
+                                            @elseif($report->review_decision === 'neglect_confirmed')
+                                                Neglect Confirmed: Sanctioned
+                                            @else
+                                                Life Event: Awaiting Staff Review
+                                            @endif
+                                        </span>
+                                        <span class="uppercase tracking-wider text-[8px] font-black shrink-0">
+                                            {{ $report->review_decision ? ucfirst(str_replace('_', ' ', $report->review_decision)) : 'Pending' }}
+                                        </span>
+                                    </div>
+                                @endif
+
+                                {{-- Observation / Notes Snippet --}}
+                                <div class="mt-2 space-y-1">
+                                    @if(!empty($report->notes))
+                                        <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium line-clamp-2 leading-snug italic" title="{{ $report->notes }}">
+                                            "{{ $report->notes }}"
+                                        </p>
+                                    @else
+                                        <p class="text-[10px] text-slate-400 dark:text-slate-500 italic">No notes recorded.</p>
+                                    @endif
+
+                                    <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                        <span class="truncate text-[9px] text-slate-400">{{ $report->created_at->diffForHumans() }}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Health Status Pill --}}
-                            @if($isHealthy)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
-                                    Healthy &amp; Active
-                                </span>
-                            @elseif($report->health_status === 'minor_issue')
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
-                                    Minor Issue
-                                </span>
-                            @elseif($report->health_status === 'under_treatment')
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
-                                    Under Treatment
-                                </span>
-                            @elseif($isDeceased)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-900 text-white dark:bg-slate-800 border border-slate-700 shrink-0">
-                                    Passed Away
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
-                                    {{ ucfirst($report->health_status ?? 'Submitted') }}
-                                </span>
-                            @endif
-                        </div>
-
-                        {{-- Center: Pet Details --}}
-                        <div class="my-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 min-w-0">
-                            @if($pet?->photo_url || $pet?->photo_path)
-                                <img src="{{ $pet->photo_url ?: asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs">
-                            @else
-                                <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0">
-                                    #{{ $report->pet_id }}
-                                </div>
-                            @endif
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center gap-1.5 min-w-0">
-                                    <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">Adopted Pet:</span>
-                                    <strong class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate">{{ $petName }}</strong>
-                                </div>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
-                                    {{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}
-                                </p>
-                            </div>
-                        </div>
-
-                        {{-- Life Event Status Bar (if deceased) --}}
-                        @if($isDeceased)
-                            <div class="mb-2 p-1.5 rounded-lg {{ $report->review_decision === 'cleared_accidental' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : ($report->review_decision === 'neglect_confirmed' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400') }} border text-[10px] font-bold flex items-center justify-between gap-1">
-                                <span class="truncate">
-                                    @if($report->review_decision === 'cleared_accidental')
-                                        Passing Verified: Natural / Accidental
-                                    @elseif($report->review_decision === 'neglect_confirmed')
-                                        Neglect Confirmed: Sanctioned
+                            {{-- Action Row & Footer --}}
+                            <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
+                                <div class="min-w-0 text-[10px]">
+                                    <span class="text-slate-400 block text-[9px] leading-tight">Recorded Weight:</span>
+                                    @if($weightStr)
+                                        <span class="font-bold text-[#199CA4] dark:text-[#41C1CB] truncate block leading-tight">{{ $weightStr }}</span>
                                     @else
-                                        Life Event: Awaiting Staff Review
+                                        <span class="text-slate-400 font-semibold text-[10px] truncate block leading-tight">Not recorded</span>
                                     @endif
-                                </span>
-                                <span class="uppercase tracking-wider text-[8px] font-black shrink-0">
-                                    {{ $report->review_decision ? ucfirst(str_replace('_', ' ', $report->review_decision)) : 'Pending' }}
-                                </span>
-                            </div>
-                        @endif
+                                </div>
 
-                        {{-- Observation / Notes Snippet --}}
-                        <div class="mt-2 space-y-1">
-                            @if(!empty($report->notes))
-                                <p class="text-[11px] text-slate-600 dark:text-slate-300 font-medium line-clamp-2 leading-snug italic" title="{{ $report->notes }}">
-                                    "{{ $report->notes }}"
-                                </p>
-                            @else
-                                <p class="text-[10px] text-slate-400 dark:text-slate-500 italic">No notes recorded.</p>
-                            @endif
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    @if($isDeceased)
+                                        <button type="button"
+                                                @click="openReviewModal({{ $report->id }}, '{{ addslashes($petName) }}', '{{ addslashes($adopterName) }}', '{{ addslashes($checkInDateStr) }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $report->notes ?? '')) }}', '{{ $report->review_decision ?? 'cleared_accidental' }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $report->staff_remarks ?? '')) }}')"
+                                                class="h-7 px-2.5 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 {{ empty($report->review_decision) || $report->review_decision === 'pending' ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300' }}">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                            <span>{{ empty($report->review_decision) || $report->review_decision === 'pending' ? 'Review' : 'Decision' }}</span>
+                                        </button>
+                                    @endif
 
-                            <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
-                                <span class="truncate">Check-in: <strong class="text-slate-700 dark:text-slate-300 font-medium">{{ $checkInDateStr }}</strong></span>
-                                <span class="truncate text-[9px] text-slate-400">{{ $report->created_at->diffForHumans() }}</span>
+                                    @if($photoUrl)
+                                        <button type="button" 
+                                                data-photo="{{ $photoUrl }}"
+                                                data-title="{{ $adopterName }} - {{ $petName }} Monthly Check-in"
+                                                data-date="{{ $checkInDateStr }}"
+                                                data-weight="{{ $weightStr ?? 'Not recorded' }}"
+                                                data-status="{{ $report->health_status }}"
+                                                data-notes="{{ $report->notes }}"
+                                                @click="openFromCard($event)"
+                                                class="h-7 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20 shrink-0">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <span>Inspect Photo</span>
+                                        </button>
+                                    @else
+                                        <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}"
+                                           class="h-7 px-3 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 transition shadow-2xs flex items-center justify-center gap-1 shrink-0">
+                                            <span>Profile</span>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    {{-- Action Row & Footer --}}
-                    <div class="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
-                        <div class="min-w-0 text-[10px]">
-                            <span class="text-slate-400 block text-[9px] leading-tight">Recorded Weight:</span>
-                            @if($weightStr)
-                                <span class="font-bold text-[#199CA4] dark:text-[#41C1CB] truncate block leading-tight">{{ $weightStr }}</span>
-                            @else
-                                <span class="text-slate-400 font-semibold text-[10px] truncate block leading-tight">Not recorded</span>
-                            @endif
-                        </div>
-
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            @if($isDeceased)
-                                <button type="button"
-                                        @click="openReviewModal({{ $report->id }}, '{{ addslashes($petName) }}', '{{ addslashes($adopterName) }}', '{{ addslashes($checkInDateStr) }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $report->notes ?? '')) }}', '{{ $report->review_decision ?? 'cleared_accidental' }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $report->staff_remarks ?? '')) }}')"
-                                        class="h-7 px-2.5 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 {{ empty($report->review_decision) || $report->review_decision === 'pending' ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300' }}">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                    <span>{{ empty($report->review_decision) || $report->review_decision === 'pending' ? 'Review' : 'Decision' }}</span>
-                                </button>
-                            @endif
-
-                            @if($photoUrl)
-                                <button type="button" 
-                                        data-photo="{{ $photoUrl }}"
-                                        data-title="{{ $adopterName }} - {{ $petName }} Monthly Check-in"
-                                        data-date="{{ $checkInDateStr }}"
-                                        data-weight="{{ $weightStr ?? 'Not recorded' }}"
-                                        data-status="{{ $report->health_status }}"
-                                        data-notes="{{ $report->notes }}"
-                                        @click="openFromCard($event)"
-                                        class="h-7 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20 shrink-0">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <span>Inspect Photo</span>
-                                </button>
-                            @else
-                                <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}"
-                                   class="h-7 px-3 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 transition shadow-2xs flex items-center justify-center gap-1 shrink-0">
-                                    <span>Profile</span>
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                </a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
+                @endforeach
             </div>
         @empty
             <div class="col-span-full py-16 text-center bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] p-8">

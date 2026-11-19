@@ -113,4 +113,164 @@ class AdopterMonthlyReportsTest extends TestCase
         $response->assertSeeText('Barnaby');
         $response->assertSeeText('Barnaby is doing wonderful and active!');
     }
+
+    public function test_monthly_pet_updates_consolidates_multiple_pets_for_same_adopter(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Mayang Santos',
+            'email' => 'mayang@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        \App\Models\AdoptersProfile::create([
+            'user_id' => $adopterUser->id,
+            'adopter_code' => 'ADP-0006',
+            'full_name' => 'Mayang Santos',
+            'email' => 'mayang@example.com',
+            'phone' => '09334545411',
+            'status' => 'active',
+        ]);
+
+        $pet1 = \App\Models\Pet::create([
+            'name' => 'King',
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'adopted',
+            'age' => 3,
+            'gender' => 'male',
+            'size' => 'medium',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        $pet2 = \App\Models\Pet::create([
+            'name' => 'Claude',
+            'type' => 'cat',
+            'breed' => 'Puspin',
+            'status' => 'adopted',
+            'age' => 1,
+            'gender' => 'male',
+            'size' => 'small',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet1->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/king.jpg',
+            'health_status' => 'healthy',
+            'weight' => 15.0,
+            'notes' => 'King is healthy and active.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'submitted',
+        ]);
+
+        \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet2->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/claude.jpg',
+            'health_status' => 'healthy',
+            'weight' => 4.2,
+            'notes' => 'Claude is doing well.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'submitted',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/adopters/reports?tab=monthly_updates');
+
+        $response->assertStatus(200);
+        $response->assertSeeText('Mayang Santos');
+        $response->assertSeeText('ADP-0006');
+        $response->assertSeeText('2 Pets');
+        $response->assertSeeText('Pet:');
+        $response->assertSeeText('King');
+        $response->assertSeeText('Claude');
+    }
+
+    public function test_vaccination_proofs_consolidates_multiple_pets_for_same_adopter(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Mayang Santos',
+            'email' => 'mayang.vet@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        \App\Models\AdoptersProfile::create([
+            'user_id' => $adopterUser->id,
+            'adopter_code' => 'ADP-0007',
+            'full_name' => 'Mayang Santos',
+            'email' => 'mayang.vet@example.com',
+            'phone' => '09334545412',
+            'status' => 'active',
+        ]);
+
+        $pet1 = \App\Models\Pet::create([
+            'name' => 'King',
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'adopted',
+            'age' => 3,
+            'gender' => 'male',
+            'size' => 'medium',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        $pet2 = \App\Models\Pet::create([
+            'name' => 'Claude',
+            'type' => 'cat',
+            'breed' => 'Puspin',
+            'status' => 'adopted',
+            'age' => 1,
+            'gender' => 'male',
+            'size' => 'small',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        \App\Models\MedicalLog::create([
+            'pet_id' => $pet1->id,
+            'created_by' => $adopterUser->id,
+            'category' => 'vaccination',
+            'vaccine_name' => 'Rabies Vaccine',
+            'clinic_name' => 'PetVet Clinic',
+            'administered_by' => 'Dr. Santos',
+            'date' => now()->toDateString(),
+            'is_external' => true,
+            'verification_status' => 'pending',
+            'proof_photo_path' => 'vet-proofs/king_rabies.jpg',
+        ]);
+
+        \App\Models\MedicalLog::create([
+            'pet_id' => $pet2->id,
+            'created_by' => $adopterUser->id,
+            'category' => 'vaccination',
+            'vaccine_name' => 'FVRCP Vaccine',
+            'clinic_name' => 'PetVet Clinic',
+            'administered_by' => 'Dr. Santos',
+            'date' => now()->toDateString(),
+            'is_external' => true,
+            'verification_status' => 'pending',
+            'proof_photo_path' => 'vet-proofs/claude_fvrcp.jpg',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/adopters/reports?tab=vet_proofs');
+
+        $response->assertStatus(200);
+        $response->assertSeeText('Mayang Santos');
+        $response->assertSeeText('ADP-0007');
+        $response->assertSeeText('2 Pets');
+        $response->assertSeeText('Pet:');
+        $response->assertSeeText('King');
+        $response->assertSeeText('Claude');
+    }
 }
