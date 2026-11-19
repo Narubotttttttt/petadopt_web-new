@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://text-pray-evaluated-partially.trycloudflare.com/$1",
+                         "destination":  "https://writer-pda-confidential-select.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

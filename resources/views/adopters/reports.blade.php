@@ -406,14 +406,18 @@
         </div>
     </div>
 
-    {{-- External Vet Proofs Grid (Compact 3-column dashboard grid) --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+    {{-- External Vet Proofs Grid (Compact dashboard grid) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
         @forelse($vetLogs as $log)
             @php
                 $pet = $log->pet;
                 $petName = $pet && $pet->name ? $pet->name : ('Pet #' . $log->pet_id);
                 $adopter = $log->creator?->adoptersProfile;
                 $adopterName = $adopter?->full_name ?: ($log->creator?->name ?: 'Adopter');
+                $adopterAvatar = $adopter?->avatar_url;
+                $adopterInitials = $adopter?->initials ?: strtoupper(substr($adopterName, 0, 2));
+                $adopterCode = $adopter?->adopter_code ?: ($log->creator ? sprintf('ADP-%04d', $log->creator->id) : null);
+                $adopterContact = $adopter?->phone ?: ($log->creator?->email ?: null);
                 $photoUrl = $log->proof_photo_url;
                 $isPending = ($log->verification_status === 'pending');
                 $isVerified = ($log->verification_status === 'verified');
@@ -477,51 +481,75 @@
                 {{-- Right: Content & Information --}}
                 <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2 min-w-0">
                     <div>
-                        {{-- Top Header Row: Adopter Identity & Status --}}
+                        {{-- Top Header Row: Adopter Identity First & Status --}}
                         <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                @if($pet?->photo_path)
-                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs" title="Companion: {{ $petName }}">
-                                @else
-                                    <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] flex items-center justify-center font-black text-[11px] shrink-0" title="Companion: {{ $petName }}">
-                                        #{{ $log->pet_id }}
-                                    </div>
-                                @endif
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5 min-w-0">
-                                        <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight" title="Adopter: {{ $adopterName }}">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                {{-- Adopter Avatar / Initials --}}
+                                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
+                                    @if($adopterAvatar)
+                                        <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
+                                            {{ $adopterInitials }}
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight" title="Adopter: {{ $adopterName }}">
+                                        @if($adopterCode)
+                                            <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
+                                        @else
                                             {{ $adopterName }}
-                                        </h3>
-                                        @if($adopter?->adopter_code)
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopter->adopter_code }}</span>
                                         @endif
+                                    </h3>
+                                    <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                                        @if($adopterCode)
+                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
+                                        @endif
+                                        <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
                                     </div>
-                                    <p class="text-[10px] text-slate-400 truncate leading-tight mt-0.5">
-                                        Pet: <strong class="text-slate-700 dark:text-slate-200 font-bold">{{ $petName }}</strong>
-                                        <span class="text-slate-400 font-normal">&bull; {{ ucfirst($pet?->type ?? 'Pet') }} ({{ $pet?->breed ?? 'Mixed' }})</span>
-                                    </p>
                                 </div>
                             </div>
 
                             {{-- Status Pill --}}
                             @if($isPending)
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                     Pending
                                 </span>
                             @elseif($isVerified)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
                                     Verified
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
                                     Rejected
                                 </span>
                             @endif
                         </div>
 
+                        {{-- Center: Pet Details --}}
+                        <div class="my-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 min-w-0">
+                            @if($pet?->photo_url || $pet?->photo_path)
+                                <img src="{{ $pet->photo_url ?: asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs">
+                            @else
+                                <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0">
+                                    #{{ $log->pet_id }}
+                                </div>
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">Adopted Pet:</span>
+                                    <strong class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate">{{ $petName }}</strong>
+                                </div>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+                                    {{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}
+                                </p>
+                            </div>
+                        </div>
+
                         {{-- Clinical Details --}}
-                        <div class="mt-2 space-y-1">
+                        <div class="space-y-1">
                             <div class="flex items-center gap-1.5 min-w-0">
                                 <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shrink-0">
                                     {{ $log->vaccine_name ?: ($log->category === 'vaccination' ? 'Vaccine' : 'Deworming') }}
@@ -679,15 +707,18 @@
         </div>
     </div>
 
-    {{-- Monthly Updates Grid (Compact 3-column dashboard grid matching Vaccination updates) --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+    {{-- Monthly Updates Grid (Compact dashboard grid matching Vaccination updates) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
         @forelse($reports as $report)
             @php
                 $pet = $report->pet;
                 $petName = $pet && $pet->name ? $pet->name : 'Pet no. ' . $report->pet_id;
                 $adopter = $report->user?->adoptersProfile;
                 $adopterName = $adopter?->full_name ?: ($report->user?->name ?: 'Adopter');
+                $adopterAvatar = $adopter?->avatar_url;
+                $adopterInitials = $adopter?->initials ?: strtoupper(substr($adopterName, 0, 2));
                 $adopterCode = $adopter?->adopter_code ?: ($report->user ? sprintf('ADP-%04d', $report->user->id) : 'ADP');
+                $adopterContact = $adopter?->phone ?: ($report->user?->email ?: null);
                 $photoUrl = $report->photo_url;
                 $checkInDateStr = $report->check_in_date ? $report->check_in_date->format('M d, Y') : $report->created_at->format('M d, Y');
                 $weightStr = $report->weight ? number_format($report->weight, 1) . ' kg' : null;
@@ -731,63 +762,85 @@
                 </div>
 
                 {{-- Right: Content & Information --}}
-                <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2 min-w-0">
+                <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 min-w-0">
                     <div>
-                        {{-- Top Header Row: Adopter Identity & Status --}}
+                        {{-- Top Header Row: Adopter Identity First & Status --}}
                         <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                @if($pet && $pet->photo_url)
-                                    <img src="{{ $pet->photo_url }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs" title="Companion: {{ $petName }}">
-                                @elseif($pet && $pet->photo_path)
-                                    <img src="{{ asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs" title="Companion: {{ $petName }}">
-                                @else
-                                    <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0" title="Companion: {{ $petName }}">
-                                        #{{ $report->pet_id }}
-                                    </div>
-                                @endif
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5 min-w-0">
-                                        <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate leading-tight" title="Adopter: {{ $adopterName }}">
+                            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                {{-- Adopter Avatar / Initials --}}
+                                <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
+                                    @if($adopterAvatar)
+                                        <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
+                                            {{ $adopterInitials }}
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight" title="Adopter: {{ $adopterName }}">
+                                        @if($adopterCode)
                                             <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
-                                        </h3>
+                                        @else
+                                            {{ $adopterName }}
+                                        @endif
+                                    </h3>
+                                    <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
                                         @if($adopterCode)
                                             <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
                                         @endif
+                                        <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
                                     </div>
-                                    <p class="text-[10px] text-slate-400 truncate leading-tight mt-0.5">
-                                        Adopted Pet: <strong class="text-slate-700 dark:text-slate-200 font-bold">{{ $petName }}</strong>
-                                        <span class="text-slate-400 font-normal">&bull; {{ $pet ? ucfirst($pet->type) . ' (' . ($pet->breed ?? 'Mixed') . ')' : 'Adopted' }}</span>
-                                    </p>
                                 </div>
                             </div>
 
                             {{-- Health Status Pill --}}
                             @if($isHealthy)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
                                     Healthy &amp; Active
                                 </span>
                             @elseif($report->health_status === 'minor_issue')
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
                                     Minor Issue
                                 </span>
                             @elseif($report->health_status === 'under_treatment')
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
                                     Under Treatment
                                 </span>
                             @elseif($isDeceased)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-900 text-white dark:bg-slate-800 border border-slate-700 shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-900 text-white dark:bg-slate-800 border border-slate-700 shrink-0">
                                     Passed Away
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] shrink-0">
                                     {{ ucfirst($report->health_status ?? 'Submitted') }}
                                 </span>
                             @endif
                         </div>
 
+                        {{-- Center: Pet Details --}}
+                        <div class="my-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] flex items-center gap-2.5 min-w-0">
+                            @if($pet?->photo_url || $pet?->photo_path)
+                                <img src="{{ $pet->photo_url ?: asset('storage/'.ltrim($pet->photo_path, '/')) }}" alt="{{ $petName }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs">
+                            @else
+                                <div class="w-8 h-8 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-black text-[11px] shrink-0">
+                                    #{{ $report->pet_id }}
+                                </div>
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <span class="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">Adopted Pet:</span>
+                                    <strong class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100 truncate">{{ $petName }}</strong>
+                                </div>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+                                    {{ ucfirst($pet?->type ?? 'Pet') }} &bull; {{ $pet?->breed ?? 'Mixed Breed' }}
+                                </p>
+                            </div>
+                        </div>
+
                         {{-- Life Event Status Bar (if deceased) --}}
                         @if($isDeceased)
-                            <div class="mt-2 p-1.5 rounded-lg {{ $report->review_decision === 'cleared_accidental' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : ($report->review_decision === 'neglect_confirmed' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400') }} border text-[10px] font-bold flex items-center justify-between gap-1">
+                            <div class="mb-2 p-1.5 rounded-lg {{ $report->review_decision === 'cleared_accidental' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : ($report->review_decision === 'neglect_confirmed' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400') }} border text-[10px] font-bold flex items-center justify-between gap-1">
                                 <span class="truncate">
                                     @if($report->review_decision === 'cleared_accidental')
                                         Passing Verified: Natural / Accidental
