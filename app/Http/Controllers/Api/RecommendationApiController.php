@@ -208,20 +208,21 @@ class RecommendationApiController extends Controller
             return trim($text);
         };
 
+        $userApplications = collect();
+        if ($user) {
+            $userApplications = AdoptionApplication::where('applicant_email', $user->email)
+                ->whereIn('status', ['pending', 'under_review', 'approved', 'adopted'])
+                ->latest()
+                ->get()
+                ->keyBy('pet_id');
+        }
+
         if ($cacheKey && Cache::has($cacheKey)) {
             $cachedOutput = Cache::get($cacheKey);
             $cachedPetIds = collect($cachedOutput['recommendations'] ?? [])->pluck('id')->filter()->toArray();
 
-            $hasApplied = false;
-            if ($user) {
-                $hasApplied = AdoptionApplication::where('applicant_email', $user->email)
-                    ->whereIn('pet_id', $cachedPetIds)
-                    ->whereIn('status', ['pending', 'under_review', 'approved', 'adopted'])
-                    ->exists();
-            }
-
             $availableCount = Pet::whereIn('id', $cachedPetIds)->where('status', 'available')->count();
-            if (!empty($cachedPetIds) && ! $hasApplied && $availableCount === count($cachedPetIds)) {
+            if (!empty($cachedPetIds) && $availableCount === count($cachedPetIds)) {
                 if (isset($cachedOutput['comparative_analysis'])) {
                     if (isset($cachedOutput['comparative_analysis']['summary'])) {
                         $cachedOutput['comparative_analysis']['summary'] = $cleanBracketLabels($cachedOutput['comparative_analysis']['summary']);
@@ -232,6 +233,13 @@ class RecommendationApiController extends Controller
                 }
                 if (!empty($cachedOutput['recommendations'])) {
                     foreach ($cachedOutput['recommendations'] as &$r) {
+                        $app = $userApplications->get($r['id'] ?? null);
+                        $isApplied = ($app !== null);
+                        $r['is_applied'] = $isApplied;
+                        $r['application_status'] = $app ? $app->status : null;
+                        $r['application_id'] = $app ? $app->id : null;
+                        $r['can_apply'] = !$isApplied && (($adoptedCount ?? 0) < 3);
+
                         if (!empty($r['reasons']) && is_array($r['reasons'])) {
                             $r['reasons'] = array_map($cleanBracketLabels, $r['reasons']);
                         }
@@ -247,21 +255,6 @@ class RecommendationApiController extends Controller
         }
 
         $petsQuery = Pet::where('status', 'available');
-
-        // Exclude pets that this adopter has already applied for or adopted
-        $appliedPetIds = [];
-        if ($user) {
-            $appliedPetIds = AdoptionApplication::where('applicant_email', $user->email)
-                ->whereIn('status', ['pending', 'under_review', 'approved', 'adopted'])
-                ->pluck('pet_id')
-                ->filter()
-                ->unique()
-                ->toArray();
-
-            if (!empty($appliedPetIds)) {
-                $petsQuery->whereNotIn('id', $appliedPetIds);
-            }
-        }
 
         // Strict species filtering if user specified 'dog' or 'cat'
         $prefSpecies = strtolower($profile['preferred_species'] ?? $request->input('preferred_species', 'any'));
@@ -359,9 +352,12 @@ class RecommendationApiController extends Controller
                     $validRecs = [];
                     foreach ($output['recommendations'] as $rec) {
                         $petModel = $petMap->get($rec['pet_id']);
-                        if (! $petModel || strtolower($petModel->status) !== 'available' || in_array($rec['pet_id'], $appliedPetIds)) {
+                        if (! $petModel || strtolower($petModel->status) !== 'available') {
                             continue;
                         }
+
+                        $app = $userApplications->get($petModel->id);
+                        $isApplied = ($app !== null);
 
                         $photoUrl = null;
                         if ($petModel->photo_path) {
@@ -382,6 +378,10 @@ class RecommendationApiController extends Controller
                         $rec['image'] = $photoUrl ?: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80';
                         $rec['photo_url'] = $rec['image'];
                         $rec['status'] = 'available';
+                        $rec['is_applied'] = $isApplied;
+                        $rec['application_status'] = $app ? $app->status : null;
+                        $rec['application_id'] = $app ? $app->id : null;
+                        $rec['can_apply'] = !$isApplied && (($adoptedCount ?? 0) < 3);
                         $rec['temperament'] = $petModel->temperamentTags->pluck('name')->toArray();
                         $rec['temperaments'] = $rec['temperament'];
 

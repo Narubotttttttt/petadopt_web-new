@@ -460,10 +460,6 @@ class AdoptionApiController extends Controller
             }
         });
 
-        if ($user) {
-            \Illuminate\Support\Facades\Cache::forget("recommendations_user_{$user->id}");
-        }
-
         $firstApp = $createdApps[0];
         $petNames = collect($createdApps)->map(fn($a) => $targetPets->get($a->pet_id)?->name ?: "Pet #{$a->pet_id}")->implode(', ');
 
