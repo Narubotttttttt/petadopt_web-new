@@ -82,22 +82,15 @@ class AdminNotificationService
                 $latestUpdate = $pet->healthUpdates->first();
                 $isPetDeceased = ($pet->status === 'deceased') || ($latestUpdate && $latestUpdate->health_status === 'deceased');
                 
+                // Exclude deceased pets from routine check-in notifications (handled in dedicated memorial notifications)
+                if ($isPetDeceased) {
+                    continue;
+                }
+
                 if ($latestUpdate) {
                     $updateTime = $latestUpdate->created_at ? $latestUpdate->created_at->timestamp : 0;
                     if ($updateTime > $latestTimestamp) {
                         $latestTimestamp = $updateTime;
-                    }
-                    
-                    if ($isPetDeceased) {
-                        $hasDeceased = true;
-                        $petDetails[] = [
-                            'pet_name' => $petName,
-                            'status_type' => 'deceased',
-                            'status_label' => 'Passed Away',
-                            'is_alert' => true,
-                            'time' => $latestUpdate->created_at ? $latestUpdate->created_at->diffForHumans() : '',
-                        ];
-                        continue;
                     }
 
                     $healthLabel = match($latestUpdate->health_status) {
@@ -321,6 +314,62 @@ class AdminNotificationService
             ];
         }
 
+        // 4. Pet Passing & Memorial Dedication Submissions
+        $deceasedHealthUpdates = PetHealthUpdate::with(['pet', 'user.adoptersProfile', 'application'])
+            ->where('health_status', 'deceased')
+            ->latest('created_at')
+            ->take(20)
+            ->get();
+
+        foreach ($deceasedHealthUpdates as $dUpdate) {
+            $pet = $dUpdate->pet;
+            $petName = $pet?->name ?: ('Pet no. ' . $dUpdate->pet_id);
+            $user = $dUpdate->user;
+            $adopterProfile = $user?->adoptersProfile;
+            $adopterName = $adopterProfile?->full_name ?? ($user?->name ?? ($dUpdate->application?->applicant_name ?? 'Adopter'));
+            $adopterIdCode = $adopterProfile?->adopter_code ?? ($user ? sprintf('ADP-%04d', $user->id) : 'ADP');
+            $isPendingReview = empty($dUpdate->review_decision) || $dUpdate->review_decision === 'pending';
+
+            $adopterParts = preg_split('/\s+/', trim($adopterName));
+            $adopterInitials = count($adopterParts) >= 2 
+                ? strtoupper(mb_substr($adopterParts[0], 0, 1) . mb_substr(end($adopterParts), 0, 1))
+                : strtoupper(mb_substr($adopterName, 0, 1));
+
+            $actionUrl = url('/adopters/reports') . '?tab=pet_dedications&search=' . urlencode($petName);
+            $message = "{$adopterName} submitted a pet passing report and memorial dedication for {$petName}. Shelter review is required to verify natural causes or record welfare findings.";
+
+            $notifications[] = [
+                'id'              => 'dedication_' . $dUpdate->id,
+                'category'        => 'request',
+                'severity'        => 'danger',
+                'type'            => 'pet_dedication_pending',
+                'adopter_name'    => $adopterName,
+                'adopter_id_code' => $adopterIdCode,
+                'avatar'          => $user?->avatar_url,
+                'initials'        => $adopterInitials,
+                'title'           => 'Pet Passing Notice & Memorial Dedication',
+                'message'         => $message,
+                'body'            => $message,
+                'pets_count'      => 1,
+                'pet_details'     => [
+                    [
+                        'pet_name'     => $petName,
+                        'status_type'  => 'deceased',
+                        'status_label' => $isPendingReview ? 'Awaiting Shelter Review' : ucfirst(str_replace('_', ' ', $dUpdate->review_decision)),
+                        'is_alert'     => $isPendingReview,
+                        'time'         => $dUpdate->created_at ? $dUpdate->created_at->diffForHumans() : 'Recently',
+                    ]
+                ],
+                'time'            => $dUpdate->created_at ? $dUpdate->created_at->diffForHumans() : 'Recently',
+                'is_read'         => false,
+                'url'             => $actionUrl,
+                'action_url'      => $actionUrl,
+                'action_hint'     => 'Review Dedication & Determine Standing',
+                'created_at'      => $dUpdate->created_at ? $dUpdate->created_at->timestamp : now()->timestamp,
+                'is_today'        => $dUpdate->created_at ? ((now()->timestamp - $dUpdate->created_at->timestamp) < 86400) : true,
+            ];
+        }
+
         // Sort all by created_at desc
         usort($notifications, fn($a, $b) => $b['created_at'] <=> $a['created_at']);
 
@@ -399,5 +448,22 @@ class AdminNotificationService
         }
 
         return $query->count();
+    }
+
+    public static function getPendingDedicationsCount(): int
+    {
+        return PetHealthUpdate::where('health_status', 'deceased')
+            ->where(function ($q) {
+                $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
+            })
+            ->count();
+    }
+
+    public static function markDedicationsViewed(): void
+    {
+        $deceasedIds = PetHealthUpdate::where('health_status', 'deceased')->pluck('id');
+        foreach ($deceasedIds as $dId) {
+            self::markAsRead('dedication_' . $dId);
+        }
     }
 }

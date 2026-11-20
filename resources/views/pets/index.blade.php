@@ -5,7 +5,6 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Rescue Pets Directory</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage and track all rescued dogs and cats in the CAWS database.</p>
             </div>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
                 <form method="GET" action="{{ route('pets.index') }}" class="flex items-center gap-2 w-full sm:w-auto">

@@ -37,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
             $hasNew = !request()->routeIs('adoption-applications.*')
                 && AdminNotificationService::getUnviewedAdoptionRequestsCount() > 0;
             $view->with('hasNewAdoptionRequests', $hasNew);
+            $view->with('pendingDedicationsCount', AdminNotificationService::getPendingDedicationsCount());
         });
     }
 }

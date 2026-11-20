@@ -3,7 +3,6 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Staff Management</h1>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage shelter personnel, official staff codes, job titles, and active staff statuses.</p>
             </div>
             <div class="w-full sm:w-auto">
                 <a href="{{ route('register') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition-all shadow-xs">

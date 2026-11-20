@@ -12,9 +12,6 @@
                         {{ $dateRangeLabel }}
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Summary metrics and administrative registry records.
-                </p>
             </div>
 
             {{-- Quick Timeframe Selector & Export Actions --}}

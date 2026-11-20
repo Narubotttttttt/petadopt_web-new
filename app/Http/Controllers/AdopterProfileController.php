@@ -213,9 +213,13 @@ class AdopterProfileController extends Controller
         $restrictedCount = $blacklistedCount;
         $totalApprovedApplications = AdoptionApplication::where('status', 'approved')->count();
 
-        $totalMonthlyReports = PetHealthUpdate::count();
+        $totalMonthlyReports = PetHealthUpdate::where('health_status', '!=', 'deceased')->count();
         $totalVetLogsCount = MedicalLog::where('is_external', true)->count();
         $pendingVetLogsCount = MedicalLog::where('is_external', true)->where('verification_status', 'pending')->count();
+        $totalDedicationsCount = PetHealthUpdate::where('health_status', 'deceased')->count();
+        $pendingDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where(function($q) {
+            $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
+        })->count();
 
         // Apply active filter (defaults to active compliant adopters)
         if ($filter === 'inactive' || $filter === 'overdue') {
@@ -249,7 +253,9 @@ class AdopterProfileController extends Controller
             'restrictedCount',
             'totalMonthlyReports',
             'totalVetLogsCount',
-            'pendingVetLogsCount'
+            'pendingVetLogsCount',
+            'totalDedicationsCount',
+            'pendingDeceasedCount'
         ));
     }
 
@@ -279,16 +285,21 @@ class AdopterProfileController extends Controller
     }
 
     /**
-     * Display the dedicated Monthly Pet Updates Report page.
+     * Display the dedicated Monthly Pet Updates Report and Pet Dedications page.
      */
     public function monthlyReports(Request $request): View
     {
-        $tab      = $request->query('tab', $request->filled('verify_log_id') ? 'vet_proofs' : 'monthly_updates'); // 'monthly_updates' or 'vet_proofs'
-        $search   = trim((string) $request->query('search', ''));
-        $status   = $request->query('status', 'all'); // all, healthy, minor_issue, under_treatment
-        $species  = $request->query('species', 'all'); // all, dog, cat
-        $period   = $request->query('period', 'all');  // all, this_month, last_month, last_3_months
-        $vetStatus = $request->query('vet_status', 'all'); // all, pending, verified, rejected
+        $tab              = $request->query('tab', $request->filled('verify_log_id') ? 'vet_proofs' : 'monthly_updates'); // 'monthly_updates', 'vet_proofs', or 'pet_dedications'
+        $search           = trim((string) $request->query('search', ''));
+        $status           = $request->query('status', 'all'); // all, healthy, minor_issue, under_treatment
+        $species          = $request->query('species', 'all'); // all, dog, cat
+        $period           = $request->query('period', 'all');  // all, this_month, last_month, last_3_months
+        $vetStatus        = $request->query('vet_status', 'all'); // all, pending, verified, rejected
+        $dedicationFilter = $request->query('dedication_filter', 'all'); // all, pending, cleared, neglect
+
+        if ($tab === 'pet_dedications') {
+            \App\Services\AdminNotificationService::markDedicationsViewed();
+        }
 
         $autoVerifyLogPayload = null;
         if ($request->filled('verify_log_id')) {
@@ -333,7 +344,8 @@ class AdopterProfileController extends Controller
             }
         }
 
-        $query = PetHealthUpdate::with([
+        // Routine Monthly Pet Updates Query (Strictly living pets)
+        $query = PetHealthUpdate::where('health_status', '!=', 'deceased')->with([
             'pet',
             'user.adoptersProfile',
             'application',
@@ -406,42 +418,83 @@ class AdopterProfileController extends Controller
 
         $vetLogs = $vetQuery->latest('created_at')->paginate(12, ['*'], 'vet_page')->withQueryString();
 
+        // Pet Dedications & Memorials Submissions
+        $dedicationQuery = PetHealthUpdate::where('health_status', 'deceased')->with([
+            'pet',
+            'user.adoptersProfile',
+            'application',
+            'reviewer'
+        ]);
+
+        if (!empty($search)) {
+            $dedicationQuery->where(function ($q) use ($search) {
+                $q->whereHas('pet', function ($petQ) use ($search) {
+                    $petQ->where('name', 'like', "%{$search}%")
+                        ->orWhere('breed', 'like', "%{$search}%")
+                        ->orWhere('type', 'like', "%{$search}%");
+                })->orWhereHas('user', function ($userQ) use ($search) {
+                    $userQ->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })->orWhereHas('user.adoptersProfile', function ($profQ) use ($search) {
+                    $profQ->where('adopter_code', 'like', "%{$search}%")
+                        ->orWhere('full_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })->orWhere('notes', 'like', "%{$search}%")
+                  ->orWhere('staff_remarks', 'like', "%{$search}%");
+            });
+        }
+
+        if ($dedicationFilter === 'pending') {
+            $dedicationQuery->where(function($q) {
+                $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
+            });
+        } elseif ($dedicationFilter === 'cleared') {
+            $dedicationQuery->where('review_decision', 'cleared_accidental');
+        } elseif ($dedicationFilter === 'neglect') {
+            $dedicationQuery->where('review_decision', 'neglect_confirmed');
+        }
+
+        $dedications = $dedicationQuery->latest('created_at')->paginate(12, ['*'], 'dedication_page')->withQueryString();
+
         // Vet Proofs KPI counts
         $totalVetLogsCount     = MedicalLog::where('is_external', true)->count();
         $pendingVetLogsCount   = MedicalLog::where('is_external', true)->where('verification_status', 'pending')->count();
         $verifiedVetLogsCount  = MedicalLog::where('is_external', true)->where('verification_status', 'verified')->count();
         $rejectedVetLogsCount  = MedicalLog::where('is_external', true)->where('verification_status', 'rejected')->count();
 
-        // Summary KPI statistics
-        $totalReports     = PetHealthUpdate::count();
-        $thisMonthReports = PetHealthUpdate::whereBetween('check_in_date', [now()->startOfMonth(), now()->endOfMonth()])->count();
+        // Monthly Updates KPI statistics (living pets)
+        $totalReports     = PetHealthUpdate::where('health_status', '!=', 'deceased')->count();
+        $thisMonthReports = PetHealthUpdate::where('health_status', '!=', 'deceased')->whereBetween('check_in_date', [now()->startOfMonth(), now()->endOfMonth()])->count();
         $healthyReports   = PetHealthUpdate::where('health_status', 'healthy')->count();
         $attentionReports = PetHealthUpdate::whereIn('health_status', ['minor_issue', 'under_treatment'])->count();
-        $deceasedReports  = PetHealthUpdate::where('health_status', 'deceased')->count();
 
-        $totalApprovedAdopters = AdoptionApplication::where('status', 'approved')->distinct('applicant_email')->count();
-
-        $pendingDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where(function($q) {
+        // Dedications & Memorials KPI statistics
+        $totalDedicationsCount = PetHealthUpdate::where('health_status', 'deceased')->count();
+        $pendingDeceasedCount  = PetHealthUpdate::where('health_status', 'deceased')->where(function($q) {
             $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
         })->count();
-        $clearedDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'cleared_accidental')->count();
-        $neglectDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'neglect_confirmed')->count();
+        $clearedDeceasedCount  = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'cleared_accidental')->count();
+        $neglectDeceasedCount  = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'neglect_confirmed')->count();
+
+        $totalApprovedAdopters = AdoptionApplication::where('status', 'approved')->distinct('applicant_email')->count();
 
         return view('adopters.reports', compact(
             'tab',
             'reports',
             'vetLogs',
+            'dedications',
             'search',
             'status',
             'species',
             'period',
             'vetStatus',
+            'dedicationFilter',
             'autoVerifyLogPayload',
             'totalReports',
             'thisMonthReports',
             'healthyReports',
             'attentionReports',
-            'deceasedReports',
+            'totalDedicationsCount',
             'pendingDeceasedCount',
             'clearedDeceasedCount',
             'neglectDeceasedCount',

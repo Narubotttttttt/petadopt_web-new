@@ -231,7 +231,6 @@
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Adoption Requests</h1>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Review incoming applications, schedule meet-and-greets, and manage finalized adoptions.</p>
             </div>
 
             {{-- Quick Search Form --}}

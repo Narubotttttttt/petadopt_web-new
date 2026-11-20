@@ -98,6 +98,12 @@
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 10-8 0v4M5 11h14v10H5V11z"></path></svg>
 					</span>
 					<span class="whitespace-nowrap tracking-wide">Adopters</span>
+					@if(($pendingDedicationsCount ?? 0) > 0)
+						<span class="ml-auto relative flex h-2.5 w-2.5 shrink-0" title="{{ $pendingDedicationsCount }} Pet Dedication(s) Awaiting Review">
+							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+							<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 ring-2 ring-white/30 dark:ring-[#0C0D13]"></span>
+						</span>
+					@endif
 				</a>
 
 				<p class="text-[10px] font-extrabold uppercase tracking-widest text-teal-200 dark:text-slate-500 px-3 pt-4 pb-1 flex items-center gap-1.5">

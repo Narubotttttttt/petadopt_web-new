@@ -4,7 +4,6 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Medical Logs</h1>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Record and manage shelter vaccinations and routine dewormings.</p>
             </div>
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                 <form method="GET" action="{{ route('medical-logs.index') }}" class="flex items-center gap-2 w-full sm:w-auto">

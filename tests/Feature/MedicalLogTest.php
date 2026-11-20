@@ -575,10 +575,11 @@ class MedicalLogTest extends TestCase
         });
 
         $this->assertNotNull($deceasedNotif);
-        $this->assertEquals('Pet Life Event: Passing Notification', $deceasedNotif['title']);
-        $this->assertEquals('Juan Dela Cruz reported that Rocky has passed away. Memorial record and adopter notes logged for shelter review.', $deceasedNotif['message']);
-        $this->assertEquals('Passed Away', $deceasedNotif['pet_details'][0]['status_label']);
-        $this->assertEquals('View Memorial Report', $deceasedNotif['action_hint']);
+        $this->assertEquals('Pet Passing Notice & Memorial Dedication', $deceasedNotif['title']);
+        $this->assertEquals('Juan Dela Cruz submitted a pet passing report and memorial dedication for Rocky. Shelter review is required to verify natural causes or record welfare findings.', $deceasedNotif['message']);
+        $this->assertEquals('Awaiting Shelter Review', $deceasedNotif['pet_details'][0]['status_label']);
+        $this->assertEquals('Review Dedication & Determine Standing', $deceasedNotif['action_hint']);
+        $this->assertStringContainsString('tab=pet_dedications', $deceasedNotif['action_url']);
     }
 }
 

@@ -82,4 +82,49 @@ class NotificationTest extends TestCase
         $after->assertStatus(200);
         $this->assertEquals(0, $after->json('unread_count'));
     }
+
+    public function test_pet_passing_generates_notification_for_staff(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopter = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Elena Cruz',
+            'email' => 'elena.cruz@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Snowy',
+            'type' => 'cat',
+            'status' => 'deceased',
+        ]);
+
+        \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopter->id,
+            'photo_path' => 'pet-updates/snowy.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Snowy passed away peacefully at home.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        AdminNotificationService::clearCache();
+
+        $response = $this->actingAs($staff)->get(route('admin.notifications.index'));
+        $response->assertStatus(200);
+
+        $notifications = collect($response->json('notifications'));
+        $dedicationNotif = $notifications->firstWhere('type', 'pet_dedication_pending');
+
+        $this->assertNotNull($dedicationNotif);
+        $this->assertEquals('danger', $dedicationNotif['severity']);
+        $this->assertStringContainsString('tab=pet_dedications', $dedicationNotif['action_url']);
+        $this->assertEquals(1, AdminNotificationService::getPendingDedicationsCount());
+    }
 }

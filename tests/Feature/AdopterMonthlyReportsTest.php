@@ -273,4 +273,111 @@ class AdopterMonthlyReportsTest extends TestCase
         $response->assertSeeText('King');
         $response->assertSeeText('Claude');
     }
+
+    public function test_monthly_pet_updates_excludes_deceased_pets(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Carla Reyes',
+            'email' => 'carla@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        \App\Models\AdoptersProfile::create([
+            'user_id' => $adopterUser->id,
+            'adopter_code' => 'ADP-0008',
+            'full_name' => 'Carla Reyes',
+            'email' => 'carla@example.com',
+            'phone' => '09170001122',
+            'status' => 'active',
+        ]);
+
+        $pet = \App\Models\Pet::create([
+            'name' => 'Rusty',
+            'type' => 'dog',
+            'breed' => 'Shih Tzu',
+            'status' => 'deceased',
+            'age' => 5,
+            'gender' => 'male',
+            'size' => 'small',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/rusty.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Rusty peacefully crossed the rainbow bridge after an extended illness.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/adopters/reports?tab=monthly_updates');
+
+        $response->assertStatus(200);
+        $response->assertDontSeeText('Rusty peacefully crossed the rainbow bridge');
+    }
+
+    public function test_staff_can_view_pet_dedications_tab_and_memorials(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Danilo Ramos',
+            'email' => 'danilo@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        \App\Models\AdoptersProfile::create([
+            'user_id' => $adopterUser->id,
+            'adopter_code' => 'ADP-0009',
+            'full_name' => 'Danilo Ramos',
+            'email' => 'danilo@example.com',
+            'phone' => '09180003344',
+            'status' => 'active',
+        ]);
+
+        $pet = \App\Models\Pet::create([
+            'name' => 'Oreo',
+            'type' => 'cat',
+            'breed' => 'Tuxedo Cat',
+            'status' => 'deceased',
+            'age' => 4,
+            'gender' => 'male',
+            'size' => 'small',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/oreo.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Oreo was a cherished member of our family. Passed away naturally in his sleep.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/adopters/reports?tab=pet_dedications');
+
+        $response->assertStatus(200);
+        $response->assertSeeText('Pet Dedications & Memorials');
+        $response->assertSeeText('Oreo');
+        $response->assertSeeText('Danilo Ramos');
+        $response->assertSeeText('ADP-0009');
+        $response->assertSeeText('Awaiting Shelter Determination');
+        $response->assertSeeText('Oreo was a cherished member of our family');
+    }
 }

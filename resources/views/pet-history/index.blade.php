@@ -63,9 +63,6 @@
                         {{ $events->total() }} Pets in History
                     </span>
                 </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Unified chronological life history, clinical milestones, and adoption records of all shelter pets.
-                </p>
             </div>
 
             <div class="flex items-center gap-2">

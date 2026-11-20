@@ -327,6 +327,17 @@
                         <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
                     @endif
                 </a>
+
+                <a href="{{ route('adopters.reports', ['tab' => 'pet_dedications']) }}" 
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                    <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    <span>Pet Dedications</span>
+                    @if($pendingDeceasedCount > 0)
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $pendingDeceasedCount }} Pending</span>
+                    @else
+                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalDedicationsCount ?? 0 }}</span>
+                    @endif
+                </a>
             </div>
         </div>
 
@@ -348,7 +359,6 @@
                     </span>
                 @endif
             </div>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Private veterinary clinic vaccination booklet stickers and receipts uploaded by adopters. Verify the proof photo to auto-calculate and activate the next booster schedule.</p>
         </div>
     </div>
 
@@ -672,6 +682,266 @@
         </div>
     @endif
 
+@elseif(($tab ?? 'monthly_updates') === 'pet_dedications')
+    {{-- ==================== PET DEDICATIONS & MEMORIALS TAB ==================== --}}
+
+    {{-- Page Header --}}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Pet Dedications & Memorials</h1>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                    {{ $totalDedicationsCount }} {{ Str::plural('Memorial', $totalDedicationsCount) }}
+                </span>
+                @if(($pendingDeceasedCount ?? 0) > 0)
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        {{ $pendingDeceasedCount }} Awaiting Shelter Review
+                    </span>
+                @endif
+            </div>
+        </div>
+        
+        {{-- Header Actions --}}
+        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <a href="{{ route('adopters.index') }}" 
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <span>Adopter Profiles</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Search & Filter Toolbar for Pet Dedications --}}
+    <div class="bg-white dark:bg-[#12141C] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {{-- Quick Filter Pills --}}
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'all'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($dedicationFilter ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
+                    All Dedications ({{ $totalDedicationsCount }})
+                </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'pending'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
+                    @if(($pendingDeceasedCount ?? 0) > 0)
+                        <span class="w-2 h-2 rounded-full {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
+                    @endif
+                    <span>Awaiting Review ({{ $pendingDeceasedCount }})</span>
+                </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'cleared'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'cleared' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
+                    <span>Natural / Accidental ({{ $clearedDeceasedCount }})</span>
+                </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'neglect'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'neglect' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
+                    <span>Neglect Confirmed ({{ $neglectDeceasedCount }})</span>
+                </a>
+            </div>
+
+            {{-- Search Input --}}
+            <form method="GET" action="{{ route('adopters.reports') }}" class="flex items-center gap-2 w-full md:w-auto">
+                <input type="hidden" name="tab" value="pet_dedications">
+                @if(($dedicationFilter ?? 'all') !== 'all')
+                    <input type="hidden" name="dedication_filter" value="{{ $dedicationFilter }}">
+                @endif
+                <div class="relative flex-1 md:w-80">
+                    <input type="text" 
+                           name="search" 
+                           value="{{ $search }}"
+                           placeholder="Search pet, adopter, breed, notes..." 
+                           class="w-full pl-9 {{ !empty($search) ? 'pr-8' : 'pr-3' }} py-2 text-xs sm:text-sm bg-slate-50 dark:bg-[#0C0D13] border border-slate-200 dark:border-white/[0.08] text-slate-800 dark:text-slate-100 rounded-xl focus:border-[#199CA4] focus:ring-2 focus:ring-[#199CA4]/20 transition placeholder-slate-400 dark:placeholder-slate-500 font-medium">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    @if(!empty($search))
+                        <a href="{{ route('adopters.reports', ['tab' => 'pet_dedications', 'dedication_filter' => $dedicationFilter]) }}" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold" title="Clear search">
+                            &times;
+                        </a>
+                    @endif
+                </div>
+                <button type="submit" class="px-4 py-2 bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs shrink-0 cursor-pointer">
+                    Search
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{-- Dedication Cards Grid --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+        @forelse($dedications as $dedication)
+            @php
+                $dPet = $dedication->pet;
+                $dPetName = $dPet && $dPet->name ? $dPet->name : ('Pet no. ' . $dedication->pet_id);
+                $dAdopter = $dedication->user?->adoptersProfile;
+                $dAdopterName = $dAdopter?->full_name ?? ($dedication->user?->name ?? ($dedication->application?->applicant_name ?? 'Adopter'));
+                $dAdopterCode = $dAdopter?->adopter_code ?? ($dedication->user ? sprintf('ADP-%04d', $dedication->user->id) : null);
+                $dPhotoUrl = $dedication->photo_url ?: ($dPet?->photo_url ?: ($dPet?->photo_path ? asset('storage/'.ltrim($dPet->photo_path, '/')) : null));
+                $dDateStr = $dedication->check_in_date ? $dedication->check_in_date->format('M d, Y') : $dedication->created_at->format('M d, Y');
+                $isPending = empty($dedication->review_decision) || $dedication->review_decision === 'pending';
+                $isCleared = ($dedication->review_decision === 'cleared_accidental');
+                $isNeglect = ($dedication->review_decision === 'neglect_confirmed');
+            @endphp
+            <div class="bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] shadow-xs overflow-hidden flex flex-col justify-between transition hover:border-slate-300 dark:hover:border-white/[0.15]">
+                <div>
+                    {{-- Memorial Top Ribbon --}}
+                    <div class="px-4 py-2 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 text-slate-200 text-[10px] font-black uppercase tracking-wider flex items-center justify-between border-b border-white/[0.06]">
+                        <span class="inline-flex items-center gap-1.5 text-slate-300">
+                            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                            <span>In Loving Memory</span>
+                        </span>
+                        <span class="text-slate-400 font-medium font-mono text-[9px]">{{ $dDateStr }}</span>
+                    </div>
+
+                    {{-- Pet Photo & Identity Header --}}
+                    <div class="p-4 flex items-center gap-3.5 border-b border-slate-100 dark:border-white/[0.06]">
+                        <div class="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 shrink-0 group cursor-pointer border border-slate-200 dark:border-white/[0.08] shadow-xs"
+                             @if($dPhotoUrl)
+                             data-photo="{{ $dPhotoUrl }}"
+                             data-title="In Memory of {{ $dPetName }}"
+                             data-date="{{ $dDateStr }}"
+                             data-weight="Memorial"
+                             data-status="deceased"
+                             data-notes="{{ $dedication->notes }}"
+                             @click="openFromCard($event)"
+                             @endif
+                             title="Inspect photo">
+                            @if($dPhotoUrl)
+                                <img src="{{ $dPhotoUrl }}" alt="{{ $dPetName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white opacity-80 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                </div>
+                            @else
+                                <div class="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs bg-slate-800">
+                                    RIP
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white truncate">{{ $dPetName }}</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                {{ ucfirst($dPet?->type ?? 'Pet') }} &bull; {{ $dPet?->breed ?? 'Mixed Breed' }}
+                            </p>
+                            <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                <span class="text-[10px] text-slate-400 font-medium">Adopter:</span>
+                                @if($dAdopterCode)
+                                    <a href="{{ route('adopters.index', ['search' => $dAdopterCode]) }}" class="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] hover:underline truncate">{{ $dAdopterName }}</a>
+                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] font-mono">{{ $dAdopterCode }}</span>
+                                @else
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ $dAdopterName }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Adopter Tribute & Circumstances --}}
+                    <div class="p-4 space-y-3">
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06]">
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">Adopter Tribute & Circumstances:</span>
+                            @if(!empty($dedication->notes))
+                                <p class="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed italic whitespace-pre-line">
+                                    "{{ $dedication->notes }}"
+                                </p>
+                            @else
+                                <p class="text-xs text-slate-400 italic">No statement provided.</p>
+                            @endif
+                        </div>
+
+                        {{-- Shelter Determination Badge & Remarks --}}
+                        <div>
+                            @if($isPending)
+                                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                                        <span class="text-xs font-bold text-amber-700 dark:text-amber-400 truncate">Awaiting Shelter Determination</span>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shrink-0">Pending</span>
+                                </div>
+                            @elseif($isCleared)
+                                <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-1">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">Passing Verified: Natural / Accidental</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Cleared</span>
+                                    </div>
+                                    @if(!empty($dedication->staff_remarks))
+                                        <p class="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 font-medium leading-tight">
+                                            Remarks: {{ $dedication->staff_remarks }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @elseif($isNeglect)
+                                <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 space-y-1">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-xs font-extrabold text-rose-700 dark:text-rose-300">Neglect Confirmed: Adopter Restricted</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200">Restricted</span>
+                                    </div>
+                                    @if(!empty($dedication->staff_remarks))
+                                        <p class="text-[11px] text-rose-800/90 dark:text-rose-300/90 font-medium leading-tight">
+                                            Findings: {{ $dedication->staff_remarks }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Action Row & Footer --}}
+                <div class="p-3 sm:px-4 sm:py-3 bg-slate-50/70 dark:bg-[#171923]/60 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
+                    <span class="text-[10px] text-slate-400 font-medium">Logged {{ $dedication->created_at->diffForHumans() }}</span>
+
+                    <div class="flex items-center gap-2">
+                        @if($dPhotoUrl)
+                            <button type="button" 
+                                    data-photo="{{ $dPhotoUrl }}"
+                                    data-title="In Memory of {{ $dPetName }}"
+                                    data-date="{{ $dDateStr }}"
+                                    data-weight="Memorial"
+                                    data-status="deceased"
+                                    data-notes="{{ $dedication->notes }}"
+                                    @click="openFromCard($event)"
+                                    class="h-8 px-2.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <span>Inspect</span>
+                            </button>
+                        @endif
+
+                        <button type="button"
+                                @click="openReviewModal({{ $dedication->id }}, '{{ addslashes($dPetName) }}', '{{ addslashes($dAdopterName) }}', '{{ addslashes($dDateStr) }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $dedication->notes ?? '')) }}', '{{ $dedication->review_decision ?? 'cleared_accidental' }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $dedication->staff_remarks ?? '')) }}')"
+                                class="h-8 px-3 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5 {{ $isPending ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' }}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            <span>{{ $isPending ? 'Review Life Event' : 'Re-evaluate' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="col-span-full py-16 text-center bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] p-8">
+                <div class="w-14 h-14 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-800 dark:text-white">No Pet Dedications Found</h3>
+                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+                    No memorial dedication reports matched your search or filters. When adopters report a passing companion, it will appear here for shelter determination.
+                </p>
+                @if(!empty($search) || ($dedicationFilter ?? 'all') !== 'all')
+                    <div class="mt-4">
+                        <a href="{{ route('adopters.reports', ['tab' => 'pet_dedications']) }}" class="inline-flex items-center px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 text-xs font-bold text-slate-700 dark:text-slate-200 transition">
+                            Clear Filters & Search
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endforelse
+    </div>
+
+    {{-- Pagination for Pet Dedications --}}
+    @if($dedications->hasPages())
+        <div class="p-4 bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-xs">
+            {{ $dedications->links() }}
+        </div>
+    @endif
+
 @else
     {{-- ==================== MONTHLY PET UPDATES TAB ==================== --}}
 
@@ -690,7 +960,6 @@
                     </span>
                 @endif
             </div>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Official post-adoption health reports, condition photos, and recorded weights submitted monthly by adopters via the mobile application.</p>
         </div>
         
         {{-- Header Actions --}}
@@ -722,10 +991,6 @@
                         <span class="w-2 h-2 rounded-full {{ in_array(($status ?? ''), ['minor_issue', 'under_treatment']) ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
                     @endif
                     <span>Needs Attention ({{ $attentionReports }})</span>
-                </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('status', 'page'), ['tab' => 'monthly_updates', 'status' => 'deceased'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($status ?? '') === 'deceased' ? 'bg-slate-900 text-white dark:bg-slate-800 shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
-                    <span>Passed Away ({{ $deceasedReports ?? 0 }})</span>
                 </a>
             </div>
 

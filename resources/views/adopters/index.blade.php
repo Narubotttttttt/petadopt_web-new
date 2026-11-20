@@ -108,6 +108,17 @@
                     <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-[#41C1CB]">{{ $totalVetLogsCount ?? 0 }}</span>
                 @endif
             </a>
+
+            <a href="{{ route('adopters.reports', ['tab' => 'pet_dedications']) }}" 
+               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                <svg class="w-3.5 h-3.5 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                <span>Pet Dedications</span>
+                @if(($pendingDeceasedCount ?? 0) > 0)
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $pendingDeceasedCount }} Pending</span>
+                @else
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-[#41C1CB]">{{ $totalDedicationsCount ?? 0 }}</span>
+                @endif
+            </a>
         </div>
 
         {{-- Page Header --}}
@@ -119,7 +130,6 @@
                         {{ $totalApprovedAdopters }} {{ Str::plural('Adopter', $totalApprovedAdopters) }} &bull; {{ $totalApprovedApplications }} {{ Str::plural('Pet', $totalApprovedApplications) }}
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Manage approved adopters, shelter safety standing, and monthly health update compliance.</p>
             </div>
             
             {{-- Header Action --}}
