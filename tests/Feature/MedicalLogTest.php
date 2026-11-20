@@ -541,6 +541,44 @@ class MedicalLogTest extends TestCase
         $reportPageResponse->assertSee('Veterinary Proof Verification');
     }
 
+    public function test_staff_can_verify_external_vaccination_log_without_database_error(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $adopter = User::factory()->create(['role' => 'adopter', 'name' => 'Mayang Santos', 'email' => 'mayang@example.com']);
+        $pet = Pet::create(['name' => 'Brownie', 'type' => 'dog', 'status' => 'adopted']);
+
+        \App\Models\AdoptionApplication::create([
+            'pet_id'          => $pet->id,
+            'applicant_name'  => 'Mayang Santos',
+            'applicant_email' => 'mayang@example.com',
+            'applicant_phone' => '09123456789',
+            'status'          => 'approved',
+        ]);
+
+        $log = MedicalLog::create([
+            'pet_id'              => $pet->id,
+            'date'                => now()->toDateString(),
+            'category'            => 'vaccination',
+            'vaccine_name'        => 'Anti-Rabies',
+            'administered_by'     => 'PetVet Clinic',
+            'is_external'         => true,
+            'verification_status' => 'pending',
+            'created_by'          => $adopter->id,
+        ]);
+
+        $response = $this->actingAs($admin)->patch(route('medical-logs.verify', $log->id), [
+            'status'        => 'verified',
+            'next_due_date' => now()->addYear()->format('Y-m-d'),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $log->refresh();
+        $this->assertEquals('verified', $log->verification_status);
+        $this->assertEquals($admin->id, $log->verified_by);
+    }
+
     public function test_deceased_pet_update_generates_admin_notification(): void
     {
         $adopter = User::factory()->create(['role' => 'adopter', 'name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']);
@@ -548,7 +586,6 @@ class MedicalLogTest extends TestCase
 
         $application = \App\Models\AdoptionApplication::create([
             'pet_id'          => $pet->id,
-            'user_id'         => $adopter->id,
             'applicant_name'  => 'Juan Dela Cruz',
             'applicant_email' => 'juan@example.com',
             'applicant_phone' => '09123456789',

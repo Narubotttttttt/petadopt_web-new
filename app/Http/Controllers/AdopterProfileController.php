@@ -552,9 +552,12 @@ class AdopterProfileController extends Controller
         \App\Services\AdminNotificationService::clearCache();
 
         $petName = $report->pet?->name ?? 'companion';
+        $adopterEmail = $report->application?->applicant_email ?? $report->user?->email;
+
+        // Ensure pet status is officially updated
+        $report->pet?->update(['status' => 'deceased']);
 
         if ($validated['decision'] === 'neglect_confirmed') {
-            $adopterEmail = $report->application?->applicant_email ?? $report->user?->email;
             $profile = null;
             if ($report->user?->adoptersProfile) {
                 $profile = $report->user->adoptersProfile;
@@ -570,7 +573,33 @@ class AdopterProfileController extends Controller
                 ]);
             }
 
+            if ($adopterEmail) {
+                \App\Services\FirebaseNotificationService::sendToUser(
+                    $adopterEmail,
+                    'Pet Life Event Review Notice',
+                    "CAWS shelter staff has completed the administrative review for {$petName}. Findings have been officially recorded.",
+                    [
+                        'type'           => 'pet_deceased_neglect',
+                        'pet_id'         => (string) $report->pet_id,
+                        'application_id' => (string) $report->adoption_application_id,
+                    ]
+                );
+            }
+
             return back()->with('success', "Deceased report for {$petName} reviewed: Neglect confirmed. Adopter account has been restricted from future shelter adoptions.");
+        }
+
+        if ($adopterEmail) {
+            \App\Services\FirebaseNotificationService::sendToUser(
+                $adopterEmail,
+                'With Deep Sympathy from CAWS',
+                "We are deeply saddened to hear about the loss of {$petName}. Thank you for providing them a loving home. Your memorial record has been officially verified by CAWS shelter staff.",
+                [
+                    'type'           => 'pet_deceased_confirmed',
+                    'pet_id'         => (string) $report->pet_id,
+                    'application_id' => (string) $report->adoption_application_id,
+                ]
+            );
         }
 
         return back()->with('success', "Deceased report for {$petName} verified as accidental / natural passing. Adopter remains in good standing, and 1 adoption slot has been freed up under household limit.");

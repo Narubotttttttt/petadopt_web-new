@@ -314,14 +314,6 @@ class MedicalLogController extends Controller
             $adopterEmails->push($log->creator->email);
         }
 
-        $appUserIds = \App\Models\AdoptionApplication::where('pet_id', $log->pet_id)
-            ->whereNotNull('user_id')
-            ->pluck('user_id');
-        if ($appUserIds->isNotEmpty()) {
-            $userEmails = \App\Models\User::whereIn('id', $appUserIds)->pluck('email');
-            $adopterEmails = $adopterEmails->merge($userEmails);
-        }
-
         $adopterEmails = $adopterEmails->filter()->unique();
 
         foreach ($adopterEmails as $email) {

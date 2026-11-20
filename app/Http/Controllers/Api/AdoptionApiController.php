@@ -866,18 +866,6 @@ class AdoptionApiController extends Controller
 
         if ($isDeceased) {
             $application->pet?->update(['status' => 'deceased']);
-
-            $petName = $application->pet?->name ?: 'your companion';
-            \App\Services\FirebaseNotificationService::sendToUser(
-                $user->email,
-                'With Deep Sympathy from CAWS',
-                "We are deeply saddened to hear about the loss of {$petName}. Thank you for providing them a loving home. Your memorial record has been respectfully updated.",
-                [
-                    'type'           => 'pet_deceased_confirmed',
-                    'pet_id'         => (string) $application->pet_id,
-                    'application_id' => (string) $application->id,
-                ]
-            );
         }
 
         \App\Services\AdminNotificationService::clearCache();
@@ -885,7 +873,7 @@ class AdoptionApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => $isDeceased
-                ? 'Life event notification received. CAWS records have been respectfully updated.'
+                ? 'Life event report submitted and queued for CAWS shelter staff review.'
                 : 'Health check-in submitted successfully.',
             'data'    => [
                 'id'            => $healthUpdate->id,
