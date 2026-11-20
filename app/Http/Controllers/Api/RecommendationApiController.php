@@ -91,11 +91,17 @@ class RecommendationApiController extends Controller
 
         // 2. Check if the authenticated adopter has saved preferences in database
         $saved = null;
+        $capacity = null;
+        $adoptedCount = 0;
+        $remainingSlots = 3;
+
         if ($user) {
             $saved = AdopterCompatibilityProfile::where('user_id', $user->id)->first();
 
             // Business rule: Maximum household adoption limit of 3 active pets per adopter
-            $adoptedCount = \App\Models\AdoptionApplication::getActiveAdoptedCount($user->email);
+            $capacity = \App\Models\AdoptionApplication::getAdoptionCapacityDetails($user->email);
+            $adoptedCount = $capacity['active_pets_count'];
+            $remainingSlots = $capacity['remaining_slots'];
 
             if ($adoptedCount >= 3) {
                 return response()->json([
@@ -104,6 +110,7 @@ class RecommendationApiController extends Controller
                     'max_limit_reached' => true,
                     'adopted_count'     => $adoptedCount,
                     'count'             => 0,
+                    'remaining_slots'   => 0,
                     'recommendations'   => [],
                     'message'           => 'You have reached the maximum shelter adoption limit of 3 pets. Your household is currently at full companion capacity.',
                 ]);
@@ -219,11 +226,24 @@ class RecommendationApiController extends Controller
 
         if ($cacheKey && Cache::has($cacheKey)) {
             $cachedOutput = Cache::get($cacheKey);
-            $cachedPetIds = collect($cachedOutput['recommendations'] ?? [])->pluck('id')->filter()->toArray();
+            $cachedPetIds = collect($cachedOutput['all_high_matches'] ?? ($cachedOutput['recommendations'] ?? []))->pluck('id')->filter()->toArray();
 
             $availableCount = Pet::whereIn('id', $cachedPetIds)->where('status', 'available')->count();
             if (!empty($cachedPetIds) && $availableCount === count($cachedPetIds)) {
+                $slotLimit = min(3, max(1, $remainingSlots));
+                $sourceMatches = $cachedOutput['all_high_matches'] ?? $cachedOutput['recommendations'];
+                $cachedOutput['recommendations'] = array_slice($sourceMatches, 0, $slotLimit);
+                $cachedOutput['count'] = count($cachedOutput['recommendations']);
+                $cachedOutput['remaining_slots'] = $remainingSlots;
+                $cachedOutput['adopted_count'] = $adoptedCount;
+
                 if (isset($cachedOutput['comparative_analysis'])) {
+                    if ($remainingSlots === 1 && !empty($cachedOutput['recommendations'][0])) {
+                        $p1Name = $cachedOutput['recommendations'][0]['name'] ?? 'Your top candidate';
+                        $p1Score = $cachedOutput['recommendations'][0]['match_percentage'] ?? 80;
+                        $cachedOutput['comparative_analysis']['summary'] = "{$p1Name} ({$p1Score}% Match) is your highest-ranked companion match, specifically selected to fill your 1 available adoption slot.";
+                        $cachedOutput['comparative_analysis']['verdict'] = "{$p1Name} is your recommended single companion match.";
+                    }
                     if (isset($cachedOutput['comparative_analysis']['summary'])) {
                         $cachedOutput['comparative_analysis']['summary'] = $cleanBracketLabels($cachedOutput['comparative_analysis']['summary']);
                     }
@@ -238,7 +258,7 @@ class RecommendationApiController extends Controller
                         $r['is_applied'] = $isApplied;
                         $r['application_status'] = $app ? $app->status : null;
                         $r['application_id'] = $app ? $app->id : null;
-                        $r['can_apply'] = !$isApplied && (($adoptedCount ?? 0) < 3);
+                        $r['can_apply'] = !$isApplied && ($adoptedCount < 3);
 
                         if (!empty($r['reasons']) && is_array($r['reasons'])) {
                             $r['reasons'] = array_map($cleanBracketLabels, $r['reasons']);
@@ -410,28 +430,37 @@ class RecommendationApiController extends Controller
                         $validRecs[] = $rec;
                     }
 
-                    // Enforce 80% minimum compatibility threshold and Top 3 limit strictly from available pets
+                    // Enforce 80% minimum compatibility threshold and capacity-aware slot limit
                     $highMatchRecs = array_values(array_filter($validRecs, function ($rec) {
                         return ($rec['match_percentage'] ?? 0) >= 80.0;
                     }));
 
-                    $output['recommendations'] = array_slice($highMatchRecs, 0, 3);
+                    $slotLimit = min(3, max(1, $remainingSlots));
+                    $output['all_high_matches'] = array_slice($highMatchRecs, 0, 3);
+                    $output['recommendations'] = array_slice($highMatchRecs, 0, $slotLimit);
                     $output['count'] = count($output['recommendations']);
                     $output['is_locked'] = ($user && $saved !== null);
                     $output['can_retake'] = $saved ? ((int)($saved->revision_count ?? 0) === 0 || ($saved->next_retake_available_at === null || now()->greaterThanOrEqualTo($saved->next_retake_available_at))) : true;
                     $output['revision_count'] = (int)($saved?->revision_count ?? 0);
-                    $output['adopted_count'] = $adoptedCount ?? 0;
+                    $output['adopted_count'] = $adoptedCount;
                     $output['max_pets_allowed'] = 3;
-                    $output['remaining_slots'] = max(0, 3 - ($adoptedCount ?? 0));
+                    $output['remaining_slots'] = $remainingSlots;
 
-                    if (!isset($output['comparative_analysis']) || empty($output['comparative_analysis']['summary'])) {
+                    if (!isset($output['comparative_analysis']) || empty($output['comparative_analysis']['summary']) || str_contains($output['comparative_analysis']['summary'] ?? '', 'unavailable') || $remainingSlots === 1) {
                         $p1 = $output['recommendations'][0] ?? null;
                         $p1Name = $p1['name'] ?? 'Your top candidate';
                         $p1Score = $p1['match_percentage'] ?? 80;
-                        $output['comparative_analysis'] = [
-                            'summary' => "{$p1Name} ({$p1Score}% Match) demonstrates the strongest behavioral and schedule compatibility for your household, while other matched candidates provide great alternative options.",
-                            'verdict' => "{$p1Name} is your recommended primary companion.",
-                        ];
+                        if ($remainingSlots === 1) {
+                            $output['comparative_analysis'] = [
+                                'summary' => "{$p1Name} ({$p1Score}% Match) is your highest-ranked companion match, specifically selected to fill your 1 available adoption slot.",
+                                'verdict' => "{$p1Name} is your recommended single companion match.",
+                            ];
+                        } else {
+                            $output['comparative_analysis'] = [
+                                'summary' => "{$p1Name} ({$p1Score}% Match) demonstrates the strongest behavioral and schedule compatibility for your household, while other matched candidates provide great alternative options.",
+                                'verdict' => "{$p1Name} is your recommended primary companion.",
+                            ];
+                        }
                     }
 
                     if (isset($output['comparative_analysis'])) {
