@@ -215,6 +215,14 @@ class RecommendationApiController extends Controller
             return trim($text);
         };
 
+        $cleanReason = function ($text) use ($cleanBracketLabels) {
+            if (!$text || !is_string($text)) return $text;
+            $text = $cleanBracketLabels($text);
+            $text = preg_replace('/^(?:the\s+)?pet\s+(?:no\.?|#)?\s*\d+\s*(?:\([^)]+\))?\s*[:-]?\s*/i', '', $text);
+            $text = trim($text);
+            return ucfirst($text);
+        };
+
         $userApplications = collect();
         if ($user) {
             $userApplications = AdoptionApplication::where('applicant_email', $user->email)
@@ -261,10 +269,10 @@ class RecommendationApiController extends Controller
                         $r['can_apply'] = !$isApplied && ($adoptedCount < 3);
 
                         if (!empty($r['reasons']) && is_array($r['reasons'])) {
-                            $r['reasons'] = array_map($cleanBracketLabels, $r['reasons']);
+                            $r['reasons'] = array_map($cleanReason, $r['reasons']);
                         }
                         if (!empty($r['match_reasons']) && is_array($r['match_reasons'])) {
-                            $r['match_reasons'] = array_map($cleanBracketLabels, $r['match_reasons']);
+                            $r['match_reasons'] = array_map($cleanReason, $r['match_reasons']);
                         }
                     }
                     unset($r);
@@ -474,10 +482,10 @@ class RecommendationApiController extends Controller
                     if (!empty($output['recommendations'])) {
                         foreach ($output['recommendations'] as &$r) {
                             if (!empty($r['reasons']) && is_array($r['reasons'])) {
-                                $r['reasons'] = array_map($cleanBracketLabels, $r['reasons']);
+                                $r['reasons'] = array_map($cleanReason, $r['reasons']);
                             }
                             if (!empty($r['match_reasons']) && is_array($r['match_reasons'])) {
-                                $r['match_reasons'] = array_map($cleanBracketLabels, $r['match_reasons']);
+                                $r['match_reasons'] = array_map($cleanReason, $r['match_reasons']);
                             }
                         }
                         unset($r);

@@ -281,6 +281,21 @@ def _clean_bracket_text(text: str) -> str:
     return text.strip()
 
 
+def _clean_reason_text(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = _clean_bracket_text(text).strip()
+    cleaned = re.sub(
+        r'^(?:the\s+)?pet\s+(?:no\.?|#)?\s*\d+\s*(?:\([^)]+\))?\s*[:-]?\s*',
+        '',
+        cleaned,
+        flags=re.IGNORECASE
+    ).strip()
+    if cleaned:
+        cleaned = cleaned[0].upper() + cleaned[1:]
+    return cleaned
+
+
 def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_profile: dict[str, Any], key: str) -> dict[str, Any]:
     """
     Dynamic natural language explainer and comparative analyst powered by Google Gemini.
@@ -336,16 +351,16 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
         f"Candidate Pets: {json.dumps(compact_pets)}\n\n"
         "Tasks:\n"
         "1. For each pet, provide:\n"
-        "   - 'reasons': Exactly 3 to 4 distinct compatibility reasons (each 10 to 18 words) highlighting space, routine, temperament, and household dynamics. Reference them using their shelter label, e.g. 'Pet no. <id> (<Breed> <Species>)'.\n"
-        "   - 'care_tip': 1 realistic pre-adoption care consideration or settling-in decompression tip (max 15 words).\n"
+        "   - 'reasons': Exactly 3 to 4 distinct, concise compatibility bullet points (each 8 to 16 words) highlighting: (1) space fit, (2) routine alignment and alone-time separation comfort (noting independence vs companionship needs to prevent separation anxiety during the adopter's hours away), (3) temperament alignment, and (4) household dynamics. Write as direct attributes or sentences starting with active verbs or descriptors (e.g. 'Matches your high activity level with an energetic temperament for daily walks.', 'Independent nature allows them to rest comfortably during your work hours without separation stress.', 'Balances high energy with a calm side making it suitable for households with children.', 'Affectionate and social temperament flourishes with your short daily alone hours.'). DO NOT start bullet points with 'Pet no. <id>', 'Pet <id>', 'The pet', or the pet's name/breed label, as the pet's identity is already displayed in the card header above.\n"
+        "   - 'care_tip': 1 realistic pre-adoption care consideration, settling-in decompression tip, or separation anxiety prevention advice (max 15 words).\n"
         "   - 'energy_level': Exactly one of 'Calm', 'Moderate', 'Active'\n"
         "   - 'space_fit': Short label (e.g. 'Apartment Friendly', 'Yard Preferred', 'House with Yard', 'Flexible Space')\n"
-        "   - 'alone_tolerance': Short label (e.g. 'Tolerates 6+ hrs', 'Needs midday check', 'Moderate')\n"
+        "   - 'alone_tolerance': Short label emphasizing independence vs companionship needs (e.g. 'Tolerates 6+ hrs', 'Needs midday check', 'Low separation risk', 'Thrives with company', 'Moderate')\n"
         "   - 'social_compatibility': Short label (e.g. 'Great with pets', 'Friendly with kids', 'Gentle companion')\n"
         "   - 'grooming_care': Short label (e.g. 'Low maintenance', 'Regular brushing', 'Moderate grooming')\n"
         "2. For the overall comparison, provide 'comparative_analysis':\n"
-        "   - 'summary': A natural 2 to 3 sentence comparative breakdown directly contrasting the candidates against the adopter's lifestyle and home environment. Highlight concrete trade-offs between them (e.g. space, activity requirements, and alone-time adaptability) using their shelter label 'Pet no. <id>'.\n"
-        "   - 'verdict': A distinct 1 to 2 sentence recommendation advising the adopter how to choose between them based on lifestyle priorities (e.g. 'Choose Pet no. X if you prefer..., or Pet no. Y for...'). Do NOT simply repeat or restate the summary.\n\n"
+        "   - 'summary': A natural 2 to 3 sentence comparative breakdown directly contrasting the candidates against the adopter's lifestyle and home environment. Highlight concrete trade-offs between them (e.g. living space, exercise demands, and alone-time / separation anxiety adaptability) using their shelter label 'Pet no. <id>'. Explicitly contrast how each pet (whether feline or canine) handles solitude versus needing regular human interaction during the adopter's routine.\n"
+        "   - 'verdict': A distinct 1 to 2 sentence recommendation advising the adopter how to choose between them based on lifestyle priorities (e.g. 'Choose Pet no. X if you need an independent companion during long work hours, or Pet no. Y for a more affectionate, interactive pet'). Do NOT simply repeat or restate the summary.\n\n"
         "Strict rules:\n"
         "- ZERO emojis anywhere.\n"
         "- Clean labels only: Never use nested or double parentheses (e.g. write 'Pet no. 11 (Puspin Cat)' or 'Pet no. 2 (Aspin Dog)', NEVER write '(Puspin (Mixed Breed) Cat)' or double brackets).\n"
@@ -404,7 +419,8 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
 
                 for k, v in raw_pets.items():
                     if isinstance(v, dict):
-                        reasons = [_clean_bracket_text(str(r)) for r in v.get('reasons', []) if str(r).strip()]
+                        reasons = [_clean_reason_text(str(r)) for r in v.get('reasons', []) if str(r).strip()]
+                        reasons = [r for r in reasons if r]
                         care_tip = _clean_bracket_text(str(v.get('care_tip', ''))).strip()
                         pets_map[str(k)] = {
                             'reasons': reasons,
@@ -493,6 +509,8 @@ def _generate_care_tip(pet: dict[str, Any], adopter_profile: dict[str, Any]) -> 
         return "Provide 30 to 45 minutes of daily structured play or active walks to channel energy."
     elif 'Independent' in tags:
         return "Respect their personal space and allow them to initiate contact during early bonding."
+    elif 'Affectionate' in tags and hours in ['8_plus', '8+', '8plus']:
+        return "Provide interactive puzzle feeders and vertical perches to prevent separation stress."
     elif 'Protective' in tags:
         return "Introduce unfamiliar guests gradually using calm guidance and positive reinforcement."
     elif hours in ['8_plus', '8+', '8plus']:
@@ -516,7 +534,7 @@ def _generate_default_reasons(pet, match_pct):
     return [
         f"High compatibility match ({match_pct}%) evaluated by the Random Forest model.",
         f"Living environment and available space align with this {size} {species}'s frame and exercise needs.",
-        f"Daily schedule and household routine strongly support this {age} companion's care requirements.",
+        f"Daily schedule and alone-time routine support this {age} companion without separation distress.",
         "Verified behavioral temperament complements your lifestyle preferences and household dynamics."
     ]
 
@@ -695,8 +713,9 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
 
         reasons = g_entry.get('reasons')
         if isinstance(reasons, list) and reasons:
-            item['reasons'] = reasons
-            item['match_reasons'] = reasons
+            clean_r = [_clean_reason_text(str(r)) for r in reasons if _clean_reason_text(str(r))]
+            item['reasons'] = clean_r
+            item['match_reasons'] = clean_r
 
         care_tip = g_entry.get('care_tip')
         if isinstance(care_tip, str) and care_tip:
