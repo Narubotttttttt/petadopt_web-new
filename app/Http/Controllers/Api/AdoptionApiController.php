@@ -492,8 +492,32 @@ class AdoptionApiController extends Controller
 
         $applications = AdoptionApplication::with('pet', 'staff')
             ->where('applicant_email', $user->email)
-            ->latest()
             ->get()
+            ->sortBy([
+                function ($app) {
+                    $isPetAdopted = $app->pet && $app->pet->status === 'adopted';
+                    $isAdoptedByOther = $isPetAdopted && ! $app->is_finalized;
+                    $isArchived = ($app->status === 'rejected' || $isAdoptedByOther || (bool)$app->is_archived_due_to_adoption);
+
+                    if ($isArchived) {
+                        return 4; // Archived at bottom
+                    }
+
+                    if ($app->status === 'approved') {
+                        // Highest priority: accepted application requiring contract pre-signing
+                        if (empty($app->signature_path)) {
+                            return 0;
+                        }
+                        // Pre-signed scheduled pickup
+                        return $app->is_finalized ? 2 : 1;
+                    }
+
+                    return 3; // Pending / Under Review
+                },
+                ['updated_at', 'desc'],
+                ['created_at', 'desc'],
+            ])
+            ->values()
             ->map(function ($app) use ($rootUrl) {
                 $pet = $app->pet;
                 $photoUrl = null;
@@ -508,6 +532,7 @@ class AdoptionApiController extends Controller
                 $isApproved = $app->status === 'approved';
                 $isPetAdopted = $pet && $pet->status === 'adopted';
                 $isAdoptedByOther = $isPetAdopted && ! $app->is_finalized;
+                $isArchived = ($app->status === 'rejected' || $isAdoptedByOther || (bool)$app->is_archived_due_to_adoption);
 
                 $proposedName = null;
                 if ($app->message && preg_match('/Proposed Pet Name:\s*([^\r\n]+)/i', $app->message, $matches)) {
@@ -557,6 +582,9 @@ class AdoptionApiController extends Controller
                     'display_status'   => $app->display_status,
                     'displayStatus'    => $app->display_status,
                     'isAdoptedByOther' => $isAdoptedByOther,
+                    'is_archived'      => $isArchived,
+                    'isArchived'       => $isArchived,
+                    'is_archived_due_to_adoption' => (bool)$app->is_archived_due_to_adoption,
                     'pet_status'       => $pet?->status,
                     'is_deceased'      => ($pet?->status === 'deceased'),
                     'scheduledAt'      => ($isApproved && $app->scheduled_at) ? $app->scheduled_at->format('l, M d, Y') : null,
