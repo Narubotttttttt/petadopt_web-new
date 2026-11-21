@@ -17,6 +17,7 @@
              reviewCheckInDate: '',
              reviewCurrentDecision: 'cleared_accidental',
              reviewCurrentRemarks: '',
+             reviewPhotoUrl: '',
 
              // Side-by-Side Vet Verification Modal State
              showVerifyModal: false,
@@ -64,7 +65,7 @@
                  @endif
              },
 
-             openReviewModal(id, petName, adopterName, date, notes, decision, remarks) {
+             openReviewModal(id, petName, adopterName, date, notes, decision, remarks, photoUrl) {
                  this.reviewReportId = id;
                  this.reviewPetName = petName || 'Companion';
                  this.reviewAdopterName = adopterName || 'Adopter';
@@ -72,6 +73,7 @@
                  this.reviewAdopterNotes = notes || '';
                  this.reviewCurrentDecision = decision || 'cleared_accidental';
                  this.reviewCurrentRemarks = remarks || '';
+                 this.reviewPhotoUrl = photoUrl || '';
                  this.showReviewModal = true;
              },
 
@@ -1050,7 +1052,7 @@
                                 @endif
 
                                 <button type="button"
-                                        @click="openReviewModal({{ $dedication->id }}, @js($dPetName), @js($adopterName), @js($dDateStr), @js($dedication->notes ?? ''), @js($dedication->review_decision ?? 'cleared_accidental'), @js($dedication->staff_remarks ?? ''))"
+                                        @click="openReviewModal({{ $dedication->id }}, @js($dPetName), @js($adopterName), @js($dDateStr), @js($dedication->notes ?? ''), @js($dedication->review_decision ?? 'cleared_accidental'), @js($dedication->staff_remarks ?? ''), @js($dPhotoUrl))"
                                         class="h-7.5 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center {{ $isPending ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' }} shrink-0">
                                     <span>{{ $isPending ? 'Review' : 'Re-evaluate' }}</span>
                                 </button>
@@ -1466,80 +1468,6 @@
     @endif
 @endif
 
-        {{-- Photo Zoom Modal --}}
-        <div x-show="showPhotoModal" 
-             x-cloak 
-             class="fixed inset-0 z-[70] overflow-y-auto" 
-             aria-labelledby="modal-title" 
-             role="dialog" 
-             aria-modal="true"
-             @keydown.escape.window="showPhotoModal = false">
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 transition-opacity bg-black/85 backdrop-blur-md" 
-                     @click="showPhotoModal = false"
-                     x-show="showPhotoModal"
-                     x-transition:enter="ease-out duration-200"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     x-transition:leave="ease-in duration-150"
-                     x-transition:leave-start="opacity-100"
-                     x-transition:leave-end="opacity-0"></div>
-
-                <div class="inline-block w-full max-w-2xl p-5 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/[0.1] relative z-10"
-                     x-show="showPhotoModal"
-                     x-transition:enter="ease-out duration-200"
-                     x-transition:enter-start="opacity-0 scale-95"
-                     x-transition:enter-end="opacity-100 scale-100"
-                     x-transition:leave="ease-in duration-150"
-                     x-transition:leave-start="opacity-100 scale-100"
-                     x-transition:leave-end="opacity-0 scale-95"
-                     @click.outside="showPhotoModal = false">
-                    
-                    {{-- Modal Header --}}
-                    <div class="flex items-start justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-white/[0.06] gap-3">
-                        <div class="min-w-0">
-                            <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white truncate" x-text="photoModalTitle"></h3>
-                            <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" x-text="photoModalDate"></span>
-                                <template x-if="photoModalWeight">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]">
-                                        Weight: <span class="ml-1" x-text="photoModalWeight"></span>
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
-                        <button type="button" @click="showPhotoModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer shrink-0">&times;</button>
-                    </div>
-
-                    {{-- High-Res Image Display --}}
-                    <div class="relative w-full max-h-[65vh] rounded-2xl overflow-hidden bg-black/90 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
-                        <img :src="photoModalUrl" :alt="photoModalTitle" class="max-w-full max-h-[65vh] object-contain rounded-xl">
-                    </div>
-
-                    {{-- Observations Note if present --}}
-                    <template x-if="photoModalNotes">
-                        <div class="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] text-xs text-slate-700 dark:text-slate-300">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-0.5">Adopter Observations:</span>
-                            <p class="font-medium italic" x-text="'&quot;' + photoModalNotes + '&quot;'"></p>
-                        </div>
-                    </template>
-
-                    {{-- Additional Modal Metadata & Actions --}}
-                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
-                        <a :href="photoModalUrl" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline inline-flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                            <span>Open Original Full Size</span>
-                        </a>
-
-                        <button type="button" @click="showPhotoModal = false" class="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] rounded-xl transition cursor-pointer">
-                            Close
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
         {{-- Deceased Life Event Review Modal --}}
         <div x-show="showReviewModal" 
              x-cloak 
@@ -1547,7 +1475,7 @@
              aria-labelledby="review-modal-title" 
              role="dialog" 
              aria-modal="true"
-             @keydown.escape.window="showReviewModal = false">
+             @keydown.escape.window="if (!showPhotoModal) showReviewModal = false">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 transition-opacity bg-black/80 backdrop-blur-xs" 
                      @click="showReviewModal = false"
@@ -1577,8 +1505,8 @@
                         <button type="button" @click="showReviewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer">&times;</button>
                     </div>
 
-                    {{-- Adopter's Submitted Reason --}}
-                    <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5">
+                    {{-- Adopter's Submitted Reason & Supporting Documentation --}}
+                    <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-2">
                         <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                             <span>Reason for Pet's Passing</span>
                             <template x-if="extractCause(reviewAdopterNotes)">
@@ -1586,12 +1514,48 @@
                             </template>
                         </div>
                         <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 italic leading-relaxed" x-text="'&quot;' + cleanReason(reviewAdopterNotes) + '&quot;'"></p>
+                        
+                        <template x-if="reviewPhotoUrl">
+                            <div class="pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between">
+                                <span class="text-[10px] text-slate-400 font-medium">Supporting Evidence:</span>
+                                <button type="button" 
+                                        @click="openPhotoModal(reviewPhotoUrl, 'Submitted Memorial / Vet Proof - ' + reviewPetName, reviewCheckInDate, 'Memorial', 'deceased', reviewAdopterNotes)"
+                                        class="inline-flex items-center gap-1.5 text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>Inspect Uploaded Photo / Document</span>
+                                </button>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- Form --}}
                     <form :action="'{{ url('/adopters/reports') }}/' + reviewReportId + '/review'" method="POST" class="mt-4 space-y-4">
                         @csrf
                         @method('PATCH')
+
+                        {{-- Shelter Verification Protocol (Audit Checklist for Panel Defense) --}}
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                    Shelter Verification Protocol (Audit Checklist)
+                                </span>
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20">Standard SOP</span>
+                            </div>
+                            <div class="space-y-1.5 text-xs">
+                                <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                    <input type="checkbox" class="rounded border-slate-300 dark:border-white/[0.1] text-[#199CA4] focus:ring-[#199CA4]/30" checked>
+                                    <span class="text-[11px] font-medium">Physical or veterinary documentation inspected</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                    <input type="checkbox" class="rounded border-slate-300 dark:border-white/[0.1] text-[#199CA4] focus:ring-[#199CA4]/30">
+                                    <span class="text-[11px] font-medium">Direct phone / SMS contact conducted with adopter</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                    <input type="checkbox" class="rounded border-slate-300 dark:border-white/[0.1] text-[#199CA4] focus:ring-[#199CA4]/30">
+                                    <span class="text-[11px] font-medium">Attending veterinary clinic / medical records cross-verified</span>
+                                </label>
+                            </div>
+                        </div>
 
                         <div>
                             <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
@@ -1660,7 +1624,7 @@
              aria-labelledby="verify-modal-title" 
              role="dialog" 
              aria-modal="true"
-             @keydown.escape.window="showVerifyModal = false">
+             @keydown.escape.window="if (!showPhotoModal) showVerifyModal = false">
             <div class="flex items-center justify-center min-h-screen px-3 sm:px-4 py-6 text-center">
                 <div class="fixed inset-0 transition-opacity bg-black/85 backdrop-blur-sm" 
                      @click="showVerifyModal = false"
@@ -1898,6 +1862,83 @@
 
                         </div>
 
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        {{-- Photo Zoom / Inspection Modal (Highest Stacking Layer) --}}
+        <div x-show="showPhotoModal" 
+             x-cloak 
+             class="fixed inset-0 z-[100] overflow-y-auto" 
+             style="position: fixed; inset: 0; z-index: 99999 !important;"
+             aria-labelledby="modal-title" 
+             role="dialog" 
+             aria-modal="true"
+             @keydown.escape.window="showPhotoModal = false">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-black/85 backdrop-blur-md" 
+                     @click="showPhotoModal = false"
+                     x-show="showPhotoModal"
+                     x-transition:enter="ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="ease-in duration-150"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     style="position: fixed; inset: 0; z-index: 99998 !important;"></div>
+
+                <div class="inline-block w-full max-w-2xl p-5 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/[0.1]"
+                     x-show="showPhotoModal"
+                     x-transition:enter="ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="ease-in duration-150"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     style="position: relative; z-index: 99999 !important;"
+                     @click.outside="showPhotoModal = false">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-start justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-white/[0.06] gap-3">
+                        <div class="min-w-0">
+                            <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white truncate" x-text="photoModalTitle"></h3>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" x-text="photoModalDate"></span>
+                                <template x-if="photoModalWeight">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB]">
+                                        Weight: <span class="ml-1" x-text="photoModalWeight"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                        <button type="button" @click="showPhotoModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer shrink-0">&times;</button>
+                    </div>
+
+                    {{-- High-Res Image Display --}}
+                    <div class="relative w-full max-h-[65vh] rounded-2xl overflow-hidden bg-black/90 flex items-center justify-center border border-slate-200 dark:border-white/[0.08]">
+                        <img :src="photoModalUrl" :alt="photoModalTitle" class="max-w-full max-h-[65vh] object-contain rounded-xl">
+                    </div>
+
+                    {{-- Observations Note if present --}}
+                    <template x-if="photoModalNotes">
+                        <div class="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06] text-xs text-slate-700 dark:text-slate-300">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-0.5">Adopter Observations:</span>
+                            <p class="font-medium italic" x-text="'&quot;' + photoModalNotes + '&quot;'"></p>
+                        </div>
+                    </template>
+
+                    {{-- Additional Modal Metadata & Actions --}}
+                    <div class="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-3 flex-wrap">
+                        <a :href="photoModalUrl" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-[#199CA4] hover:text-[#13787F] dark:text-[#41C1CB] hover:underline inline-flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            <span>Open Original Full Size</span>
+                        </a>
+
+                        <button type="button" @click="showPhotoModal = false" class="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] rounded-xl transition cursor-pointer">
+                            Close
+                        </button>
                     </div>
 
                 </div>

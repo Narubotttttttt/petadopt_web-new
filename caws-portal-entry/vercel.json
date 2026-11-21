@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://graphical-epinions-mom-weekends.trycloudflare.com/$1",
+                         "destination":  "https://selected-birthday-pins-outcomes.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],
