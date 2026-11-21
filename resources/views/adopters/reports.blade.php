@@ -75,6 +75,22 @@
                  this.showReviewModal = true;
              },
 
+             cleanReason(notes) {
+                 if (!notes) return '';
+                 const m = notes.match(/Reason & Circumstances:\s*([\s\S]+)/i);
+                 if (m) return m[1].trim();
+                 let clean = notes.replace(/\[PET LIFE EVENT:[^\]]*\]/gi, '');
+                 clean = clean.replace(/Date of Passing:[^\r\n]*/gi, '');
+                 clean = clean.replace(/Cause Category:[^\r\n]*/gi, '');
+                 return clean.trim() || notes;
+             },
+
+             extractCause(notes) {
+                 if (!notes) return '';
+                 const m = notes.match(/Cause Category:\s*([^\r\n]+)/i);
+                 return m ? m[1].trim() : '';
+             },
+
              openPhotoModal(url, title, date, weight, status, notes) {
                  if (!url) return;
                  this.photoModalUrl = url;
@@ -321,22 +337,14 @@
                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
                     <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'text-white' : 'text-[#199CA4]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     <span>Vaccination updates</span>
-                    @if($pendingVetLogsCount > 0)
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
-                    @else
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
-                    @endif
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
                 </a>
 
                 <a href="{{ route('adopters.reports', ['tab' => 'pet_dedications']) }}" 
                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
                     <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                     <span>Pet Dedications</span>
-                    @if($pendingDeceasedCount > 0)
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $pendingDeceasedCount }} Pending</span>
-                    @else
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalDedicationsCount ?? 0 }}</span>
-                    @endif
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalDedicationsCount ?? 0 }}</span>
                 </a>
             </div>
         </div>
@@ -367,22 +375,22 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             {{-- Quick Filter Pills --}}
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'all'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page', 'vet_page'), ['tab' => 'vet_proofs', 'vet_status' => 'all'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($vetStatus ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
                     All ({{ $totalVetLogsCount }})
                 </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'pending'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page', 'vet_page'), ['tab' => 'vet_proofs', 'vet_status' => 'pending'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($vetStatus ?? '') === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
                     @if($pendingVetLogsCount > 0)
                         <span class="w-2 h-2 rounded-full {{ ($vetStatus ?? '') === 'pending' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
                     @endif
                     <span>Pending ({{ $pendingVetLogsCount }})</span>
                 </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'verified'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page', 'vet_page'), ['tab' => 'vet_proofs', 'vet_status' => 'verified'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($vetStatus ?? '') === 'verified' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
                     Verified ({{ $verifiedVetLogsCount }})
                 </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page'), ['tab' => 'vet_proofs', 'vet_status' => 'rejected'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('vet_status', 'page', 'vet_page'), ['tab' => 'vet_proofs', 'vet_status' => 'rejected'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($vetStatus ?? '') === 'rejected' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
                     Rejected ({{ $rejectedVetLogsCount }})
                 </a>
@@ -688,18 +696,7 @@
     {{-- Page Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <div class="flex items-center gap-3 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Pet Dedications & Memorials</h1>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
-                    {{ $totalDedicationsCount }} {{ Str::plural('Memorial', $totalDedicationsCount) }}
-                </span>
-                @if(($pendingDeceasedCount ?? 0) > 0)
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 animate-pulse">
-                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                        {{ $pendingDeceasedCount }} Awaiting Shelter Review
-                    </span>
-                @endif
-            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Pet Dedications & Memorials</h1>
         </div>
         
         {{-- Header Actions --}}
@@ -717,22 +714,22 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             {{-- Quick Filter Pills --}}
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'all'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'all'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($dedicationFilter ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
                     All Dedications ({{ $totalDedicationsCount }})
                 </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'pending'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'pending'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
                     @if(($pendingDeceasedCount ?? 0) > 0)
                         <span class="w-2 h-2 rounded-full {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
                     @endif
                     <span>Awaiting Review ({{ $pendingDeceasedCount }})</span>
                 </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'cleared'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'cleared'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'cleared' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
                     <span>Natural / Accidental ({{ $clearedDeceasedCount }})</span>
                 </a>
-                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'neglect'])) }}"
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'neglect'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'neglect' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
                     <span>Neglect Confirmed ({{ $neglectDeceasedCount }})</span>
                 </a>
@@ -766,35 +763,198 @@
         </div>
     </div>
 
-    {{-- Dedication Cards Grid --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-        @forelse($dedications as $dedication)
+    {{-- Dedications Grid (Compact dashboard grid matching Monthly Updates & Vaccination updates) --}}
+    @php
+        $groupedDedications = $dedications->getCollection()->groupBy(function($dedication) {
+            return $dedication->user_id ? ('user_' . $dedication->user_id) : ('dedication_' . $dedication->id);
+        });
+    @endphp
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
+        @forelse($groupedDedications as $groupKey => $group)
             @php
-                $dPet = $dedication->pet;
-                $dPetName = $dPet && $dPet->name ? $dPet->name : ('Pet no. ' . $dedication->pet_id);
-                $dAdopter = $dedication->user?->adoptersProfile;
-                $dAdopterName = $dAdopter?->full_name ?? ($dedication->user?->name ?? ($dedication->application?->applicant_name ?? 'Adopter'));
-                $dAdopterCode = $dAdopter?->adopter_code ?? ($dedication->user ? sprintf('ADP-%04d', $dedication->user->id) : null);
-                $dPhotoUrl = $dedication->photo_url ?: ($dPet?->photo_url ?: ($dPet?->photo_path ? asset('storage/'.ltrim($dPet->photo_path, '/')) : null));
-                $dDateStr = $dedication->check_in_date ? $dedication->check_in_date->format('M d, Y') : $dedication->created_at->format('M d, Y');
-                $isPending = empty($dedication->review_decision) || $dedication->review_decision === 'pending';
-                $isCleared = ($dedication->review_decision === 'cleared_accidental');
-                $isNeglect = ($dedication->review_decision === 'neglect_confirmed');
+                $firstDedication = $group->first();
+                $adopter = $firstDedication->user?->adoptersProfile;
+                $adopterName = $adopter?->full_name ?: ($firstDedication->user?->name ?: ($firstDedication->application?->applicant_name ?: 'Adopter'));
+                $adopterAvatar = $adopter?->avatar_url;
+                $adopterInitials = $adopter?->initials ?: strtoupper(substr($adopterName, 0, 2));
+                $adopterCode = $adopter?->adopter_code ?: ($firstDedication->user ? sprintf('ADP-%04d', $firstDedication->user->id) : null);
+                $adopterContact = $adopter?->phone ?: ($firstDedication->user?->email ?: null);
+                $totalPetsInGroup = $group->count();
             @endphp
-            <div class="bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] shadow-xs overflow-hidden flex flex-col justify-between transition hover:border-slate-300 dark:hover:border-white/[0.15]">
-                <div>
-                    {{-- Memorial Top Ribbon --}}
-                    <div class="px-4 py-2 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 text-slate-200 text-[10px] font-black uppercase tracking-wider flex items-center justify-between border-b border-white/[0.06]">
-                        <span class="inline-flex items-center gap-1.5 text-slate-300">
-                            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                            <span>In Loving Memory</span>
-                        </span>
-                        <span class="text-slate-400 font-medium font-mono text-[9px]">{{ $dDateStr }}</span>
+
+            <div class="bg-white dark:bg-[#12141C] rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-white/[0.07] shadow-2xs overflow-hidden hover:border-[#199CA4]/40 transition-all duration-200 flex flex-col"
+                 x-data="{ activeIndex: 0 }">
+                
+                {{-- Adopter Top Header (Full Width) --}}
+                <div class="p-3 sm:p-3.5 border-b border-slate-100 dark:border-white/[0.06] bg-slate-50/60 dark:bg-white/[0.02] flex flex-col gap-2.5">
+                    {{-- Top Row: Adopter Info (Left) & Determination Status / Multi-Pet Count (Right) --}}
+                    <div class="flex items-center justify-between gap-3 min-w-0">
+                        {{-- Adopter Identity --}}
+                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#12141C] relative">
+                                @if($adopterAvatar)
+                                    <img src="{{ $adopterAvatar }}" alt="{{ $adopterName }}" class="w-full h-full object-cover">
+                                @else
+                                    <div class="w-full h-full bg-gradient-to-br from-[#199CA4] to-[#13787F] text-white flex items-center justify-center font-black text-[11px]">
+                                        {{ $adopterInitials }}
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white leading-tight truncate" title="Adopter: {{ $adopterName }}">
+                                    @if($adopterCode)
+                                        <a href="{{ route('adopters.index', ['search' => $adopterCode]) }}" class="hover:text-[#199CA4] hover:underline transition-colors">{{ $adopterName }}</a>
+                                    @else
+                                        {{ $adopterName }}
+                                    @endif
+                                </h3>
+                                <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                                    @if($adopterCode)
+                                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] shrink-0 font-mono">{{ $adopterCode }}</span>
+                                    @endif
+                                    <span class="text-[10px] text-slate-400 truncate leading-tight font-medium">{{ $adopterContact ?: 'Verified Adopter' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Top Right: Determination Status Pill (On Top) & Multi-Pet Count (Below) --}}
+                        <div class="flex flex-col items-end justify-center gap-1 shrink-0">
+                            @foreach($group->values() as $idx => $dedicationHeader)
+                                @php
+                                    $hIsPending = empty($dedicationHeader->review_decision) || $dedicationHeader->review_decision === 'pending';
+                                    $hIsCleared = ($dedicationHeader->review_decision === 'cleared_accidental');
+                                    $hIsNeglect = ($dedicationHeader->review_decision === 'neglect_confirmed');
+                                @endphp
+                                <div x-show="activeIndex === {{ $idx }}"
+                                     @if($idx > 0) x-cloak style="display: none;" @endif>
+                                    @if($hIsPending)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Pending Review
+                                        </span>
+                                    @elseif($hIsCleared)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
+                                            Natural / Accidental
+                                        </span>
+                                    @elseif($hIsNeglect)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 shrink-0">
+                                            Neglect Confirmed
+                                        </span>
+                                    @endif
+                                </div>
+                            @endforeach
+
+                            @if($totalPetsInGroup > 1)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/25 shrink-0" title="{{ $totalPetsInGroup }} deceased companions reported">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                    <span>{{ $totalPetsInGroup }} Pets</span>
+                                </span>
+                            @endif
+                        </div>
                     </div>
 
-                    {{-- Pet Photo & Identity Header --}}
-                    <div class="p-4 flex items-center gap-3.5 border-b border-slate-100 dark:border-white/[0.06]">
-                        <div class="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 shrink-0 group cursor-pointer border border-slate-200 dark:border-white/[0.08] shadow-xs"
+                    {{-- Bottom Row: Detail of the Pet Below Adopter Details --}}
+                    <div class="pt-2 border-t border-slate-100 dark:border-white/[0.04] flex items-center gap-2 min-w-0">
+                        @foreach($group->values() as $idx => $dedicationHeader)
+                            @php
+                                $hPet = $dedicationHeader->pet;
+                                $hPetName = $hPet && $hPet->name ? $hPet->name : ('Pet no. ' . $dedicationHeader->pet_id);
+                                $hPetType = ucfirst($hPet?->type ?? 'Pet');
+                                $hBreedClean = preg_replace('/\s*\(.*?\)/', '', $hPet?->breed ?? 'Mixed Breed');
+                            @endphp
+                            <div x-show="activeIndex === {{ $idx }}"
+                                 @if($idx > 0) x-cloak style="display: none;" @endif
+                                 class="flex items-center gap-2 min-w-0 flex-wrap flex-1">
+                                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/70 dark:border-white/[0.08] shrink-0">
+                                    @if($hPet?->photo_url || $hPet?->photo_path)
+                                        <img src="{{ $hPet->photo_url ?: asset('storage/'.ltrim($hPet->photo_path, '/')) }}" alt="{{ $hPetName }}" class="w-5 h-5 rounded-md object-cover shrink-0">
+                                    @else
+                                        <div class="w-5 h-5 rounded-md bg-[#199CA4]/15 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold text-[9px] shrink-0">
+                                            #{{ $dedicationHeader->pet_id }}
+                                        </div>
+                                    @endif
+                                    <strong class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{{ $hPetName }}</strong>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 truncate">({{ $hPetType }} &bull; {{ $hBreedClean }})</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Multi-Pet Switcher Tabs (Only shown if adopter has > 1 pet submission) --}}
+                @if($totalPetsInGroup > 1)
+                    <div class="px-3 py-1.5 bg-slate-100/70 dark:bg-white/[0.03] border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-0.5">Pet:</span>
+                        @foreach($group->values() as $idx => $dedicationItem)
+                            @php
+                                $tabPet = $dedicationItem->pet;
+                                $tabPetName = $tabPet && $tabPet->name ? $tabPet->name : ('Pet no. ' . $dedicationItem->pet_id);
+                                $tabPetType = ucfirst($tabPet?->type ?? 'Pet');
+                                $tabIsPending = empty($dedicationItem->review_decision) || $dedicationItem->review_decision === 'pending';
+                            @endphp
+                            <button type="button"
+                                    @click="activeIndex = {{ $idx }}"
+                                    :class="activeIndex === {{ $idx }} ? 'bg-[#199CA4] text-white shadow-xs font-bold' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/[0.08] font-medium'"
+                                    class="px-2.5 py-1 rounded-lg text-[10px] transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                                <span>{{ $tabPetName }}</span>
+                                <span class="text-[9px] opacity-75">({{ $tabPetType }})</span>
+                                @if($tabIsPending)
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="Shelter Determination Pending"></span>
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Pet Dedication Details (One per pet in the group) --}}
+                @foreach($group->values() as $idx => $dedication)
+                    @php
+                        $dPet = $dedication->pet;
+                        $dPetName = $dPet && $dPet->name ? $dPet->name : ('Pet no. ' . $dedication->pet_id);
+                        $dPhotoUrl = $dedication->photo_url ?: ($dPet?->photo_url ?: ($dPet?->photo_path ? asset('storage/'.ltrim($dPet->photo_path, '/')) : null));
+                        $dDateStr = $dedication->check_in_date ? $dedication->check_in_date->format('M d, Y') : $dedication->created_at->format('M d, Y');
+                        $isPending = empty($dedication->review_decision) || $dedication->review_decision === 'pending';
+                        $isCleared = ($dedication->review_decision === 'cleared_accidental');
+                        $isNeglect = ($dedication->review_decision === 'neglect_confirmed');
+
+                        // Parse structured notes if submitted via Life Event form
+                        $rawNotes = $dedication->notes ?? '';
+                        $causeCategory = null;
+                        $passingDate = null;
+                        $reasonText = $rawNotes;
+
+                        if (preg_match('/Cause Category:\s*([^\r\n]+)/i', $rawNotes, $m)) {
+                            $causeCategory = trim($m[1]);
+                        }
+                        if (preg_match('/Date of Passing:\s*([^\r\n]+)/i', $rawNotes, $m)) {
+                            $pDateRaw = trim($m[1]);
+                            try {
+                                $passingDate = \Carbon\Carbon::parse($pDateRaw)->format('M d, Y');
+                            } catch (\Throwable $e) {
+                                $passingDate = $pDateRaw;
+                            }
+                        }
+                        if (preg_match('/Reason & Circumstances:\s*([\s\S]+)/i', $rawNotes, $m)) {
+                            $reasonText = trim($m[1]);
+                        } else {
+                            $clean = preg_replace('/\[PET LIFE EVENT:[^\]]*\]/i', '', $rawNotes);
+                            $clean = preg_replace('/Date of Passing:[^\r\n]*/i', '', $clean);
+                            $clean = preg_replace('/Cause Category:[^\r\n]*/i', '', $clean);
+                            $clean = trim($clean);
+                            if (!empty($clean)) {
+                                $reasonText = $clean;
+                            }
+                        }
+                    @endphp
+
+                    <div x-show="activeIndex === {{ $idx }}"
+                         @if($idx > 0) x-cloak style="display: none;" @endif
+                         class="flex-1 flex flex-col sm:flex-row min-w-0">
+
+                        {{-- Left: Memorial Photo Thumbnail Container (Matching Monthly Updates: w-full sm:w-28 md:w-32 shrink-0 h-36 sm:h-auto) --}}
+                        <div class="relative w-full sm:w-28 md:w-32 shrink-0 h-36 sm:h-auto bg-slate-950 overflow-hidden group cursor-pointer flex items-center justify-center"
                              @if($dPhotoUrl)
                              data-photo="{{ $dPhotoUrl }}"
                              data-title="In Memory of {{ $dPetName }}"
@@ -804,119 +964,103 @@
                              data-notes="{{ $dedication->notes }}"
                              @click="openFromCard($event)"
                              @endif
-                             title="Inspect photo">
+                             title="Click to inspect memorial photo">
                             @if($dPhotoUrl)
-                                <img src="{{ $dPhotoUrl }}" alt="{{ $dPetName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                <div class="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-white opacity-80 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                <img src="{{ $dPhotoUrl }}" alt="In Memory of {{ $dPetName }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                <div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
+                                    <div class="w-7 h-7 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white shadow-2xs group-hover:scale-110 transition-transform">
+                                        <svg class="w-3.5 h-3.5 text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/></svg>
+                                    </div>
+                                    <span class="text-[9px] font-bold text-white bg-black/70 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-2xs">
+                                        Inspect
+                                    </span>
                                 </div>
                             @else
-                                <div class="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs bg-slate-800">
-                                    RIP
+                                <div class="w-full h-full min-h-[110px] flex flex-col items-center justify-center text-slate-500 text-xs p-2 text-center bg-slate-900">
+                                    <svg class="w-5 h-5 mb-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                    <span class="text-[10px] font-bold text-slate-400">Memorial</span>
                                 </div>
                             @endif
+                            <div class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-white text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-2.5 h-2.5 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                <span>Memorial</span>
+                            </div>
                         </div>
 
-                        <div class="min-w-0 flex-1">
-                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white truncate">{{ $dPetName }}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                {{ ucfirst($dPet?->type ?? 'Pet') }} &bull; {{ $dPet?->breed ?? 'Mixed Breed' }}
-                            </p>
-                            <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                <span class="text-[10px] text-slate-400 font-medium">Adopter:</span>
-                                @if($dAdopterCode)
-                                    <a href="{{ route('adopters.index', ['search' => $dAdopterCode]) }}" class="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#199CA4] hover:underline truncate">{{ $dAdopterName }}</a>
-                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/[0.08] font-mono">{{ $dAdopterCode }}</span>
-                                @else
-                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{{ $dAdopterName }}</span>
+                        {{-- Right: Content & Information --}}
+                        <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between gap-2.5 min-w-0">
+                            {{-- Top Metadata Row: Dates, Cause & Logged Time --}}
+                            <div class="flex items-center justify-between text-[10px] text-slate-400 pb-1.5 border-b border-slate-100 dark:border-white/[0.06] gap-2 flex-wrap">
+                                <div class="flex items-center gap-2 truncate">
+                                    <span>Reported: <strong class="text-slate-700 dark:text-slate-300 font-semibold">{{ $dDateStr }}</strong></span>
+                                    @if($causeCategory)
+                                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0" title="Cause of Passing: {{ $causeCategory }}">
+                                            {{ $causeCategory }}
+                                        </span>
+                                    @endif
+                                    @if($passingDate && $passingDate !== $dDateStr)
+                                        <span>&bull;</span>
+                                        <span>Passed: <strong class="text-slate-700 dark:text-slate-300 font-semibold">{{ $passingDate }}</strong></span>
+                                    @endif
+                                </div>
+                                <span class="text-[9px] text-slate-400 font-medium shrink-0">Logged {{ $dedication->created_at->diffForHumans() }}</span>
+                            </div>
+
+                            {{-- Center: Expanded Reason Only of Why Pet Died --}}
+                            <div class="flex-1 flex flex-col justify-center min-w-0 my-0.5">
+                                <div class="p-3.5 sm:p-4 rounded-xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-100 dark:border-white/[0.06] flex-1 flex flex-col justify-between gap-2.5 shadow-2xs">
+                                    <div>
+                                        <div class="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+                                            <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                            <span>Reason for Pet's Passing</span>
+                                        </div>
+                                        @if(!empty($reasonText))
+                                            <p class="text-xs sm:text-[13px] md:text-sm text-slate-800 dark:text-slate-100 font-medium leading-relaxed italic line-clamp-6" title="{{ $reasonText }}">
+                                                "{{ $reasonText }}"
+                                            </p>
+                                        @else
+                                            <p class="text-xs text-slate-400 dark:text-slate-500 italic">No explanation recorded.</p>
+                                        @endif
+                                    </div>
+
+                                    @if(!empty($dedication->staff_remarks))
+                                        <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center gap-2 text-[10px]">
+                                            <span class="text-[8px] font-black uppercase tracking-wider text-slate-400 shrink-0">Staff Remark:</span>
+                                            <span class="font-semibold text-slate-600 dark:text-slate-300 truncate">{{ $dedication->staff_remarks }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Action Row & Footer --}}
+                            <div class="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-end gap-1.5">
+                                @if($dPhotoUrl)
+                                    <button type="button" 
+                                            data-photo="{{ $dPhotoUrl }}"
+                                            data-title="In Memory of {{ $dPetName }}"
+                                            data-date="{{ $dDateStr }}"
+                                            data-weight="Memorial"
+                                            data-status="deceased"
+                                            data-notes="{{ $dedication->notes }}"
+                                            @click="openFromCard($event)"
+                                            class="h-7.5 w-7.5 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 shrink-0"
+                                            title="Inspect Memorial Photo">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    </button>
                                 @endif
+
+                                <button type="button"
+                                        @click="openReviewModal({{ $dedication->id }}, @js($dPetName), @js($adopterName), @js($dDateStr), @js($dedication->notes ?? ''), @js($dedication->review_decision ?? 'cleared_accidental'), @js($dedication->staff_remarks ?? ''))"
+                                        class="h-7.5 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center {{ $isPending ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' }} shrink-0">
+                                    <span>{{ $isPending ? 'Review' : 'Re-evaluate' }}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    {{-- Adopter Tribute & Circumstances --}}
-                    <div class="p-4 space-y-3">
-                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.06]">
-                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">Adopter Tribute & Circumstances:</span>
-                            @if(!empty($dedication->notes))
-                                <p class="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed italic whitespace-pre-line">
-                                    "{{ $dedication->notes }}"
-                                </p>
-                            @else
-                                <p class="text-xs text-slate-400 italic">No statement provided.</p>
-                            @endif
-                        </div>
-
-                        {{-- Shelter Determination Badge & Remarks --}}
-                        <div>
-                            @if($isPending)
-                                <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                                        <span class="text-xs font-bold text-amber-700 dark:text-amber-400 truncate">Awaiting Shelter Determination</span>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shrink-0">Pending</span>
-                                </div>
-                            @elseif($isCleared)
-                                <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-1">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">Passing Verified: Natural / Accidental</span>
-                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Cleared</span>
-                                    </div>
-                                    @if(!empty($dedication->staff_remarks))
-                                        <p class="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 font-medium leading-tight">
-                                            Remarks: {{ $dedication->staff_remarks }}
-                                        </p>
-                                    @endif
-                                </div>
-                            @elseif($isNeglect)
-                                <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 space-y-1">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="text-xs font-extrabold text-rose-700 dark:text-rose-300">Neglect Confirmed: Adopter Restricted</span>
-                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200">Restricted</span>
-                                    </div>
-                                    @if(!empty($dedication->staff_remarks))
-                                        <p class="text-[11px] text-rose-800/90 dark:text-rose-300/90 font-medium leading-tight">
-                                            Findings: {{ $dedication->staff_remarks }}
-                                        </p>
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Action Row & Footer --}}
-                <div class="p-3 sm:px-4 sm:py-3 bg-slate-50/70 dark:bg-[#171923]/60 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
-                    <span class="text-[10px] text-slate-400 font-medium">Logged {{ $dedication->created_at->diffForHumans() }}</span>
-
-                    <div class="flex items-center gap-2">
-                        @if($dPhotoUrl)
-                            <button type="button" 
-                                    data-photo="{{ $dPhotoUrl }}"
-                                    data-title="In Memory of {{ $dPetName }}"
-                                    data-date="{{ $dDateStr }}"
-                                    data-weight="Memorial"
-                                    data-status="deceased"
-                                    data-notes="{{ $dedication->notes }}"
-                                    @click="openFromCard($event)"
-                                    class="h-8 px-2.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                <span>Inspect</span>
-                            </button>
-                        @endif
-
-                        <button type="button"
-                                @click="openReviewModal({{ $dedication->id }}, '{{ addslashes($dPetName) }}', '{{ addslashes($dAdopterName) }}', '{{ addslashes($dDateStr) }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $dedication->notes ?? '')) }}', '{{ $dedication->review_decision ?? 'cleared_accidental' }}', '{{ addslashes(str_replace(["\r", "\n"], ' ', $dedication->staff_remarks ?? '')) }}')"
-                                class="h-8 px-3 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center gap-1.5 {{ $isPending ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' }}">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                            <span>{{ $isPending ? 'Review Life Event' : 'Re-evaluate' }}</span>
-                        </button>
-                    </div>
-                </div>
+                @endforeach
             </div>
         @empty
-            <div class="col-span-full py-16 text-center bg-white dark:bg-[#12141C] rounded-3xl border border-slate-200/80 dark:border-white/[0.07] p-8">
+            <div class="col-span-full py-16 text-center bg-white dark:bg-[#12141C] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/[0.07] p-8">
                 <div class="w-14 h-14 rounded-2xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center mx-auto mb-3">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                 </div>
@@ -1413,7 +1557,7 @@
                      x-transition:enter-end="opacity-100"
                      x-transition:leave="ease-in duration-150"></div>
 
-                <div class="relative inline-block w-full max-w-xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] shadow-2xl rounded-3xl border border-slate-200 dark:border-white/[0.1] z-10"
+                <div class="relative inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] shadow-2xl rounded-3xl border border-slate-200 dark:border-white/[0.1] z-10"
                      x-show="showReviewModal"
                      x-transition:enter="ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -1421,70 +1565,63 @@
                      x-transition:leave="ease-in duration-150">
                     
                     {{-- Modal Header --}}
-                    <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/[0.08]">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                            </div>
-                            <div>
-                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white" id="review-modal-title">
-                                    Review Deceased Life Event
-                                </h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">
-                                    Companion: <span class="font-bold text-slate-700 dark:text-slate-200" x-text="reviewPetName"></span> | Adopter: <span class="font-bold text-slate-700 dark:text-slate-200" x-text="reviewAdopterName"></span>
-                                </p>
-                            </div>
+                    <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-white/[0.08]">
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight" id="review-modal-title">
+                                Review Deceased Life Event
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Companion: <span class="font-bold text-slate-700 dark:text-slate-200" x-text="reviewPetName"></span> &bull; Adopter: <span class="font-bold text-slate-700 dark:text-slate-200" x-text="reviewAdopterName"></span>
+                            </p>
                         </div>
                         <button type="button" @click="showReviewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer">&times;</button>
                     </div>
 
-                    {{-- Adopter's Submitted Statement --}}
-                    <div class="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-1">
-                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                            <span>Adopter's Reported Circumstances:</span>
-                            <span x-text="reviewCheckInDate"></span>
+                    {{-- Adopter's Submitted Reason --}}
+                    <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-1.5">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                            <span>Reason for Pet's Passing</span>
+                            <template x-if="extractCause(reviewAdopterNotes)">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20" x-text="extractCause(reviewAdopterNotes)"></span>
+                            </template>
                         </div>
-                        <p class="text-xs font-medium text-slate-800 dark:text-slate-200 leading-relaxed italic whitespace-pre-line" x-text="'&quot;' + reviewAdopterNotes + '&quot;'"></p>
+                        <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 italic leading-relaxed" x-text="'&quot;' + cleanReason(reviewAdopterNotes) + '&quot;'"></p>
                     </div>
 
                     {{-- Form --}}
-                    <form :action="'{{ url('/adopters/reports') }}/' + reviewReportId + '/review'" method="POST" class="mt-5 space-y-4">
+                    <form :action="'{{ url('/adopters/reports') }}/' + reviewReportId + '/review'" method="POST" class="mt-4 space-y-4">
                         @csrf
                         @method('PATCH')
 
                         <div>
                             <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
-                                Official Shelter Determination:
+                                Select Decision:
                             </label>
-                            <div class="space-y-2.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 {{-- Option 1: Cleared Accidental / Natural --}}
-                                <label class="p-3.5 rounded-2xl border flex items-start gap-3 cursor-pointer transition"
-                                       :class="reviewCurrentDecision === 'cleared_accidental' ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/20 ring-1 ring-emerald-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
-                                    <input type="radio" name="decision" value="cleared_accidental" x-model="reviewCurrentDecision" class="mt-1 text-emerald-600 focus:ring-emerald-500">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs font-extrabold text-emerald-900 dark:text-emerald-300">Acceptable Cause (Natural Passing / Accidental - No Neglect)</span>
-                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">Restores Slot</span>
+                                <label class="p-3 rounded-xl border flex items-center justify-between gap-2.5 cursor-pointer transition select-none"
+                                       :class="reviewCurrentDecision === 'cleared_accidental' ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 ring-1 ring-emerald-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <input type="radio" name="decision" value="cleared_accidental" x-model="reviewCurrentDecision" class="text-emerald-600 focus:ring-emerald-500 shrink-0">
+                                        <div class="min-w-0">
+                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block leading-tight truncate">Natural / Accidental</span>
+                                            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block leading-tight">No Neglect</span>
                                         </div>
-                                        <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
-                                            Passing was due to natural causes, illness despite care, or unavoidable accident. Adopter remains in good standing. This deceased companion is removed from their active count, freeing up 1 slot under the 3-pet household limit.
-                                        </p>
                                     </div>
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">Restores Slot</span>
                                 </label>
 
                                 {{-- Option 2: Neglect Confirmed --}}
-                                <label class="p-3.5 rounded-2xl border flex items-start gap-3 cursor-pointer transition"
-                                       :class="reviewCurrentDecision === 'neglect_confirmed' ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/20 ring-1 ring-rose-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
-                                    <input type="radio" name="decision" value="neglect_confirmed" x-model="reviewCurrentDecision" class="mt-1 text-rose-600 focus:ring-rose-500">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs font-extrabold text-rose-900 dark:text-rose-300">Adopter Neglect / Welfare Violation Confirmed</span>
-                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200">Restricts Adopter</span>
+                                <label class="p-3 rounded-xl border flex items-center justify-between gap-2.5 cursor-pointer transition select-none"
+                                       :class="reviewCurrentDecision === 'neglect_confirmed' ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 ring-1 ring-rose-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <input type="radio" name="decision" value="neglect_confirmed" x-model="reviewCurrentDecision" class="text-rose-600 focus:ring-rose-500 shrink-0">
+                                        <div class="min-w-0">
+                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block leading-tight truncate">Adopter Neglect</span>
+                                            <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold block leading-tight">Care Violation</span>
                                         </div>
-                                        <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
-                                            Investigation confirms death was caused by neglect, abandonment, or care violation. The adopter's profile will be flagged as Restricted, blocking them from submitting future adoption applications.
-                                        </p>
                                     </div>
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 shrink-0">Restricts Adopter</span>
                                 </label>
                             </div>
                         </div>
@@ -1492,23 +1629,23 @@
                         {{-- Staff Remarks --}}
                         <div>
                             <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1.5">
-                                Shelter Assessment Remarks & Evidence (Required):
+                                Shelter Remarks:
                             </label>
                             <textarea name="staff_remarks" 
-                                      rows="3" 
+                                      rows="2" 
                                       required 
                                       x-model="reviewCurrentRemarks"
-                                      placeholder="Provide the official shelter explanation, veterinary documentation, or justification for this decision..."
-                                      class="w-full text-xs rounded-xl border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#171923] text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                      placeholder="Enter shelter remarks or notes for this decision..."
+                                      class="w-full text-xs rounded-xl border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#171923] text-slate-900 dark:text-white focus:ring-2 focus:ring-[#199CA4] focus:border-[#199CA4]"></textarea>
                         </div>
 
                         {{-- Modal Action Buttons --}}
-                        <div class="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end gap-3">
+                        <div class="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end gap-2.5">
                             <button type="button" @click="showReviewModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] rounded-xl transition cursor-pointer">
                                 Cancel
                             </button>
-                            <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black dark:bg-[#199CA4] dark:hover:bg-[#13787F] rounded-xl transition cursor-pointer shadow-sm">
-                                Save Official Decision
+                            <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-[#199CA4] hover:bg-[#13787F] rounded-xl transition cursor-pointer shadow-xs">
+                                Save Decision
                             </button>
                         </div>
                     </form>

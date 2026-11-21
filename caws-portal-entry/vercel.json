@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://proxy-biotechnology-tract-beads.trycloudflare.com/$1",
+                         "destination":  "https://graphical-epinions-mom-weekends.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],
