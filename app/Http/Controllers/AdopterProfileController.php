@@ -528,11 +528,9 @@ class AdopterProfileController extends Controller
 
         $validated = $request->validate([
             'decision'      => 'required|in:cleared_accidental,neglect_confirmed',
-            'staff_remarks' => 'required|string|min:5|max:2000',
+            'staff_remarks' => 'nullable|string|max:2000',
         ], [
-            'decision.required'      => 'Please select an official review decision for this life event.',
-            'staff_remarks.required' => 'Please provide detailed staff remarks explaining the review findings.',
-            'staff_remarks.min'      => 'Staff remarks must be at least 5 characters.',
+            'decision.required' => 'Please select an official review decision for this life event.',
         ]);
 
         $report = PetHealthUpdate::with(['pet', 'user.adoptersProfile', 'application'])->findOrFail($id);
@@ -567,17 +565,23 @@ class AdopterProfileController extends Controller
 
             if ($profile) {
                 $existingNotes = $profile->admin_notes ? $profile->admin_notes . ' | ' : '';
+                $remarksText = !empty($validated['staff_remarks']) ? ('. Remarks: ' . $validated['staff_remarks']) : '';
                 $profile->update([
                     'status'      => 'restricted',
-                    'admin_notes' => $existingNotes . 'Administrative Investigation (' . now()->format('M d, Y') . '): Neglect confirmed in passing of pet ' . $petName . '. Remarks: ' . $validated['staff_remarks'],
+                    'admin_notes' => $existingNotes . 'Administrative Investigation (' . now()->format('M d, Y') . '): Neglect confirmed in passing of pet ' . $petName . $remarksText,
                 ]);
             }
 
             if ($adopterEmail) {
+                $neglectMessage = "CAWS did not find your reported reason for {$petName}'s passing reasonable. As a result, your account has been restricted and you are not allowed to adopt another pet from our shelter.";
+                if (!empty($validated['staff_remarks'])) {
+                    $neglectMessage .= " Shelter note: {$validated['staff_remarks']}";
+                }
+
                 \App\Services\FirebaseNotificationService::sendToUser(
                     $adopterEmail,
-                    'Pet Life Event Review Notice',
-                    "CAWS shelter staff has completed the administrative review for {$petName}. Findings have been officially recorded.",
+                    'Account Restricted - CAWS Shelter',
+                    $neglectMessage,
                     [
                         'type'           => 'pet_deceased_neglect',
                         'pet_id'         => (string) $report->pet_id,

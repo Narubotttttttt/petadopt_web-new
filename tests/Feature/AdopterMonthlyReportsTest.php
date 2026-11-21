@@ -377,7 +377,125 @@ class AdopterMonthlyReportsTest extends TestCase
         $response->assertSeeText('Oreo');
         $response->assertSeeText('Danilo Ramos');
         $response->assertSeeText('ADP-0009');
-        $response->assertSeeText('Awaiting Shelter Determination');
+        $response->assertSeeText('Pending Review');
         $response->assertSeeText('Oreo was a cherished member of our family');
+    }
+
+    public function test_staff_can_review_deceased_report_without_remarks(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Danilo Ramos',
+            'email' => 'danilo2@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = \App\Models\Pet::create([
+            'name' => 'Milo',
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'deceased',
+            'age' => 3,
+            'gender' => 'male',
+            'size' => 'medium',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        $report = \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/milo.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Passed away peacefully.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->patch("/adopters/reports/{$report->id}/review", [
+            'decision' => 'cleared_accidental',
+            'staff_remarks' => '',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('pet_health_updates', [
+            'id' => $report->id,
+            'review_decision' => 'cleared_accidental',
+            'staff_remarks' => null,
+            'status' => 'memorial_cleared',
+        ]);
+    }
+
+    public function test_staff_can_review_deceased_report_with_neglect_and_restrict_adopter(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Maria Santos',
+            'email' => 'maria@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $profile = \App\Models\AdoptersProfile::create([
+            'user_id' => $adopterUser->id,
+            'adopter_code' => 'ADP-0010',
+            'full_name' => 'Maria Santos',
+            'email' => 'maria@example.com',
+            'phone' => '09191234567',
+            'status' => 'active',
+        ]);
+
+        $pet = \App\Models\Pet::create([
+            'name' => 'Buster',
+            'type' => 'dog',
+            'breed' => 'Shih Tzu',
+            'status' => 'deceased',
+            'age' => 2,
+            'gender' => 'male',
+            'size' => 'small',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        $report = \App\Models\PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/buster.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Left unattended outside.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->patch("/adopters/reports/{$report->id}/review", [
+            'decision' => 'neglect_confirmed',
+            'staff_remarks' => 'Pet was left without shelter.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('pet_health_updates', [
+            'id' => $report->id,
+            'review_decision' => 'neglect_confirmed',
+            'staff_remarks' => 'Pet was left without shelter.',
+            'status' => 'memorial_neglect',
+        ]);
+
+        $profile->refresh();
+        $this->assertEquals('restricted', $profile->status);
+        $this->assertStringContainsString('Administrative Investigation', $profile->admin_notes);
+        $this->assertStringContainsString('Pet was left without shelter.', $profile->admin_notes);
     }
 }

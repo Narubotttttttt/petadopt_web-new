@@ -1597,31 +1597,31 @@
                             <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
                                 Select Decision:
                             </label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="grid grid-cols-1 gap-2">
                                 {{-- Option 1: Cleared Accidental / Natural --}}
-                                <label class="p-3 rounded-xl border flex items-center justify-between gap-2.5 cursor-pointer transition select-none"
+                                <label class="p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition select-none"
                                        :class="reviewCurrentDecision === 'cleared_accidental' ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 ring-1 ring-emerald-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
                                     <div class="flex items-center gap-2.5 min-w-0">
                                         <input type="radio" name="decision" value="cleared_accidental" x-model="reviewCurrentDecision" class="text-emerald-600 focus:ring-emerald-500 shrink-0">
-                                        <div class="min-w-0">
-                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block leading-tight truncate">Natural / Accidental</span>
-                                            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block leading-tight">No Neglect</span>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Natural / Accidental</span>
+                                            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold leading-tight">&bull; No Neglect</span>
                                         </div>
                                     </div>
-                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">Restores Slot</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">Restores Slot</span>
                                 </label>
 
                                 {{-- Option 2: Neglect Confirmed --}}
-                                <label class="p-3 rounded-xl border flex items-center justify-between gap-2.5 cursor-pointer transition select-none"
+                                <label class="p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition select-none"
                                        :class="reviewCurrentDecision === 'neglect_confirmed' ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 ring-1 ring-rose-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
                                     <div class="flex items-center gap-2.5 min-w-0">
                                         <input type="radio" name="decision" value="neglect_confirmed" x-model="reviewCurrentDecision" class="text-rose-600 focus:ring-rose-500 shrink-0">
-                                        <div class="min-w-0">
-                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block leading-tight truncate">Adopter Neglect</span>
-                                            <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold block leading-tight">Care Violation</span>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Adopter Neglect</span>
+                                            <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold leading-tight">&bull; Care Violation</span>
                                         </div>
                                     </div>
-                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 shrink-0">Restricts Adopter</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 shrink-0">Restricts Adopter</span>
                                 </label>
                             </div>
                         </div>
@@ -1629,13 +1629,12 @@
                         {{-- Staff Remarks --}}
                         <div>
                             <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1.5">
-                                Shelter Remarks:
+                                Shelter Remarks <span class="text-slate-400 dark:text-slate-500 font-normal lowercase">(optional)</span>:
                             </label>
                             <textarea name="staff_remarks" 
                                       rows="2" 
-                                      required 
                                       x-model="reviewCurrentRemarks"
-                                      placeholder="Enter shelter remarks or notes for this decision..."
+                                      placeholder="Optional: Enter shelter remarks or investigation notes..."
                                       class="w-full text-xs rounded-xl border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#171923] text-slate-900 dark:text-white focus:ring-2 focus:ring-[#199CA4] focus:border-[#199CA4]"></textarea>
                         </div>
 
