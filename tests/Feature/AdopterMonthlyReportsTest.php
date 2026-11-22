@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Pet;
+use App\Models\PetHealthUpdate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -497,5 +499,124 @@ class AdopterMonthlyReportsTest extends TestCase
         $this->assertEquals('restricted', $profile->status);
         $this->assertStringContainsString('Administrative Investigation', $profile->admin_notes);
         $this->assertStringContainsString('Pet was left without shelter.', $profile->admin_notes);
+    }
+
+    public function test_staff_can_review_deceased_report_with_staff_remarks(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'King',
+            'type' => 'dog',
+            'breed' => 'Aspin',
+            'status' => 'deceased',
+            'age' => 2,
+            'gender' => 'male',
+            'size' => 'medium',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'email_verified_at' => now(),
+        ]);
+
+        $report = PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/king.jpg',
+            'health_status' => 'deceased',
+            'notes' => '[PET LIFE EVENT: DECEASED REPORT]\nDate of Passing: 2026-11-20\nCause Category: Severe Illness\nReason & Circumstances: namatay sa parvo virus',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->patch("/adopters/reports/{$report->id}/review", [
+            'decision' => 'cleared_accidental',
+            'staff_remarks' => 'Cross-verified with attending vet Dr. Valdez. Proper care was provided.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $report->refresh();
+        $this->assertEquals('cleared_accidental', $report->review_decision);
+        $this->assertEquals('Cross-verified with attending vet Dr. Valdez. Proper care was provided.', $report->staff_remarks);
+    }
+
+    public function test_staff_can_place_deceased_report_on_hold_for_onsite_investigation(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopterUser = User::factory()->create([
+            'role' => 'adopter',
+            'name' => 'Adopter Test',
+            'email' => 'adopter.inquiry@example.com',
+            'email_verified_at' => now(),
+        ]);
+
+        $profile = \App\Models\AdoptersProfile::create([
+            'user_id' => $adopterUser->id,
+            'adopter_code' => 'ADP-0099',
+            'full_name' => 'Adopter Test',
+            'email' => 'adopter.inquiry@example.com',
+            'phone' => '09171234567',
+            'status' => 'active',
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Rocky',
+            'type' => 'dog',
+            'breed' => 'Beagle',
+            'status' => 'deceased',
+            'age' => 4,
+            'gender' => 'male',
+            'size' => 'medium',
+            'added_by_user_id' => $admin->id,
+        ]);
+
+        $report = PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopterUser->id,
+            'photo_path' => 'pet-updates/rocky.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Pet passed away under uncertain circumstances.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->patch("/adopters/reports/{$report->id}/review", [
+            'decision' => 'investigation_pending',
+            'staff_remarks' => 'Shelter officer scheduled home visit for Nov 25.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $report->refresh();
+        $this->assertEquals('investigation_pending', $report->review_decision);
+        $this->assertEquals('memorial_investigating', $report->status);
+        $this->assertEquals('Shelter officer scheduled home visit for Nov 25.', $report->staff_remarks);
+
+        $profile->refresh();
+        // Adopter is NOT blacklisted/restricted; remains active
+        $this->assertEquals('active', $profile->status);
+        $this->assertStringContainsString('On-Site Verification Requested', $profile->admin_notes);
+        $this->assertStringContainsString('Rocky', $profile->admin_notes);
+
+        // Check that dedication filter investigating includes this report
+        $filterResponse = $this->actingAs($admin)->get('/adopters/reports?tab=pet_dedications&dedication_filter=investigating');
+        $filterResponse->assertStatus(200);
+        $filterResponse->assertSeeText('Rocky');
+        $filterResponse->assertSeeText('On-Site Visit Requested');
+        $filterResponse->assertSeeText('Visit Pending');
     }
 }

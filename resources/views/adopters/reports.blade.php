@@ -18,6 +18,8 @@
              reviewCurrentDecision: 'cleared_accidental',
              reviewCurrentRemarks: '',
              reviewPhotoUrl: '',
+             reviewVaccines: [],
+             showVaccineHistory: true,
 
              // Side-by-Side Vet Verification Modal State
              showVerifyModal: false,
@@ -65,7 +67,7 @@
                  @endif
              },
 
-             openReviewModal(id, petName, adopterName, date, notes, decision, remarks, photoUrl) {
+             openReviewModal(id, petName, adopterName, date, notes, decision, remarks, photoUrl, vaccines) {
                  this.reviewReportId = id;
                  this.reviewPetName = petName || 'Companion';
                  this.reviewAdopterName = adopterName || 'Adopter';
@@ -74,7 +76,25 @@
                  this.reviewCurrentDecision = decision || 'cleared_accidental';
                  this.reviewCurrentRemarks = remarks || '';
                  this.reviewPhotoUrl = photoUrl || '';
+                 this.reviewVaccines = Array.isArray(vaccines) ? vaccines : [];
+                 this.showVaccineHistory = this.isIllnessRelated(notes);
                  this.showReviewModal = true;
+             },
+
+             hasInfectionMention(notes) {
+                 if (!notes) return false;
+                 const lower = notes.toLowerCase();
+                 return lower.includes('parvo') || lower.includes('distemper') || lower.includes('rabies') || lower.includes('virus') || lower.includes('infect') || lower.includes('sakit') || lower.includes('lepto');
+             },
+
+             isIllnessRelated(notes) {
+                 if (!notes) return true;
+                 const cause = this.extractCause(notes).toLowerCase();
+                 return cause.includes('illness') || 
+                        cause.includes('medical') || 
+                        cause.includes('condition') || 
+                        cause.includes('disease') || 
+                        this.hasInfectionMention(notes);
              },
 
              cleanReason(notes) {
@@ -727,6 +747,13 @@
                     @endif
                     <span>Awaiting Review ({{ $pendingDeceasedCount }})</span>
                 </a>
+                <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'investigating'])) }}"
+                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'investigating' ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
+                    @if(($investigatingDeceasedCount ?? 0) > 0)
+                        <span class="w-2 h-2 rounded-full {{ ($dedicationFilter ?? '') === 'investigating' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
+                    @endif
+                    <span>On-Site Visit ({{ $investigatingDeceasedCount ?? 0 }})</span>
+                </a>
                 <a href="{{ route('adopters.reports', array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'cleared'])) }}"
                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'cleared' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
                     <span>Natural / Accidental ({{ $clearedDeceasedCount }})</span>
@@ -826,6 +853,7 @@
                             @foreach($group->values() as $idx => $dedicationHeader)
                                 @php
                                     $hIsPending = empty($dedicationHeader->review_decision) || $dedicationHeader->review_decision === 'pending';
+                                    $hIsInvestigating = ($dedicationHeader->review_decision === 'investigation_pending');
                                     $hIsCleared = ($dedicationHeader->review_decision === 'cleared_accidental');
                                     $hIsNeglect = ($dedicationHeader->review_decision === 'neglect_confirmed');
                                 @endphp
@@ -835,6 +863,11 @@
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                             Pending Review
+                                        </span>
+                                    @elseif($hIsInvestigating)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            On-Site Visit Requested
                                         </span>
                                     @elseif($hIsCleared)
                                         <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shrink-0">
@@ -894,7 +927,7 @@
                                 $tabPet = $dedicationItem->pet;
                                 $tabPetName = $tabPet && $tabPet->name ? $tabPet->name : ('Pet no. ' . $dedicationItem->pet_id);
                                 $tabPetType = ucfirst($tabPet?->type ?? 'Pet');
-                                $tabIsPending = empty($dedicationItem->review_decision) || $dedicationItem->review_decision === 'pending';
+                                $tabIsPending = empty($dedicationItem->review_decision) || in_array($dedicationItem->review_decision, ['pending', 'investigation_pending']);
                             @endphp
                             <button type="button"
                                     @click="activeIndex = {{ $idx }}"
@@ -918,6 +951,7 @@
                         $dPhotoUrl = $dedication->photo_url ?: ($dPet?->photo_url ?: ($dPet?->photo_path ? asset('storage/'.ltrim($dPet->photo_path, '/')) : null));
                         $dDateStr = $dedication->check_in_date ? $dedication->check_in_date->format('M d, Y') : $dedication->created_at->format('M d, Y');
                         $isPending = empty($dedication->review_decision) || $dedication->review_decision === 'pending';
+                        $isInvestigating = ($dedication->review_decision === 'investigation_pending');
                         $isCleared = ($dedication->review_decision === 'cleared_accidental');
                         $isNeglect = ($dedication->review_decision === 'neglect_confirmed');
 
@@ -1035,6 +1069,20 @@
                             </div>
 
                             {{-- Action Row & Footer --}}
+                            @php
+                                $dVaccines = ($dedication->pet?->medicalLogs ?? collect([]))->map(function($ml) {
+                                    return [
+                                        'id' => $ml->id,
+                                        'category' => $ml->category,
+                                        'name' => $ml->vaccine_name ?: ($ml->category === 'vaccination' ? 'Core Vaccine' : ucfirst($ml->category)),
+                                        'date' => $ml->date ? $ml->date->format('M d, Y') : null,
+                                        'next_due' => $ml->next_due_date ? $ml->next_due_date->format('M d, Y') : null,
+                                        'is_overdue' => $ml->next_due_date ? $ml->next_due_date->isPast() : false,
+                                        'clinic' => $ml->clinic_name ?: 'CAWS Shelter Clinic',
+                                        'status' => $ml->verification_status ?: 'verified',
+                                    ];
+                                })->values()->all();
+                            @endphp
                             <div class="pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-end gap-1.5">
                                 @if($dPhotoUrl)
                                     <button type="button" 
@@ -1052,9 +1100,19 @@
                                 @endif
 
                                 <button type="button"
-                                        @click="openReviewModal({{ $dedication->id }}, @js($dPetName), @js($adopterName), @js($dDateStr), @js($dedication->notes ?? ''), @js($dedication->review_decision ?? 'cleared_accidental'), @js($dedication->staff_remarks ?? ''), @js($dPhotoUrl))"
-                                        class="h-7.5 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center {{ $isPending ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' }} shrink-0">
-                                    <span>{{ $isPending ? 'Review' : 'Re-evaluate' }}</span>
+                                        @click="openReviewModal(
+                                            {{ $dedication->id }}, 
+                                            @js($dPetName), 
+                                            @js($adopterName), 
+                                            @js($dDateStr), 
+                                            @js($dedication->notes ?? ''), 
+                                            @js($dedication->review_decision ?? 'cleared_accidental'), 
+                                            @js($dedication->staff_remarks ?? ''), 
+                                            @js($dPhotoUrl),
+                                            @js($dVaccines)
+                                        )"
+                                        class="h-7.5 px-3 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer flex items-center justify-center {{ ($isPending || $isInvestigating) ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-[#199CA4]/20' }} shrink-0">
+                                    <span>{{ $isPending ? 'Review' : ($isInvestigating ? 'Visit Pending' : 'Re-evaluate') }}</span>
                                 </button>
                             </div>
                         </div>
@@ -1367,6 +1425,8 @@
                                                 Passing Verified: Natural / Accidental
                                             @elseif($report->review_decision === 'neglect_confirmed')
                                                 Neglect Confirmed: Sanctioned
+                                            @elseif($report->review_decision === 'investigation_pending')
+                                                On-Site Visit Requested: Hold for Inquiry
                                             @else
                                                 Life Event: Awaiting Staff Review
                                             @endif
@@ -1485,7 +1545,7 @@
                      x-transition:enter-end="opacity-100"
                      x-transition:leave="ease-in duration-150"></div>
 
-                <div class="relative inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] shadow-2xl rounded-3xl border border-slate-200 dark:border-white/[0.1] z-10"
+                <div class="relative inline-block w-full max-w-xl p-5 sm:p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-[#12141C] shadow-2xl rounded-3xl border border-slate-200 dark:border-white/[0.1] z-10 max-h-[90vh] overflow-y-auto"
                      x-show="showReviewModal"
                      x-transition:enter="ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -1505,8 +1565,8 @@
                         <button type="button" @click="showReviewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-light leading-none cursor-pointer">&times;</button>
                     </div>
 
-                    {{-- Adopter's Submitted Reason & Supporting Documentation --}}
-                    <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-2">
+                    {{-- Adopter's Submitted Reason & Evidence Tier --}}
+                    <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-2.5">
                         <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                             <span>Reason for Pet's Passing</span>
                             <template x-if="extractCause(reviewAdopterNotes)">
@@ -1515,77 +1575,124 @@
                         </div>
                         <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 italic leading-relaxed" x-text="'&quot;' + cleanReason(reviewAdopterNotes) + '&quot;'"></p>
                         
-                        <template x-if="reviewPhotoUrl">
-                            <div class="pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between">
-                                <span class="text-[10px] text-slate-400 font-medium">Supporting Evidence:</span>
-                                <button type="button" 
-                                        @click="openPhotoModal(reviewPhotoUrl, 'Submitted Memorial / Vet Proof - ' + reviewPetName, reviewCheckInDate, 'Memorial', 'deceased', reviewAdopterNotes)"
-                                        class="inline-flex items-center gap-1.5 text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <span>Inspect Uploaded Photo / Document</span>
-                                </button>
+                        <div class="pt-2 border-t border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between gap-2 flex-wrap">
+                            <span class="text-[10px] text-slate-400 font-medium">Evidence Tier:</span>
+                            <template x-if="reviewPhotoUrl">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20">
+                                        Clinical / Photo Attached
+                                    </span>
+                                    <button type="button" 
+                                            @click="openPhotoModal(reviewPhotoUrl, 'Submitted Memorial / Vet Proof - ' + reviewPetName, reviewCheckInDate, 'Memorial', 'deceased', reviewAdopterNotes)"
+                                            class="inline-flex items-center gap-1 text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <span>Inspect Document</span>
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="!reviewPhotoUrl">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                                    Unverified Narrative (Phone Audit Required)
+                                </span>
+                            </template>
+                        </div>
+                        <template x-if="extractCause(reviewAdopterNotes).toLowerCase().includes('accident') || extractCause(reviewAdopterNotes).toLowerCase().includes('trauma')">
+                            <div class="pt-1.5 text-[10px] text-slate-500 dark:text-slate-400 italic leading-snug">
+                                SOP Policy: Graphic trauma photos are prohibited. Official veterinary certification, burial proof, or direct phone verification is prioritized.
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Non-Illness Passing Compact Banner (Optional Inspection) --}}
+                    <template x-if="!isIllnessRelated(reviewAdopterNotes) && !showVaccineHistory">
+                        <div class="mt-3 p-3 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between text-xs gap-2">
+                            <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 min-w-0">
+                                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="text-[11px] font-medium truncate">Non-disease passing reported (Accident / Natural).</span>
+                            </div>
+                            <button type="button" @click="showVaccineHistory = true" class="text-xs font-bold text-[#199CA4] dark:text-[#41C1CB] hover:underline cursor-pointer shrink-0">
+                                View Vaccination History
+                            </button>
+                        </div>
+                    </template>
+
+                    {{-- Preventive Care & Vaccination History (Live Cross-Check) --}}
+                    <div x-show="isIllnessRelated(reviewAdopterNotes) || showVaccineHistory" class="mt-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                    Vaccination History
+                                </span>
+                            </div>
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-md bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20" x-text="reviewVaccines.length + ' Record(s) On File'"></span>
+                        </div>
+
+                        {{-- Records List --}}
+                        <template x-if="reviewVaccines.length > 0">
+                            <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                <template x-for="vac in reviewVaccines" :key="vac.id">
+                                    <div class="p-2 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between text-xs gap-2">
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-slate-800 dark:text-slate-200 truncate" x-text="vac.name"></div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500" x-text="(vac.date || 'Date N/A') + (vac.clinic ? ' • ' + vac.clinic : '')"></div>
+                                        </div>
+                                        <div class="shrink-0 text-right">
+                                            <template x-if="vac.is_overdue">
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" x-text="'Overdue: ' + vac.next_due"></span>
+                                            </template>
+                                            <template x-if="!vac.is_overdue && vac.next_due">
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" x-text="'Next: ' + vac.next_due"></span>
+                                            </template>
+                                            <template x-if="!vac.next_due">
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400" x-text="vac.status"></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        {{-- Empty records fallback --}}
+                        <template x-if="reviewVaccines.length === 0">
+                            <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300">
+                                <div class="font-bold text-[11px]">No prior medical / vaccination logs on file</div>
+                                <p class="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+                                    If this companion passed away from a preventable disease (e.g. Parvovirus, Distemper, Rabies), the lack of documented vaccinations suggests potential failure of preventive care obligations.
+                                </p>
                             </div>
                         </template>
                     </div>
 
                     {{-- Form --}}
-                    <form :action="'{{ url('/adopters/reports') }}/' + reviewReportId + '/review'" method="POST" class="mt-4 space-y-4">
+                    <form :action="'{{ url('/adopters/reports') }}/' + reviewReportId + '/review'" method="POST" class="mt-3.5 space-y-3.5">
                         @csrf
                         @method('PATCH')
-
-                        {{-- Shelter Verification Protocol (Audit Checklist for Panel Defense) --}}
-                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-200/80 dark:border-white/[0.06] space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                                    Shelter Verification Protocol (Audit Checklist)
-                                </span>
-                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] border border-[#199CA4]/20">Standard SOP</span>
-                            </div>
-                            <div class="space-y-1.5 text-xs">
-                                <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                                    <input type="checkbox" class="rounded border-slate-300 dark:border-white/[0.1] text-[#199CA4] focus:ring-[#199CA4]/30" checked>
-                                    <span class="text-[11px] font-medium">Physical or veterinary documentation inspected</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                                    <input type="checkbox" class="rounded border-slate-300 dark:border-white/[0.1] text-[#199CA4] focus:ring-[#199CA4]/30">
-                                    <span class="text-[11px] font-medium">Direct phone / SMS contact conducted with adopter</span>
-                                </label>
-                                <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                                    <input type="checkbox" class="rounded border-slate-300 dark:border-white/[0.1] text-[#199CA4] focus:ring-[#199CA4]/30">
-                                    <span class="text-[11px] font-medium">Attending veterinary clinic / medical records cross-verified</span>
-                                </label>
-                            </div>
-                        </div>
 
                         <div>
                             <label class="block text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
                                 Select Decision:
                             </label>
                             <div class="grid grid-cols-1 gap-2">
-                                {{-- Option 1: Cleared Accidental / Natural --}}
-                                <label class="p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition select-none"
+                                {{-- Option 1: Natural or Accidental --}}
+                                <label class="p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none"
                                        :class="reviewCurrentDecision === 'cleared_accidental' ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 ring-1 ring-emerald-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
-                                    <div class="flex items-center gap-2.5 min-w-0">
-                                        <input type="radio" name="decision" value="cleared_accidental" x-model="reviewCurrentDecision" class="text-emerald-600 focus:ring-emerald-500 shrink-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Natural / Accidental</span>
-                                            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold leading-tight">&bull; No Neglect</span>
-                                        </div>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0">Restores Slot</span>
+                                    <input type="radio" name="decision" value="cleared_accidental" x-model="reviewCurrentDecision" class="text-emerald-600 focus:ring-emerald-500 shrink-0">
+                                    <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Natural or Accidental</span>
                                 </label>
 
-                                {{-- Option 2: Neglect Confirmed --}}
-                                <label class="p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition select-none"
+                                {{-- Option 2: Request On-Site Meeting --}}
+                                <label class="p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none"
+                                       :class="reviewCurrentDecision === 'investigation_pending' ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/30 ring-1 ring-amber-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
+                                    <input type="radio" name="decision" value="investigation_pending" x-model="reviewCurrentDecision" class="text-amber-600 focus:ring-amber-500 shrink-0">
+                                    <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Request On-Site Meeting</span>
+                                </label>
+
+                                {{-- Option 3: Adopter Neglect --}}
+                                <label class="p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none"
                                        :class="reviewCurrentDecision === 'neglect_confirmed' ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 ring-1 ring-rose-500/40' : 'border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/[0.02]'">
-                                    <div class="flex items-center gap-2.5 min-w-0">
-                                        <input type="radio" name="decision" value="neglect_confirmed" x-model="reviewCurrentDecision" class="text-rose-600 focus:ring-rose-500 shrink-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Adopter Neglect</span>
-                                            <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold leading-tight">&bull; Care Violation</span>
-                                        </div>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 shrink-0">Restricts Adopter</span>
+                                    <input type="radio" name="decision" value="neglect_confirmed" x-model="reviewCurrentDecision" class="text-rose-600 focus:ring-rose-500 shrink-0">
+                                    <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Adopter Neglect</span>
                                 </label>
                             </div>
                         </div>
@@ -1598,7 +1705,7 @@
                             <textarea name="staff_remarks" 
                                       rows="2" 
                                       x-model="reviewCurrentRemarks"
-                                      placeholder="Optional: Enter shelter remarks or investigation notes..."
+                                      placeholder="Optional: Enter shelter remarks, clinic verification, or investigation notes..."
                                       class="w-full text-xs rounded-xl border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#171923] text-slate-900 dark:text-white focus:ring-2 focus:ring-[#199CA4] focus:border-[#199CA4]"></textarea>
                         </div>
 

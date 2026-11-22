@@ -328,7 +328,13 @@ class AdminNotificationService
             $adopterProfile = $user?->adoptersProfile;
             $adopterName = $adopterProfile?->full_name ?? ($user?->name ?? ($dUpdate->application?->applicant_name ?? 'Adopter'));
             $adopterIdCode = $adopterProfile?->adopter_code ?? ($user ? sprintf('ADP-%04d', $user->id) : 'ADP');
-            $isPendingReview = empty($dUpdate->review_decision) || $dUpdate->review_decision === 'pending';
+            $isPendingReview = empty($dUpdate->review_decision) || in_array($dUpdate->review_decision, ['pending', 'investigation_pending']);
+            $statusLabel = 'Awaiting Shelter Review';
+            if ($dUpdate->review_decision === 'investigation_pending') {
+                $statusLabel = 'On-Site Visit Requested';
+            } elseif (!empty($dUpdate->review_decision) && $dUpdate->review_decision !== 'pending') {
+                $statusLabel = ucfirst(str_replace('_', ' ', $dUpdate->review_decision));
+            }
 
             $adopterParts = preg_split('/\s+/', trim($adopterName));
             $adopterInitials = count($adopterParts) >= 2 
@@ -355,7 +361,7 @@ class AdminNotificationService
                     [
                         'pet_name'     => $petName,
                         'status_type'  => 'deceased',
-                        'status_label' => $isPendingReview ? 'Awaiting Shelter Review' : ucfirst(str_replace('_', ' ', $dUpdate->review_decision)),
+                        'status_label' => $statusLabel,
                         'is_alert'     => $isPendingReview,
                         'time'         => $dUpdate->created_at ? $dUpdate->created_at->diffForHumans() : 'Recently',
                     ]
@@ -454,7 +460,7 @@ class AdminNotificationService
     {
         return PetHealthUpdate::where('health_status', 'deceased')
             ->where(function ($q) {
-                $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
+                $q->whereNull('review_decision')->orWhereIn('review_decision', ['pending', 'investigation_pending']);
             })
             ->count();
     }

@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://selected-birthday-pins-outcomes.trycloudflare.com/$1",
+                         "destination":  "https://mel-short-creations-founder.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

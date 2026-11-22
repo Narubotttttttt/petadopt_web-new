@@ -420,7 +420,9 @@ class AdopterProfileController extends Controller
 
         // Pet Dedications & Memorials Submissions
         $dedicationQuery = PetHealthUpdate::where('health_status', 'deceased')->with([
-            'pet',
+            'pet.medicalLogs' => function ($q) {
+                $q->latest('date')->latest('created_at');
+            },
             'user.adoptersProfile',
             'application',
             'reviewer'
@@ -448,6 +450,8 @@ class AdopterProfileController extends Controller
             $dedicationQuery->where(function($q) {
                 $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
             });
+        } elseif ($dedicationFilter === 'investigating') {
+            $dedicationQuery->where('review_decision', 'investigation_pending');
         } elseif ($dedicationFilter === 'cleared') {
             $dedicationQuery->where('review_decision', 'cleared_accidental');
         } elseif ($dedicationFilter === 'neglect') {
@@ -469,12 +473,13 @@ class AdopterProfileController extends Controller
         $attentionReports = PetHealthUpdate::whereIn('health_status', ['minor_issue', 'under_treatment'])->count();
 
         // Dedications & Memorials KPI statistics
-        $totalDedicationsCount = PetHealthUpdate::where('health_status', 'deceased')->count();
-        $pendingDeceasedCount  = PetHealthUpdate::where('health_status', 'deceased')->where(function($q) {
+        $totalDedicationsCount      = PetHealthUpdate::where('health_status', 'deceased')->count();
+        $pendingDeceasedCount       = PetHealthUpdate::where('health_status', 'deceased')->where(function($q) {
             $q->whereNull('review_decision')->orWhere('review_decision', 'pending');
         })->count();
-        $clearedDeceasedCount  = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'cleared_accidental')->count();
-        $neglectDeceasedCount  = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'neglect_confirmed')->count();
+        $investigatingDeceasedCount = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'investigation_pending')->count();
+        $clearedDeceasedCount       = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'cleared_accidental')->count();
+        $neglectDeceasedCount       = PetHealthUpdate::where('health_status', 'deceased')->where('review_decision', 'neglect_confirmed')->count();
 
         $totalApprovedAdopters = AdoptionApplication::where('status', 'approved')->distinct('applicant_email')->count();
 
@@ -496,6 +501,7 @@ class AdopterProfileController extends Controller
             'attentionReports',
             'totalDedicationsCount',
             'pendingDeceasedCount',
+            'investigatingDeceasedCount',
             'clearedDeceasedCount',
             'neglectDeceasedCount',
             'totalApprovedAdopters',
@@ -527,7 +533,7 @@ class AdopterProfileController extends Controller
         }
 
         $validated = $request->validate([
-            'decision'      => 'required|in:cleared_accidental,neglect_confirmed',
+            'decision'      => 'required|in:cleared_accidental,neglect_confirmed,investigation_pending',
             'staff_remarks' => 'nullable|string|max:2000',
         ], [
             'decision.required' => 'Please select an official review decision for this life event.',
@@ -539,12 +545,19 @@ class AdopterProfileController extends Controller
             return back()->with('error', 'Only deceased / memorial pet life event reports require this review procedure.');
         }
 
+        $reportStatus = 'memorial_cleared';
+        if ($validated['decision'] === 'neglect_confirmed') {
+            $reportStatus = 'memorial_neglect';
+        } elseif ($validated['decision'] === 'investigation_pending') {
+            $reportStatus = 'memorial_investigating';
+        }
+
         $report->update([
             'review_decision' => $validated['decision'],
             'staff_remarks'   => $validated['staff_remarks'],
             'reviewed_by'     => $user->id,
             'reviewed_at'     => now(),
-            'status'          => $validated['decision'] === 'cleared_accidental' ? 'memorial_cleared' : 'memorial_neglect',
+            'status'          => $reportStatus,
         ]);
 
         \App\Services\AdminNotificationService::clearCache();
@@ -554,6 +567,43 @@ class AdopterProfileController extends Controller
 
         // Ensure pet status is officially updated
         $report->pet?->update(['status' => 'deceased']);
+
+        if ($validated['decision'] === 'investigation_pending') {
+            $profile = null;
+            if ($report->user?->adoptersProfile) {
+                $profile = $report->user->adoptersProfile;
+            } elseif ($adopterEmail) {
+                $profile = AdoptersProfile::where('email', $adopterEmail)->first();
+            }
+
+            if ($profile) {
+                $existingNotes = $profile->admin_notes ? $profile->admin_notes . ' | ' : '';
+                $remarksText = !empty($validated['staff_remarks']) ? ('. Notes: ' . $validated['staff_remarks']) : '';
+                $profile->update([
+                    'admin_notes' => $existingNotes . 'On-Site Verification Requested (' . now()->format('M d, Y') . '): Shelter requested an in-person meeting/home visit regarding companion ' . $petName . $remarksText,
+                ]);
+            }
+
+            if ($adopterEmail) {
+                $visitMessage = "CAWS Shelter has requested an on-site consultation/home visit regarding the passing of {$petName}. Our team will contact you to coordinate the schedule.";
+                if (!empty($validated['staff_remarks'])) {
+                    $visitMessage .= " Shelter remarks: {$validated['staff_remarks']}";
+                }
+
+                \App\Services\FirebaseNotificationService::sendToUser(
+                    $adopterEmail,
+                    'On-Site Verification Requested - CAWS Shelter',
+                    $visitMessage,
+                    [
+                        'type'           => 'pet_deceased_investigation',
+                        'pet_id'         => (string) $report->pet_id,
+                        'application_id' => (string) $report->adoption_application_id,
+                    ]
+                );
+            }
+
+            return back()->with('success', "Deceased report for {$petName} placed on hold for on-site inquiry. Adopter has been notified.");
+        }
 
         if ($validated['decision'] === 'neglect_confirmed') {
             $profile = null;
