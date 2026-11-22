@@ -43,16 +43,6 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                @if(in_array($application->status, ['approved', 'adopted']))
-                    @if($application->is_finalized)
-                        <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs sm:text-sm font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white transition shadow-2xs">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            <span>Print Official Contract</span>
-                        </a>
-                    @endif
-                @endif
                 <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="inline-flex items-center px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
             </div>
         </div>
@@ -1225,6 +1215,290 @@
                         </div>
                     </div>
 
+                    {{-- POST-ADOPTION SPAY / NEUTER (KAPON) TRACKING CARD --}}
+                    <div x-data="{ showScheduleModal: false, showCompleteModal: false }" class="mt-4 p-4 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200 dark:border-white/[0.08] shadow-2xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/60 text-[#199CA4] flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Spay / Neuter (Kapon)</h3>
+                                    <p class="text-[10px] text-slate-400 font-medium">Post-adoption mandatory neutering</p>
+                                </div>
+                            </div>
+
+                            {{-- Status Badge --}}
+                            @if($application->kapon_status === 'completed' || $application->pet?->is_neutered)
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Neutered / Completed
+                                </span>
+                            @elseif($application->kapon_status === 'scheduled')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-[#13787F] dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4] animate-pulse"></span>
+                                    Scheduled
+                                </span>
+                            @elseif($application->kapon_status === 'not_required')
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    Already Neutered
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    Awaiting Schedule
+                                </span>
+                            @endif
+                        </div>
+
+                        {{-- Details Box --}}
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-[#171923] border border-slate-100 dark:border-white/[0.04] space-y-2 text-xs">
+                            @if($application->kapon_status === 'scheduled')
+                                <div class="flex items-start justify-between gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 font-medium">Scheduled Date:</span>
+                                    <span class="font-extrabold text-slate-900 dark:text-white text-right">
+                                        {{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('M d, Y - h:i A') : 'Pending date' }}
+                                    </span>
+                                </div>
+                                <div class="flex items-start justify-between gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 font-medium">Venue:</span>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200 text-right">
+                                        {{ $application->kapon_venue ?: 'CAWS Shelter Clinic' }}
+                                    </span>
+                                </div>
+                                @if(!empty($application->kapon_instructions))
+                                    <div class="pt-1.5 border-t border-slate-200 dark:border-white/[0.06]">
+                                        <span class="text-[11px] font-semibold text-slate-400 block mb-0.5">Pre-surgery Instructions:</span>
+                                        <p class="text-[11px] text-slate-700 dark:text-slate-300 bg-white dark:bg-[#12141C] p-2 rounded-lg border border-slate-200 dark:border-white/[0.05]">
+                                            {{ $application->kapon_instructions }}
+                                        </p>
+                                    </div>
+                                @endif
+                                <p class="text-[10px] text-[#199CA4] dark:text-[#41C1CB] font-semibold">
+                                    Adopter received a push notification with these guidelines.
+                                </p>
+                            @elseif($application->kapon_status === 'completed' || $application->pet?->is_neutered)
+                                <div class="flex items-start justify-between gap-2">
+                                    <span class="text-slate-500 dark:text-slate-400 font-medium">Completed On:</span>
+                                    <span class="font-extrabold text-emerald-700 dark:text-emerald-400">
+                                        {{ $application->kapon_completed_at ? $application->kapon_completed_at->format('M d, Y h:i A') : 'Completed' }}
+                                    </span>
+                                </div>
+                                @if(!empty($application->kapon_attending_vet))
+                                    <div class="flex items-start justify-between gap-2">
+                                        <span class="text-slate-500 dark:text-slate-400 font-medium">Attending Vet:</span>
+                                        <span class="font-bold text-slate-800 dark:text-slate-200">
+                                            {{ $application->kapon_attending_vet }}
+                                        </span>
+                                    </div>
+                                @endif
+                                <div class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">
+                                    Procedure logged in official Medical Passport and pet status updated to Neutered.
+                                </div>
+                            @elseif($application->kapon_status === 'not_required')
+                                <p class="text-[11px] text-slate-600 dark:text-slate-400">
+                                    This pet was already spayed or neutered prior to or upon adoption handover. No further schedule required.
+                                </p>
+                            @else
+                                <p class="text-[11px] text-amber-800 dark:text-amber-300">
+                                    Companion is registered in the neuter queue to prevent cross-breeding. When the surgery schedule is set, announce the date below to notify the adopter.
+                                </p>
+                            @endif
+                        </div>
+
+                        {{-- Action Buttons --}}
+                        <div class="space-y-2 pt-1">
+                            @if($application->kapon_status === 'scheduled')
+                                <div class="flex items-center gap-2">
+                                    <button type="button" 
+                                            @click="showCompleteModal = true" 
+                                            class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Mark Completed</span>
+                                    </button>
+                                    <button type="button" 
+                                            @click="showScheduleModal = true" 
+                                            class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer">
+                                        <span>Reschedule</span>
+                                    </button>
+                                </div>
+                            @elseif($application->kapon_status === 'completed' || $application->pet?->is_neutered)
+                                <div class="flex items-center justify-between text-[11px]">
+                                    <button type="button" 
+                                            @click="showScheduleModal = true" 
+                                            class="text-[#199CA4] hover:underline font-semibold cursor-pointer">
+                                        Update Details
+                                    </button>
+                                    <form action="{{ route('adoption-applications.update-kapon', $application) }}" method="POST" class="inline" onsubmit="return confirm('Reset kapon status to awaiting announcement?');">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="kapon_action" value="reset">
+                                        <button type="submit" class="text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:underline cursor-pointer">
+                                            Reset Status
+                                        </button>
+                                    </form>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <button type="button" 
+                                            @click="showScheduleModal = true" 
+                                            class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#199CA4] hover:bg-[#147a80] text-white text-xs font-bold transition shadow-2xs cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <span>Announce Kapon Date</span>
+                                    </button>
+                                    <form action="{{ route('adoption-applications.update-kapon', $application) }}" method="POST" class="inline" onsubmit="return confirm('Mark this pet as already neutered / not required?');">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="kapon_action" value="not_required">
+                                        <button type="submit" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-600 dark:text-slate-300 text-xs font-bold transition cursor-pointer" title="Already neutered">
+                                            Not Required
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- MODAL 1: SCHEDULE / ANNOUNCE KAPON --}}
+                        <div x-show="showScheduleModal" 
+                             x-cloak 
+                             class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                             @keydown.escape.window="showScheduleModal = false">
+                            <div class="relative w-full max-w-md bg-white dark:bg-[#12141C] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.08] p-5 space-y-4"
+                                 @click.outside="showScheduleModal = false">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/60 text-[#199CA4] flex items-center justify-center">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-extrabold text-slate-900 dark:text-white">Schedule Kapon Session</h4>
+                                            <p class="text-[11px] text-slate-400">Pet: {{ $application->pet->name ?? ('Pet #' . $application->pet_id) }}</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="showScheduleModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+
+                                <form action="{{ route('adoption-applications.update-kapon', $application) }}" method="POST" class="space-y-3.5">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="kapon_action" value="schedule">
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                                            Kapon Date & Time <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="datetime-local" 
+                                               name="kapon_scheduled_date" 
+                                               required
+                                               value="{{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('Y-m-d\TH:i') : '' }}"
+                                               class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                                            Venue / Clinic Location
+                                        </label>
+                                        <input type="text" 
+                                               name="kapon_venue" 
+                                               value="{{ old('kapon_venue', $application->kapon_venue ?: 'CAWS Shelter Clinic') }}"
+                                               placeholder="e.g. CAWS Shelter Clinic / CDO City Vet Office"
+                                               class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                                            Pre-Surgery Fasting & Preparation Instructions
+                                        </label>
+                                        <textarea name="kapon_instructions" 
+                                                  rows="3" 
+                                                  class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">{{ old('kapon_instructions', $application->kapon_instructions ?: 'Strictly fast pet: no food or water 8-10 hours prior to surgery. Bring your pet in a secure carrier or leash.') }}</textarea>
+                                        <p class="text-[10px] text-slate-400 mt-1">This will be prominently displayed on the adopter's mobile dashboard.</p>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 text-[11px] text-teal-800 dark:text-teal-300 font-medium">
+                                        An automated push notification will be sent to <strong>{{ $application->applicant_name }}</strong> upon saving this schedule.
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-2 pt-2">
+                                        <button type="button" @click="showScheduleModal = false" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-300 text-xs font-bold transition">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#147a80] text-white text-xs font-bold transition shadow-xs">
+                                            Announce & Notify Adopter
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        {{-- MODAL 2: MARK AS COMPLETED --}}
+                        <div x-show="showCompleteModal" 
+                             x-cloak 
+                             class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                             @keydown.escape.window="showCompleteModal = false">
+                            <div class="relative w-full max-w-md bg-white dark:bg-[#12141C] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/[0.08] p-5 space-y-4"
+                                 @click.outside="showCompleteModal = false">
+                                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-600 flex items-center justify-center">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-extrabold text-slate-900 dark:text-white">Confirm Kapon Completion</h4>
+                                            <p class="text-[11px] text-slate-400">Pet: {{ $application->pet->name ?? ('Pet #' . $application->pet_id) }}</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="showCompleteModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+
+                                <form action="{{ route('adoption-applications.update-kapon', $application) }}" method="POST" class="space-y-3.5">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="kapon_action" value="complete">
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                                            Procedure Completion Date & Time
+                                        </label>
+                                        <input type="datetime-local" 
+                                               name="kapon_completed_at" 
+                                               value="{{ now()->format('Y-m-d\TH:i') }}"
+                                               class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-emerald-500">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                                            Attending Veterinarian / Clinic
+                                        </label>
+                                        <input type="text" 
+                                               name="kapon_attending_vet" 
+                                               value="{{ old('kapon_attending_vet', $application->kapon_attending_vet ?: 'CAWS Veterinary Clinic') }}"
+                                               placeholder="e.g. Dr. Santos / CAWS Clinic"
+                                               class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-emerald-500">
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300 font-medium">
+                                        Submitting this will mark the pet as <strong>Neutered (Yes)</strong> and append an official surgery log to the Pet Medical Passport.
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-2 pt-2">
+                                        <button type="button" @click="showCompleteModal = false" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-300 text-xs font-bold transition">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs">
+                                            Confirm & Archive to Passport
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
                 @elseif($isAppApproved)
                     {{-- ======================================================= --}}
                     {{-- STATE 2: SCHEDULED / IN-PERSON HANDOVER STAGE           --}}
@@ -1346,8 +1620,7 @@
                     {{-- THE TWO MAIN ACTION BUTTONS: ACCEPT (HANDOVER) & REJECT --}}
                     <div class="space-y-2 pt-1">
                         {{-- 1. Accept / Finalize Handover Button --}}
-                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-emerald-600/20 transition cursor-pointer">
-                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-emerald-600/20 transition cursor-pointer">
                             <span class="pointer-events-none">Verify & Finalize Handover</span>
                         </button>
 
@@ -1355,9 +1628,8 @@
                         <div class="pt-1">
                             <button type="button" 
                                     @click="showRejectBox = !showRejectBox" 
-                                    class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                <span x-text="showRejectBox ? 'Cancel Rejection' : 'Reject Application (Failed Screening)'"></span>
+                                    class="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-xs font-bold transition cursor-pointer">
+                                <span x-text="showRejectBox ? 'Cancel Rejection' : 'Reject Application'"></span>
                             </button>
 
                             <div x-show="showRejectBox" x-transition class="mt-2.5 p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 space-y-2.5">

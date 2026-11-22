@@ -46,6 +46,12 @@ class AdoptionApplication extends Model
         'documents_verified_by',
         'id_document_verified',
         'barangay_cert_verified',
+        'kapon_status',
+        'kapon_scheduled_date',
+        'kapon_venue',
+        'kapon_instructions',
+        'kapon_completed_at',
+        'kapon_attending_vet',
     ];
 
     protected $casts = [
@@ -54,6 +60,8 @@ class AdoptionApplication extends Model
         'staff_signed_at'        => 'datetime',
         'evaluated_at'           => 'datetime',
         'documents_verified_at'  => 'datetime',
+        'kapon_scheduled_date'   => 'datetime',
+        'kapon_completed_at'     => 'datetime',
         'id_document_verified'   => 'boolean',
         'barangay_cert_verified' => 'boolean',
         'compatibility_score'    => 'float',

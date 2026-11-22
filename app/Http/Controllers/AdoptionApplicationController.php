@@ -56,6 +56,7 @@ class AdoptionApplicationController extends Controller
         $countPending = (clone $countQuery)->whereIn('status', ['pending', 'under_review'])->count();
         $countScheduled = (clone $countQuery)->where('status', 'approved')->whereNull('documents_verified_at')->count();
         $countFinalized = (clone $countQuery)->whereNotNull('documents_verified_at')->count();
+        $countKapon = (clone $countQuery)->whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled'])->count();
         $countRejected = (clone $countQuery)->where('status', 'rejected')->count();
 
         // Apply status filter based on active tab
@@ -66,6 +67,9 @@ class AdoptionApplicationController extends Controller
                 break;
             case 'finalized':
                 $query->whereNotNull('documents_verified_at');
+                break;
+            case 'kapon':
+                $query->whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled']);
                 break;
             case 'rejected':
                 $query->where('status', 'rejected');
@@ -121,6 +125,7 @@ class AdoptionApplicationController extends Controller
             'today_pending' => $countTodayPending,
             'scheduled'     => $countScheduled,
             'finalized'     => $countFinalized,
+            'kapon'         => $countKapon,
             'rejected'      => $countRejected,
         ];
 
@@ -144,6 +149,7 @@ class AdoptionApplicationController extends Controller
             ->count();
         $countScheduled = AdoptionApplication::where('status', 'approved')->whereNull('documents_verified_at')->count();
         $countFinalized = AdoptionApplication::whereNotNull('documents_verified_at')->count();
+        $countKapon = AdoptionApplication::whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled'])->count();
         $countRejected = AdoptionApplication::where('status', 'rejected')->count();
 
         $latestPendingId = AdoptionApplication::whereIn('status', ['pending', 'under_review'])->max('id') ?? 0;
@@ -191,6 +197,7 @@ class AdoptionApplicationController extends Controller
                 'today_pending' => $countTodayPending,
                 'scheduled'     => $countScheduled,
                 'finalized'     => $countFinalized,
+                'kapon'         => $countKapon,
                 'rejected'      => $countRejected,
             ],
         ]);
@@ -447,6 +454,9 @@ class AdoptionApplicationController extends Controller
             }
         }
 
+        $isNeutered = (bool) ($application->pet?->is_neutered ?? false);
+        $defaultKaponStatus = $isNeutered ? 'not_required' : 'awaiting_schedule';
+
         $application->update([
             'staff_signature_path'   => $signaturePath,
             'staff_id'               => $user->id,
@@ -458,6 +468,7 @@ class AdoptionApplicationController extends Controller
             'barangay_cert_verified' => true,
             'status'                 => 'approved',
             'approved_at'            => $application->approved_at ?: now(),
+            'kapon_status'           => $application->kapon_status && $application->kapon_status !== 'not_required' ? $application->kapon_status : $defaultKaponStatus,
         ]);
 
         $application->pet?->update(['status' => 'adopted']);
@@ -649,5 +660,133 @@ class AdoptionApplicationController extends Controller
         $application->delete();
 
         return back()->with('success', "Adoption request from {$applicantName} for {$petName} has been deleted.");
+    }
+
+    /**
+     * Update post-adoption Spay / Neuter (Kapon) schedule or completion status.
+     */
+    public function updateKaponSchedule(Request $request, AdoptionApplication $application): RedirectResponse
+    {
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'staff'])) {
+            abort(403, 'Unauthorized. Shelter staff or admin privileges required.');
+        }
+
+        $validated = $request->validate([
+            'kapon_action'         => 'required|in:schedule,complete,not_required,reset',
+            'kapon_scheduled_date' => 'nullable|date',
+            'kapon_venue'          => 'nullable|string|max:255',
+            'kapon_instructions'   => 'nullable|string|max:1000',
+            'kapon_completed_at'   => 'nullable|date',
+            'kapon_attending_vet'  => 'nullable|string|max:255',
+        ]);
+
+        $pet = $application->pet;
+        $petName = $pet?->name ?? 'companion';
+        $adopterEmail = $application->applicant_email;
+
+        if ($validated['kapon_action'] === 'schedule') {
+            if (empty($validated['kapon_scheduled_date'])) {
+                return back()->with('error', 'Please specify a scheduled date and time for the Kapon session.');
+            }
+
+            $application->update([
+                'kapon_status'         => 'scheduled',
+                'kapon_scheduled_date' => $validated['kapon_scheduled_date'],
+                'kapon_venue'          => $validated['kapon_venue'] ?: 'CAWS Shelter Clinic',
+                'kapon_instructions'   => $validated['kapon_instructions'] ?: 'Strictly fast pet: no food or water 8-10 hours prior to surgery.',
+            ]);
+
+            if ($adopterEmail) {
+                $schedDateFormatted = \Carbon\Carbon::parse($validated['kapon_scheduled_date'])->format('M d, Y h:i A');
+                $venue = $application->kapon_venue;
+                \App\Services\FirebaseNotificationService::sendToUser(
+                    $adopterEmail,
+                    'Kapon Schedule Announced - CAWS Shelter',
+                    "Your adopted companion {$petName} is scheduled for Kapon on {$schedDateFormatted} at {$venue}. Please review pre-surgery instructions in the app.",
+                    [
+                        'type'           => 'kapon_scheduled',
+                        'pet_id'         => (string) $application->pet_id,
+                        'application_id' => (string) $application->id,
+                        'scheduled_date' => (string) $validated['kapon_scheduled_date'],
+                        'venue'          => (string) $venue,
+                    ]
+                );
+            }
+
+            return back()->with('success', "Kapon schedule announced for {$petName}. Adopter has been notified via push notification.");
+        }
+
+        if ($validated['kapon_action'] === 'complete') {
+            $completedDate = $validated['kapon_completed_at'] ? \Carbon\Carbon::parse($validated['kapon_completed_at']) : now();
+            $vetName = $validated['kapon_attending_vet'] ?: 'CAWS Attending Veterinarian';
+
+            $application->update([
+                'kapon_status'        => 'completed',
+                'kapon_completed_at'  => $completedDate,
+                'kapon_attending_vet' => $vetName,
+            ]);
+
+            if ($pet) {
+                $pet->update(['is_neutered' => true]);
+
+                // Create official medical log record for pet medical passport
+                \App\Models\MedicalLog::create([
+                    'pet_id'              => $pet->id,
+                    'date'                => $completedDate->toDateString(),
+                    'category'            => 'surgery',
+                    'vaccine_name'        => 'Spay / Neuter (Kapon)',
+                    'administered_by'     => $vetName,
+                    'clinic_name'         => $application->kapon_venue ?: 'CAWS Shelter Clinic',
+                    'is_external'         => false,
+                    'verification_status' => 'verified',
+                    'verified_by'         => $user->id,
+                    'verified_at'         => now(),
+                    'created_by'          => $user->id,
+                ]);
+            }
+
+            if ($adopterEmail) {
+                \App\Services\FirebaseNotificationService::sendToUser(
+                    $adopterEmail,
+                    'Kapon Completed - CAWS Shelter',
+                    "The Spay / Neuter (Kapon) procedure for {$petName} has been recorded and verified in their official medical passport.",
+                    [
+                        'type'           => 'kapon_completed',
+                        'pet_id'         => (string) $application->pet_id,
+                        'application_id' => (string) $application->id,
+                    ]
+                );
+            }
+
+            return back()->with('success', "Kapon marked as completed for {$petName}. Pet record and medical passport updated.");
+        }
+
+        if ($validated['kapon_action'] === 'not_required') {
+            $application->update([
+                'kapon_status' => 'not_required',
+            ]);
+
+            if ($pet) {
+                $pet->update(['is_neutered' => true]);
+            }
+
+            return back()->with('success', "Kapon for {$petName} marked as already completed or not required.");
+        }
+
+        if ($validated['kapon_action'] === 'reset') {
+            $application->update([
+                'kapon_status'         => 'awaiting_schedule',
+                'kapon_scheduled_date' => null,
+                'kapon_venue'          => null,
+                'kapon_instructions'   => null,
+                'kapon_completed_at'   => null,
+                'kapon_attending_vet'  => null,
+            ]);
+
+            return back()->with('success', "Kapon schedule for {$petName} reset to awaiting announcement.");
+        }
+
+        return back();
     }
 }

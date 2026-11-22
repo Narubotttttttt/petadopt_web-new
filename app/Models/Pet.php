@@ -15,6 +15,7 @@ class Pet extends Model
         'breed',
         'color',
         'gender',
+        'is_neutered',
         'size',
         'type',
         'age',
@@ -31,6 +32,7 @@ class Pet extends Model
 
     protected $casts = [
         'rescue_date' => 'date',
+        'is_neutered' => 'boolean',
     ];
 
     protected $appends = [

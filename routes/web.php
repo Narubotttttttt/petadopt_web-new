@@ -110,6 +110,7 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::post('/adoption-applications/{application}/finalize-handover', [\App\Http\Controllers\AdoptionApplicationController::class, 'finalizeHandover'])->name('adoption-applications.finalize-handover');
     Route::post('/adoption-applications/{application}/sign-as-staff', [\App\Http\Controllers\AdoptionApplicationController::class, 'signAsStaff'])->name('adoption-applications.sign-as-staff');
     Route::post('/adoption-applications/{application}/reset-handover', [\App\Http\Controllers\AdoptionApplicationController::class, 'resetHandover'])->name('adoption-applications.reset-handover');
+    Route::patch('/adoption-applications/{application}/kapon', [\App\Http\Controllers\AdoptionApplicationController::class, 'updateKaponSchedule'])->name('adoption-applications.update-kapon');
     Route::get('/adoption-applications/{application}/contract', [\App\Http\Controllers\AdoptionApplicationController::class, 'downloadContract'])->name('adoption-applications.contract');
     Route::delete('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'destroy'])->name('adoption-applications.destroy');
 

@@ -185,9 +185,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/save-fcm-token', function (Request $request) {
         $request->validate(['fcm_token' => 'required|string']);
         $user = $request->user();
+
+        // Disassociate this device token from any other accounts on the same device
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('fcm_token', $request->fcm_token)
+            ->where('id', '!=', $user->id)
+            ->update(['fcm_token' => null]);
+
         \Illuminate\Support\Facades\DB::table('users')
             ->where('id', $user->id)
             ->update(['fcm_token' => $request->fcm_token]);
+
         return response()->json(['success' => true, 'message' => 'FCM token saved successfully.']);
     });
 });
