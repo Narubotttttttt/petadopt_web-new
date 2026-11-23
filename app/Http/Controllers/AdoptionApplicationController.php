@@ -475,12 +475,34 @@ class AdoptionApplicationController extends Controller
 
         $application->pet?->update(['status' => 'adopted']);
 
-        $petName = $application->pet?->name ?? 'your pet';
+        // Check if pet has a custom official name vs empty or default shelter identifier (e.g. "Pet no. 15", "Pet #15")
+        $rawPetName = trim((string)($application->pet?->name ?? ''));
+        $isGenericName = empty($rawPetName) || (bool)preg_match('/^pet\s*(no\.?|#)?\s*\d+$/i', $rawPetName);
+        $hasCustomName = ! $isGenericName;
+
+        if ($hasCustomName) {
+            $notificationTitle = "Adoption Finalized for {$rawPetName}!";
+            $notificationBody  = "Congratulations! Your adoption of {$rawPetName} is finalized and your contract is unlocked. Tap here to confirm their official name and view your contract.";
+        } else {
+            $notificationTitle = "Adoption Finalized! Name Your New Pet";
+            $notificationBody  = "Congratulations! Your adoption has been officially finalized and your contract is unlocked. Tap here to give your new family member their official name!";
+        }
+
         \App\Services\FirebaseNotificationService::sendToUser(
             $application->applicant_email,
-            "Adoption Finalized for {$petName}!",
-            "Congratulations! Your physical documents have been verified and adoption of {$petName} is finalized. Your official Adoption Contract PDF is now unlocked and available in your app.",
-            ['type' => 'adoption_finalized', 'status' => 'adopted', 'pet_id' => $application->pet_id, 'contract_unlocked' => true]
+            $notificationTitle,
+            $notificationBody,
+            [
+                'type'              => 'adoption_finalized',
+                'screen'            => 'my_adopted_pets',
+                'action'            => 'name_pet',
+                'requires_naming'   => $hasCustomName ? '0' : '1',
+                'status'            => 'adopted',
+                'pet_id'            => (string) $application->pet_id,
+                'application_id'    => (string) $application->id,
+                'contract_unlocked' => '1',
+                'click_action'      => 'FLUTTER_NOTIFICATION_CLICK',
+            ]
         );
 
         // Auto-reject any other competing applications for this pet

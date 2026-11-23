@@ -381,7 +381,7 @@ class AdoptionApplicationTest extends TestCase
         $response = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
 
         $response->assertStatus(200);
-        $response->assertSee('Awaiting Adopter Pre-Signature');
+        $response->assertSee('Pre-Signature Pending');
         $response->assertDontSee('Print Official Contract');
 
         // Now attach adopter pre-signature
@@ -1672,6 +1672,170 @@ class AdoptionApplicationTest extends TestCase
         $response3->assertSee('Claude');
         $response3->assertSee('King');
         $response3->assertSee('Plong');
+    }
+
+    public function test_finalized_handover_sets_requires_naming_flag_and_allows_naming_via_api(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'https://oauth2.googleapis.com/*' => \Illuminate\Support\Facades\Http::response(['access_token' => 'mock_token', 'expires_in' => 3600]),
+            'https://fcm.googleapis.com/*'    => \Illuminate\Support\Facades\Http::response(['name' => 'projects/mock/messages/123']),
+        ]);
+
+        $adopter = User::factory()->create([
+            'role'              => 'adopter',
+            'email_verified_at' => now(),
+            'fcm_token'         => 'fake_fcm_token_adopter',
+        ]);
+
+        $pet = Pet::create([
+            'name'   => null,
+            'type'   => 'dog',
+            'breed'  => 'Aspin',
+            'status' => 'pending',
+        ]);
+
+        $staff = User::factory()->create([
+            'role'              => 'staff',
+            'email_verified_at' => now(),
+        ]);
+        \App\Models\StaffProfile::create([
+            'user_id'                => $staff->id,
+            'staff_code'             => 'STF-0101',
+            'full_name'              => $staff->name,
+            'status'                 => 'active',
+            'digital_signature_path' => 'signatures/staff_sig.png',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('public')->put('signatures/staff_sig.png', 'fake_sig');
+
+        $app = AdoptionApplication::create([
+            'pet_id'                 => $pet->id,
+            'applicant_name'         => $adopter->name,
+            'applicant_email'        => $adopter->email,
+            'status'                 => 'approved',
+            'signature_path'         => 'signatures/adopter_sig.png',
+            'signed_at'              => now(),
+        ]);
+
+        // Handover is finalized by staff
+        $response = $this->actingAs($staff)->post(route('adoption-applications.finalize-handover', $app), [
+            'id_document_verified'   => '1',
+            'barangay_cert_verified' => '1',
+            'use_saved_signature'    => '1',
+        ]);
+        $response->assertRedirect();
+        $this->assertTrue($app->fresh()->is_finalized);
+
+        // Verify push notification sent to FCM with name_pet action and my_adopted_pets screen
+        \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+            if (!str_contains($request->url(), 'fcm.googleapis.com')) {
+                return false;
+            }
+            $data = $request['message']['data'] ?? [];
+            return ($data['action'] ?? '') === 'name_pet'
+                && ($data['screen'] ?? '') === 'my_adopted_pets'
+                && ($data['requires_naming'] ?? '') === '1';
+        });
+
+        // Mobile API query for my applications returns requires_naming as true because pet has no name yet
+        $myAppsResponse = $this->actingAs($adopter, 'sanctum')->getJson('/api/my-applications');
+        $myAppsResponse->assertStatus(200);
+        $appData = collect($myAppsResponse->json('data'))->firstWhere('id', $app->id);
+        $this->assertNotNull($appData);
+        $this->assertTrue($appData['requires_naming']);
+        $this->assertTrue($appData['requiresNaming']);
+
+        // Adopter names pet via API (tapped from notification)
+        $namingResponse = $this->actingAs($adopter, 'sanctum')->postJson("/api/pets/{$pet->id}/update-name", [
+            'name' => 'Cooper',
+        ]);
+        $namingResponse->assertStatus(200);
+        $this->assertEquals('Cooper', $pet->fresh()->name);
+
+        // Now requires_naming becomes false
+        $myAppsResponseAfter = $this->actingAs($adopter, 'sanctum')->getJson('/api/my-applications');
+        $appDataAfter = collect($myAppsResponseAfter->json('data'))->firstWhere('id', $app->id);
+        $this->assertFalse($appDataAfter['requires_naming']);
+        $this->assertFalse($appDataAfter['requiresNaming']);
+    }
+
+    public function test_vaccine_reminders_filters_window_and_includes_overdue(): void
+    {
+        $adopter = User::factory()->create(['role' => 'user', 'email_verified_at' => now()]);
+
+        $petAdopted = Pet::create(['name' => 'Snowy', 'type' => 'dog', 'status' => 'adopted']);
+        $petRejected = Pet::create(['name' => 'Brownie', 'type' => 'dog', 'status' => 'available']);
+
+        // Adopter finalized adoption
+        AdoptionApplication::create([
+            'pet_id' => $petAdopted->id,
+            'applicant_name' => $adopter->name,
+            'applicant_email' => $adopter->email,
+            'status' => 'approved',
+            'is_finalized' => true,
+        ]);
+
+        // Rejected application for another pet
+        AdoptionApplication::create([
+            'pet_id' => $petRejected->id,
+            'applicant_name' => $adopter->name,
+            'applicant_email' => $adopter->email,
+            'status' => 'rejected',
+            'is_finalized' => false,
+        ]);
+
+        // 1. Due soon (e.g. 10 days from now) -> should be returned
+        \App\Models\MedicalLog::create([
+            'pet_id' => $petAdopted->id,
+            'category' => 'vaccination',
+            'date' => now()->subMonths(11)->toDateString(),
+            'next_due_date' => now()->addDays(10)->toDateString(),
+            'is_external' => false,
+        ]);
+
+        // 2. Overdue (e.g. 5 days ago) -> should be returned as overdue
+        \App\Models\MedicalLog::create([
+            'pet_id' => $petAdopted->id,
+            'category' => 'deworming',
+            'date' => now()->subMonths(3)->subDays(5)->toDateString(),
+            'next_due_date' => now()->subDays(5)->toDateString(),
+            'is_external' => false,
+        ]);
+
+        // 3. Due far in future (e.g. 160 days from now) -> MUST NOT be returned in alerts
+        \App\Models\MedicalLog::create([
+            'pet_id' => $petAdopted->id,
+            'category' => 'vaccination',
+            'date' => now()->subDays(10)->toDateString(),
+            'next_due_date' => now()->addDays(160)->toDateString(),
+            'is_external' => false,
+        ]);
+
+        // 4. Log for pet of rejected application -> MUST NOT be returned
+        \App\Models\MedicalLog::create([
+            'pet_id' => $petRejected->id,
+            'category' => 'vaccination',
+            'date' => now()->subMonths(11)->toDateString(),
+            'next_due_date' => now()->addDays(5)->toDateString(),
+            'is_external' => false,
+        ]);
+
+        $response = $this->actingAs($adopter, 'sanctum')->getJson('/api/vaccine-reminders');
+        $response->assertStatus(200);
+        $data = $response->json('data');
+
+        $this->assertCount(2, $data);
+
+        // First item should be the overdue deworming
+        $overdueItem = collect($data)->firstWhere('category', 'Deworming');
+        $this->assertNotNull($overdueItem);
+        $this->assertTrue($overdueItem['is_overdue']);
+        $this->assertEquals(-5, $overdueItem['days_until_due']);
+
+        // Second item should be due soon rabies
+        $dueSoonItem = collect($data)->firstWhere('category', 'Vaccination');
+        $this->assertNotNull($dueSoonItem);
+        $this->assertFalse($dueSoonItem['is_overdue']);
+        $this->assertEquals(10, $dueSoonItem['days_until_due']);
     }
 }
 

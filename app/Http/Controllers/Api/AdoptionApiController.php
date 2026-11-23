@@ -551,6 +551,10 @@ class AdoptionApiController extends Controller
                 $existingPetName = ($pet && !empty($pet->name) && strtolower($pet->name) !== 'adopted pet') ? $pet->name : null;
                 $adoptedPetName = $proposedName ?: ($existingPetName ?: $shelterPetCode);
 
+                $rawPetName = trim((string)($pet?->name ?? ''));
+                $isGenericPetName = empty($rawPetName) || (bool)preg_match('/^pet\s*(no\.?|#)?\s*\d+$/i', $rawPetName);
+                $requiresNaming = (bool)($app->is_finalized && $isGenericPetName);
+
                 $sigUrl = $app->signature_path ? (str_starts_with($app->signature_path, 'http') ? $app->signature_path : $rootUrl . '/storage/' . ltrim($app->signature_path, '/')) : null;
                 $staffSigUrl = $app->staff_signature_url;
 
@@ -603,6 +607,8 @@ class AdoptionApiController extends Controller
                     'is_pre_signed'    => !empty($app->signature_path),
                     'is_finalized'     => (bool)$app->is_finalized,
                     'isFinalized'      => (bool)$app->is_finalized,
+                    'requires_naming'  => $requiresNaming,
+                    'requiresNaming'   => $requiresNaming,
                     'contract_unlocked'=> (bool)$app->is_finalized,
                     'contractUnlocked' => (bool)$app->is_finalized,
                     'documents_verified' => !empty($app->documents_verified_at),
@@ -777,6 +783,10 @@ class AdoptionApiController extends Controller
         $user = $request->user();
 
         $petIds = AdoptionApplication::where('applicant_email', $user->email)
+            ->where(function ($q) {
+                $q->where('is_finalized', true)
+                  ->orWhere('status', 'approved');
+            })
             ->pluck('pet_id')
             ->unique()
             ->values();
@@ -786,6 +796,8 @@ class AdoptionApiController extends Controller
         }
 
         $today = now()->startOfDay();
+        $windowStart = $today->copy()->subDays(60);
+        $windowEnd = $today->copy()->addDays(30);
 
         $reminders = \App\Models\MedicalLog::with('pet')
             ->whereIn('pet_id', $petIds)
@@ -794,21 +806,24 @@ class AdoptionApiController extends Controller
                   ->orWhere('verification_status', 'verified');
             })
             ->whereNotNull('next_due_date')
-            ->whereDate('next_due_date', '>=', $today)
-            ->orderBy('next_due_date')
+            ->whereDate('next_due_date', '>=', $windowStart)
+            ->whereDate('next_due_date', '<=', $windowEnd)
+            ->orderBy('next_due_date', 'asc')
             ->get()
             ->map(function ($log) use ($today) {
                 $daysUntil = (int) $today->diffInDays($log->next_due_date, false);
+                $isOverdue = $log->next_due_date->lt($today);
                 $pet = $log->pet;
 
                 return [
-                    'log_id'       => $log->id,
-                    'pet_id'       => $log->pet_id,
-                    'pet_name'     => ($pet && !empty($pet->name)) ? $pet->name : ('Pet no. ' . $log->pet_id),
-                    'category'     => ucfirst(str_replace('_', ' ', $log->category ?? 'checkup')),
-                    'next_due_date' => $log->next_due_date->format('Y-m-d'),
-                    'next_due_label' => $log->next_due_date->format('M d, Y'),
-                    'days_until_due' => $daysUntil,
+                    'log_id'          => $log->id,
+                    'pet_id'          => $log->pet_id,
+                    'pet_name'        => ($pet && !empty($pet->name)) ? $pet->name : ('Pet no. ' . $log->pet_id),
+                    'category'        => ucfirst(str_replace('_', ' ', $log->category ?? 'checkup')),
+                    'next_due_date'   => $log->next_due_date->format('Y-m-d'),
+                    'next_due_label'  => $log->next_due_date->format('M d, Y'),
+                    'days_until_due'  => $daysUntil,
+                    'is_overdue'      => $isOverdue,
                 ];
             });
 
