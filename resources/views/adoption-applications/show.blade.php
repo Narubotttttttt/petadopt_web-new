@@ -257,27 +257,49 @@
                 </div>
 
                 {{-- PANEL 1: Questionnaire & Contact Details --}}
-                <div x-show="activeTab === 'questionnaire'" x-transition class="space-y-4">
+                <div x-show="activeTab === 'questionnaire'" x-transition class="space-y-3">
                     
-                    @if(isset($siblingApplications) && $siblingApplications->isNotEmpty())
-                        <div class="bg-slate-50/80 dark:bg-[#161824] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-xl bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0 font-bold text-xs">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    @php
+                        $companionList = isset($companionApplications) 
+                            ? $companionApplications 
+                            : (isset($siblingApplications) ? $siblingApplications->concat([$application])->unique('id')->sortBy('id') : collect([$application]));
+                    @endphp
+                    @if($companionList->count() > 1)
+                        <div class="bg-slate-50/80 dark:bg-[#161824] rounded-xl border border-slate-200/80 dark:border-white/[0.08] px-3 py-1.5 flex items-center justify-between gap-2.5 shadow-2xs">
+                            <div class="flex items-center gap-2 shrink-0">
+                                <div class="w-6 h-6 rounded-lg bg-[#199CA4]/10 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center shrink-0 font-bold text-xs">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                                 </div>
-                                <div class="text-xs">
-                                    <span class="font-extrabold text-slate-800 dark:text-white">Batch Application</span>
-                                    <span class="text-slate-400 mx-1.5">&bull;</span>
-                                    <span class="text-slate-500 dark:text-slate-400">{{ $siblingApplications->count() + 1 }} companion pets requested together</span>
+                                <div class="text-xs whitespace-nowrap">
+                                    <span class="font-extrabold text-slate-800 dark:text-white">Batch</span>
+                                    <span class="text-slate-400 mx-1">&bull;</span>
+                                    <span class="text-slate-500 dark:text-slate-400">{{ $companionList->count() }} Pets</span>
                                 </div>
                             </div>
-                            <div class="flex flex-wrap items-center gap-2">
-                                @foreach($siblingApplications as $sib)
-                                    <a href="{{ route('adoption-applications.show', $sib->id) }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-[#12141C] border border-slate-200 dark:border-white/[0.08] hover:border-[#199CA4] dark:hover:border-[#199CA4] text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors shadow-2xs">
-                                        <span>{{ $sib->pet?->name ?? ('Pet #' . $sib->pet_id) }}</span>
-                                        <span class="text-[10px] text-slate-400 font-medium">({{ ucfirst($sib->pet?->type ?? 'Pet') }})</span>
-                                        <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $sib->status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20' }}">{{ ucfirst($sib->status) }}</span>
-                                    </a>
+                            <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+                                @foreach($companionList as $compApp)
+                                    @php
+                                        $isCurrent = $compApp->id === $application->id;
+                                        $isAdopted = (bool) ($compApp->is_finalized || !empty($compApp->documents_verified_at) || $compApp->status === 'adopted' || ($compApp->pet && $compApp->pet->status === 'adopted'));
+                                        $statusLabel = $isAdopted ? 'Adopted' : ($compApp->status === 'approved' ? 'Approved' : ucfirst(str_replace('_', ' ', $compApp->status)));
+                                        $badgeColor = ($isAdopted || $compApp->status === 'approved') 
+                                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                                            : 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20';
+                                    @endphp
+                                    @if($isCurrent)
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-[#199CA4]/10 dark:bg-[#199CA4]/20 border border-[#199CA4] text-xs font-bold text-slate-800 dark:text-slate-100 shadow-2xs whitespace-nowrap" title="Currently viewing this pet's application">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4]"></span>
+                                            <span class="font-extrabold text-[#199CA4] dark:text-[#41C1CB]">{{ $compApp->pet?->name ?? ('Pet #' . $compApp->pet_id) }}</span>
+                                            <span class="text-[10px] text-slate-400 font-medium">({{ ucfirst($compApp->pet?->type ?? 'Pet') }})</span>
+                                            <span class="text-[9px] px-1.5 py-0.2 rounded-full {{ $badgeColor }} font-bold">{{ $statusLabel }}</span>
+                                        </span>
+                                    @else
+                                        <a href="{{ route('adoption-applications.show', $compApp->id) }}" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white dark:bg-[#12141C] border border-slate-200 dark:border-white/[0.08] hover:border-[#199CA4] dark:hover:border-[#199CA4] text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors shadow-2xs whitespace-nowrap" title="Switch to {{ $compApp->pet?->name ?? 'companion pet' }}">
+                                            <span>{{ $compApp->pet?->name ?? ('Pet #' . $compApp->pet_id) }}</span>
+                                            <span class="text-[10px] text-slate-400 font-medium">({{ ucfirst($compApp->pet?->type ?? 'Pet') }})</span>
+                                            <span class="text-[9px] px-1.5 py-0.2 rounded-full {{ $badgeColor }} font-bold">{{ $statusLabel }}</span>
+                                        </a>
+                                    @endif
                                 @endforeach
                             </div>
                         </div>

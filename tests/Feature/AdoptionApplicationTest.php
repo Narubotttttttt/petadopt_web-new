@@ -1618,5 +1618,60 @@ class AdoptionApplicationTest extends TestCase
         $responseIndex->assertSee('Applicant B (95.4% match, 1d ago)');
         $responseIndex->assertSee('95.4% Match');
     }
+
+    public function test_batch_companion_pets_all_appear_on_application_review_page(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet1 = Pet::create(['name' => 'Claude', 'type' => 'cat', 'status' => 'adopted']);
+        $pet2 = Pet::create(['name' => 'King', 'type' => 'dog', 'status' => 'adopted']);
+        $pet3 = Pet::create(['name' => 'Plong', 'type' => 'cat', 'status' => 'pending']);
+
+        $email = 'companion.adopter@example.com';
+
+        $app1 = AdoptionApplication::create([
+            'pet_id'                 => $pet1->id,
+            'applicant_name'         => 'Test Companion Adopter',
+            'applicant_email'        => $email,
+            'status'                 => 'approved',
+            'documents_verified_at'  => now(),
+            'staff_signature_path'   => 'signatures/test_staff_1.png',
+        ]);
+
+        $app2 = AdoptionApplication::create([
+            'pet_id'                 => $pet2->id,
+            'applicant_name'         => 'Test Companion Adopter',
+            'applicant_email'        => $email,
+            'status'                 => 'approved',
+            'documents_verified_at'  => now(),
+            'staff_signature_path'   => 'signatures/test_staff_2.png',
+        ]);
+
+        $app3 = AdoptionApplication::create([
+            'pet_id'                 => $pet3->id,
+            'applicant_name'         => 'Test Companion Adopter',
+            'applicant_email'        => $email,
+            'status'                 => 'approved',
+        ]);
+
+        // When viewing Claude's page: Claude, King, and Plong should all appear
+        $response1 = $this->actingAs($staff)->get(route('adoption-applications.show', $app1));
+        $response1->assertStatus(200);
+        $response1->assertSee('3 Pets');
+        $response1->assertSee('Claude');
+        $response1->assertSee('King');
+        $response1->assertSee('Plong');
+
+        // When viewing Plong's page: all 3 should also appear
+        $response3 = $this->actingAs($staff)->get(route('adoption-applications.show', $app3));
+        $response3->assertStatus(200);
+        $response3->assertSee('3 Pets');
+        $response3->assertSee('Claude');
+        $response3->assertSee('King');
+        $response3->assertSee('Plong');
+    }
 }
 

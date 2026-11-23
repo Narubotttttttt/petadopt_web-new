@@ -217,13 +217,15 @@ class AdoptionApplicationController extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        $siblingApplications = AdoptionApplication::where('applicant_email', $application->applicant_email)
-            ->where('id', '!=', $application->id)
-            ->whereIn('status', ['pending', 'under_review', 'approved'])
+        $companionApplications = AdoptionApplication::where('applicant_email', $application->applicant_email)
+            ->whereIn('status', ['pending', 'under_review', 'approved', 'adopted'])
             ->with('pet')
+            ->orderBy('id', 'asc')
             ->get();
 
-        return view('adoption-applications.show', compact('application', 'competingApplications', 'siblingApplications'));
+        $siblingApplications = $companionApplications->where('id', '!=', $application->id);
+
+        return view('adoption-applications.show', compact('application', 'competingApplications', 'siblingApplications', 'companionApplications'));
     }
 
     public function markViewed(?Request $request = null): JsonResponse
