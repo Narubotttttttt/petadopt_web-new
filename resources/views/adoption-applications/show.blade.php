@@ -21,47 +21,39 @@
         };
     </script>
 
-    <div class="w-full py-6 px-4 sm:px-6 lg:px-8 animate-fade-in"
+    <div class="w-full pt-2 sm:pt-3 pb-6 px-4 sm:px-6 lg:px-8 animate-fade-in"
          x-data="{ 
              activeTab: '{{ in_array($application->status, ['approved', 'adopted']) && request()->query('tab') === 'handover' ? 'handover' : 'questionnaire' }}' 
          }">
         
         {{-- Top Navigation & Header Bar --}}
-        <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                        <span>Adoption Applications</span>
-                    </a>
-                    <span class="text-xs text-slate-300 dark:text-slate-600">/</span>
-                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Application no. {{ $application->id }}</span>
-                </div>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight mt-1">
+                <h1 class="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white tracking-tight">
                     Application Review: {{ $application->applicant_name }}
                 </h1>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="inline-flex items-center px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
+                <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" class="inline-flex items-center px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">Back to List</a>
             </div>
         </div>
 
         {{-- Compact Unified Pet & Applicant Summary Header Card --}}
-        <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-4 sm:p-5 mb-5">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-3 sm:p-3.5 mb-3.5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
                 {{-- Left: Pet Information --}}
-                <div class="flex items-center gap-3.5 shrink-0">
+                <div class="flex items-center gap-3 shrink-0">
                     @if($application->pet && $application->pet->photo_path)
-                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
                             <img src="{{ str_starts_with($application->pet->photo_path, 'http') ? $application->pet->photo_path : asset('storage/' . ltrim($application->pet->photo_path, '/')) }}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                             <div class="hidden w-full h-full bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-300 items-center justify-center font-bold text-sm">
-                                <svg class="w-7 h-7 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                <svg class="w-6 h-6 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                             </div>
                         </div>
                     @else
-                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
-                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
                         </div>
                     @endif
                     <div>
@@ -184,13 +176,13 @@
         </div>
 
         {{-- Main Grid: Left Tabs Column & Right Sticky Decision Sidebar --}}
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             
             {{-- Left 2 Columns: Segmented Navigation & Active Content Panels --}}
-            <div class="lg:col-span-2 space-y-4">
+            <div class="lg:col-span-2 space-y-3">
 
                 {{-- Segmented Tab Navigation Bar --}}
-                <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/90 dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] text-xs font-bold overflow-x-auto scrollbar-none">
+                <div class="flex items-center gap-1.5 p-1 bg-slate-100/90 dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] text-xs font-bold overflow-x-auto scrollbar-none">
                     
                     {{-- Tab 1: Questionnaire --}}
                     <button type="button" 
@@ -198,7 +190,7 @@
                             :class="activeTab === 'questionnaire' 
                                 ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
                                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
-                            class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <span>Questionnaire</span>
                     </button>
@@ -209,7 +201,7 @@
                             :class="activeTab === 'documents' 
                                 ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
                                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
-                            class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
                         <span>Documents</span>
                         @if($application->valid_id_path || $application->barangay_certificate_path)
@@ -223,7 +215,7 @@
                             :class="activeTab === 'medical' 
                                 ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
                                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
-                            class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
                         <span>Pet Medical</span>
                     </button>
@@ -234,7 +226,7 @@
                             :class="activeTab === 'queue' 
                                 ? 'bg-white dark:bg-[#161824] text-[#199CA4] dark:text-[#41C1CB] shadow-xs border border-slate-200/80 dark:border-white/[0.08]' 
                                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
-                            class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span>Match & Queue</span>
                         @if(isset($competingApplications) && $competingApplications->isNotEmpty())
@@ -251,7 +243,7 @@
                                 :class="activeTab === 'handover' 
                                     ? 'bg-white dark:bg-[#161824] text-emerald-600 dark:text-emerald-400 shadow-xs border border-emerald-500/30' 
                                     : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/[0.04] border border-transparent'"
-                            class="flex items-center gap-2 px-3.5 py-2 rounded-xl transition cursor-pointer shrink-0">
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                             <span>Handover & Contract</span>
                             @if($application->is_finalized)
@@ -344,8 +336,8 @@
                         }
                     @endphp
 
-                    <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-5">
-                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3">
+                    <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-4 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2.5">
                             <div>
                                 <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
                                     <svg class="w-4 h-4 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -383,17 +375,17 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                 {{-- Group 1: Home & Environment --}}
-                                <div class="bg-slate-50/70 dark:bg-[#161824] p-4 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] space-y-2.5">
+                                <div class="bg-slate-50/70 dark:bg-[#161824] p-3 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] space-y-2">
                                     <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
                                         <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                                         <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Home & Environment</span>
                                     </div>
                                     <div class="divide-y divide-slate-100 dark:divide-white/[0.04] text-xs">
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Living Space</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">{{ $livingSpace }}</span>
                                         </div>
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Yard Security</span>
                                             <span class="font-bold text-slate-800 dark:text-white inline-flex items-center gap-1.5">
                                                 @if($quizProfile->yard_type === 'fenced')
@@ -405,11 +397,11 @@
                                                 @endif
                                             </span>
                                         </div>
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Daily Hours Alone</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">{{ $hoursText }}</span>
                                         </div>
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Housing Ownership</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">{{ $isRenting ? 'Rented / Tenant' : 'Owned Property' }}</span>
                                         </div>
@@ -417,31 +409,31 @@
                                 </div>
 
                                 {{-- Group 2: Household & Experience --}}
-                                <div class="bg-slate-50/70 dark:bg-[#161824] p-4 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] space-y-2.5">
+                                <div class="bg-slate-50/70 dark:bg-[#161824] p-3 rounded-2xl border border-slate-200/60 dark:border-white/[0.08] space-y-2">
                                     <div class="flex items-center gap-1.5 pb-1 border-b border-slate-200/60 dark:border-white/[0.06]">
                                         <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                         <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Household & Pet Care</span>
                                     </div>
                                     <div class="divide-y divide-slate-100 dark:divide-white/[0.04] text-xs">
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Children in Home</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">
                                                 {{ $quizProfile->has_children ? 'Present in Household' : 'None' }}
                                             </span>
                                         </div>
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Other Pets</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">
                                                 {{ $quizProfile->has_other_pets ? 'Active Pet Owner' : 'Solo / First Pet' }}
                                             </span>
                                         </div>
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Pet Experience</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">
                                                 {{ ($quizProfile->pet_experience === 'experienced' || $quizProfile->has_other_pets) ? 'Experienced' : 'First-time Owner' }}
                                             </span>
                                         </div>
-                                        <div class="flex items-center justify-between py-1.5">
+                                        <div class="flex items-center justify-between py-1">
                                             <span class="text-slate-500 dark:text-slate-400">Care & Activity</span>
                                             <span class="font-extrabold text-slate-800 dark:text-white">
                                                 {{ ucfirst($quizProfile->activity_level ?? 'Moderate') }} &bull; {{ $quizProfile->special_care_capacity ? 'Special Care Capable' : 'Standard' }}
@@ -1079,7 +1071,7 @@
                 $isAppApproved = ($application->status === 'approved' && !$isAppFinalized);
             @endphp
             {{-- Adoption Decision Sidebar --}}
-            <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-5 space-y-5 lg:sticky lg:top-6 h-fit" 
+            <div class="bg-white dark:bg-[#12141C] rounded-2xl border border-slate-200/80 dark:border-white/[0.08] shadow-card p-4 space-y-3.5 lg:sticky lg:top-3 h-fit" 
                  x-data="{ 
                          currentStatus: '{{ old('status', in_array($application->status, ['approved', 'rejected']) ? $application->status : '') }}',
                      scheduledAt: '{{ old('scheduled_at', $application->scheduled_at ? $application->scheduled_at->format('Y-m-d') : '') }}',
@@ -1516,7 +1508,7 @@
                     </div>
 
                     {{-- Compact Scheduled Event Summary Card --}}
-                    <div class="p-3.5 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#161824] dark:to-[#171923] border border-[#199CA4]/30 space-y-2.5">
+                    <div class="p-3 rounded-2xl bg-gradient-to-br from-[#F0FBFB] to-[#E6F7F8] dark:from-[#161824] dark:to-[#171923] border border-[#199CA4]/30 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Sunday Screening Event</span>
                             <button type="button" 
@@ -1620,7 +1612,7 @@
                     {{-- THE TWO MAIN ACTION BUTTONS: ACCEPT (HANDOVER) & REJECT --}}
                     <div class="space-y-2 pt-1">
                         {{-- 1. Accept / Finalize Handover Button --}}
-                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-emerald-600/20 transition cursor-pointer">
+                        <button type="button" onclick="openHandoverModal()" data-trigger="open-handover" class="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-emerald-600/20 transition cursor-pointer">
                             <span class="pointer-events-none">Verify & Finalize Handover</span>
                         </button>
 

@@ -379,8 +379,13 @@
                                     <span class="font-extrabold text-slate-800 dark:text-slate-200 block text-xs">
                                         {{ $pet->days_in_shelter_formatted }}
                                     </span>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium block">
-                                        Added {{ $pet->created_at ? $pet->created_at->diffForHumans() : 'recently' }}
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium block"
+                                          @if($pet->rescue_date && $pet->created_at) title="Intake: {{ $pet->rescue_date->format('M d, Y') }} • System record added {{ $pet->created_at->diffForHumans() }}" @endif>
+                                        @if($pet->rescue_date)
+                                            Rescued {{ $pet->rescue_date->format('M d, Y') }}
+                                        @else
+                                            Added {{ $pet->created_at ? $pet->created_at->diffForHumans() : 'recently' }}
+                                        @endif
                                     </span>
                                     @if($pet->status === 'in_shelter')
                                         <div class="flex items-center gap-1 mt-1 flex-wrap">
