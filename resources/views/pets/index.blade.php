@@ -281,7 +281,7 @@
                                             }
                                         }))"
                                         class="flex-1 py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition shadow-2xs cursor-pointer">
-                                    Mark Ready
+                                    Ready for Adoption
                                 </button>
                             @endif
                             <a href="{{ route('pets.show', $pet) }}" class="flex-1 py-2 text-center rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold text-xs transition shadow-2xs">
@@ -440,8 +440,8 @@
                                                         }
                                                     }))"
                                                     class="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold transition-all duration-200 shadow-2xs text-[11px] whitespace-nowrap cursor-pointer"
-                                                    title="Review & Mark Ready for Adoption">
-                                                Mark Ready
+                                                    title="Review & Clear Pet for Adoption">
+                                                Ready for Adoption
                                             </button>
                                         @endif
                                         <a href="{{ route('pets.show', $pet) }}" class="px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-white/[0.08] text-white dark:text-slate-200 hover:bg-slate-800 dark:hover:bg-white/[0.12] border border-slate-800 dark:border-white/[0.08] font-extrabold transition-all duration-200 shadow-2xs text-[11px]">View</a>

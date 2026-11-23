@@ -342,57 +342,18 @@
             </div>
         @endif
 
-        {{-- Health & Welfare Navigation Tabs --}}
-        <div class="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-white/[0.08] pb-2.5 flex-wrap">
-            <div class="flex items-center gap-1.5 flex-wrap">
-                <a href="{{ route($reportBaseRoute, ['tab' => 'monthly_updates']) }}" 
-                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
-                    <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span>Monthly Pet Updates</span>
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalReports }}</span>
-                </a>
-
-                <a href="{{ route($reportBaseRoute, ['tab' => 'vet_proofs']) }}" 
-                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
-                    <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'text-white' : 'text-[#199CA4]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    <span>Vaccination updates</span>
-                    @if(($pendingVetLogsCount ?? 0) > 0)
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
-                    @else
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
-                    @endif
-                </a>
-
-                <a href="{{ route($reportBaseRoute, ['tab' => 'pet_dedications']) }}" 
-                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
-                    <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                    <span>Pet Dedications</span>
-                    @if(($pendingDeceasedCount ?? 0) > 0)
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">{{ $pendingDeceasedCount }} Pending</span>
-                    @else
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalDedicationsCount ?? 0 }}</span>
-                    @endif
-                </a>
-            </div>
-
-            <a href="{{ route('adopters.index') }}" 
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 hover:text-[#199CA4] dark:hover:text-[#41C1CB] hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]"
-               title="View Adopter Profiles Directory">
-                <svg class="w-3.5 h-3.5 text-slate-400" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
-                <span>Adopter Profiles</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">{{ $totalApprovedAdopters }}</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-            </a>
-        </div>
-
-@if(($tab ?? 'monthly_updates') === 'vet_proofs')
-    {{-- ==================== VET CLINIC PROOFS TAB ==================== --}}
-    
-    {{-- Page Header --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <div class="flex items-center gap-3 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Vaccination updates</h1>
+        {{-- Page Header --}}
+        <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                @if(($tab ?? 'monthly_updates') === 'vet_proofs')
+                    Vaccination Updates
+                @elseif(($tab ?? 'monthly_updates') === 'pet_dedications')
+                    Pet Dedications & Memorials
+                @else
+                    Monthly Pet Updates Report
+                @endif
+            </h1>
+            @if(($tab ?? 'monthly_updates') === 'vet_proofs')
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
                     {{ $totalVetLogsCount }} {{ Str::plural('Record', $totalVetLogsCount) }}
                 </span>
@@ -402,9 +363,63 @@
                         {{ $pendingVetLogsCount }} Pending Review
                     </span>
                 @endif
-            </div>
+            @elseif(($tab ?? 'monthly_updates') === 'pet_dedications')
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                    {{ $totalDedicationsCount }} {{ Str::plural('Dedication', $totalDedicationsCount) }}
+                </span>
+                @if(($pendingDeceasedCount ?? 0) > 0)
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        {{ $pendingDeceasedCount }} Awaiting Review
+                    </span>
+                @endif
+            @else
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                    {{ $totalReports }} {{ Str::plural('Record', $totalReports) }}
+                </span>
+                @if(($attentionReports ?? 0) > 0)
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        {{ $attentionReports }} Needs Attention
+                    </span>
+                @endif
+            @endif
         </div>
-    </div>
+
+        {{-- Health & Welfare Navigation Tabs (Transferred below title) --}}
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 dark:border-white/[0.08]">
+            <a href="{{ route($reportBaseRoute, ['tab' => 'monthly_updates']) }}" 
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Monthly Pet Updates</span>
+                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'monthly_updates' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalReports }}</span>
+            </a>
+
+            <a href="{{ route($reportBaseRoute, ['tab' => 'vet_proofs']) }}" 
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'text-white' : 'text-[#199CA4]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span>Vaccination updates</span>
+                @if(($pendingVetLogsCount ?? 0) > 0)
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
+                @else
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'vet_proofs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalVetLogsCount }}</span>
+                @endif
+            </a>
+
+            <a href="{{ route($reportBaseRoute, ['tab' => 'pet_dedications']) }}" 
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-[#199CA4] text-white shadow-2xs' : 'bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]' }}">
+                <svg class="w-3.5 h-3.5 {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'text-white' : 'text-slate-400' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                <span>Pet Dedications</span>
+                @if(($pendingDeceasedCount ?? 0) > 0)
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">{{ $pendingDeceasedCount }} Pending</span>
+                @else
+                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold {{ ($tab ?? 'monthly_updates') === 'pet_dedications' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300' }}">{{ $totalDedicationsCount ?? 0 }}</span>
+                @endif
+            </a>
+        </div>
+
+@if(($tab ?? 'monthly_updates') === 'vet_proofs')
+    {{-- ==================== VET CLINIC PROOFS TAB ==================== --}}
 
     {{-- Search & Filter Toolbar for Vet Proofs --}}
     <div class="bg-white dark:bg-[#12141C] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">
@@ -729,52 +744,36 @@
 @elseif(($tab ?? 'monthly_updates') === 'pet_dedications')
     {{-- ==================== PET DEDICATIONS & MEMORIALS TAB ==================== --}}
 
-    {{-- Page Header --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Pet Dedications & Memorials</h1>
-        </div>
-        
-        {{-- Header Actions --}}
-        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <a href="{{ route('adopters.index') }}" 
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
-                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                <span>Adopter Profiles</span>
-            </a>
-        </div>
-    </div>
-
     {{-- Search & Filter Toolbar for Pet Dedications --}}
     <div class="bg-white dark:bg-[#12141C] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             {{-- Quick Filter Pills --}}
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
                 <a href="{{ route($reportBaseRoute, array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'all'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($dedicationFilter ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
-                    All Dedications ({{ $totalDedicationsCount }})
+                   class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap {{ ($dedicationFilter ?? 'all') === 'all' ? 'bg-[#199CA4] text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.1]' }}">
+                    All ({{ $totalDedicationsCount }})
                 </a>
                 <a href="{{ route($reportBaseRoute, array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'pending'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
+                   class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
                     @if(($pendingDeceasedCount ?? 0) > 0)
                         <span class="w-2 h-2 rounded-full {{ ($dedicationFilter ?? '') === 'pending' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
                     @endif
-                    <span>Awaiting Review ({{ $pendingDeceasedCount }})</span>
+                    <span>Pending ({{ $pendingDeceasedCount }})</span>
                 </a>
                 <a href="{{ route($reportBaseRoute, array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'investigating'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'investigating' ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
+                   class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'investigating' ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' }}">
                     @if(($investigatingDeceasedCount ?? 0) > 0)
                         <span class="w-2 h-2 rounded-full {{ ($dedicationFilter ?? '') === 'investigating' ? 'bg-white' : 'bg-amber-500 animate-pulse' }}"></span>
                     @endif
-                    <span>On-Site Visit ({{ $investigatingDeceasedCount ?? 0 }})</span>
+                    <span>On-Site ({{ $investigatingDeceasedCount ?? 0 }})</span>
                 </a>
                 <a href="{{ route($reportBaseRoute, array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'cleared'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'cleared' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
-                    <span>Natural / Accidental ({{ $clearedDeceasedCount }})</span>
+                   class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'cleared' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' }}">
+                    <span>Natural ({{ $clearedDeceasedCount }})</span>
                 </a>
                 <a href="{{ route($reportBaseRoute, array_merge(request()->except('dedication_filter', 'page', 'dedication_page'), ['tab' => 'pet_dedications', 'dedication_filter' => 'neglect'])) }}"
-                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'neglect' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
-                    <span>Neglect Confirmed ({{ $neglectDeceasedCount }})</span>
+                   class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ ($dedicationFilter ?? '') === 'neglect' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40' }}">
+                    <span>Neglect ({{ $neglectDeceasedCount }})</span>
                 </a>
             </div>
 
@@ -1162,33 +1161,6 @@
 
 @else
     {{-- ==================== MONTHLY PET UPDATES TAB ==================== --}}
-
-    {{-- Page Header --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <div class="flex items-center gap-3 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Monthly Pet Updates Report</h1>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
-                    {{ $totalReports }} {{ Str::plural('Record', $totalReports) }}
-                </span>
-                @if(($attentionReports ?? 0) > 0)
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
-                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                        {{ $attentionReports }} Needs Attention
-                    </span>
-                @endif
-            </div>
-        </div>
-        
-        {{-- Header Actions --}}
-        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <a href="{{ route('adopters.index') }}" 
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-xs">
-                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                <span>Adopter Profiles</span>
-            </a>
-        </div>
-    </div>
 
     {{-- Search & Filter Toolbar for Monthly Updates --}}
     <div class="bg-white dark:bg-[#12141C] p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-white/[0.07]">

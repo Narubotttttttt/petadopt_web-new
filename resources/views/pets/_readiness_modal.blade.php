@@ -87,7 +87,7 @@
                                 <span class="text-rose-500 font-bold">*</span>
                             </h4>
                             <span class="text-[11px] font-bold"
-                                  :class="(isVaccineValid && isDewormingValid) ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-rose-500 dark:text-rose-400'">
+                                  :class="(isVaccineValid && isDewormingValid) ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-400 dark:text-slate-500'">
                                 <span x-show="isVaccineValid && isDewormingValid">Clearance Verified</span>
                                 <span x-show="!isVaccineValid || !isDewormingValid">Required (Vaccination & Deworming)</span>
                             </span>
@@ -97,7 +97,7 @@
                             
                             {{-- Core Vaccination Card --}}
                             <div class="p-4 rounded-2xl border transition-all"
-                                 :class="hasVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40' : (logVaccine ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-rose-50/30 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50')">
+                                 :class="hasVaccine ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/40' : (logVaccine ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-slate-50/50 dark:bg-white/[0.02] border-slate-200/80 dark:border-white/[0.08]')">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="w-full">
                                         <div class="flex items-center justify-between">
@@ -105,7 +105,7 @@
                                                 Core Vaccination <span class="text-rose-500 font-bold">*</span>
                                             </span>
                                             <template x-if="!hasVaccine">
-                                                <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wide">Required</span>
+                                                <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Required</span>
                                             </template>
                                         </div>
                                         <div class="mt-1 flex items-center gap-1.5">
@@ -117,7 +117,7 @@
                                             </template>
                                             <template x-if="!hasVaccine">
                                                 <div>
-                                                    <div class="text-xs font-semibold text-rose-500 dark:text-rose-400">
+                                                    <div class="text-xs font-medium text-slate-500 dark:text-slate-400">
                                                         No vaccination recorded yet
                                                     </div>
                                                 </div>
@@ -133,7 +133,7 @@
                                             <input type="checkbox" name="log_vaccine" value="1" x-model="logVaccine"
                                                    class="rounded text-[#199CA4] focus:ring-[#199CA4] h-4 w-4 border-slate-300">
                                             <span class="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                                Administer & log core vaccine now <span class="text-rose-500 font-bold">*</span>
+                                                Administer & log core vaccine now
                                             </span>
                                         </label>
 
@@ -241,7 +241,7 @@
 
                             {{-- Deworming Card --}}
                             <div class="p-4 rounded-2xl border transition-all"
-                                 :class="hasDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200/80 dark:border-purple-800/40' : (logDeworming ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-rose-50/30 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50')">
+                                 :class="hasDeworming ? 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-200/80 dark:border-purple-800/40' : (logDeworming ? 'bg-sky-50/50 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' : 'bg-slate-50/50 dark:bg-white/[0.02] border-slate-200/80 dark:border-white/[0.08]')">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="w-full">
                                         <div class="flex items-center justify-between">
@@ -249,7 +249,7 @@
                                                 Deworming <span class="text-rose-500 font-bold">*</span>
                                             </span>
                                             <template x-if="!hasDeworming">
-                                                <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wide">Required</span>
+                                                <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">Required</span>
                                             </template>
                                         </div>
                                         <div class="mt-1 flex items-center gap-1.5">
@@ -261,7 +261,7 @@
                                             </template>
                                             <template x-if="!hasDeworming">
                                                 <div>
-                                                    <div class="text-xs font-semibold text-rose-500 dark:text-rose-400">
+                                                    <div class="text-xs font-medium text-slate-500 dark:text-slate-400">
                                                         No deworming recorded yet
                                                     </div>
                                                 </div>
@@ -277,7 +277,7 @@
                                             <input type="checkbox" name="log_deworming" value="1" x-model="logDeworming"
                                                    class="rounded text-[#199CA4] focus:ring-[#199CA4] h-4 w-4 border-slate-300">
                                             <span class="text-xs font-bold text-slate-700 dark:text-slate-200">
-                                                Administer & log deworming now <span class="text-rose-500 font-bold">*</span>
+                                                Administer & log deworming now
                                             </span>
                                         </label>
 
@@ -376,8 +376,8 @@
                                 <span class="text-rose-500 font-bold">*</span>
                             </h4>
                             <span class="text-[11px] font-bold"
-                                  :class="isTemperamentClear ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-rose-500 dark:text-rose-400'">
-                                <span x-show="!isTemperamentClear">Required (Select at least 1)</span>
+                                  :class="isTemperamentClear ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-400 dark:text-slate-500'">
+                                <span x-show="!isTemperamentClear">Select at least 1</span>
                                 <span x-show="isTemperamentClear"><span x-text="selectedTags.length"></span> tag(s) selected</span>
                             </span>
                         </div>
@@ -418,8 +418,8 @@
                             </span>
                         </template>
                         <template x-if="!isFormValid">
-                            <span class="text-xs font-semibold text-rose-500 dark:text-rose-400 flex items-center gap-1.5">
-                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span class="text-xs font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <span x-text="missingRequirements[0] || 'Complete all requirements above'"></span>
                             </span>
                         </template>
@@ -433,7 +433,7 @@
                         <button type="submit" 
                                 :disabled="isSubmitting || !isFormValid"
                                 :class="(!isFormValid || isSubmitting) ? 'opacity-50 cursor-not-allowed bg-slate-400 dark:bg-slate-600 text-slate-200 shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-sm'"
-                                :title="!isFormValid ? 'Please complete all requirements above' : 'Ready to launch'"
+                                :title="!isFormValid ? 'Please complete all requirements above' : 'Confirm readiness'"
                                 class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all">
                             <template x-if="isSubmitting">
                                 <span class="inline-block animate-spin mr-1">
@@ -446,7 +446,7 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
-                            <span x-text="isSubmitting ? 'Promoting...' : 'Confirm & Launch to Adoption Directory'"></span>
+                            <span x-text="isSubmitting ? 'Confirming...' : 'Confirm'"></span>
                         </button>
                     </div>
                 </div>

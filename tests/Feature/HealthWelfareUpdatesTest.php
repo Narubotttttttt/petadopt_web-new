@@ -36,7 +36,7 @@ class HealthWelfareUpdatesTest extends TestCase
         $responseAdmin->assertSeeText('Monthly Pet Updates');
         $responseAdmin->assertSeeText('Vaccination updates');
         $responseAdmin->assertSeeText('Pet Dedications');
-        $responseAdmin->assertSeeText('Adopter Profiles');
+        $responseAdmin->assertSeeText('Health & Welfare');
 
         $responseStaff = $this->actingAs($staff)->get('/health-welfare-updates');
         $responseStaff->assertStatus(200);

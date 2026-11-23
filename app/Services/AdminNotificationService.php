@@ -171,8 +171,10 @@ class AdminNotificationService
                     : strtoupper(mb_substr($adopterName, 0, 1));
 
                 $targetUrl = $hasDeceased 
-                    ? url('/adopters/reports') . '?status=deceased&search=' . urlencode($adopterName)
-                    : url('/adopters') . '?search=' . urlencode($adopterName);
+                    ? url('/health-welfare-updates') . '?tab=pet_dedications&search=' . urlencode($adopterName)
+                    : ($hasRecentCheckin
+                        ? url('/health-welfare-updates') . '?tab=monthly_updates&search=' . urlencode($adopterName)
+                        : url('/adopters') . '?search=' . urlencode($adopterName));
 
                 $firstPetName = $petDetails[0]['pet_name'] ?? 'their pet';
                 if ($hasDeceased) {
@@ -279,7 +281,7 @@ class AdminNotificationService
 
             $vaccineDetail = !empty($vLog->vaccine_name) ? $vLog->vaccine_name : ucfirst($vLog->category);
 
-            $actionUrl = url('/adopters/reports') . '?tab=vet_proofs&verify_log_id=' . $vLog->id;
+            $actionUrl = url('/health-welfare-updates') . '?tab=vet_proofs&verify_log_id=' . $vLog->id;
             $message = "{$adopterName} uploaded an external vaccination record for {$petName} ({$vaccineDetail}). Verification needed.";
 
             $notifications[] = [
@@ -341,7 +343,7 @@ class AdminNotificationService
                 ? strtoupper(mb_substr($adopterParts[0], 0, 1) . mb_substr(end($adopterParts), 0, 1))
                 : strtoupper(mb_substr($adopterName, 0, 1));
 
-            $actionUrl = url('/adopters/reports') . '?tab=pet_dedications&search=' . urlencode($petName);
+            $actionUrl = url('/health-welfare-updates') . '?tab=pet_dedications&search=' . urlencode($petName);
             $message = "{$adopterName} submitted a pet passing report and memorial dedication for {$petName}. Shelter review is required to verify natural causes or record welfare findings.";
 
             $notifications[] = [
