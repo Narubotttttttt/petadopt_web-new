@@ -82,65 +82,13 @@
             </div>
         @endif
 
-        {{-- Adopters Section Navigation Tabs (Compact) --}}
-        <div class="flex items-center gap-1.5 border-b border-slate-200 dark:border-white/[0.08] pb-2.5 overflow-x-auto">
-            <a href="{{ route('adopters.index') }}" 
-               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-2xs bg-[#199CA4] text-white">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
-                <span>Adopter Profiles</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">{{ $totalApprovedAdopters }}</span>
-            </a>
-
-            <a href="{{ route('adopters.reports') }}" 
-               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
-                <svg class="w-3.5 h-3.5 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span>Monthly Pet Updates</span>
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-[#41C1CB]">{{ $totalMonthlyReports ?? 0 }}</span>
-            </a>
-
-            <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" 
-               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
-                <svg class="w-3.5 h-3.5 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                <span>Vaccination updates</span>
-                @if(($pendingVetLogsCount ?? 0) > 0)
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse">{{ $pendingVetLogsCount }} Pending</span>
-                @else
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-[#41C1CB]">{{ $totalVetLogsCount ?? 0 }}</span>
-                @endif
-            </a>
-
-            <a href="{{ route('adopters.reports', ['tab' => 'pet_dedications']) }}" 
-               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
-                <svg class="w-3.5 h-3.5 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                <span>Pet Dedications</span>
-                @if(($pendingDeceasedCount ?? 0) > 0)
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $pendingDeceasedCount }} Pending</span>
-                @else
-                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#199CA4]/10 dark:bg-white/[0.08] text-[#199CA4] dark:text-[#41C1CB]">{{ $totalDedicationsCount ?? 0 }}</span>
-                @endif
-            </a>
-        </div>
-
         {{-- Page Header --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <div class="flex items-center gap-3 flex-wrap">
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Adopter Profiles</h1>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
-                        {{ $totalApprovedAdopters }} {{ Str::plural('Adopter', $totalApprovedAdopters) }} &bull; {{ $totalApprovedApplications }} {{ Str::plural('Pet', $totalApprovedApplications) }}
-                    </span>
-                </div>
-            </div>
-            
-            {{-- Header Action --}}
-            <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
-                <a href="{{ route('adoption-applications.index', ['status' => 'pending']) }}" 
-                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#171923] hover:text-[#199CA4] dark:hover:text-[#41C1CB] transition shadow-2xs">
-                    <svg class="w-4 h-4 text-[#199CA4] dark:text-[#41C1CB]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                    <span>Review Requests</span>
-                </a>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Adopter Profiles</h1>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#199CA4]/10 text-[#199CA4] dark:bg-[#199CA4]/20 dark:text-[#41C1CB] border border-[#199CA4]/20 dark:border-[#41C1CB]/30">
+                    {{ $totalApprovedAdopters }} {{ Str::plural('Adopter', $totalApprovedAdopters) }} &bull; {{ $totalApprovedApplications }} {{ Str::plural('Pet', $totalApprovedApplications) }}
+                </span>
             </div>
         </div>
 

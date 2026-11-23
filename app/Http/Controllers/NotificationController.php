@@ -11,6 +11,8 @@ class NotificationController extends Controller
     public function index(): JsonResponse
     {
         $data = AdminNotificationService::getNotifications();
+        $data['unviewed_adoptions'] = AdminNotificationService::getUnviewedAdoptionRequestsCount();
+        $data['unviewed_health_welfare'] = AdminNotificationService::getUnviewedHealthWelfareUpdatesCount();
         return response()->json($data);
     }
 

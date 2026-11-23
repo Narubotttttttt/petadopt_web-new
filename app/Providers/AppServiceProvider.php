@@ -34,10 +34,16 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('components.sidebar', function ($view) {
-            $hasNew = !request()->routeIs('adoption-applications.*')
+            $hasNewAdoptions = !request()->routeIs('adoption-applications.*')
                 && AdminNotificationService::getUnviewedAdoptionRequestsCount() > 0;
-            $view->with('hasNewAdoptionRequests', $hasNew);
+            $hasNewHealth = !request()->routeIs('health-welfare-updates.*')
+                && !request()->routeIs('adopters.reports*')
+                && AdminNotificationService::getUnviewedHealthWelfareUpdatesCount() > 0;
+
+            $view->with('hasNewAdoptionRequests', $hasNewAdoptions);
+            $view->with('hasNewHealthWelfareUpdates', $hasNewHealth);
             $view->with('pendingDedicationsCount', AdminNotificationService::getPendingDedicationsCount());
+            $view->with('pendingVetProofsCount', AdminNotificationService::getPendingVetProofsCount());
         });
     }
 }

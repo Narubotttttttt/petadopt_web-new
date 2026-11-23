@@ -115,8 +115,15 @@ Route::middleware(['auth', 'verified', 'staff'])->group(function () {
     Route::delete('/adoption-applications/{application}', [\App\Http\Controllers\AdoptionApplicationController::class, 'destroy'])->name('adoption-applications.destroy');
 
     Route::get('/adopters', [\App\Http\Controllers\AdopterProfileController::class, 'index'])->name('adopters.index');
-    Route::get('/adopters/reports', [\App\Http\Controllers\AdopterProfileController::class, 'monthlyReports'])->name('adopters.reports');
-    Route::patch('/adopters/reports/{id}/review', [\App\Http\Controllers\AdopterProfileController::class, 'reviewDeceasedReport'])->name('adopters.reports.review');
+
+    // Health & Welfare Updates (Dedicated Post-Adoption Monitoring for Admin & Staff)
+    Route::get('/health-welfare-updates', [\App\Http\Controllers\HealthWelfareUpdateController::class, 'index'])->name('health-welfare-updates.index');
+    Route::post('/health-welfare-updates/mark-viewed', [\App\Http\Controllers\HealthWelfareUpdateController::class, 'markViewed'])->name('health-welfare-updates.mark-viewed');
+    Route::patch('/health-welfare-updates/{id}/review', [\App\Http\Controllers\HealthWelfareUpdateController::class, 'reviewDeceasedReport'])->name('health-welfare-updates.review');
+
+    // Backward-compatibility alias routes for adopters/reports
+    Route::get('/adopters/reports', [\App\Http\Controllers\HealthWelfareUpdateController::class, 'index'])->name('adopters.reports');
+    Route::patch('/adopters/reports/{id}/review', [\App\Http\Controllers\HealthWelfareUpdateController::class, 'reviewDeceasedReport'])->name('adopters.reports.review');
 
     Route::get('/medical-logs', [MedicalLogController::class, 'index'])->name('medical-logs.index');
     Route::get('/medical-logs/create', [MedicalLogController::class, 'create'])->name('medical-logs.create');

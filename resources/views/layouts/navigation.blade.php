@@ -178,6 +178,12 @@
                                     this.notifications = d.notifications || [];
                                     this.unreadCount = d.unread_count || 0;
                                     this.counts = d.counts || this.counts;
+                                    if (typeof d.unviewed_adoptions !== 'undefined') {
+                                        window.dispatchEvent(new CustomEvent('adoptions-count-updated', { detail: { count: d.unviewed_adoptions } }));
+                                    }
+                                    if (typeof d.unviewed_health_welfare !== 'undefined') {
+                                        window.dispatchEvent(new CustomEvent('health-welfare-count-updated', { detail: { count: d.unviewed_health_welfare } }));
+                                    }
                                 }
                             } catch (e) {
                                 clearTimeout(timeoutId);

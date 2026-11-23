@@ -29,7 +29,6 @@ class AdopterMonthlyReportsTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSeeText('Adopter Profiles');
-        $response->assertSeeText('Monthly Pet Updates');
         $response->assertDontSeeText('Vaccines Overdue');
     }
 

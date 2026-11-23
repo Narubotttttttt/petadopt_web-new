@@ -465,11 +465,86 @@ class AdminNotificationService
             ->count();
     }
 
+    public static function getPendingVetProofsCount(): int
+    {
+        return \App\Models\MedicalLog::where('is_external', true)
+            ->where('verification_status', 'pending')
+            ->count();
+    }
+
     public static function markDedicationsViewed(): void
     {
         $deceasedIds = PetHealthUpdate::where('health_status', 'deceased')->pluck('id');
         foreach ($deceasedIds as $dId) {
             self::markAsRead('dedication_' . $dId);
         }
+    }
+
+    public static function markHealthWelfareUpdatesViewed(): void
+    {
+        $maxHealthUpdateId = PetHealthUpdate::where('health_status', '!=', 'deceased')->max('id') ?? 0;
+        $maxVetProofId = \App\Models\MedicalLog::where('is_external', true)->max('id') ?? 0;
+        $maxDedicationId = PetHealthUpdate::where('health_status', 'deceased')->max('id') ?? 0;
+
+        Session::put('admin_viewed_health_updates_max_id', $maxHealthUpdateId);
+        Session::put('admin_viewed_vet_proofs_max_id', $maxVetProofId);
+        Session::put('admin_viewed_dedications_max_id', $maxDedicationId);
+        Session::save();
+
+        if ($userId = auth()->id()) {
+            Cache::put('admin_viewed_health_updates_max_id_' . $userId, $maxHealthUpdateId, now()->addDays(60));
+            Cache::put('admin_viewed_vet_proofs_max_id_' . $userId, $maxVetProofId, now()->addDays(60));
+            Cache::put('admin_viewed_dedications_max_id_' . $userId, $maxDedicationId, now()->addDays(60));
+        }
+
+        self::markDedicationsViewed();
+    }
+
+    public static function getUnviewedHealthWelfareUpdatesCount(): int
+    {
+        $userId = auth()->id();
+
+        // 1. Routine Monthly Health Updates (new check-in submissions)
+        $maxHealthId = Session::get('admin_viewed_health_updates_max_id');
+        if ($maxHealthId === null && $userId) {
+            $maxHealthId = Cache::get('admin_viewed_health_updates_max_id_' . $userId);
+        }
+        $healthQ = PetHealthUpdate::where('health_status', '!=', 'deceased');
+        if ($maxHealthId !== null) {
+            $healthQ->where('id', '>', (int)$maxHealthId);
+        } else {
+            $healthQ->where('created_at', '>=', now()->subDays(7));
+        }
+        $newHealthCount = $healthQ->count();
+
+        // 2. Vaccination Proofs (external vet clinic proofs)
+        $maxVetId = Session::get('admin_viewed_vet_proofs_max_id');
+        if ($maxVetId === null && $userId) {
+            $maxVetId = Cache::get('admin_viewed_vet_proofs_max_id_' . $userId);
+        }
+        $vetQ = \App\Models\MedicalLog::where('is_external', true);
+        if ($maxVetId !== null) {
+            $vetQ->where('id', '>', (int)$maxVetId);
+        } else {
+            $vetQ->where('verification_status', 'pending');
+        }
+        $newVetCount = $vetQ->count();
+
+        // 3. Pet Passing Updates (dedications)
+        $maxDedId = Session::get('admin_viewed_dedications_max_id');
+        if ($maxDedId === null && $userId) {
+            $maxDedId = Cache::get('admin_viewed_dedications_max_id_' . $userId);
+        }
+        $dedQ = PetHealthUpdate::where('health_status', 'deceased');
+        if ($maxDedId !== null) {
+            $dedQ->where('id', '>', (int)$maxDedId);
+        } else {
+            $dedQ->where(function ($q) {
+                $q->whereNull('review_decision')->orWhereIn('review_decision', ['pending', 'investigation_pending']);
+            });
+        }
+        $newDedCount = $dedQ->count();
+
+        return $newHealthCount + $newVetCount + $newDedCount;
     }
 }

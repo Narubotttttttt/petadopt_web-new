@@ -3,6 +3,11 @@
 		!request()->routeIs('adoption-applications.*') 
 		&& \App\Services\AdminNotificationService::getUnviewedAdoptionRequestsCount() > 0
 	);
+	$hasNewHealthWelfareUpdates = $hasNewHealthWelfareUpdates ?? (
+		!request()->routeIs('health-welfare-updates.*') 
+		&& !request()->routeIs('adopters.reports*')
+		&& \App\Services\AdminNotificationService::getUnviewedHealthWelfareUpdatesCount() > 0
+	);
 @endphp
 <div class="hidden lg:block fixed inset-y-0 left-0 z-40">
 	<aside class="w-64 h-full border-r border-[#10565D]/40 dark:border-white/[0.06] bg-[#146970] dark:bg-[#0C0D13] text-teal-50 dark:text-slate-300 shadow-md flex flex-col select-none transition-colors duration-150">
@@ -19,7 +24,13 @@
 
 		{{-- Navigation List (Scrollable Area) --}}
 		<div class="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-			<nav class="space-y-1" aria-label="Main navigation" x-data="{ hasNewAdoption: {{ $hasNewAdoptionRequests ? 'true' : 'false' }} }">
+			<nav class="space-y-1" aria-label="Main navigation" 
+				 x-data="{ 
+				     hasNewAdoption: {{ $hasNewAdoptionRequests ? 'true' : 'false' }},
+				     hasNewHealthUpdate: {{ $hasNewHealthWelfareUpdates ? 'true' : 'false' }} 
+				 }"
+				 @adoptions-count-updated.window="hasNewAdoption = $event.detail.count > 0"
+				 @health-welfare-count-updated.window="hasNewHealthUpdate = $event.detail.count > 0">
 				
 				<p class="text-[10px] font-extrabold uppercase tracking-widest text-teal-200 dark:text-slate-500 px-3 pt-1 pb-1 flex items-center gap-1.5">
 					<span class="w-1.5 h-1.5 rounded-full bg-teal-300 dark:bg-slate-600"></span>
@@ -90,16 +101,29 @@
 
 				{{-- Adopters --}}
 				<a href="{{ route('adopters.index') }}" title="Adopters"
-					class="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ request()->routeIs('adopters.*') ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
-					@if(request()->routeIs('adopters.*'))
+					class="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ (request()->routeIs('adopters.*') && !request()->routeIs('adopters.reports*')) ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
+					@if(request()->routeIs('adopters.*') && !request()->routeIs('adopters.reports*'))
 						<span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-teal-200 dark:bg-[#199CA4]"></span>
 					@endif
-					<span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ request()->routeIs('adopters.*') ? 'bg-white/20 text-white dark:bg-[#199CA4]/15 dark:text-[#41C1CB]' : 'bg-white/10 dark:bg-white/[0.04] text-teal-100/90 dark:text-slate-400 group-hover:bg-white/15 dark:group-hover:bg-white/[0.08] group-hover:text-white dark:group-hover:text-white' }}">
+					<span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ (request()->routeIs('adopters.*') && !request()->routeIs('adopters.reports*')) ? 'bg-white/20 text-white dark:bg-[#199CA4]/15 dark:text-[#41C1CB]' : 'bg-white/10 dark:bg-white/[0.04] text-teal-100/90 dark:text-slate-400 group-hover:bg-white/15 dark:group-hover:bg-white/[0.08] group-hover:text-white dark:group-hover:text-white' }}">
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 10-8 0v4M5 11h14v10H5V11z"></path></svg>
 					</span>
 					<span class="whitespace-nowrap tracking-wide">Adopters</span>
-					@if(($pendingDedicationsCount ?? 0) > 0)
-						<span class="ml-auto relative flex h-2.5 w-2.5 shrink-0" title="{{ $pendingDedicationsCount }} Pet Dedication(s) Awaiting Review">
+				</a>
+
+				{{-- Health & Welfare Updates --}}
+				<a href="{{ route('health-welfare-updates.index') }}" title="Health & Welfare Updates"
+					@click="hasNewHealthUpdate = false; try { fetch('{{ route('health-welfare-updates.mark-viewed') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }) } catch(e){}"
+					class="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ (request()->routeIs('health-welfare-updates.*') || request()->routeIs('adopters.reports*')) ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
+					@if(request()->routeIs('health-welfare-updates.*') || request()->routeIs('adopters.reports*'))
+						<span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-teal-200 dark:bg-[#199CA4]"></span>
+					@endif
+					<span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ (request()->routeIs('health-welfare-updates.*') || request()->routeIs('adopters.reports*')) ? 'bg-white/20 text-white dark:bg-[#199CA4]/15 dark:text-[#41C1CB]' : 'bg-white/10 dark:bg-white/[0.04] text-teal-100/90 dark:text-slate-400 group-hover:bg-white/15 dark:group-hover:bg-white/[0.08] group-hover:text-white dark:group-hover:text-white' }}">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+					</span>
+					<span class="whitespace-nowrap tracking-wide">Health & Welfare</span>
+					@if($hasNewHealthWelfareUpdates)
+						<span x-show="hasNewHealthUpdate" class="ml-auto relative flex h-2.5 w-2.5 shrink-0" data-testid="new-health-welfare-indicator" title="New health & welfare update awaiting review">
 							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
 							<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 ring-2 ring-white/30 dark:ring-[#0C0D13]"></span>
 						</span>
@@ -238,7 +262,13 @@
 
         {{-- Navigation List (Scrollable Area) --}}
         <div class="flex-1 overflow-y-auto px-4 py-2 space-y-1">
-            <nav class="space-y-1" aria-label="Mobile navigation" x-data="{ hasNewAdoption: {{ $hasNewAdoptionRequests ? 'true' : 'false' }} }">
+            <nav class="space-y-1" aria-label="Mobile navigation" 
+                 x-data="{ 
+                     hasNewAdoption: {{ $hasNewAdoptionRequests ? 'true' : 'false' }},
+                     hasNewHealthUpdate: {{ $hasNewHealthWelfareUpdates ? 'true' : 'false' }} 
+                 }"
+                 @adoptions-count-updated.window="hasNewAdoption = $event.detail.count > 0"
+                 @health-welfare-count-updated.window="hasNewHealthUpdate = $event.detail.count > 0">
                 <p class="text-[10px] font-extrabold uppercase tracking-widest text-teal-200 dark:text-slate-500 px-3 pt-1 pb-1 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-teal-300 dark:bg-slate-600"></span>
                     Overview
@@ -307,14 +337,34 @@
 
                 {{-- Adopters --}}
                 <a href="{{ route('adopters.index') }}" @click="mobileNavOpen = false" title="Adopters Directory"
-                    class="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ request()->routeIs('adopters.*') ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
-                    @if(request()->routeIs('adopters.*'))
+                    class="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ (request()->routeIs('adopters.*') && !request()->routeIs('adopters.reports*')) ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
+                    @if(request()->routeIs('adopters.*') && !request()->routeIs('adopters.reports*'))
                         <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-teal-200 dark:bg-[#199CA4]"></span>
                     @endif
-                    <span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ request()->routeIs('adopters.*') ? 'bg-white/20 text-white dark:bg-[#199CA4]/15 dark:text-[#41C1CB]' : 'bg-white/10 dark:bg-white/[0.04] text-teal-100/90 dark:text-slate-400 group-hover:bg-white/15 dark:group-hover:bg-white/[0.08] group-hover:text-white dark:group-hover:text-white' }}">
+                    <span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ (request()->routeIs('adopters.*') && !request()->routeIs('adopters.reports*')) ? 'bg-white/20 text-white dark:bg-[#199CA4]/15 dark:text-[#41C1CB]' : 'bg-white/10 dark:bg-white/[0.04] text-teal-100/90 dark:text-slate-400 group-hover:bg-white/15 dark:group-hover:bg-white/[0.08] group-hover:text-white dark:group-hover:text-white' }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 10-8 0v4M5 11h14v10H5V11z"></path></svg>
                     </span>
-                    <span class="whitespace-nowrap tracking-wide">Adopters Directory</span>
+                    <span class="whitespace-nowrap tracking-wide">Adopters</span>
+                </a>
+
+                {{-- Health & Welfare Updates --}}
+                <a href="{{ route('health-welfare-updates.index') }}" 
+                   @click="mobileNavOpen = false; hasNewHealthUpdate = false; try { fetch('{{ route('health-welfare-updates.mark-viewed') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } }) } catch(e){}" 
+                   title="Health & Welfare Updates"
+                   class="group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 {{ (request()->routeIs('health-welfare-updates.*') || request()->routeIs('adopters.reports*')) ? 'bg-white/20 dark:bg-white/[0.06] text-white shadow-xs backdrop-blur-xs' : 'text-teal-100/90 dark:text-slate-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-white/[0.03]' }}">
+                    @if(request()->routeIs('health-welfare-updates.*') || request()->routeIs('adopters.reports*'))
+                        <span class="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-teal-200 dark:bg-[#199CA4]"></span>
+                    @endif
+                    <span class="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-xl transition-all duration-150 {{ (request()->routeIs('health-welfare-updates.*') || request()->routeIs('adopters.reports*')) ? 'bg-white/20 text-white dark:bg-[#199CA4]/15 dark:text-[#41C1CB]' : 'bg-white/10 dark:bg-white/[0.04] text-teal-100/90 dark:text-slate-400 group-hover:bg-white/15 dark:group-hover:bg-white/[0.08] group-hover:text-white dark:group-hover:text-white' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </span>
+                    <span class="whitespace-nowrap tracking-wide">Health & Welfare</span>
+                    @if($hasNewHealthWelfareUpdates)
+                        <span x-show="hasNewHealthUpdate" class="ml-auto relative flex h-2.5 w-2.5 shrink-0" data-testid="new-health-welfare-indicator" title="New health & welfare update awaiting review">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 ring-2 ring-white/30 dark:ring-[#0C0D13]"></span>
+                        </span>
+                    @endif
                 </a>
 
                 <p class="text-[10px] font-extrabold uppercase tracking-widest text-teal-200 dark:text-slate-500 px-3 pt-3 pb-1 flex items-center gap-1.5">
