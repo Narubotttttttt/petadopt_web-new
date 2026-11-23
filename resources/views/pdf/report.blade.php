@@ -154,23 +154,12 @@
             background-color: #f8fafc;
         }
 
-        /* Status Badges */
-        .badge {
-            display: inline-block;
-            padding: 2px 5px;
-            font-size: 7.5px;
+        /* Status Text (Clean and tag-free for PDF print) */
+        .status-plain {
+            font-size: 8.5px;
             font-weight: bold;
-            border-radius: 3px;
-            text-transform: uppercase;
+            color: #0f172a;
         }
-        .badge-approved { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .badge-pending { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-        .badge-rejected { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .badge-available { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-        .badge-inshelter { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
-        .badge-adopted { background-color: #ccfbf1; color: #115e59; border: 1px solid #99f6e4; }
-        .badge-deceased { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-        .badge-neutral { background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
 
         /* Sign-off certification */
         .signoff-wrap {
@@ -228,7 +217,7 @@
 
     {{-- Report Title & Meta --}}
     <div class="report-title-bar">
-        <div class="report-title">{{ $reportType === 'intakes' ? 'Pet Inventory' : ucfirst($reportType) }} Report & Analytics Summary</div>
+        <div class="report-title">{{ $reportType === 'intakes' ? 'Pet Inventory' : ($reportType === 'adoptions' ? 'Finalized Adoptions' : ucfirst($reportType)) }} Report & Analytics Summary</div>
     </div>
 
     <table class="meta-table">
@@ -252,24 +241,24 @@
         <tr>
             @if($reportType === 'adoptions')
                 <td>
+                    <div class="stat-label">Finalized Adoptions</div>
+                    <div class="stat-value">{{ $stats['finalizedCount'] ?? $stats['approvedCount'] ?? 0 }}</div>
+                    <div class="stat-sub">Completed Handover</div>
+                </td>
+                <td>
                     <div class="stat-label">Total Applications</div>
                     <div class="stat-value">{{ $stats['totalApplications'] ?? 0 }}</div>
-                    <div class="stat-sub">Submitted</div>
+                    <div class="stat-sub">{{ $stats['approvalRate'] ?? 0 }}% Conversion</div>
                 </td>
                 <td>
-                    <div class="stat-label">Approved</div>
-                    <div class="stat-value">{{ $stats['approvedCount'] ?? 0 }}</div>
-                    <div class="stat-sub">{{ $stats['approvalRate'] ?? 0 }}% Approval Rate</div>
-                </td>
-                <td>
-                    <div class="stat-label">Under Review</div>
+                    <div class="stat-label">In Evaluation</div>
                     <div class="stat-value">{{ ($stats['underReviewCount'] ?? 0) + ($stats['pendingCount'] ?? 0) }}</div>
-                    <div class="stat-sub">In Evaluation</div>
+                    <div class="stat-sub">Pending / Review</div>
                 </td>
                 <td>
-                    <div class="stat-label">Rejected</div>
+                    <div class="stat-label">Ineligible</div>
                     <div class="stat-value">{{ $stats['rejectedCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Ineligible</div>
+                    <div class="stat-sub">Rejected</div>
                 </td>
             @elseif($reportType === 'intakes')
                 <td>
@@ -291,27 +280,6 @@
                     <div class="stat-label">Medical Procedures</div>
                     <div class="stat-value">{{ $stats['totalMedicalProcedures'] ?? 0 }}</div>
                     <div class="stat-sub">{{ $stats['vaccinationCount'] ?? 0 }} Vax &bull; {{ $stats['surgeryCount'] ?? 0 }} Surg</div>
-                </td>
-            @elseif($reportType === 'compliance')
-                <td>
-                    <div class="stat-label">Total Adopters</div>
-                    <div class="stat-value">{{ $stats['totalAdopters'] ?? 0 }}</div>
-                    <div class="stat-sub">Registered Profiles</div>
-                </td>
-                <td>
-                    <div class="stat-label">Up to Date</div>
-                    <div class="stat-value">{{ $stats['submittedCount'] ?? 0 }}</div>
-                    <div class="stat-sub">{{ $stats['goodStandingRate'] ?? 0 }}% Compliance</div>
-                </td>
-                <td>
-                    <div class="stat-label">Due Soon</div>
-                    <div class="stat-value">{{ $stats['dueSoonCount'] ?? 0 }}</div>
-                    <div class="stat-sub">&le; 7 Days</div>
-                </td>
-                <td>
-                    <div class="stat-label">Overdue</div>
-                    <div class="stat-value">{{ $stats['overdueCount'] ?? 0 }}</div>
-                    <div class="stat-sub">Action Required</div>
                 </td>
             @else
                 <td style="width: 25%;">
@@ -339,17 +307,17 @@
     </table>
 
     {{-- Detailed Records --}}
-    <div class="section-heading">Detailed Registry Records ({{ count($records) }} Items)</div>
+    <div class="section-heading">{{ in_array($reportType, ['adoptions', 'overview']) ? 'Finalized Adoption Registry' : 'Detailed Registry Records' }} ({{ count($records) }} {{ Str::plural('Record', count($records)) }})</div>
     <table class="records-table">
         @if($reportType === 'adoptions')
             <thead>
                 <tr>
                     <th style="width: 12%;">App ID</th>
-                    <th style="width: 25%;">Applicant</th>
-                    <th style="width: 20%;">Pet</th>
-                    <th style="width: 10%;">Species</th>
-                    <th style="width: 13%;">Status</th>
-                    <th style="width: 20%;">Submitted</th>
+                    <th style="width: 26%;">Adopter</th>
+                    <th style="width: 22%;">Pet Adopted</th>
+                    <th style="width: 12%;">Species</th>
+                    <th style="width: 12%;">Status</th>
+                    <th style="width: 16%;">Finalized Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -360,17 +328,15 @@
                             <strong>{{ $app->applicant_name }}</strong><br>
                             <span style="color: #64748b;">{{ $app->applicant_email }}</span>
                         </td>
-                        <td>{{ $app->pet ? $app->pet->name : 'Pet no. ' . $app->pet_id }}</td>
+                        <td><strong>{{ $app->pet ? $app->pet->name : 'Pet no. ' . $app->pet_id }}</strong></td>
                         <td style="text-transform: capitalize;">{{ $app->pet ? ($app->pet->type ?? 'N/A') : 'N/A' }}</td>
                         <td>
-                            <span class="badge {{ $app->status === 'approved' ? 'badge-approved' : ($app->status === 'rejected' ? 'badge-rejected' : 'badge-pending') }}">
-                                {{ $app->display_status }}
-                            </span>
+                            <strong style="color: #0f172a;">Finalized</strong>
                         </td>
-                        <td>{{ $app->created_at ? $app->created_at->format('M d, Y h:i A') : 'N/A' }}</td>
+                        <td>{{ ($app->documents_verified_at ?? $app->approved_at ?? $app->created_at)?->format('M d, Y') ?? 'N/A' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No records found.</td></tr>
+                    <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No finalized adoptions found in this period.</td></tr>
                 @endforelse
             </tbody>
 
@@ -394,24 +360,26 @@
                             <span style="color: #64748b; text-transform: capitalize;">{{ $pet->type ?? 'N/A' }} &bull; {{ $pet->breed ?? 'Mixed' }}</span>
                         </td>
                         <td>
-                            @if($pet->status === 'in_shelter')
-                                <span class="badge badge-inshelter">In Shelter</span>
-                            @elseif($pet->status === 'available')
-                                <span class="badge badge-available">Available</span>
-                            @elseif($pet->status === 'pending')
-                                <span class="badge badge-pending">Pending</span>
-                            @elseif($pet->status === 'adopted')
-                                <span class="badge badge-adopted">Adopted</span>
-                            @elseif($pet->status === 'deceased')
-                                <span class="badge badge-deceased">Deceased</span>
-                            @else
-                                <span class="badge badge-neutral">{{ ucfirst($pet->status ?? 'N/A') }}</span>
-                            @endif
+                            <strong style="color: #0f172a;">
+                                @if($pet->status === 'in_shelter')
+                                    In Shelter
+                                @elseif($pet->status === 'available')
+                                    Available
+                                @elseif($pet->status === 'pending')
+                                    Pending
+                                @elseif($pet->status === 'adopted')
+                                    Adopted
+                                @elseif($pet->status === 'deceased')
+                                    Deceased
+                                @else
+                                    {{ ucfirst(str_replace('_', ' ', $pet->status ?? 'N/A')) }}
+                                @endif
+                            </strong>
                         </td>
                         <td>
                             <strong>{{ $pet->days_in_shelter ?? 0 }} days</strong>
                             @if(($pet->days_in_shelter ?? 0) >= 60 && in_array($pet->status, ['in_shelter', 'available', 'pending']))
-                                <br><span style="color: #d97706; font-size: 7px; font-weight: bold;">(Long stay &ge;60d)</span>
+                                <br><span style="color: #64748b; font-size: 7px; font-weight: bold;">(Long stay &ge;60d)</span>
                             @endif
                         </td>
                         <td>
@@ -422,37 +390,6 @@
                     </tr>
                 @empty
                     <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 12px;">No pet inventory records found.</td></tr>
-                @endforelse
-            </tbody>
-
-        @elseif($reportType === 'compliance')
-            <thead>
-                <tr>
-                    <th style="width: 14%;">Code</th>
-                    <th style="width: 28%;">Adopter Name & Contact</th>
-                    <th style="width: 22%;">Location</th>
-                    <th style="width: 16%;">Compliance</th>
-                    <th style="width: 20%;">Last Check-in</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($records as $item)
-                    <tr>
-                        <td>{{ $item['adopter_code'] }}</td>
-                        <td>
-                            <strong>{{ $item['full_name'] }}</strong><br>
-                            <span style="color: #64748b;">{{ $item['email'] }} • {{ $item['phone'] }}</span>
-                        </td>
-                        <td>{{ $item['location'] }}</td>
-                        <td>
-                            <span class="badge {{ $item['status_type'] === 'submitted' ? 'badge-approved' : ($item['status_type'] === 'overdue' ? 'badge-rejected' : 'badge-pending') }}">
-                                {{ $item['status_label'] }}
-                            </span>
-                        </td>
-                        <td>{{ $item['last_check_in_date'] }}</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 12px;">No records found.</td></tr>
                 @endforelse
             </tbody>
 

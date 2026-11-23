@@ -58,7 +58,6 @@
                         'overview'   => 'Overview',
                         'adoptions'  => 'Adoptions',
                         'intakes'    => 'Pet Inventory',
-                        'compliance' => 'Compliance',
                     ];
                 @endphp
                 @foreach($simpleTabs as $key => $label)
@@ -208,36 +207,6 @@
                     </p>
                 </div>
 
-            @elseif($reportType === 'compliance')
-                {{-- Total Adopters --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Adopters</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $stats['totalAdopters'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Registered adopters</p>
-                </div>
-
-                {{-- Up to Date --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Up to Date</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{{ $stats['submittedCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                        {{ $stats['goodStandingRate'] ?? 0 }}% compliance rate
-                    </p>
-                </div>
-
-                {{-- Due Soon --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Due Soon</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">{{ $stats['dueSoonCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Due within 7 days</p>
-                </div>
-
-                {{-- Overdue --}}
-                <div class="p-5 rounded-2xl bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] shadow-2xs">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Overdue</span>
-                    <div class="mt-2 text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">{{ $stats['overdueCount'] ?? 0 }}</div>
-                    <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Requires follow-up</p>
-                </div>
             @endif
         </div>
 
@@ -254,8 +223,6 @@
                             Adoption Applications
                         @elseif($reportType === 'intakes')
                             Pet Inventory Registry
-                        @elseif($reportType === 'compliance')
-                            Adopter Compliance Records
                         @endif
                     </h2>
                     <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
@@ -456,72 +423,6 @@
                                 <tr>
                                     <td colspan="7" class="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
                                         No pet inventory records found for the selected criteria.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-
-                    @elseif($reportType === 'compliance')
-                        <thead class="bg-slate-50/80 dark:bg-[#171923] text-[11px] uppercase font-bold text-slate-400 dark:text-slate-400 border-b border-slate-100 dark:border-white/[0.06]">
-                            <tr>
-                                <th class="py-3 px-4 sm:px-5">Adopter ID</th>
-                                <th class="py-3 px-4 sm:px-5">Adopter Name</th>
-                                <th class="py-3 px-4 sm:px-5">Location</th>
-                                <th class="py-3 px-4 sm:px-5">Adopted Pets</th>
-                                <th class="py-3 px-4 sm:px-5">Status</th>
-                                <th class="py-3 px-4 sm:px-5">Last Check-In</th>
-                                <th class="py-3 px-4 sm:px-5 text-right print:hidden">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06]">
-                            @forelse($records as $item)
-                                <tr class="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors">
-                                    <td class="py-3 px-4 sm:px-5 font-mono font-bold text-slate-900 dark:text-white">
-                                        {{ $item['adopter_code'] }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5">
-                                        <div class="font-bold text-slate-900 dark:text-white">{{ $item['full_name'] }}</div>
-                                        <div class="text-[11px] text-slate-400">{{ $item['phone'] }}</div>
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 text-slate-600 dark:text-slate-400">
-                                        {{ $item['location'] }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 font-bold text-slate-900 dark:text-white">
-                                        {{ $item['adopted_count'] }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5">
-                                        @if($item['status_type'] === 'submitted')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                                                {{ $item['status_label'] }}
-                                            </span>
-                                        @elseif($item['status_type'] === 'due_soon')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-100/80 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
-                                                {{ $item['status_label'] }}
-                                            </span>
-                                        @elseif($item['status_type'] === 'overdue')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-rose-100/80 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300">
-                                                {{ $item['status_label'] }}
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300">
-                                                {{ $item['status_label'] }}
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 text-slate-500 whitespace-nowrap">
-                                        {{ $item['last_check_in_date'] }}
-                                    </td>
-                                    <td class="py-3 px-4 sm:px-5 text-right print:hidden">
-                                        <a href="{{ route('adopters.index') }}"
-                                            class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold text-[#199CA4] hover:text-white dark:text-[#41C1CB] hover:bg-[#199CA4] transition-colors">
-                                            Profile
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
-                                        No adopter compliance records found.
                                     </td>
                                 </tr>
                             @endforelse

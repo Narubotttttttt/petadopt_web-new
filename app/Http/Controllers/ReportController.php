@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AdopterPreference;
-use App\Models\AdoptersProfile;
 use App\Models\AdoptionApplication;
 use App\Models\MedicalLog;
 use App\Models\Pet;
-use App\Models\PetHealthUpdate;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -77,8 +74,8 @@ class ReportController extends Controller
      */
     private function generateReportData(Request $request, bool $isExport = false): array
     {
-        $reportType = $request->query('type', 'overview'); // overview, adoptions, intakes, compliance
-        if (!in_array($reportType, ['overview', 'adoptions', 'intakes', 'compliance'])) {
+        $reportType = $request->query('type', 'overview'); // overview, adoptions, intakes
+        if (!in_array($reportType, ['overview', 'adoptions', 'intakes'])) {
             $reportType = 'overview';
         }
         $preset     = $request->query('preset', 'this_year'); // this_month, this_year
@@ -140,6 +137,7 @@ class ReportController extends Controller
 
                 $totalApplications = (clone $query)->count();
                 $approvedCount     = (clone $query)->where('status', 'approved')->count();
+                $finalizedCount    = (clone $query)->where('status', 'approved')->whereNotNull('documents_verified_at')->count();
                 $underReviewCount  = (clone $query)->where('status', 'under_review')->count();
                 $pendingCount      = (clone $query)->where('status', 'pending')->count();
                 $rejectedCount     = (clone $query)->where('status', 'rejected')->count();
@@ -148,15 +146,23 @@ class ReportController extends Controller
                 $stats = [
                     'totalApplications' => $totalApplications,
                     'approvedCount'     => $approvedCount,
+                    'finalizedCount'    => $finalizedCount,
                     'underReviewCount'  => $underReviewCount,
                     'pendingCount'      => $pendingCount,
                     'rejectedCount'     => $rejectedCount,
                     'approvalRate'      => $approvalRate,
                 ];
 
+                if ($isExport) {
+                    $exportQuery = (clone $query)
+                        ->where('status', 'approved')
+                        ->whereNotNull('documents_verified_at')
+                        ->orderByRaw('COALESCE(documents_verified_at, approved_at, updated_at) DESC');
 
-
-                $records = $isExport ? $query->latest('created_at')->get() : $query->latest('created_at')->paginate(20)->withQueryString();
+                    $records = $exportQuery->get();
+                } else {
+                    $records = $query->latest('created_at')->paginate(20)->withQueryString();
+                }
                 break;
 
             case 'intakes':
@@ -242,109 +248,6 @@ class ReportController extends Controller
                     : $query->orderByRaw('COALESCE(rescue_date, created_at) DESC')->paginate(20)->withQueryString();
                 break;
 
-            case 'compliance':
-                $adoptersQuery = AdoptersProfile::with(['user', 'adoptionApplications' => fn($q) => $q->where('status', 'approved')->whereNotNull('documents_verified_at')->with('pet')]);
-
-                if (!empty($search)) {
-                    $adoptersQuery->where(function ($q) use ($search) {
-                        $q->where('full_name', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%")
-                          ->orWhere('phone', 'like', "%{$search}%")
-                          ->orWhere('city', 'like', "%{$search}%")
-                          ->orWhere('adopter_code', 'like', "%{$search}%");
-                    });
-                }
-
-                $allAdopters = $adoptersQuery->get();
-                $processedList = [];
-                $counts = [
-                    'total'        => 0,
-                    'submitted'    => 0,
-                    'due_soon'     => 0,
-                    'overdue'      => 0,
-                    'pending_first'=> 0,
-                ];
-
-                $today = now()->startOfDay();
-
-                foreach ($allAdopters as $adopter) {
-                    $approvedApps = $adopter->adoptionApplications;
-                    $adoptedCount = $approvedApps->count();
-
-                    // Determine compliance status
-                    $lastCheckIn = $adopter->last_check_in_date;
-                    $statusType = 'pending_first';
-                    $statusLabel = 'Pending 1st Check-In';
-
-                    if ($lastCheckIn) {
-                        $nextDueDate = $lastCheckIn->copy()->addDays(30)->startOfDay();
-                        $diffInDays = (int) $today->diffInDays($nextDueDate, false);
-
-                        if ($diffInDays < 0) {
-                            $statusType = 'overdue';
-                            $statusLabel = 'Overdue (' . abs($diffInDays) . 'd)';
-                        } elseif ($diffInDays <= 7) {
-                            $statusType = 'due_soon';
-                            $statusLabel = 'Due Soon (' . $diffInDays . 'd)';
-                        } else {
-                            $statusType = 'submitted';
-                            $statusLabel = 'Up to Date (' . $diffInDays . 'd left)';
-                        }
-                    }
-
-                    if ($status !== 'all' && $status !== $statusType) {
-                        continue;
-                    }
-
-                    $counts['total']++;
-                    $counts[$statusType]++;
-
-                    $processedList[] = [
-                        'id'                 => $adopter->id,
-                        'adopter_code'       => $adopter->adopter_code ?? ('ADOPT-' . str_pad((string)$adopter->id, 4, '0', STR_PAD_LEFT)),
-                        'full_name'          => $adopter->full_name ?? ($adopter->user ? $adopter->user->name : 'N/A'),
-                        'email'              => $adopter->email ?? ($adopter->user ? $adopter->user->email : 'N/A'),
-                        'phone'              => $adopter->phone ?? 'N/A',
-                        'location'           => trim(($adopter->city ?? '') . ', ' . ($adopter->province ?? ''), ', ') ?: 'Cagayan de Oro City',
-                        'adopted_count'      => $adoptedCount,
-                        'status_type'        => $statusType,
-                        'status_label'       => $statusLabel,
-                        'last_check_in_date' => $lastCheckIn ? $lastCheckIn->format('M d, Y') : 'No Check-Ins Yet',
-                        'admin_notes'        => $adopter->admin_notes ?? 'None',
-                        'avatar_url'         => $adopter->avatar_url,
-                        'initials'           => $adopter->initials,
-                    ];
-                }
-
-                $goodStandingRate = $counts['total'] > 0 ? round((($counts['submitted'] + $counts['due_soon']) / $counts['total']) * 100, 1) : 100;
-
-                $stats = [
-                    'totalAdopters'     => $counts['total'],
-                    'submittedCount'    => $counts['submitted'],
-                    'dueSoonCount'      => $counts['due_soon'],
-                    'overdueCount'      => $counts['overdue'],
-                    'pendingFirstCount' => $counts['pending_first'],
-                    'goodStandingRate'  => $goodStandingRate,
-                ];
-
-
-
-                if ($isExport) {
-                    $records = $processedList;
-                } else {
-                    $page = (int) $request->query('page', 1);
-                    $perPage = 20;
-                    $offset = ($page - 1) * $perPage;
-                    $records = new \Illuminate\Pagination\LengthAwarePaginator(
-                        array_slice($processedList, $offset, $perPage),
-                        count($processedList),
-                        $perPage,
-                        $page,
-                        ['path' => $request->url(), 'query' => $request->query()]
-                    );
-                }
-                break;
-
             case 'overview':
             default:
                 $reportType = 'overview';
@@ -427,9 +330,10 @@ class ReportController extends Controller
                     'surgeryCount'            => $surgeryCount,
                 ];
 
-                // Key milestone records for the overview table
+                // Key milestone records for the overview table (finalized adoptions only)
                 $recordsQuery = AdoptionApplication::with(['pet', 'staff'])
                     ->where('status', 'approved')
+                    ->whereNotNull('documents_verified_at')
                     ->where(function ($q) use ($startDate, $endDate) {
                         $q->whereBetween('approved_at', [$startDate, $endDate])
                           ->orWhere(function ($sub) use ($startDate, $endDate) {
