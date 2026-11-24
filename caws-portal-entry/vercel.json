@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://yarn-graduated-timer-peter.trycloudflare.com/$1",
+                         "destination":  "https://stated-rational-any-sight.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

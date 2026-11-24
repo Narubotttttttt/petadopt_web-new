@@ -7,7 +7,7 @@
                 checkUrl: config.checkUrl,
                 markViewedUrl: config.markViewedUrl,
                 csrfToken: config.csrfToken,
-                counts: config.initialCounts || { all: 0, pending: 0, today_pending: 0, scheduled: 0, finalized: 0, kapon: 0, rejected: 0 },
+                counts: config.initialCounts || { all: 0, pending: 0, today_pending: 0, scheduled: 0, finalized: 0, kapon: 0, kapon_awaiting: 0, kapon_scheduled: 0, rejected: 0 },
                 showPendingIndicator: config.initialHasUnseen,
                 newBadgeCount: config.initialNewBadgeCount,
                 hasNewIncoming: false,
@@ -19,6 +19,28 @@
                 expandedPets: {},
                 focusedPetId: null,
                 focusedPetName: '',
+
+                showKaponModal: false,
+                kaponAppId: null,
+                kaponPetName: '',
+                kaponApplicantName: '',
+                kaponScheduledDate: '',
+                kaponVenue: 'CAWS Shelter Clinic',
+                kaponInstructions: 'Strictly fast pet: no food or water 8-10 hours prior to surgery.',
+
+                openKaponModal(appId, petName, applicantName, schedDate = '', venue = '', instructions = '') {
+                    this.kaponAppId = appId;
+                    this.kaponPetName = petName;
+                    this.kaponApplicantName = applicantName;
+                    this.kaponScheduledDate = schedDate || '';
+                    this.kaponVenue = venue || 'CAWS Shelter Clinic';
+                    this.kaponInstructions = instructions || 'Strictly fast pet: no food or water 8-10 hours prior to surgery.';
+                    this.showKaponModal = true;
+                },
+
+                closeKaponModal() {
+                    this.showKaponModal = false;
+                },
 
                 togglePet(petId, petName = '') {
                     if (this.focusedPetId === petId) {
@@ -344,6 +366,50 @@
             </a>
         </div>
 
+        {{-- Kapon Queue Sub-Filter Metric Cards --}}
+        @if($activeTab === 'kapon')
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-1">
+                {{-- Card 1: All in Kapon Queue --}}
+                <a href="{{ route('adoption-applications.index', ['status' => 'kapon', 'kapon_filter' => 'all', 'search' => $search]) }}"
+                   class="group p-4 rounded-2xl border transition-all duration-200 shadow-2xs {{ ($kaponFilter ?? 'all') === 'all' ? 'bg-[#199CA4]/10 border-[#199CA4] dark:border-[#41C1CB] ring-1 ring-[#199CA4]' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15]' }}">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold {{ ($kaponFilter ?? 'all') === 'all' ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-600 dark:text-slate-400' }}">All in Kapon Queue</span>
+                        <span class="w-2 h-2 rounded-full bg-[#199CA4]"></span>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-2xl font-black text-slate-900 dark:text-white" x-text="counts.kapon">{{ $counts['kapon'] ?? 0 }}</span>
+                        <span class="text-[11px] text-slate-400">Total adopted pets in surgery pipeline</span>
+                    </div>
+                </a>
+
+                {{-- Card 2: Awaiting Schedule --}}
+                <a href="{{ route('adoption-applications.index', ['status' => 'kapon', 'kapon_filter' => 'awaiting', 'search' => $search]) }}"
+                   class="group p-4 rounded-2xl border transition-all duration-200 shadow-2xs {{ ($kaponFilter ?? 'all') === 'awaiting' ? 'bg-amber-500/10 border-amber-500 ring-1 ring-amber-500' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15]' }}">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold {{ ($kaponFilter ?? 'all') === 'awaiting' ? 'text-amber-700 dark:text-amber-300' : 'text-slate-600 dark:text-slate-400' }}">Awaiting Schedule</span>
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-2xl font-black text-amber-600 dark:text-amber-400" x-text="counts.kapon_awaiting">{{ $counts['kapon_awaiting'] ?? 0 }}</span>
+                        <span class="text-[11px] text-slate-400">Needs clinic batch date assigned</span>
+                    </div>
+                </a>
+
+                {{-- Card 3: Confirmed / Scheduled --}}
+                <a href="{{ route('adoption-applications.index', ['status' => 'kapon', 'kapon_filter' => 'scheduled', 'search' => $search]) }}"
+                   class="group p-4 rounded-2xl border transition-all duration-200 shadow-2xs {{ ($kaponFilter ?? 'all') === 'scheduled' ? 'bg-cyan-500/10 border-[#199CA4] ring-1 ring-[#199CA4]' : 'bg-white dark:bg-[#12141C] border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15]' }}">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold {{ ($kaponFilter ?? 'all') === 'scheduled' ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-600 dark:text-slate-400' }}">Confirmed Appointments</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-2xl font-black text-[#199CA4] dark:text-[#41C1CB]" x-text="counts.kapon_scheduled">{{ $counts['kapon_scheduled'] ?? 0 }}</span>
+                        <span class="text-[11px] text-slate-400">Surgery date & venue confirmed</span>
+                    </div>
+                </a>
+            </div>
+        @endif
+
         {{-- Real-time New Requests Banner --}}
         <div x-show="hasNewIncoming" 
              x-cloak
@@ -393,11 +459,16 @@
                             @if($activeTab === 'pending') Pending Applications
                             @elseif($activeTab === 'scheduled') Scheduled Screening Applications
                             @elseif($activeTab === 'finalized') Finalized Adoption Records
+                            @elseif($activeTab === 'kapon') Post-Adoption Kapon (Spay / Neuter) Queue
                             @elseif($activeTab === 'rejected') Archived & Declined Applications
                             @else Pending Applications
                             @endif
                         </h2>
-                        @if(!empty($search))
+                        @if($activeTab === 'kapon')
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                Track post-handover spay & neuter surgery schedules, wait times, and clinic appointments.
+                            </p>
+                        @elseif(!empty($search))
                             <p class="text-[11px] text-slate-400">Filtering results matching "{{ $search }}"</p>
                         @endif
                     </div>
@@ -437,7 +508,11 @@
             </div>
 
             @php
-                $groupedApplications = $applications->getCollection()->groupBy(function($app) {
+                $isKaponOrFinalized = in_array($activeTab, ['kapon', 'finalized']);
+                $groupedApplications = $applications->getCollection()->groupBy(function($app) use ($isKaponOrFinalized) {
+                    if ($isKaponOrFinalized) {
+                        return 'app_' . $app->id;
+                    }
                     return $app->pet_id ? ('pet_' . $app->pet_id) : ('app_' . $app->id);
                 })->map(function ($group) {
                     return $group->sort(function ($a, $b) {
@@ -530,10 +605,42 @@
                                     </span>
                                 @elseif($application->status === 'approved')
                                     @if($application->is_finalized || !empty($application->documents_verified_at))
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            Finalized
-                                        </span>
+                                        @if($activeTab === 'kapon')
+                                            @php
+                                                $daysWaiting = $application->documents_verified_at ? (int) $application->documents_verified_at->diffInDays(now()) : 0;
+                                            @endphp
+                                            @if($application->kapon_status === 'scheduled')
+                                                <div class="flex flex-col items-end gap-0.5">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-cyan-50 dark:bg-cyan-950/40 text-[#13787F] dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4] animate-pulse"></span>
+                                                        Scheduled
+                                                    </span>
+                                                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                                                        {{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('M d, Y') : 'Date pending' }}
+                                                    </span>
+                                                </div>
+                                            @elseif($application->kapon_status === 'completed' || $application->pet?->is_neutered)
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    Neutered
+                                                </span>
+                                            @else
+                                                <div class="flex flex-col items-end gap-0.5">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 {{ $daysWaiting >= 14 ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' }}">
+                                                        <span class="w-1.5 h-1.5 rounded-full {{ $daysWaiting >= 14 ? 'bg-rose-500' : 'bg-amber-500' }}"></span>
+                                                        Awaiting Date
+                                                    </span>
+                                                    <span class="text-[10px] {{ $daysWaiting >= 14 ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-slate-500 dark:text-slate-400 font-medium' }}">
+                                                        Waiting {{ $daysWaiting }} {{ Str::plural('day', $daysWaiting) }}
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                Finalized
+                                            </span>
+                                        @endif
                                     @else
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
                                             <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
@@ -553,60 +660,122 @@
                             </div>
 
                             {{-- Middle applicant details card --}}
-                            <div class="bg-slate-50/80 dark:bg-[#171923] p-3 rounded-xl border border-slate-100 dark:border-white/[0.04] space-y-2">
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Applicant</span>
-                                    <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
-                                </div>
-                                @if($application->application_source === 'recommendation')
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
-                                        <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
-                                            Quiz Match {{ $application->compatibility_score !== null ? '(' . $application->formatted_compatibility_score . '%)' : '' }}
+                            @if($activeTab === 'kapon')
+                                <div class="bg-slate-50/80 dark:bg-[#171923] p-3 rounded-xl border border-slate-100 dark:border-white/[0.04] space-y-2 text-xs">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Adopter</span>
+                                        <span class="font-extrabold text-slate-800 dark:text-slate-200">{{ $application->applicant_name }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Phone</span>
+                                        <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Handover</span>
+                                        <span class="font-medium text-slate-700 dark:text-slate-300">
+                                            {{ $application->documents_verified_at ? $application->documents_verified_at->format('M d, Y') : '—' }}
                                         </span>
                                     </div>
-                                @endif
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
-                                    <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
-                                </div>
-                                @if(!empty($application->adopter_address))
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Address</span>
-                                        <span class="font-medium text-slate-700 dark:text-slate-300 max-w-[200px] truncate" title="{{ $application->adopter_address }}">{{ $application->adopter_address }}</span>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Clinic</span>
+                                        <span class="font-medium text-slate-700 dark:text-slate-300">{{ $application->kapon_venue ?: 'CAWS Shelter Clinic' }}</span>
                                     </div>
-                                @endif
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-slate-400 dark:text-slate-500 font-medium">Submitted</span>
-                                    <span class="text-slate-600 dark:text-slate-400 font-medium">{{ $application->created_at ? $application->created_at->format('M d, Y · h:i A') : '—' }}</span>
                                 </div>
-                            </div>
 
-                            {{-- Action buttons --}}
-                            <div class="flex items-center gap-2 pt-1">
-                                @if(in_array($application->status, ['approved', 'adopted']))
-                                    @if($application->signature_path)
-                                        <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-xs shrink-0">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                                            <span>Print</span>
-                                        </a>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0">
-                                            Unsigned
-                                        </span>
+                                {{-- Action buttons for Kapon --}}
+                                <div class="flex items-center gap-2 pt-1">
+                                    @php
+                                        $isKaponScheduled = $application->kapon_status === 'scheduled';
+                                        $isKaponDone = $application->kapon_status === 'completed' || ($application->pet?->is_neutered);
+                                    @endphp
+                                    @if(!$isKaponDone)
+                                        <button type="button"
+                                                @click="openKaponModal(
+                                                    {{ $application->id }},
+                                                    '{{ addslashes($pet->name ?? 'Pet') }}',
+                                                    '{{ addslashes($application->applicant_name) }}',
+                                                    '{{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('Y-m-d\TH:i') : '' }}',
+                                                    '{{ addslashes($application->kapon_venue ?? 'CAWS Shelter Clinic') }}',
+                                                    '{{ addslashes($application->kapon_instructions ?? 'Strictly fast pet: no food or water 8-10 hours prior to surgery.') }}'
+                                                )"
+                                                class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl {{ $isKaponScheduled ? 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.08] text-slate-700 dark:text-slate-200' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-2xs' }} text-xs font-extrabold transition cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <span>{{ $isKaponScheduled ? 'Reschedule' : 'Schedule Kapon' }}</span>
+                                        </button>
+
+                                        @if($isKaponScheduled)
+                                            <form action="{{ route('adoption-applications.update-kapon', $application) }}" method="POST" class="inline" onsubmit="return confirm('Mark Kapon procedure completed for {{ addslashes($pet->name ?? 'pet') }}? This will mark the pet as neutered.');">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="kapon_action" value="complete">
+                                                <input type="hidden" name="kapon_completed_at" value="{{ now()->format('Y-m-d H:i:s') }}">
+                                                <input type="hidden" name="kapon_attending_vet" value="CAWS Attending Veterinarian">
+                                                <button type="submit" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-extrabold text-xs transition cursor-pointer">
+                                                    Mark Done
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
-                                @endif
-                                <a href="{{ route('adoption-applications.show', $application) }}" class="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition shadow-2xs text-xs">
-                                    View Details
-                                </a>
-                                <form action="{{ route('adoption-applications.destroy', $application) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $application->applicant_name }}?');" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
-                                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                </form>
-                            </div>
+                                    <a href="{{ route('adoption-applications.show', $application) }}" class="inline-flex items-center justify-center px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-[#181A24] text-slate-700 dark:text-slate-200 font-bold transition text-xs">
+                                        Details
+                                    </a>
+                                </div>
+                            @else
+                                <div class="bg-slate-50/80 dark:bg-[#171923] p-3 rounded-xl border border-slate-100 dark:border-white/[0.04] space-y-2">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Applicant</span>
+                                        <span class="font-extrabold text-slate-900 dark:text-white">{{ $application->applicant_name }}</span>
+                                    </div>
+                                    @if($application->application_source === 'recommendation')
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-slate-400 dark:text-slate-500 font-medium">Source</span>
+                                            <span class="font-extrabold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                                                Quiz Match {{ $application->compatibility_score !== null ? '(' . $application->formatted_compatibility_score . '%)' : '' }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Contact Phone</span>
+                                        <a href="tel:{{ $application->applicant_phone }}" class="font-mono font-semibold text-[#199CA4] hover:underline">{{ $application->applicant_phone }}</a>
+                                    </div>
+                                    @if(!empty($application->adopter_address))
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-slate-400 dark:text-slate-500 font-medium">Address</span>
+                                            <span class="font-medium text-slate-700 dark:text-slate-300 max-w-[200px] truncate" title="{{ $application->adopter_address }}">{{ $application->adopter_address }}</span>
+                                        </div>
+                                    @endif
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-slate-400 dark:text-slate-500 font-medium">Submitted</span>
+                                        <span class="text-slate-600 dark:text-slate-400 font-medium">{{ $application->created_at ? $application->created_at->format('M d, Y · h:i A') : '—' }}</span>
+                                    </div>
+                                </div>
+
+                                {{-- Action buttons --}}
+                                <div class="flex items-center gap-2 pt-1">
+                                    @if(in_array($application->status, ['approved', 'adopted']))
+                                        @if($application->signature_path)
+                                            <a href="{{ route('adoption-applications.contract', $application) }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#171923] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1D1F2C] font-bold transition shadow-2xs text-xs shrink-0">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                                <span>Print</span>
+                                            </a>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0">
+                                                Unsigned
+                                            </span>
+                                        @endif
+                                    @endif
+                                    <a href="{{ route('adoption-applications.show', $application) }}" class="flex-1 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white font-extrabold transition shadow-2xs text-xs">
+                                        View Details
+                                    </a>
+                                    <form action="{{ route('adoption-applications.destroy', $application) }}" method="POST" onsubmit="return confirm('Permanently delete this adoption application from {{ $application->applicant_name }}?');" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:border-rose-200 text-slate-400 hover:text-rose-600 dark:hover:bg-rose-950/30 transition cursor-pointer" title="Delete application">
+                                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
                         </div>
                     @else
                         {{-- Multi-Applicant Pet Group Card (Expandable Accordion) --}}
@@ -794,14 +963,25 @@
             <div class="hidden md:block overflow-x-auto">
                 <table class="min-w-full text-left border-collapse">
                     <thead class="bg-slate-50/80 dark:bg-[#171923] border-b border-slate-200/80 dark:border-white/[0.06]">
-                        <tr>
-                            <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
-                            <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Applicant</th>
-                            <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Source</th>
-                            <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
-                            <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date</th>
-                            <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
-                        </tr>
+                        @if($activeTab === 'kapon')
+                            <tr>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Adopted Pet</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Adopter Details</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Handover Date</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Kapon Status & Wait Time</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Clinic Schedule</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+                            </tr>
+                        @else
+                            <tr>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Pet</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Applicant</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Source</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Status</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date</th>
+                                <th class="px-3.5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+                            </tr>
+                        @endif
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-white/[0.06]">
                         @forelse($groupedApplications as $groupKey => $petApps)
@@ -812,7 +992,166 @@
                                 $petImg = $pet && $pet->photo_path ? (str_starts_with($pet->photo_path, 'http') ? $pet->photo_path : asset('storage/' . ltrim($pet->photo_path, '/'))) : null;
                             @endphp
 
-                            @if(!$isMulti)
+                            @if($activeTab === 'kapon')
+                                {{-- Dedicated Kapon Row --}}
+                                @php
+                                    $application = $firstApp;
+                                    $daysWaiting = $application->documents_verified_at ? (int) $application->documents_verified_at->diffInDays(now()) : 0;
+                                    $isScheduled = $application->kapon_status === 'scheduled';
+                                    $isDone = $application->kapon_status === 'completed' || ($application->pet?->is_neutered);
+                                @endphp
+                                <tr x-show="isPetVisible('{{ $groupKey }}')" class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
+                                    {{-- Col 1: Adopted Pet --}}
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-900 dark:text-white font-extrabold">
+                                        <div class="flex items-center gap-2.5">
+                                            @if($petImg)
+                                                <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/[0.08] shadow-2xs relative bg-slate-100 dark:bg-[#171923]">
+                                                    <img src="{{ $petImg }}" alt="{{ $pet->name ?? 'Pet' }}" class="w-full h-full object-cover">
+                                                </div>
+                                            @else
+                                                <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 border border-slate-200 dark:border-white/[0.08] flex items-center justify-center shrink-0">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 512 512"><path d="M226.5 92.9c14.3 42.9-.3 86.2-32.6 96.8s-70.1-15.6-84.4-58.5s.3-86.2 32.6-96.8s70.1 15.6 84.4 58.5zM100.4 198.6c18.9 32.4 14.3 70.1-10.2 84.1s-59.7-.9-78.5-33.3S-2.7 179.3 21.8 165.3s59.7 .9 78.5 33.3zM69.2 401.2C121.6 259.9 214.7 224 256 224s134.4 35.9 186.8 177.2c3.6 9.7 5.2 20.1 5.2 30.5l0 1.6c0 25.8-20.9 46.7-46.7 46.7c-11.5 0-22.9-1.4-34-4.2l-88-22c-15.3-3.8-31.3-3.8-46.6 0l-88 22c-11.1 2.8-22.5 4.2-34 4.2C84.9 480 64 459.1 64 433.3l0-1.6c0-10.4 1.6-20.8 5.2-30.5zM421.8 282.7c-24.5-14-29.1-51.7-10.2-84.1s54-47.3 78.5-33.3s29.1 51.7 10.2 84.1s-54 47.3-78.5 33.3zM318.1 189.7c-32.3-10.6-46.9-53.9-32.6-96.8s52.1-69.1 84.4-58.5s46.9 53.9 32.6 96.8s-52.1 69.1-84.4 58.5z"/></svg>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <div class="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                                    <span>{{ $pet->name ?? 'Pet' }}</span>
+                                                    <span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-600 dark:text-slate-300">
+                                                        {{ ucfirst($pet->species ?? 'Pet') }}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                                                    {{ $pet->breed ?? 'Mixed Breed' }} · {{ $pet->age ?? 'Age N/A' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {{-- Col 2: Adopter Details --}}
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                        <div class="font-extrabold text-slate-900 dark:text-white leading-tight">
+                                            {{ $application->applicant_name }}
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium leading-normal">
+                                            {{ $application->applicant_phone }}
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">
+                                            {{ $application->applicant_email }}
+                                        </div>
+                                    </td>
+
+                                    {{-- Col 3: Handover Date --}}
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap">
+                                        @if($application->documents_verified_at)
+                                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                {{ $application->documents_verified_at->format('M d, Y') }}
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                                {{ $application->documents_verified_at->diffForHumans() }}
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-slate-400">—</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Col 4: Kapon Status & Wait Time --}}
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap">
+                                        @if($isScheduled)
+                                            <div class="flex flex-col gap-1 items-start">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-cyan-50 dark:bg-cyan-950/40 text-[#13787F] dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4] animate-pulse"></span>
+                                                    Scheduled
+                                                </span>
+                                                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                                                    {{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('M d, Y · h:i A') : 'Date pending' }}
+                                                </span>
+                                            </div>
+                                        @elseif($isDone)
+                                            <div class="flex flex-col gap-1 items-start">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    Neutered
+                                                </span>
+                                                <span class="text-[10px] text-slate-400">Surgery Completed</span>
+                                            </div>
+                                        @else
+                                            <div class="flex flex-col gap-1 items-start">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold border {{ $daysWaiting >= 14 ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' }}">
+                                                    <span class="w-1.5 h-1.5 rounded-full {{ $daysWaiting >= 14 ? 'bg-rose-500' : 'bg-amber-500' }}"></span>
+                                                    Awaiting Schedule
+                                                </span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-[11px] {{ $daysWaiting >= 14 ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-slate-500 dark:text-slate-400 font-semibold' }}">
+                                                        Waiting {{ $daysWaiting }} {{ Str::plural('day', $daysWaiting) }}
+                                                    </span>
+                                                    @if($daysWaiting >= 14)
+                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
+                                                            Priority
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </td>
+
+                                    {{-- Col 5: Clinic Schedule --}}
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-xs">
+                                        @if($isScheduled)
+                                            <div class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5 text-[#199CA4]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                <span>{{ $application->kapon_venue ?: 'CAWS Shelter Clinic' }}</span>
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5" title="{{ $application->kapon_instructions }}">
+                                                {{ $application->kapon_instructions ?: 'Fast 8-10 hours' }}
+                                            </div>
+                                        @elseif($isDone)
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Record Complete</span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 text-[11px] text-slate-400 italic">
+                                                <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                Pending clinic slot assignment
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Col 6: Actions --}}
+                                    <td class="px-3.5 py-3.5 whitespace-nowrap text-right space-x-1.5">
+                                        @if(!$isDone)
+                                            <button type="button"
+                                                    @click="openKaponModal(
+                                                        {{ $application->id }},
+                                                        '{{ addslashes($pet->name ?? 'Pet') }}',
+                                                        '{{ addslashes($application->applicant_name) }}',
+                                                        '{{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('Y-m-d\TH:i') : '' }}',
+                                                        '{{ addslashes($application->kapon_venue ?? 'CAWS Shelter Clinic') }}',
+                                                        '{{ addslashes($application->kapon_instructions ?? 'Strictly fast pet: no food or water 8-10 hours prior to surgery.') }}'
+                                                    )"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl {{ $isScheduled ? 'bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200' : 'bg-[#199CA4] hover:bg-[#13787F] text-white shadow-2xs' }} font-extrabold transition text-xs cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                <span>{{ $isScheduled ? 'Reschedule' : 'Schedule Kapon' }}</span>
+                                            </button>
+
+                                            @if($isScheduled)
+                                                <form action="{{ route('adoption-applications.update-kapon', $application) }}" method="POST" class="inline" onsubmit="return confirm('Mark Kapon procedure completed for {{ addslashes($pet->name ?? 'pet') }}? This will mark the pet as neutered.');">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="kapon_action" value="complete">
+                                                    <input type="hidden" name="kapon_completed_at" value="{{ now()->format('Y-m-d H:i:s') }}">
+                                                    <input type="hidden" name="kapon_attending_vet" value="CAWS Attending Veterinarian">
+                                                    <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-extrabold transition text-xs cursor-pointer" title="Mark procedure complete">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                        <span>Mark Done</span>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+
+                                        <a href="{{ route('adoption-applications.show', $application) }}" class="inline-flex items-center px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] hover:bg-slate-50 dark:hover:bg-[#181A24] text-slate-700 dark:text-slate-200 font-bold transition shadow-2xs text-xs">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            @elseif(!$isMulti)
                                 {{-- Single Applicant Row (Standard flat row) --}}
                                 @php $application = $firstApp; @endphp
                                 <tr x-show="isPetVisible('{{ $groupKey }}')" class="hover:bg-slate-50/70 dark:hover:bg-[#181A24] text-xs sm:text-sm transition-colors">
@@ -906,10 +1245,38 @@
                                                 <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">On standby for {{ $application->scheduled_competing_application->applicant_name ?? 'primary applicant' }}</span>
                                             @elseif($application->status === 'approved')
                                                 @if($application->is_finalized || !empty($application->documents_verified_at))
-                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                        Finalized
-                                                    </span>
+                                                    @if($activeTab === 'kapon')
+                                                        @php
+                                                            $daysWaiting = $application->documents_verified_at ? (int) $application->documents_verified_at->diffInDays(now()) : 0;
+                                                        @endphp
+                                                        @if($application->kapon_status === 'scheduled')
+                                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-cyan-50 dark:bg-cyan-950/40 text-[#13787F] dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60">
+                                                                <span class="w-1.5 h-1.5 rounded-full bg-[#199CA4] animate-pulse"></span>
+                                                                Scheduled
+                                                            </span>
+                                                            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                                                                {{ $application->kapon_scheduled_date ? $application->kapon_scheduled_date->format('M d, Y') : 'Date pending' }}
+                                                            </span>
+                                                        @elseif($application->kapon_status === 'completed' || $application->pet?->is_neutered)
+                                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                                Neutered
+                                                            </span>
+                                                        @else
+                                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit {{ $daysWaiting >= 14 ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' }}">
+                                                                <span class="w-1.5 h-1.5 rounded-full {{ $daysWaiting >= 14 ? 'bg-rose-500' : 'bg-amber-500' }}"></span>
+                                                                Awaiting Date
+                                                            </span>
+                                                            <span class="text-[10px] {{ $daysWaiting >= 14 ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-slate-500 dark:text-slate-400 font-medium' }}">
+                                                                Waiting {{ $daysWaiting }} {{ Str::plural('day', $daysWaiting) }}
+                                                            </span>
+                                                        @endif
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                            Finalized
+                                                        </span>
+                                                    @endif
                                                 @else
                                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold border w-fit bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60" title="Scheduled for on-site screening and document verification">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
@@ -1217,6 +1584,111 @@
 
             <div class="p-4 border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#171923]">
                 {{ $applications->links() }}
+            </div>
+        </div>
+
+        {{-- Kapon Scheduling Quick Modal (Alpine.js) --}}
+        <div x-show="showKaponModal" 
+             x-cloak 
+             class="fixed inset-0 z-50 overflow-y-auto"
+             aria-labelledby="kapon-modal-title" 
+             role="dialog" 
+             aria-modal="true"
+             @keydown.escape.window="closeKaponModal()">
+            
+            {{-- Backdrop --}}
+            <div x-show="showKaponModal"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                 @click="closeKaponModal()"></div>
+
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div x-show="showKaponModal"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#12141C] border border-slate-200 dark:border-white/[0.08] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg p-6 space-y-4">
+                    
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] flex items-center justify-center font-bold">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-extrabold text-slate-900 dark:text-white" id="kapon-modal-title">
+                                    Schedule Kapon Procedure
+                                </h3>
+                                <p class="text-xs text-slate-400">
+                                    For <span class="font-bold text-[#199CA4] dark:text-[#41C1CB]" x-text="kaponPetName"></span> (Adopter: <span class="font-semibold text-slate-700 dark:text-slate-300" x-text="kaponApplicantName"></span>)
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="closeKaponModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <form :action="'/adoption-applications/' + kaponAppId + '/kapon'" method="POST" class="space-y-4">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="kapon_action" value="schedule">
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                                Surgery Date & Time <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="datetime-local" 
+                                   name="kapon_scheduled_date" 
+                                   x-model="kaponScheduledDate"
+                                   required
+                                   class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">
+                            <p class="text-[11px] text-slate-400 mt-1">Select the confirmed date and time slot for the spay/neuter surgery.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                                Clinic Venue / Location <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="kapon_venue" 
+                                   x-model="kaponVenue"
+                                   required
+                                   class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                                Pre-Surgery & Fasting Instructions
+                            </label>
+                            <textarea name="kapon_instructions" 
+                                      x-model="kaponInstructions"
+                                      rows="3"
+                                      class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#171923] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]"></textarea>
+                            <p class="text-[11px] text-slate-400 mt-1">This will be pushed directly to the adopter's mobile notification and companion card.</p>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end gap-2.5">
+                            <button type="button" 
+                                    @click="closeKaponModal()" 
+                                    class="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/[0.08] text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition cursor-pointer">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 rounded-xl bg-[#199CA4] hover:bg-[#147a80] text-white text-xs font-bold transition shadow-2xs cursor-pointer flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span>Confirm & Notify Adopter</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

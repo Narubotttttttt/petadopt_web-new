@@ -2044,6 +2044,61 @@
                         </div>
                     </div>
 
+                    {{-- Step 3: Mandatory Kapon (Spay / Neuter) Plan --}}
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Step 3: Post-Adoption Kapon (Spay / Neuter)</span>
+                            <span class="text-[10px] font-bold text-slate-400">Shelter Policy</span>
+                        </div>
+
+                        @if($application->pet?->is_neutered)
+                            <div class="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2.5">
+                                <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span>Pet is already verified as spayed/neutered. No post-adoption surgery required.</span>
+                                <input type="hidden" name="kapon_decision" value="already_neutered">
+                            </div>
+                        @else
+                            <div x-data="{ kaponChoice: 'schedule_later' }" class="space-y-3 bg-slate-50 dark:bg-[#161824] p-3.5 rounded-2xl border border-slate-100 dark:border-white/[0.08]">
+                                <div class="text-xs text-slate-600 dark:text-slate-300">
+                                    This pet is currently unneutered. Set expectations for the adopter:
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] cursor-pointer" :class="kaponChoice === 'schedule_later' ? 'ring-2 ring-[#199CA4] border-transparent' : ''">
+                                        <input type="radio" name="kapon_decision" value="schedule_later" x-model="kaponChoice" class="text-[#199CA4] focus:ring-[#199CA4]">
+                                        <div>
+                                            <div class="font-bold text-slate-800 dark:text-white">Schedule Later</div>
+                                            <div class="text-[10px] text-slate-400">Place pet in Kapon queue</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#12141C] cursor-pointer" :class="kaponChoice === 'schedule_now' ? 'ring-2 ring-[#199CA4] border-transparent' : ''">
+                                        <input type="radio" name="kapon_decision" value="schedule_now" x-model="kaponChoice" class="text-[#199CA4] focus:ring-[#199CA4]">
+                                        <div>
+                                            <div class="font-bold text-slate-800 dark:text-white">Schedule Now</div>
+                                            <div class="text-[10px] text-slate-400">Date is already set</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div x-show="kaponChoice === 'schedule_now'" x-transition class="space-y-2.5 pt-2 border-t border-slate-200 dark:border-white/[0.06]">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                                            Kapon Date & Time <span class="text-rose-500">*</span>
+                                        </label>
+                                        <input type="datetime-local" name="kapon_scheduled_date" :required="kaponChoice === 'schedule_now'" class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#12141C] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Clinic Venue</label>
+                                        <input type="text" name="kapon_venue" value="CAWS Shelter Clinic" class="w-full text-xs rounded-xl border border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#12141C] text-slate-800 dark:text-slate-100 p-2.5 focus:ring-2 focus:ring-[#199CA4]">
+                                    </div>
+                                </div>
+
+                                <div x-show="kaponChoice === 'schedule_later'" class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    Adopter will see their pet registered in the shelter Kapon queue and will be notified as soon as staff announces the date.
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
                     {{-- Modal Footer Actions --}}
                     <div class="pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-center justify-end gap-3">
                         <button type="button" onclick="closeHandoverModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition cursor-pointer">

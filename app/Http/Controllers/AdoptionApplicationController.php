@@ -57,7 +57,11 @@ class AdoptionApplicationController extends Controller
         $countScheduled = (clone $countQuery)->where('status', 'approved')->whereNull('documents_verified_at')->count();
         $countFinalized = (clone $countQuery)->whereNotNull('documents_verified_at')->count();
         $countKapon = (clone $countQuery)->whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled'])->count();
+        $countKaponAwaiting = (clone $countQuery)->whereNotNull('documents_verified_at')->where('kapon_status', 'awaiting_schedule')->count();
+        $countKaponScheduled = (clone $countQuery)->whereNotNull('documents_verified_at')->where('kapon_status', 'scheduled')->count();
         $countRejected = (clone $countQuery)->where('status', 'rejected')->count();
+
+        $kaponFilter = $request->query('kapon_filter', 'all');
 
         // Apply status filter based on active tab
         $query = clone $baseQuery;
@@ -69,7 +73,13 @@ class AdoptionApplicationController extends Controller
                 $query->whereNotNull('documents_verified_at');
                 break;
             case 'kapon':
-                $query->whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled']);
+                if ($kaponFilter === 'awaiting') {
+                    $query->whereNotNull('documents_verified_at')->where('kapon_status', 'awaiting_schedule');
+                } elseif ($kaponFilter === 'scheduled') {
+                    $query->whereNotNull('documents_verified_at')->where('kapon_status', 'scheduled');
+                } else {
+                    $query->whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled']);
+                }
                 break;
             case 'rejected':
                 $query->where('status', 'rejected');
@@ -120,18 +130,20 @@ class AdoptionApplicationController extends Controller
         $newBadgeCount = $countTodayPending > 0 ? $countTodayPending : ($hasUnseenPending ? $countPending : 0);
 
         $counts = [
-            'all'           => $countAll,
-            'pending'       => $countPending,
-            'today_pending' => $countTodayPending,
-            'scheduled'     => $countScheduled,
-            'finalized'     => $countFinalized,
-            'kapon'         => $countKapon,
-            'rejected'      => $countRejected,
+            'all'             => $countAll,
+            'pending'         => $countPending,
+            'today_pending'   => $countTodayPending,
+            'scheduled'       => $countScheduled,
+            'finalized'       => $countFinalized,
+            'kapon'           => $countKapon,
+            'kapon_awaiting'  => $countKaponAwaiting,
+            'kapon_scheduled' => $countKaponScheduled,
+            'rejected'        => $countRejected,
         ];
 
         $latestId = AdoptionApplication::max('id') ?? 0;
 
-        return view('adoption-applications.index', compact('applications', 'activeTab', 'search', 'counts', 'hasUnseenPending', 'newBadgeCount', 'latestId'));
+        return view('adoption-applications.index', compact('applications', 'activeTab', 'search', 'counts', 'hasUnseenPending', 'newBadgeCount', 'latestId', 'kaponFilter'));
     }
 
     /**
@@ -150,6 +162,8 @@ class AdoptionApplicationController extends Controller
         $countScheduled = AdoptionApplication::where('status', 'approved')->whereNull('documents_verified_at')->count();
         $countFinalized = AdoptionApplication::whereNotNull('documents_verified_at')->count();
         $countKapon = AdoptionApplication::whereNotNull('documents_verified_at')->whereIn('kapon_status', ['awaiting_schedule', 'scheduled'])->count();
+        $countKaponAwaiting = AdoptionApplication::whereNotNull('documents_verified_at')->where('kapon_status', 'awaiting_schedule')->count();
+        $countKaponScheduled = AdoptionApplication::whereNotNull('documents_verified_at')->where('kapon_status', 'scheduled')->count();
         $countRejected = AdoptionApplication::where('status', 'rejected')->count();
 
         $latestPendingId = AdoptionApplication::whereIn('status', ['pending', 'under_review'])->max('id') ?? 0;
@@ -192,13 +206,15 @@ class AdoptionApplicationController extends Controller
             'new_count' => count($newApplications),
             'new_applications' => $newApplications,
             'counts' => [
-                'all'           => $countAll,
-                'pending'       => $countPending,
-                'today_pending' => $countTodayPending,
-                'scheduled'     => $countScheduled,
-                'finalized'     => $countFinalized,
-                'kapon'         => $countKapon,
-                'rejected'      => $countRejected,
+                'all'             => $countAll,
+                'pending'         => $countPending,
+                'today_pending'   => $countTodayPending,
+                'scheduled'       => $countScheduled,
+                'finalized'       => $countFinalized,
+                'kapon'           => $countKapon,
+                'kapon_awaiting'  => $countKaponAwaiting,
+                'kapon_scheduled' => $countKaponScheduled,
+                'rejected'        => $countRejected,
             ],
         ]);
     }
@@ -456,8 +472,32 @@ class AdoptionApplicationController extends Controller
             }
         }
 
-        $isNeutered = (bool) ($application->pet?->is_neutered ?? false);
-        $defaultKaponStatus = $isNeutered ? 'not_required' : 'awaiting_schedule';
+        $pet = $application->pet;
+        $petName = $pet?->name ?? 'companion';
+        $isNeutered = (bool) ($pet?->is_neutered ?? false);
+        $kaponDecision = $request->input('kapon_decision');
+
+        $kaponStatus = 'awaiting_schedule';
+        $kaponScheduledDate = null;
+        $kaponVenue = null;
+        $kaponInstructions = null;
+
+        if ($isNeutered || $kaponDecision === 'already_neutered') {
+            $kaponStatus = 'not_required';
+            if ($application->pet && !$application->pet->is_neutered) {
+                $application->pet->update(['is_neutered' => true]);
+            }
+        } elseif ($kaponDecision === 'schedule_now' && $request->filled('kapon_scheduled_date')) {
+            $kaponStatus = 'scheduled';
+            $kaponScheduledDate = $request->kapon_scheduled_date;
+            $kaponVenue = $request->kapon_venue ?: 'CAWS Shelter Clinic';
+            $kaponInstructions = $request->kapon_instructions ?: 'Strictly fast pet: no food or water 8-10 hours prior to surgery.';
+        } elseif ($application->kapon_status && in_array($application->kapon_status, ['scheduled', 'completed', 'not_required'])) {
+            $kaponStatus = $application->kapon_status;
+            $kaponScheduledDate = $application->kapon_scheduled_date;
+            $kaponVenue = $application->kapon_venue;
+            $kaponInstructions = $application->kapon_instructions;
+        }
 
         $application->update([
             'staff_signature_path'   => $signaturePath,
@@ -470,7 +510,10 @@ class AdoptionApplicationController extends Controller
             'barangay_cert_verified' => true,
             'status'                 => 'approved',
             'approved_at'            => $application->approved_at ?: now(),
-            'kapon_status'           => $application->kapon_status && $application->kapon_status !== 'not_required' ? $application->kapon_status : $defaultKaponStatus,
+            'kapon_status'           => $kaponStatus,
+            'kapon_scheduled_date'   => $kaponScheduledDate,
+            'kapon_venue'            => $kaponVenue,
+            'kapon_instructions'     => $kaponInstructions,
         ]);
 
         $application->pet?->update(['status' => 'adopted']);

@@ -389,7 +389,7 @@ class AdoptionApplicationTest extends TestCase
 
         $responseWithSig = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
         $responseWithSig->assertStatus(200);
-        $responseWithSig->assertSee('Preview Draft Contract');
+        $responseWithSig->assertSee('Preview Contract PDF');
 
         // Now finalize handover
         $app->update([
@@ -401,7 +401,7 @@ class AdoptionApplicationTest extends TestCase
 
         $responseWithFinalized = $this->actingAs($staff)->get(route('adoption-applications.show', $app));
         $responseWithFinalized->assertStatus(200);
-        $responseWithFinalized->assertSee('Print Official Contract');
+        $responseWithFinalized->assertSee('Print Official Adoption Contract');
     }
 
     public function test_contract_download_is_locked_for_adopter_until_physical_verification_finalized(): void
@@ -1137,6 +1137,7 @@ class AdoptionApplicationTest extends TestCase
 
         $response = $this->actingAs($staff)->patch(route('adoption-applications.update', $app2), [
             'status' => 'approved',
+            'scheduled_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'event_location' => 'Centrio Mall CDO',
             'event_notes' => 'Bring documents',
         ]);
@@ -1168,6 +1169,7 @@ class AdoptionApplicationTest extends TestCase
 
         $response = $this->actingAs($staff)->patch(route('adoption-applications.update', $appCompeting), [
             'status' => 'approved',
+            'scheduled_at' => now()->addDays(2)->format('Y-m-d H:i:s'),
             'event_location' => 'Centrio Mall CDO',
             'event_notes' => 'Bring documents',
         ]);
@@ -1446,15 +1448,15 @@ class AdoptionApplicationTest extends TestCase
         $this->assertTrue($app2->fresh()->is_waitlisted_backup);
         $this->assertEquals('Waitlisted', $app2->fresh()->display_status);
 
-        // Verify index view renders Primary Candidate for App 1 on scheduled tab and Waitlisted (Backup) for App 2 on pending tab
+        // Verify index view renders Primary for App 1 on scheduled tab and Waitlisted / Backup for App 2 on pending tab
         $responseScheduled = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'scheduled']));
         $responseScheduled->assertStatus(200);
-        $responseScheduled->assertSee('Primary Candidate');
+        $responseScheduled->assertSee('Primary');
 
         $responsePending = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'pending']));
         $responsePending->assertStatus(200);
-        $responsePending->assertSee('Waitlisted (Backup)');
-        $responsePending->assertSee('Backup · Queue #2');
+        $responsePending->assertSee('Waitlisted');
+        $responsePending->assertSee('Backup #2');
     }
 
     public function test_realtime_check_endpoint_detects_new_applications_and_returns_counts(): void
@@ -1758,6 +1760,56 @@ class AdoptionApplicationTest extends TestCase
         $this->assertFalse($appDataAfter['requiresNaming']);
     }
 
+    public function test_finalize_handover_supports_kapon_scheduling_choices(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'oauth2.googleapis.com/*' => \Illuminate\Support\Facades\Http::response(['access_token' => 'mock_token'], 200),
+            'fcm.googleapis.com/*'    => \Illuminate\Support\Facades\Http::response(['name' => 'projects/mock/messages/123'], 200),
+        ]);
+
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+        \App\Models\StaffProfile::create([
+            'user_id'                => $staff->id,
+            'staff_code'             => 'STF-TEST',
+            'full_name'              => $staff->name,
+            'status'                 => 'active',
+            'digital_signature_path' => 'signatures/staff_mock.png',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('public')->put('signatures/staff_mock.png', 'mock_bytes');
+
+        $adopter = User::factory()->create(['role' => 'user', 'email_verified_at' => now()]);
+        $unneuteredPet = Pet::create(['name' => 'Rocky', 'type' => 'dog', 'status' => 'available', 'is_neutered' => false]);
+
+        $app = AdoptionApplication::create([
+            'pet_id'                 => $unneuteredPet->id,
+            'applicant_name'         => $adopter->name,
+            'applicant_email'        => $adopter->email,
+            'status'                 => 'approved',
+            'scheduled_at'           => now()->addDays(2),
+            'id_document_verified'   => true,
+            'barangay_cert_verified' => true,
+        ]);
+
+        // Handover with immediate Kapon schedule
+        $response = $this->actingAs($staff)->post(route('adoption-applications.finalize-handover', $app), [
+            'id_document_verified'   => '1',
+            'barangay_cert_verified' => '1',
+            'use_saved_signature'    => '1',
+            'kapon_decision'         => 'schedule_now',
+            'kapon_scheduled_date'   => now()->addDays(7)->format('Y-m-d H:i:s'),
+            'kapon_venue'            => 'CAWS Shelter Main Clinic',
+        ]);
+        $response->assertRedirect();
+
+        $app->refresh();
+        $this->assertEquals('scheduled', $app->kapon_status);
+        $this->assertEquals('CAWS Shelter Main Clinic', $app->kapon_venue);
+        $this->assertNotNull($app->kapon_scheduled_date);
+    }
+
     public function test_vaccine_reminders_filters_window_and_includes_overdue(): void
     {
         $adopter = User::factory()->create(['role' => 'user', 'email_verified_at' => now()]);
@@ -1836,6 +1888,158 @@ class AdoptionApplicationTest extends TestCase
         $this->assertNotNull($dueSoonItem);
         $this->assertFalse($dueSoonItem['is_overdue']);
         $this->assertEquals(10, $dueSoonItem['days_until_due']);
+    }
+
+    public function test_kapon_queue_displays_enhanced_metrics_wait_time_and_scheduling_columns(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+        \App\Models\StaffProfile::create([
+            'user_id' => $staff->id,
+            'staff_code' => 'STF-001',
+            'full_name' => $staff->name,
+            'position_title' => 'Shelter Officer',
+            'status' => 'active',
+        ]);
+
+        $petAwaiting = Pet::create([
+            'name' => 'Brownie',
+            'type' => 'dog',
+            'status' => 'adopted',
+            'is_neutered' => false,
+        ]);
+
+        $appAwaiting = AdoptionApplication::create([
+            'pet_id' => $petAwaiting->id,
+            'applicant_name' => 'Maria Santos',
+            'applicant_email' => 'maria@example.com',
+            'applicant_phone' => '09123456781',
+            'status' => 'approved',
+            'documents_verified_at' => now()->subDays(16),
+            'id_document_verified' => true,
+            'barangay_cert_verified' => true,
+            'kapon_status' => 'awaiting_schedule',
+        ]);
+
+        $petScheduled = Pet::create([
+            'name' => 'Blackie',
+            'type' => 'cat',
+            'status' => 'adopted',
+            'is_neutered' => false,
+        ]);
+
+        $appScheduled = AdoptionApplication::create([
+            'pet_id' => $petScheduled->id,
+            'applicant_name' => 'Juan Dela Cruz',
+            'applicant_email' => 'juan@example.com',
+            'applicant_phone' => '09123456782',
+            'status' => 'approved',
+            'documents_verified_at' => now()->subDays(3),
+            'id_document_verified' => true,
+            'barangay_cert_verified' => true,
+            'kapon_status' => 'scheduled',
+            'kapon_scheduled_date' => now()->addDays(4)->setTime(9, 30),
+            'kapon_venue' => 'CAWS Shelter Clinic',
+            'kapon_instructions' => 'Fast 8 hours',
+        ]);
+
+        $response = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'kapon']));
+        $response->assertStatus(200);
+
+        // Header & Titles
+        $response->assertSee('Post-Adoption Kapon (Spay / Neuter) Queue');
+        $response->assertSee('All in Kapon Queue');
+        $response->assertSee('Awaiting Schedule');
+        $response->assertSee('Confirmed Appointments');
+
+        // Column Headers
+        $response->assertSee('Adopted Pet');
+        $response->assertSee('Adopter Details');
+        $response->assertSee('Handover Date');
+        $response->assertSee('Kapon Status & Wait Time', false);
+        $response->assertSee('Clinic Schedule');
+
+        // Content
+        $response->assertSee('Brownie');
+        $response->assertSee('Maria Santos');
+        $response->assertSee('Waiting 16 days');
+        $response->assertSee('Priority');
+        $response->assertSee('Schedule Kapon');
+
+        $response->assertSee('Blackie');
+        $response->assertSee('Juan Dela Cruz');
+        $response->assertSee('Scheduled');
+        $response->assertSee('Reschedule');
+        $response->assertSee('Mark Done');
+    }
+
+    public function test_kapon_queue_subfilter_awaiting_and_scheduled(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+        \App\Models\StaffProfile::create([
+            'user_id' => $staff->id,
+            'staff_code' => 'STF-002',
+            'full_name' => $staff->name,
+            'position_title' => 'Shelter Officer',
+            'status' => 'active',
+        ]);
+
+        $petAwaiting = Pet::create([
+            'name' => 'Simba',
+            'type' => 'cat',
+            'status' => 'adopted',
+            'is_neutered' => false,
+        ]);
+
+        AdoptionApplication::create([
+            'pet_id' => $petAwaiting->id,
+            'applicant_name' => 'Elena Cruz',
+            'applicant_email' => 'elena@example.com',
+            'applicant_phone' => '09123456783',
+            'status' => 'approved',
+            'documents_verified_at' => now()->subDays(5),
+            'id_document_verified' => true,
+            'barangay_cert_verified' => true,
+            'kapon_status' => 'awaiting_schedule',
+        ]);
+
+        $petScheduled = Pet::create([
+            'name' => 'Nala',
+            'type' => 'cat',
+            'status' => 'adopted',
+            'is_neutered' => false,
+        ]);
+
+        AdoptionApplication::create([
+            'pet_id' => $petScheduled->id,
+            'applicant_name' => 'Carlos Reyes',
+            'applicant_email' => 'carlos@example.com',
+            'applicant_phone' => '09123456784',
+            'status' => 'approved',
+            'documents_verified_at' => now()->subDays(2),
+            'id_document_verified' => true,
+            'barangay_cert_verified' => true,
+            'kapon_status' => 'scheduled',
+            'kapon_scheduled_date' => now()->addDays(2),
+            'kapon_venue' => 'CAWS Shelter Clinic',
+        ]);
+
+        // Filter: awaiting
+        $responseAwaiting = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'kapon', 'kapon_filter' => 'awaiting']));
+        $responseAwaiting->assertStatus(200);
+        $responseAwaiting->assertSee('Simba');
+        $responseAwaiting->assertDontSee('Nala');
+
+        // Filter: scheduled
+        $responseScheduled = $this->actingAs($staff)->get(route('adoption-applications.index', ['status' => 'kapon', 'kapon_filter' => 'scheduled']));
+        $responseScheduled->assertStatus(200);
+        $responseScheduled->assertSee('Nala');
+        $responseScheduled->assertDontSee('Simba');
     }
 }
 
