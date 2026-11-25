@@ -172,4 +172,86 @@ class HealthWelfareUpdatesTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);
     }
+
+    public function test_health_welfare_photo_urls_use_proxied_request_host_instead_of_localhost(): void
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email_verified_at' => now(),
+        ]);
+
+        $adopter = User::factory()->create([
+            'role' => 'adopter',
+            'email_verified_at' => now(),
+        ]);
+
+        $pet = Pet::create([
+            'name' => 'Mochi',
+            'type' => 'cat',
+            'breed' => 'Puspin',
+            'status' => 'adopted',
+            'age' => 2,
+            'gender' => 'female',
+            'size' => 'small',
+            'added_by_user_id' => $staff->id,
+        ]);
+
+        PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopter->id,
+            'photo_path' => 'health_updates/mochi_checkin.jpg',
+            'health_status' => 'healthy',
+            'notes' => 'Healthy check-in.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'submitted',
+        ]);
+
+        PetHealthUpdate::create([
+            'pet_id' => $pet->id,
+            'user_id' => $adopter->id,
+            'photo_path' => 'http://localhost:8000/storage/health_updates/legacy_memorial.jpg',
+            'health_status' => 'deceased',
+            'notes' => 'Memorial submission.',
+            'check_in_date' => now()->toDateString(),
+            'status' => 'memorial_recorded',
+            'review_decision' => 'pending',
+        ]);
+
+        \App\Models\MedicalLog::create([
+            'pet_id' => $pet->id,
+            'date' => now()->toDateString(),
+            'category' => 'vaccination',
+            'vaccine_name' => 'Anti-Rabies',
+            'is_external' => true,
+            'clinic_name' => 'City Vet',
+            'proof_photo_path' => 'medical_proofs/mochi_vax.png',
+            'verification_status' => 'pending',
+            'created_by' => $adopter->id,
+        ]);
+
+        $proxyHeaders = [
+            'X-Forwarded-Host' => 'caws-petadoption.vercel.app',
+            'X-Forwarded-Proto' => 'https',
+        ];
+
+        $monthlyResponse = $this->actingAs($staff)
+            ->withHeaders($proxyHeaders)
+            ->get('/health-welfare-updates?tab=monthly_updates');
+        $monthlyResponse->assertStatus(200);
+        $monthlyResponse->assertSee('https://caws-petadoption.vercel.app/storage/health_updates/mochi_checkin.jpg', false);
+        $monthlyResponse->assertDontSee('http://localhost:8000/storage/health_updates/mochi_checkin.jpg', false);
+
+        $vetResponse = $this->actingAs($staff)
+            ->withHeaders($proxyHeaders)
+            ->get('/health-welfare-updates?tab=vet_proofs');
+        $vetResponse->assertStatus(200);
+        $vetResponse->assertSee('https://caws-petadoption.vercel.app/storage/medical_proofs/mochi_vax.png', false);
+
+        $dedicationResponse = $this->actingAs($staff)
+            ->withHeaders($proxyHeaders)
+            ->get('/health-welfare-updates?tab=pet_dedications');
+        $dedicationResponse->assertStatus(200);
+        $dedicationResponse->assertSee('https://caws-petadoption.vercel.app/storage/health_updates/legacy_memorial.jpg', false);
+        $dedicationResponse->assertDontSee('http://localhost:8000/storage/health_updates/legacy_memorial.jpg', false);
+    }
 }

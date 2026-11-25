@@ -265,7 +265,7 @@
                                 $healthData = $healthUpdates->map(function($h) {
                                     return [
                                         'id' => $h->id,
-                                        'photo_url' => $h->photo_path ? asset('storage/' . ltrim($h->photo_path, '/')) : ($h->photo_url ?? null),
+                                        'photo_url' => $h->photo_url,
                                         'health_status' => $h->health_status,
                                         'weight' => $h->weight,
                                         'notes' => $h->notes,

@@ -901,7 +901,7 @@ class AdoptionApiController extends Controller
                 : 'Health check-in submitted successfully.',
             'data'    => [
                 'id'            => $healthUpdate->id,
-                'photo_url'     => $photoPath ? asset('storage/' . $photoPath) : null,
+                'photo_url'     => $healthUpdate->photo_url,
                 'health_status' => $healthUpdate->health_status,
                 'weight'        => $healthUpdate->weight,
                 'notes'         => $healthUpdate->notes,
@@ -925,7 +925,7 @@ class AdoptionApiController extends Controller
                 'id'                      => $item->id,
                 'adoption_application_id' => $item->adoption_application_id,
                 'pet_id'                  => $item->pet_id,
-                'photo_url'               => asset('storage/' . $item->photo_path),
+                'photo_url'               => $item->photo_url,
                 'health_status'           => $item->health_status,
                 'weight'                  => $item->weight,
                 'notes'                   => $item->notes,

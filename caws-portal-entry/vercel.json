@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://stated-rational-any-sight.trycloudflare.com/$1",
+                         "destination":  "https://ultram-dense-divine-addressing.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

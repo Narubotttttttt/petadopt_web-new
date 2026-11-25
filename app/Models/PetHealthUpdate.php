@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class PetHealthUpdate extends Model
 {
@@ -42,11 +41,24 @@ class PetHealthUpdate extends Model
             return null;
         }
 
-        if (filter_var($this->photo_path, FILTER_VALIDATE_URL)) {
-            return $this->photo_path;
+        $path = $this->photo_path;
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            if (preg_match('#^https?://(?:localhost|127\.0\.0\.1|[^/]+\.trycloudflare\.com)(?::\d+)?/storage/(.+)$#i', $path, $matches)) {
+                $path = $matches[1];
+            } else {
+                return $path;
+            }
         }
 
-        return Storage::disk('public')->url($this->photo_path);
+        $cleanPath = ltrim($path, '/');
+        if (str_starts_with($cleanPath, 'storage/')) {
+            $cleanPath = substr($cleanPath, strlen('storage/'));
+        } elseif (str_starts_with($cleanPath, 'public/')) {
+            $cleanPath = substr($cleanPath, strlen('public/'));
+        }
+
+        return asset('storage/' . $cleanPath);
     }
 
     public function pet()
