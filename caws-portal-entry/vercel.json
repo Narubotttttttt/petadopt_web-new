@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://ultram-dense-divine-addressing.trycloudflare.com/$1",
+                         "destination":  "https://exhibitions-white-furthermore-dui.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

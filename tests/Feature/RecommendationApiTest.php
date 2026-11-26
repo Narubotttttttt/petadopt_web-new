@@ -48,7 +48,6 @@ class RecommendationApiTest extends TestCase
             'preferred_species'    => 'dog',
             'living_environment'   => 'house_fenced',
             'activity_level'       => 'high',
-            'desired_temperaments' => ['Playful'],
         ]);
 
         $response1->assertOk();
@@ -81,7 +80,6 @@ class RecommendationApiTest extends TestCase
             'preferred_species'    => 'dog',
             'living_environment'   => 'house_fenced',
             'activity_level'       => 'high',
-            'desired_temperaments' => ['Playful'],
         ]);
 
         $response2->assertOk();
@@ -169,7 +167,6 @@ class RecommendationApiTest extends TestCase
             'preferred_species'    => 'dog',
             'living_environment'   => 'house_fenced',
             'activity_level'       => 'high',
-            'desired_temperaments' => ['Playful'],
         ]);
 
         $response->assertOk();
@@ -220,7 +217,6 @@ class RecommendationApiTest extends TestCase
             'preferred_species'    => 'dog',
             'living_environment'   => 'house_fenced',
             'activity_level'       => 'high',
-            'desired_temperaments' => ['Playful'],
         ]);
 
         $response->assertOk();

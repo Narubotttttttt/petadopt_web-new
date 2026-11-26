@@ -465,19 +465,6 @@
                                 </div>
                             </div>
 
-                            @if(!empty($quizProfile->desired_temperaments) && is_array($quizProfile->desired_temperaments))
-                                <div class="p-3.5 bg-slate-50/80 dark:bg-[#161824] rounded-xl border border-slate-200/60 dark:border-white/[0.08] space-y-1.5">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#199CA4] dark:text-[#41C1CB]">Sought Pet Temperaments</p>
-                                    <div class="flex flex-wrap gap-1.5 pt-0.5">
-                                        @foreach($quizProfile->desired_temperaments as $tag)
-                                            <span class="px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-[#12141C] text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200/80 dark:border-white/[0.08]">
-                                                {{ ucfirst($tag) }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-
                         @else
                             {{-- Fallback: Questionnaire Answers from Message --}}
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

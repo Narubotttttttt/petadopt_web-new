@@ -315,7 +315,6 @@ def _generate_dynamic_reasons_gemini(top_pets: list[dict[str, Any]], adopter_pro
         'has_children': bool(adopter_profile.get('has_children', False)),
         'has_other_pets': bool(adopter_profile.get('has_other_pets', False)),
         'experience_level': 'experienced' if bool(adopter_profile.get('has_other_pets', False)) else adopter_profile.get('pet_experience', 'first_time'),
-        'desired_temperaments': adopter_profile.get('desired_temperaments', [])
     }
 
     compact_pets = []
@@ -631,10 +630,14 @@ def recommend_pets_with_analysis(pets_data, adopter_profile, top_k=3):
         routine_penalty = (energy_diff * 1.5) + (1.5 if hours_val > 7.0 and anxiety > 3.0 else 0)
         routine_pct = round(min(98.0, max(80.0, match_pct - routine_penalty + 2.0)), 0)
 
-        # 3. Temperament & Behavioral Fit (based on behavioral tags and safety)
-        desired = adopter_profile.get('desired_temperaments', [])
-        temp_boost = 3.0 if any(t in pet_tags_list for t in desired) else 1.0
-        temperament_pct = round(min(99.0, max(80.0, match_pct + temp_boost)), 0)
+        # 3. Temperament & Behavioral Fit (based on observed behavioral tags and household safety)
+        aggression = feat_dict.get('aggression_score', 1.5)
+        reactivity = feat_dict.get('reactivity_to_dogs', 2.0)
+        has_kids_val = feat_dict.get('household_has_kids', 0)
+        has_pets_val = feat_dict.get('household_has_pets', 0)
+        safety_penalty = (2.0 if has_kids_val and aggression > 2.0 else 0.0) + (2.0 if has_pets_val and reactivity > 3.0 else 0.0)
+        friendly_bonus = 2.0 if any(t in pet_tags_list for t in ['Friendly', 'Calm', 'Affectionate', 'Playful']) else 0.5
+        temperament_pct = round(min(99.0, max(80.0, match_pct + friendly_bonus - safety_penalty)), 0)
 
         compat_breakdown = {
             'space': int(space_pct),

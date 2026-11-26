@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdopterCompatibilityProfile;
-use App\Models\AdopterPreference;
 use App\Models\AdoptionApplication;
 use App\Models\Pet;
 use Illuminate\Http\JsonResponse;
@@ -148,7 +147,6 @@ class RecommendationApiController extends Controller
                 'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
                 'hours_alone'           => $request->input('hours_alone', '4_7'),
                 'special_care_capacity' => filter_var($request->input('special_care_capacity', false), FILTER_VALIDATE_BOOLEAN),
-                'desired_temperaments'  => $request->input('desired_temperaments', []),
                 'revision_count'        => $revCount + 1,
                 'next_retake_available_at' => now()->addDays(30),
             ]);
@@ -190,7 +188,6 @@ class RecommendationApiController extends Controller
                 'has_other_pets'        => filter_var($request->input('has_other_pets', false), FILTER_VALIDATE_BOOLEAN),
                 'hours_alone'           => $request->input('hours_alone', '4_7'),
                 'special_care_capacity' => filter_var($request->input('special_care_capacity', false), FILTER_VALIDATE_BOOLEAN),
-                'desired_temperaments'  => $request->input('desired_temperaments', []),
                 'revision_count'        => 0,
                 'next_retake_available_at' => null,
             ]);
@@ -314,7 +311,7 @@ class RecommendationApiController extends Controller
         if (empty($pets)) {
             return response()->json([
                 'success'         => true,
-                'algorithm'       => 'Scikit-Learn Random Forest Classifier (Color, Age, Gender Prioritized)',
+                'algorithm'       => 'Python Scikit-Learn Random Forest Engine',
                 'count'           => 0,
                 'is_locked'       => ($user && $saved !== null),
                 'recommendations' => [],

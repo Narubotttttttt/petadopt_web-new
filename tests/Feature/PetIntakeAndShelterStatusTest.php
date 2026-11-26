@@ -316,7 +316,6 @@ class PetIntakeAndShelterStatusTest extends TestCase
             'preferred_species'    => 'dog',
             'living_environment'   => 'house_fenced',
             'activity_level'       => 'high',
-            'desired_temperaments' => ['Playful'],
         ]);
 
         $response->assertOk();
