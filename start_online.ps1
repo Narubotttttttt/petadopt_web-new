@@ -16,14 +16,91 @@ Write-Host "==================================================" -ForegroundColor
 Write-Host "   CAWS Pet Adoption - Live Online Cloud Bridge   " -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 
-# 1. Check & start Laravel server if not running
-$Port8000 = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
+# 1. Start multi-threaded XAMPP Apache on port 8000 (replacing single-threaded php artisan serve)
+$ApacheBin = "C:\xampp\apache\bin\httpd.exe"
+$PhpApacheDll = "C:\xampp\php\php8apache2_4.dll"
+$Port8000 = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+
+if ($Port8000) {
+    foreach ($conn in $Port8000) {
+        $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
+        if ($proc -and $proc.ProcessName -eq "php") {
+            Write-Host "Stopping slow single-threaded php artisan serve (PID $($proc.Id))..." -ForegroundColor Yellow
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 1
+        }
+    }
+    $Port8000 = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+}
+
 if (-not $Port8000) {
-    Write-Host "1. Starting Laravel server on port 8000..." -ForegroundColor Yellow
-    Start-Process -FilePath "php" -ArgumentList "artisan", "serve", "--host=0.0.0.0", "--port=8000" -WorkingDirectory $PSScriptRoot -WindowStyle Hidden
-    Start-Sleep -Seconds 2
+    if ((Test-Path $ApacheBin) -and (Test-Path $PhpApacheDll)) {
+        Write-Host "1. Starting multi-threaded Apache HTTP Server (64 workers) on port 8000..." -ForegroundColor Yellow
+        $ProjectSlash = $PSScriptRoot -replace '\\', '/'
+        $ApacheConfPath = Join-Path $PSScriptRoot "storage\framework\apache_caws.conf"
+        $ApacheConf = @"
+ServerRoot "C:/xampp/apache"
+Listen 8000
+ServerName localhost:8000
+
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule env_module modules/mod_env.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule filter_module modules/mod_filter.so
+LoadModule deflate_module modules/mod_deflate.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule php_module "C:/xampp/php/php8apache2_4.dll"
+
+PHPIniDir "C:/xampp/php"
+AddHandler application/x-httpd-php .php
+
+<IfModule mpm_winnt_module>
+    ThreadsPerChild 64
+    MaxConnectionsPerChild 0
+</IfModule>
+
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+Timeout 120
+
+TypesConfig "C:/xampp/apache/conf/mime.types"
+
+<IfModule dir_module>
+    DirectoryIndex index.php index.html
+</IfModule>
+
+PidFile "$ProjectSlash/storage/logs/apache_caws.pid"
+ErrorLog "$ProjectSlash/storage/logs/apache_error.log"
+LogLevel warn
+
+DocumentRoot "$ProjectSlash/public"
+<Directory "$ProjectSlash/public">
+    Options FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+
+<IfModule deflate_module>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+"@
+        [System.IO.File]::WriteAllText($ApacheConfPath, $ApacheConf, [System.Text.UTF8Encoding]::new($false))
+        Start-Process -FilePath $ApacheBin -ArgumentList "-f", "`"$ApacheConfPath`"" -WorkingDirectory $PSScriptRoot -WindowStyle Hidden
+        Start-Sleep -Seconds 2
+    } else {
+        Write-Host "1. Starting Laravel server on port 8000..." -ForegroundColor Yellow
+        Start-Process -FilePath "php" -ArgumentList "artisan", "serve", "--host=0.0.0.0", "--port=8000" -WorkingDirectory $PSScriptRoot -WindowStyle Hidden
+        Start-Sleep -Seconds 2
+    }
 } else {
-    Write-Host "1. Laravel server already active on port 8000." -ForegroundColor Green
+    Write-Host "1. Web server already active on port 8000." -ForegroundColor Green
 }
 
 # 2. Start cloudflared process and redirect stderr to log file
@@ -31,7 +108,7 @@ $LogFile = Join-Path $PSScriptRoot "tunnel.log"
 if (Test-Path $LogFile) { Remove-Item $LogFile -Force }
 
 Write-Host "2. Launching Cloudflare Tunnel to port 8000..." -ForegroundColor Yellow
-$Process = Start-Process -FilePath $CloudflaredBin -ArgumentList "tunnel", "--protocol", "http2", "--url", "http://127.0.0.1:8000" -RedirectStandardError $LogFile -PassThru -WindowStyle Hidden
+$Process = Start-Process -FilePath $CloudflaredBin -ArgumentList "tunnel", "--protocol", "auto", "--url", "http://127.0.0.1:8000" -RedirectStandardError $LogFile -PassThru -WindowStyle Hidden
 
 # 3. Wait and capture the assigned trycloudflare URL
 $TunnelUrl = ""

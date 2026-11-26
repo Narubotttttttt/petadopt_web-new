@@ -1,3 +1,17 @@
+<IfModule mod_mime.c>
+    AddType application/vnd.android.package-archive .apk
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.apk$">
+        Header set Content-Disposition "attachment; filename=caws-petadopt.apk"
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+    <FilesMatch "\.(css|js|png|jpg|jpeg|webp|svg|woff2?)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

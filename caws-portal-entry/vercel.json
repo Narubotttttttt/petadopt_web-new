@@ -1,7 +1,7 @@
 {
     "rewrites":  [
                      {
-                         "destination":  "https://exhibitions-white-furthermore-dui.trycloudflare.com/$1",
+                         "destination":  "https://pension-apps-edinburgh-treat.trycloudflare.com/$1",
                          "source":  "/(.*)"
                      }
                  ],

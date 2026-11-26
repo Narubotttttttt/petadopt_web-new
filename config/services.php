@@ -39,4 +39,6 @@ return [
         'app_distribution_url' => env('FIREBASE_APP_DISTRIBUTION_URL', 'https://appdistribution.firebase.dev'),
     ],
 
+    'mobile_apk_url' => env('MOBILE_APK_URL', 'https://github.com/Narubotttttttt/petadopt_web-new/releases/download/v1/caws-petadopt.apk'),
+
 ];

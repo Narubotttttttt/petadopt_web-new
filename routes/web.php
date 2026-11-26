@@ -19,15 +19,31 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/download-app', function () {
+Route::get('/download-app', function (Request $request) {
+    $externalUrl = trim((string) config('services.mobile_apk_url', ''));
+    if ($externalUrl !== '') {
+        return redirect()->away($externalUrl);
+    }
+
     $apkPath = public_path('downloads/caws-petadopt.apk');
     if (! file_exists($apkPath)) {
         abort(404, 'Mobile application installer not found.');
     }
-    return response()->download($apkPath, 'caws-petadopt.apk', [
-        'Content-Type' => 'application/vnd.android.package-archive',
-        'Content-Disposition' => 'attachment; filename="caws-petadopt.apk"',
-    ]);
+
+    // Bypass Vercel Edge reverse-proxy limits for large 60MB+ APK downloads by sending the browser directly to the active tunnel static file
+    $isVercelProxy = $request->hasHeader('x-vercel-id') || str_contains((string) $request->header('host'), 'vercel.app');
+    if ($isVercelProxy) {
+        $vercelJsonPath = base_path('caws-portal-entry/vercel.json');
+        if (file_exists($vercelJsonPath)) {
+            $vercelConfig = json_decode((string) file_get_contents($vercelJsonPath), true);
+            $dest = $vercelConfig['rewrites'][0]['destination'] ?? '';
+            if (preg_match('#^(https://[^/]+)#i', $dest, $m)) {
+                return redirect()->away(rtrim($m[1], '/') . '/downloads/caws-petadopt.apk');
+            }
+        }
+    }
+
+    return redirect('/downloads/caws-petadopt.apk');
 })->name('mobile.download');
 
 Route::middleware(['auth', 'verified'])->group(function () {
