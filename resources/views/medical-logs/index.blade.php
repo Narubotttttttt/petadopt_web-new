@@ -26,15 +26,6 @@
                     </div>
                     <button type="submit" class="px-4 sm:px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 font-bold rounded-xl text-xs sm:text-sm border border-slate-200 dark:border-white/[0.08] shadow-2xs transition-colors cursor-pointer shrink-0">Search</button>
                 </form>
-                <a href="{{ route('adopters.reports', ['tab' => 'vet_proofs']) }}" class="relative inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/40 dark:hover:bg-violet-900/50 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50 text-xs sm:text-sm font-bold shadow-2xs transition-all duration-200 shrink-0">
-                    <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span>Vaccination updates</span>
-                    @if(($pendingVetProofsCount ?? 0) > 0)
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white leading-none">
-                            {{ $pendingVetProofsCount }}
-                        </span>
-                    @endif
-                </a>
                 <a href="{{ route('medical-logs.create') }}" class="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl bg-[#199CA4] hover:bg-[#13787F] text-white text-xs sm:text-sm font-bold shadow-xs transition-all duration-200 shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                     <span>Record Medical Log</span>
@@ -61,66 +52,30 @@
             </div>
         @endif
 
-        {{-- Clinical KPI Metric Summary & Filter Cards (3 cards) --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {{-- Total Clinical Records --}}
-            <a href="{{ route('medical-logs.index', array_merge(request()->except('filter', 'page'), ['filter' => 'all'])) }}" class="group block p-4 sm:p-5 rounded-2xl transition-all duration-200 {{ $filter === 'all' ? 'bg-[#199CA4]/[0.08] dark:bg-[#199CA4]/15 border-2 border-[#199CA4] dark:border-[#41C1CB] ring-2 ring-[#199CA4]/20 shadow-xs' : 'bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1.5 truncate">
-                        <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider {{ $filter === 'all' ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200' }} truncate">Total Logs</span>
-                        @if($filter === 'all')
-                            <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide bg-[#199CA4] text-white leading-none shrink-0">Active</span>
-                        @endif
-                    </div>
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center border shrink-0 transition-colors {{ $filter === 'all' ? 'bg-[#199CA4] text-white border-[#199CA4]' : 'bg-[#199CA4]/10 dark:bg-[#199CA4]/20 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/20' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-                    </div>
-                </div>
-                <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5">
-                    <span class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $totalLogsCount }}</span>
-                    <span class="text-[10px] sm:text-xs font-semibold text-slate-400 truncate">entries</span>
-                </div>
-                <p class="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">All clinical entries</p>
+        {{-- Compact Filter Pill Tags --}}
+        <div class="flex flex-wrap items-center gap-2">
+            {{-- Total Clinical Records Pill --}}
+            <a href="{{ route('medical-logs.index', array_merge(request()->except('filter', 'page'), ['filter' => 'all'])) }}"
+               class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 {{ $filter === 'all' ? 'bg-[#199CA4] text-white border border-[#199CA4] shadow-xs ring-2 ring-[#199CA4]/20' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.16]' }}">
+                <svg class="w-3.5 h-3.5 {{ $filter === 'all' ? 'text-white' : 'text-[#199CA4] dark:text-[#41C1CB]' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                <span>Total Logs</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-black leading-none {{ $filter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-200' }}">{{ $totalLogsCount }}</span>
             </a>
 
-            {{-- Core Vaccinations Card --}}
-            <a href="{{ route('medical-logs.index', array_merge(request()->except('filter', 'page'), ['filter' => 'vaccination'])) }}" class="group block p-4 sm:p-5 rounded-2xl transition-all duration-200 {{ $filter === 'vaccination' ? 'bg-[#199CA4]/[0.08] dark:bg-[#199CA4]/15 border-2 border-[#199CA4] dark:border-[#41C1CB] ring-2 ring-[#199CA4]/20 shadow-xs' : 'bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1.5 truncate">
-                        <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider {{ $filter === 'vaccination' ? 'text-[#199CA4] dark:text-[#41C1CB]' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200' }} truncate">Vaccinations</span>
-                        @if($filter === 'vaccination')
-                            <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide bg-[#199CA4] text-white leading-none shrink-0">Active</span>
-                        @endif
-                    </div>
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center border shrink-0 transition-colors {{ $filter === 'vaccination' ? 'bg-[#199CA4] text-white border-[#199CA4]' : 'bg-[#199CA4]/10 dark:bg-[#199CA4]/15 text-[#199CA4] dark:text-[#41C1CB] border-[#199CA4]/20' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    </div>
-                </div>
-                <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5">
-                    <span class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $vaccineCount }}</span>
-                    <span class="text-[10px] sm:text-xs font-semibold text-slate-400 truncate">{{ Str::plural('dose', $vaccineCount) }}</span>
-                </div>
-                <p class="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">Immunization records</p>
+            {{-- Vaccinations Pill --}}
+            <a href="{{ route('medical-logs.index', array_merge(request()->except('filter', 'page'), ['filter' => 'vaccination'])) }}"
+               class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 {{ $filter === 'vaccination' ? 'bg-[#199CA4] text-white border border-[#199CA4] shadow-xs ring-2 ring-[#199CA4]/20' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.16]' }}">
+                <svg class="w-3.5 h-3.5 {{ $filter === 'vaccination' ? 'text-white' : 'text-[#199CA4] dark:text-[#41C1CB]' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span>Vaccinations</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-black leading-none {{ $filter === 'vaccination' ? 'bg-white/20 text-white' : 'bg-[#199CA4]/10 dark:bg-[#199CA4]/15 text-[#15838B] dark:text-[#41C1CB]' }}">{{ $vaccineCount }}</span>
             </a>
 
-            {{-- Total Routine Dewormings --}}
-            <a href="{{ route('medical-logs.index', array_merge(request()->except('filter', 'page'), ['filter' => 'deworming'])) }}" class="group block p-4 sm:p-5 rounded-2xl transition-all duration-200 {{ $filter === 'deworming' ? 'bg-[#4F46E5]/[0.08] dark:bg-[#4F46E5]/15 border-2 border-[#4F46E5] dark:border-[#818CF8] ring-2 ring-[#4F46E5]/20 shadow-xs' : 'bg-white dark:bg-[#12141C] border border-slate-200/80 dark:border-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-xs' }}">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1.5 truncate">
-                        <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider {{ $filter === 'deworming' ? 'text-[#4F46E5] dark:text-[#818CF8]' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200' }} truncate">Dewormings</span>
-                        @if($filter === 'deworming')
-                            <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide bg-[#4F46E5] text-white leading-none shrink-0">Active</span>
-                        @endif
-                    </div>
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center border shrink-0 transition-colors {{ $filter === 'deworming' ? 'bg-[#4F46E5] text-white border-[#4F46E5]' : 'bg-[#4F46E5]/10 dark:bg-[#6366F1]/15 text-[#4F46E5] dark:text-[#818CF8] border-[#4F46E5]/20 dark:border-[#6366F1]/25' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
-                    </div>
-                </div>
-                <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5">
-                    <span class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{{ $dewormingCount }}</span>
-                    <span class="text-[10px] sm:text-xs font-semibold text-slate-400 truncate">{{ Str::plural('dose', $dewormingCount) }}</span>
-                </div>
-                <p class="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">Parasite prevention</p>
+            {{-- Dewormings Pill --}}
+            <a href="{{ route('medical-logs.index', array_merge(request()->except('filter', 'page'), ['filter' => 'deworming'])) }}"
+               class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 {{ $filter === 'deworming' ? 'bg-[#4F46E5] text-white border border-[#4F46E5] shadow-xs ring-2 ring-[#4F46E5]/20' : 'bg-white dark:bg-[#12141C] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.16]' }}">
+                <svg class="w-3.5 h-3.5 {{ $filter === 'deworming' ? 'text-white' : 'text-[#4F46E5] dark:text-[#818CF8]' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                <span>Dewormings</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-black leading-none {{ $filter === 'deworming' ? 'bg-white/20 text-white' : 'bg-[#4F46E5]/10 dark:bg-[#6366F1]/15 text-[#4F46E5] dark:text-[#818CF8]' }}">{{ $dewormingCount }}</span>
             </a>
         </div>
 
